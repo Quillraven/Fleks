@@ -18,9 +18,9 @@ class EntityConfiguration(
     internal lateinit var cmpMask: BitSet
 
     inline fun <reified T : Any> add(cfg: T.() -> Unit = {}): T {
-        val cmpIdx = cmpService.cmpIdx<T>()
-        cmpMask.set(cmpIdx)
-        return cmpService.mapper<T>(cmpIdx).add(entityId, cfg)
+        val mapper = cmpService.mapper<T>()
+        cmpMask.set(mapper.id)
+        return mapper.add(entityId, cfg)
     }
 }
 

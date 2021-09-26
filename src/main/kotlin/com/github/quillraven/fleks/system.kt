@@ -32,7 +32,7 @@ class SystemService(
                     val paramClass = it.type.classifier as KClass<*>
                     if (paramClass == ComponentMapper::class) {
                         val cmpClazz = it.type.arguments[0].type?.classifier as KClass<*>
-                        cmpService.mappers[cmpService.cmpIdx(cmpClazz)]
+                        cmpService.mappers[cmpClazz]
                     } else {
                         injectables[it.type.classifier]
                     }
