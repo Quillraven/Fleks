@@ -33,9 +33,24 @@ class World(
 ) {
     private val systemService: SystemService
 
+    @PublishedApi
+    internal val componentService = ComponentService()
+
+    @PublishedApi
+    internal val entityService: EntityService
+
     init {
         val worldCfg = WorldConfiguration().apply(cfg)
-        systemService = SystemService(worldCfg.systemTypes, worldCfg.injectables)
+        systemService = SystemService(worldCfg.systemTypes, worldCfg.injectables, componentService)
+        entityService = EntityService(worldCfg.entityCapacity, componentService)
+    }
+
+    inline fun entity(cfg: EntityConfiguration.() -> Unit = {}): Int {
+        return entityService.create(cfg)
+    }
+
+    fun remove(entityId: Int) {
+        entityService.remove(entityId)
     }
 
     fun update() {

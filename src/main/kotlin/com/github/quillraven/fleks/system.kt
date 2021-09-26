@@ -1,6 +1,7 @@
 package com.github.quillraven.fleks
 
 import kotlin.reflect.KClass
+import kotlin.reflect.full.primaryConstructor
 
 abstract class EntitySystem(var enabled: Boolean = true) {
     abstract fun update()
@@ -8,7 +9,8 @@ abstract class EntitySystem(var enabled: Boolean = true) {
 
 class SystemService(
     systemTypes: List<KClass<out EntitySystem>>,
-    injectables: Map<KClass<*>, Any>
+    injectables: MutableMap<KClass<*>, Any>,
+    cmpService: ComponentService
 ) {
     private val systems: Array<EntitySystem>
 
@@ -16,39 +18,38 @@ class SystemService(
         systems = Array(systemTypes.size) { sysIdx ->
             val sysType = systemTypes[sysIdx]
 
-            val constructors = sysType.java.declaredConstructors
-            if (constructors.size > 1) {
-                // sort constructors by amount of parameters
-                // constructor with the least amount of parameters is used for creation
-                constructors.sortBy { it.parameters.size }
-            }
+            val primaryConstructor = sysType.primaryConstructor ?: throw FleksSystemCreationException(
+                sysType,
+                "No primary constructor found"
+            )
 
-            val cstr = constructors.first()
-            val params = cstr.parameters
-            if (params.isEmpty()) {
-                return@Array cstr.newInstance() as EntitySystem
-            } else {
-                // TODO how to support Kotlin's default constructor value assignments?
-                val missingTypes = mutableListOf<String>()
-
-                val args = Array(params.size) { paramIdx ->
-                    val param = params[paramIdx]
-                    val arg = injectables[param.type.kotlin]
-                    if (arg == null) {
-                        missingTypes.add(param.type.simpleName)
+            val args = primaryConstructor.parameters
+                // filter out default value assignments in the constructor
+                .filterNot { it.isOptional }
+                // for any non-default value parameter assign the value of the injectables map
+                // or a ComponentMapper of the ComponentService
+                .associateWith {
+                    val paramClass = it.type.classifier as KClass<*>
+                    if (paramClass == ComponentMapper::class) {
+                        val cmpClazz = it.type.arguments[0].type?.classifier as KClass<*>
+                        cmpService.mappers[cmpService.cmpIdx(cmpClazz)]
+                    } else {
+                        injectables[it.type.classifier]
                     }
-                    arg
                 }
 
-                if (missingTypes.isEmpty()) {
-                    return@Array cstr.newInstance(*args) as EntitySystem
-                }
 
+            val missingInjectables = args
+                .filter { !it.key.type.isMarkedNullable && it.value == null }
+                .map { it.key.type.classifier }
+            if (missingInjectables.isNotEmpty()) {
                 throw FleksSystemCreationException(
                     sysType,
-                    "Missing injectables of type (${missingTypes.joinToString()}) for constructor with parameters (${params.joinToString { it.type.simpleName }})."
+                    "Missing injectables of type $missingInjectables"
                 )
             }
+
+            primaryConstructor.callBy(args)
         }
     }
 
