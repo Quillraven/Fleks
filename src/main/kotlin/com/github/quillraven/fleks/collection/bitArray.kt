@@ -7,6 +7,16 @@ class BitArray(
 ) {
     private var bits = LongArray(nBits ushr 6)
 
+    val isEmpty: Boolean
+        get() {
+            for (bit in bits) {
+                if (bit != 0L) {
+                    return false
+                }
+            }
+            return true
+        }
+
     operator fun get(idx: Int): Boolean {
         val word = idx ushr 6
         return if (word >= bits.size) {
@@ -83,6 +93,40 @@ class BitArray(
             }
         }
         return 0
+    }
+
+    fun nextSetBit(fromIdx: Int): Int {
+        var word = fromIdx ushr 6
+        val bitsSize = bits.size
+        if (word >= bitsSize) {
+            return -1
+        }
+
+        var bitsAtWord = bits[word]
+        if (bitsAtWord != 0L) {
+            for (bit in (fromIdx and 0x3F) until 64) {
+                if ((bitsAtWord and (1L shl (bit and 0x3F))) != 0L) {
+                    return (word shl 6) + bit
+                }
+            }
+        }
+
+        ++word
+        while (word < bitsSize) {
+            if (word != 0) {
+                bitsAtWord = bits[word]
+                if (bitsAtWord != 0L) {
+                    for (bit in 0 until 64) {
+                        if ((bitsAtWord and (1L shl (bit and 0x3F))) != 0L) {
+                            return (word shl 6) + bit
+                        }
+                    }
+                }
+            }
+            ++word
+        }
+
+        return -1
     }
 
     override fun hashCode(): Int {

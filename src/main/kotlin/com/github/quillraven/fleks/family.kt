@@ -1,6 +1,7 @@
 package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.BitArray
+import com.github.quillraven.fleks.collection.IntBag
 import kotlin.reflect.KClass
 
 @Target(AnnotationTarget.CLASS)
@@ -18,8 +19,8 @@ data class Family(
     internal val anyOf: BitArray? = null
 ) : EntityListener {
     @PublishedApi
-    internal var activeIds = IntArray(0)
-    private val entities = mutableSetOf<Int>()
+    internal var activeIds = IntBag()
+    private val entities = BitArray()
     var isDirty = false
         private set
 
@@ -34,7 +35,16 @@ data class Family(
 
     fun updateActiveEntities() {
         isDirty = false
-        activeIds = entities.toIntArray()
+        activeIds.ensureCapacity(entities.length())
+        activeIds.clear()
+        var i = entities.nextSetBit(0)
+        while (i >= 0) {
+            if (i == Int.MAX_VALUE) {
+                break // or (i+1) would overflow
+            }
+            activeIds.add(i)
+            i = entities.nextSetBit(i + 1)
+        }
     }
 
     inline fun forEach(action: (Int) -> Unit) {
@@ -44,9 +54,9 @@ data class Family(
     override fun onEntityCfgChanged(entityId: Int, cmpMask: BitArray) {
         isDirty = true
         if (cmpMask in this) {
-            entities.add(entityId)
+            entities.set(entityId)
         } else {
-            entities.remove(entityId)
+            entities.clear(entityId)
         }
     }
 
