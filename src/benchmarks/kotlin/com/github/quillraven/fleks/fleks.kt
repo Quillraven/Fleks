@@ -12,6 +12,54 @@ import java.util.concurrent.TimeUnit
 
 data class FleksPosition(var x: Float = 0f, var y: Float = 0f)
 
+data class FleksLife(var life: Float = 0f)
+
+data class FleksSprite(var path: String = "", var animationTime: Float = 0f)
+
+@AllOf([FleksPosition::class])
+class FleksSystemSimple(
+    private val positions: ComponentMapper<FleksPosition>
+) : IteratingSystem() {
+    override fun onEntityAction(entityId: Int, deltaTime: Float) {
+        positions[entityId].x++
+    }
+}
+
+@AllOf([FleksPosition::class])
+@NoneOf([FleksLife::class])
+@AnyOf([FleksSprite::class])
+class FleksSystemComplex1(
+    private val positions: ComponentMapper<FleksPosition>,
+    private val lifes: ComponentMapper<FleksLife>,
+    private val sprites: ComponentMapper<FleksSprite>
+) : IteratingSystem() {
+    private var actionCalls = 0
+
+    override fun onEntityAction(entityId: Int, deltaTime: Float) {
+        if (actionCalls % 2 == 0) {
+            positions[entityId].x++
+            world.configureEntity(entityId) { add(lifes) }
+        } else {
+            world.configureEntity(entityId) { remove(positions) }
+        }
+        sprites[entityId].animationTime++
+        ++actionCalls
+    }
+}
+
+@AnyOf([FleksPosition::class, FleksLife::class, FleksSprite::class])
+class FleksSystemComplex2(
+    private val positions: ComponentMapper<FleksPosition>,
+    private val lifes: ComponentMapper<FleksLife>,
+) : IteratingSystem() {
+    override fun onEntityAction(entityId: Int, deltaTime: Float) {
+        world.configureEntity(entityId) {
+            remove(lifes)
+            add(positions)
+        }
+    }
+}
+
 @State(Scope.Benchmark)
 open class FleksStateAddRemove {
     lateinit var world: World
@@ -20,6 +68,44 @@ open class FleksStateAddRemove {
     fun setup() {
         world = World {
             entityCapacity = NUM_ENTITIES
+        }
+    }
+}
+
+@State(Scope.Benchmark)
+open class FleksStateSimple {
+    lateinit var world: World
+
+    @Setup(value = Level.Iteration)
+    fun setup() {
+        world = World {
+            entityCapacity = NUM_ENTITIES
+            system<FleksSystemSimple>()
+        }
+
+        repeat(NUM_ENTITIES) {
+            world.entity { add<FleksPosition>() }
+        }
+    }
+}
+
+@State(Scope.Benchmark)
+open class FleksStateComplex {
+    lateinit var world: World
+
+    @Setup(value = Level.Iteration)
+    fun setup() {
+        world = World {
+            entityCapacity = NUM_ENTITIES
+            system<FleksSystemComplex1>()
+            system<FleksSystemComplex2>()
+        }
+
+        repeat(NUM_ENTITIES) {
+            world.entity {
+                add<FleksPosition>()
+                add<FleksSprite>()
+            }
         }
     }
 }
@@ -35,6 +121,20 @@ open class FleksBenchmark {
         }
         repeat(NUM_ENTITIES) {
             state.world.remove(it)
+        }
+    }
+
+    @Benchmark
+    fun simple(state: FleksStateSimple) {
+        repeat(WORLD_UPDATES) {
+            state.world.update(1f)
+        }
+    }
+
+    @Benchmark
+    fun complex(state: FleksStateComplex) {
+        repeat(WORLD_UPDATES) {
+            state.world.update(1f)
         }
     }
 }

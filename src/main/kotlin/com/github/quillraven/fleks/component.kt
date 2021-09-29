@@ -1,27 +1,38 @@
 package com.github.quillraven.fleks
 
-import com.github.quillraven.fleks.collection.Bag
-import com.github.quillraven.fleks.collection.bag
 import java.lang.reflect.Constructor
+import kotlin.math.max
 import kotlin.reflect.KClass
 
 class ComponentMapper<T>(
     @PublishedApi
     internal val id: Int,
     @PublishedApi
-    internal val components: Bag<T>,
+    internal var components: Array<T?>,
     @PublishedApi
     internal val cstr: Constructor<T>
 ) {
     @PublishedApi
     internal inline fun add(entityId: Int, cfg: T.() -> Unit = {}): T {
         val newCmp = cstr.newInstance().apply(cfg)
+        if (entityId >= components.size) {
+            components = components.copyOf(max(components.size * 2, entityId + 1))
+        }
         components[entityId] = newCmp
         return newCmp
     }
 
+    @PublishedApi
+    internal fun remove(entityId: Int) {
+        components[entityId] = null
+    }
+
     operator fun get(entityId: Int): T {
-        return components[entityId]
+        return components[entityId] ?: throw FleksNoSuchComponentException(entityId, cstr::class)
+    }
+
+    override fun toString(): String {
+        return "ComponentMapper(id=$id, cstr=${cstr})"
     }
 }
 
@@ -40,12 +51,12 @@ class ComponentService {
 
                 mapper = ComponentMapper(
                     mappers.size,
-                    bag<Any?>() as Bag<T>,
+                    Array<Any?>(64) { null } as Array<T?>,
                     cstr
                 )
                 mappers[type] = mapper
             } catch (e: Exception) {
-                throw FleksNoNoArgsComponentConstructor(type)
+                throw FleksNoNoArgsComponentConstructorException(type)
             }
         }
 

@@ -1,12 +1,9 @@
 package com.github.quillraven.fleks
 
-import com.artemis.WorldConfigurationBuilder
-import kotlin.reflect.full.createInstance
-import kotlin.system.measureNanoTime
 import kotlin.system.measureTimeMillis
 
 fun main() {
-    val kClass = FleksPosition::class
+    /*val kClass = FleksPosition::class
     val constructor = FleksPosition::class.java.getConstructor()
     val lambda = { kClass.createInstance() }
     kClass.createInstance()
@@ -25,7 +22,7 @@ fun main() {
                 world.createEntity().edit().create(ArtemisPosition::class.java)
             }
         })
-    }
+    }*/
 
     val fleksTimes = mutableListOf<Long>()
     repeat(100) {
@@ -39,12 +36,12 @@ fun main() {
         })
     }
 
-    println(
-        """
-        Artemis: max(${artemisTimes.maxOrNull()})    min(${artemisTimes.minOrNull()})  avg(${artemisTimes.average()})
-        Fleks:   max(${fleksTimes.maxOrNull()})    min(${fleksTimes.minOrNull()})  avg(${fleksTimes.average()})
-    """.trimIndent()
-    )
+    /*  println(
+          """
+          Artemis: max(${artemisTimes.maxOrNull()})    min(${artemisTimes.minOrNull()})  avg(${artemisTimes.average()})
+          Fleks:   max(${fleksTimes.maxOrNull()})    min(${fleksTimes.minOrNull()})  avg(${fleksTimes.average()})
+      """.trimIndent()
+      )*/
 }
 
 /*

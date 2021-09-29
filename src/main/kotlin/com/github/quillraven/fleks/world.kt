@@ -41,19 +41,23 @@ class World(
 
     init {
         val worldCfg = WorldConfiguration().apply(cfg)
-        systemService = SystemService(worldCfg.systemTypes, worldCfg.injectables, componentService)
         entityService = EntityService(worldCfg.entityCapacity, componentService)
+        systemService = SystemService(this, worldCfg.systemTypes, worldCfg.injectables)
     }
 
     inline fun entity(cfg: EntityConfiguration.() -> Unit = {}): Int {
         return entityService.create(cfg)
     }
 
+    inline fun configureEntity(entityId: Int, cfg: EntityConfiguration.() -> Unit) {
+        return entityService.configureEntity(entityId, cfg)
+    }
+
     fun remove(entityId: Int) {
         entityService.remove(entityId)
     }
 
-    fun update() {
-        systemService.update()
+    fun update(deltaTime: Float) {
+        systemService.update(deltaTime.coerceAtMost(1 / 30f))
     }
 }

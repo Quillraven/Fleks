@@ -1,10 +1,10 @@
 package com.github.quillraven.fleks
 
+import com.github.quillraven.fleks.collection.BitArray
 import com.github.quillraven.fleks.collection.bag
-import java.util.BitSet
 
 interface EntityListener {
-    fun onEntityCfgChanged(entityId: Int, cmpMask: BitSet) = Unit
+    fun onEntityCfgChanged(entityId: Int, cmpMask: BitArray) = Unit
 }
 
 class EntityConfiguration(
@@ -15,12 +15,22 @@ class EntityConfiguration(
     internal var entityId = 0
 
     @PublishedApi
-    internal lateinit var cmpMask: BitSet
+    internal lateinit var cmpMask: BitArray
 
     inline fun <reified T : Any> add(cfg: T.() -> Unit = {}): T {
         val mapper = cmpService.mapper<T>()
         cmpMask.set(mapper.id)
         return mapper.add(entityId, cfg)
+    }
+
+    inline fun <reified T : Any> add(mapper: ComponentMapper<T>, cfg: T.() -> Unit = {}): T {
+        cmpMask.set(mapper.id)
+        return mapper.add(entityId, cfg)
+    }
+
+    inline fun <reified T : Any> remove(mapper: ComponentMapper<T>) {
+        cmpMask.clear(mapper.id)
+        mapper.remove(entityId)
     }
 }
 
@@ -35,7 +45,7 @@ class EntityService(
     internal val recycledIds = ArrayDeque<Int>()
 
     @PublishedApi
-    internal val cmpMasks = bag<BitSet>(initialEntityCapacity)
+    internal val cmpMasks = bag<BitArray>(initialEntityCapacity)
 
     @PublishedApi
     internal val entityConfiguration = EntityConfiguration(cmpService)
@@ -51,18 +61,21 @@ class EntityService(
         }
 
         if (newId >= cmpMasks.size) {
-            cmpMasks[newId] = BitSet(64)
+            cmpMasks[newId] = BitArray(64)
         }
-        val cmpMask = cmpMasks[newId]
+        configureEntity(newId, cfg)
 
+        return newId
+    }
+
+    inline fun configureEntity(entityId: Int, cfg: EntityConfiguration.() -> Unit) {
+        val cmpMask = cmpMasks[entityId]
         entityConfiguration.run {
-            this.entityId = newId
+            this.entityId = entityId
             this.cmpMask = cmpMask
             cfg()
         }
-        listeners.forEach { it.onEntityCfgChanged(newId, cmpMask) }
-
-        return newId
+        listeners.forEach { it.onEntityCfgChanged(entityId, cmpMask) }
     }
 
     fun remove(entityId: Int) {

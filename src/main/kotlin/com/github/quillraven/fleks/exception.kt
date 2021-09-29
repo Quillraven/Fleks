@@ -13,5 +13,8 @@ class FleksInjectableAlreadyAddedException(injectable: KClass<*>) :
 class FleksSystemCreationException(system: KClass<*>, details: String) :
     FleksException("Cannot create ${system.simpleName}. Did you add all necessary injectables?\nDetails: $details")
 
-class FleksNoNoArgsComponentConstructor(component: KClass<*>) :
+class FleksNoNoArgsComponentConstructorException(component: KClass<*>) :
     FleksException("Component ${component.simpleName} is missing a no-args constructor")
+
+class FleksNoSuchComponentException(entityId: Int, component: KClass<*>) :
+    FleksException("Entity $entityId has no component of type ${component.simpleName}")
