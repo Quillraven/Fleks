@@ -38,30 +38,30 @@ class ArtemisSystemSimple : IteratingSystem() {
 @One(ArtemisSprite::class)
 class ArtemisSystemComplex1 : IteratingSystem() {
     private var processCalls = 0
-    private lateinit var mapper1: ComponentMapper<ArtemisPosition>
-    private lateinit var mapper2: ComponentMapper<ArtemisLife>
-    private lateinit var mapper3: ComponentMapper<ArtemisSprite>
+    private lateinit var positions: ComponentMapper<ArtemisPosition>
+    private lateinit var lifes: ComponentMapper<ArtemisLife>
+    private lateinit var sprites: ComponentMapper<ArtemisSprite>
 
     override fun process(entityId: Int) {
         if (processCalls % 2 == 0) {
-            mapper1[entityId].x++
-            mapper2.create(entityId)
+            positions[entityId].x++
+            lifes.create(entityId)
         } else {
-            mapper1.remove(entityId)
+            positions.remove(entityId)
         }
-        mapper3[entityId].animationTime++
+        sprites[entityId].animationTime++
         ++processCalls
     }
 }
 
 @One(ArtemisPosition::class, ArtemisLife::class, ArtemisSprite::class)
 class ArtemisSystemComplex2 : IteratingSystem() {
-    private lateinit var mapper1: ComponentMapper<ArtemisPosition>
-    private lateinit var mapper2: ComponentMapper<ArtemisLife>
+    private lateinit var positions: ComponentMapper<ArtemisPosition>
+    private lateinit var lifes: ComponentMapper<ArtemisLife>
 
     override fun process(entityId: Int) {
-        mapper2.remove(entityId)
-        mapper1.create(entityId)
+        lifes.remove(entityId)
+        positions.create(entityId)
     }
 }
 

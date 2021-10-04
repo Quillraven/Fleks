@@ -2,7 +2,7 @@ package com.github.quillraven.fleks
 
 class EventSystem(val number: Int = 42)
 
-@AllOf(components = [Position::class])
+@AllOf([Position::class])
 class TestSystem(
     private val eventSystem: EventSystem,
     private val number: Int = eventSystem.number,
