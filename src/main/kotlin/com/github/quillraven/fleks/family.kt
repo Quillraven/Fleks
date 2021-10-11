@@ -47,16 +47,16 @@ data class Family(
         }
     }
 
-    inline fun forEach(action: (Int) -> Unit) {
-        activeIds.forEach(action)
+    inline fun forEach(action: (Entity) -> Unit) {
+        activeIds.forEach { action(Entity(it)) }
     }
 
-    override fun onEntityCfgChanged(entityId: Int, cmpMask: BitArray) {
+    override fun onEntityCfgChanged(entity: Entity, cmpMask: BitArray) {
         isDirty = true
         if (cmpMask in this) {
-            entities.set(entityId)
+            entities.set(entity.id)
         } else {
-            entities.clear(entityId)
+            entities.clear(entity.id)
         }
     }
 

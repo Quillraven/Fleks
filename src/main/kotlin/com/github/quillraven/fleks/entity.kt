@@ -3,8 +3,11 @@ package com.github.quillraven.fleks
 import com.github.quillraven.fleks.collection.BitArray
 import com.github.quillraven.fleks.collection.bag
 
+@JvmInline
+value class Entity(val id: Int)
+
 interface EntityListener {
-    fun onEntityCfgChanged(entityId: Int, cmpMask: BitArray) = Unit
+    fun onEntityCfgChanged(entity: Entity, cmpMask: BitArray) = Unit
 }
 
 class EntityConfiguration(
@@ -12,7 +15,7 @@ class EntityConfiguration(
     internal val cmpService: ComponentService
 ) {
     @PublishedApi
-    internal var entityId = 0
+    internal var entity = Entity(0)
 
     @PublishedApi
     internal lateinit var cmpMask: BitArray
@@ -20,17 +23,17 @@ class EntityConfiguration(
     inline fun <reified T : Any> add(cfg: T.() -> Unit = {}): T {
         val mapper = cmpService.mapper<T>()
         cmpMask.set(mapper.id)
-        return mapper.add(entityId, cfg)
+        return mapper.add(entity, cfg)
     }
 
     inline fun <reified T : Any> add(mapper: ComponentMapper<T>, cfg: T.() -> Unit = {}): T {
         cmpMask.set(mapper.id)
-        return mapper.add(entityId, cfg)
+        return mapper.add(entity, cfg)
     }
 
     inline fun <reified T : Any> remove(mapper: ComponentMapper<T>) {
         cmpMask.clear(mapper.id)
-        mapper.remove(entityId)
+        mapper.remove(entity)
     }
 }
 
@@ -42,7 +45,7 @@ class EntityService(
     internal var nextId = 0
 
     @PublishedApi
-    internal val recycledIds = ArrayDeque<Int>()
+    internal val recycledEntities = ArrayDeque<Entity>()
 
     @PublishedApi
     internal val cmpMasks = bag<BitArray>(initialEntityCapacity)
@@ -53,34 +56,34 @@ class EntityService(
     @PublishedApi
     internal val listeners = bag<EntityListener>()
 
-    inline fun create(cfg: EntityConfiguration.() -> Unit): Int {
-        val newId = if (recycledIds.isEmpty()) {
-            nextId++
+    inline fun create(cfg: EntityConfiguration.() -> Unit): Entity {
+        val newEntity = if (recycledEntities.isEmpty()) {
+            Entity(nextId++)
         } else {
-            recycledIds.removeLast()
+            recycledEntities.removeLast()
         }
 
-        if (newId >= cmpMasks.size) {
-            cmpMasks[newId] = BitArray(64)
+        if (newEntity.id >= cmpMasks.size) {
+            cmpMasks[newEntity.id] = BitArray(64)
         }
-        configureEntity(newId, cfg)
+        configureEntity(newEntity, cfg)
 
-        return newId
+        return newEntity
     }
 
-    inline fun configureEntity(entityId: Int, cfg: EntityConfiguration.() -> Unit) {
-        val cmpMask = cmpMasks[entityId]
+    inline fun configureEntity(entity: Entity, cfg: EntityConfiguration.() -> Unit) {
+        val cmpMask = cmpMasks[entity.id]
         entityConfiguration.run {
-            this.entityId = entityId
+            this.entity = entity
             this.cmpMask = cmpMask
             cfg()
         }
-        listeners.forEach { it.onEntityCfgChanged(entityId, cmpMask) }
+        listeners.forEach { it.onEntityCfgChanged(entity, cmpMask) }
     }
 
-    fun remove(entityId: Int) {
-        recycledIds.add(entityId)
-        cmpMasks[entityId].clear()
+    fun remove(entity: Entity) {
+        recycledEntities.add(entity)
+        cmpMasks[entity.id].clear()
     }
 
     fun addEntityListener(listener: EntityListener) = listeners.add(listener)

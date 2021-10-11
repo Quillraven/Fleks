@@ -54,7 +54,7 @@ abstract class IteratingSystem(
         family.forEach { onEntityAction(it, deltaTime) }
     }
 
-    abstract fun onEntityAction(entityId: Int, deltaTime: Float)
+    abstract fun onEntityAction(entity: Entity, deltaTime: Float)
 }
 
 class SystemService(

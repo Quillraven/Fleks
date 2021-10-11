@@ -13,22 +13,22 @@ class ComponentMapper<T>(
     internal val cstr: Constructor<T>
 ) {
     @PublishedApi
-    internal inline fun add(entityId: Int, cfg: T.() -> Unit = {}): T {
+    internal inline fun add(entity: Entity, cfg: T.() -> Unit = {}): T {
         val newCmp = cstr.newInstance().apply(cfg)
-        if (entityId >= components.size) {
-            components = components.copyOf(max(components.size * 2, entityId + 1))
+        if (entity.id >= components.size) {
+            components = components.copyOf(max(components.size * 2, entity.id + 1))
         }
-        components[entityId] = newCmp
+        components[entity.id] = newCmp
         return newCmp
     }
 
     @PublishedApi
-    internal fun remove(entityId: Int) {
-        components[entityId] = null
+    internal fun remove(entity: Entity) {
+        components[entity.id] = null
     }
 
-    operator fun get(entityId: Int): T {
-        return components[entityId] ?: throw FleksNoSuchComponentException(entityId, cstr::class)
+    operator fun get(entity: Entity): T {
+        return components[entity.id] ?: throw FleksNoSuchComponentException(entity, cstr::class)
     }
 
     override fun toString(): String {

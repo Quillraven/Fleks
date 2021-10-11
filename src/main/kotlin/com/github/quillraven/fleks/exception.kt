@@ -16,5 +16,5 @@ class FleksSystemCreationException(system: KClass<*>, details: String) :
 class FleksNoNoArgsComponentConstructorException(component: KClass<*>) :
     FleksException("Component ${component.simpleName} is missing a no-args constructor")
 
-class FleksNoSuchComponentException(entityId: Int, component: KClass<*>) :
-    FleksException("Entity $entityId has no component of type ${component.simpleName}")
+class FleksNoSuchComponentException(entity: Entity, component: KClass<*>) :
+    FleksException("Entity $entity has no component of type ${component.simpleName}")

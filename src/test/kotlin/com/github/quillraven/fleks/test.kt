@@ -8,8 +8,8 @@ class TestSystem(
     private val number: Int = eventSystem.number,
     private val positions: ComponentMapper<Position>
 ) : IteratingSystem() {
-    override fun onEntityAction(entityId: Int, deltaTime: Float) {
-        println("$number entity $entityId ${positions[entityId]}")
+    override fun onEntityAction(entity: Entity, deltaTime: Float) {
+        println("$number $entity ${positions[entity]}")
     }
 }
 
@@ -18,8 +18,8 @@ class TestSystem2(
     private val lifes: ComponentMapper<Life>
 ) : EntitySystem(enabled = false) {
     override fun onTick(deltaTime: Float) {
-        println("${positions[0]} ${lifes[0]}")
-        println("${positions[1]} ${lifes[1]}")
+        println("${positions[Entity(0)]} ${lifes[Entity(0)]}")
+        println("${positions[Entity(1)]} ${lifes[Entity(1)]}")
     }
 }
 
@@ -27,8 +27,8 @@ class TestSystem2(
 class TestSystem3(
     private val lifes: ComponentMapper<Life>
 ) : IteratingSystem() {
-    override fun onEntityAction(entityId: Int, deltaTime: Float) {
-        println("entity $entityId ${lifes[entityId]}")
+    override fun onEntityAction(entity: Entity, deltaTime: Float) {
+        println("$entity ${lifes[entity]}")
     }
 }
 

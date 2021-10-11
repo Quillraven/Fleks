@@ -45,16 +45,16 @@ class World(
         systemService = SystemService(this, worldCfg.systemTypes, worldCfg.injectables)
     }
 
-    inline fun entity(cfg: EntityConfiguration.() -> Unit = {}): Int {
+    inline fun entity(cfg: EntityConfiguration.() -> Unit = {}): Entity {
         return entityService.create(cfg)
     }
 
-    inline fun configureEntity(entityId: Int, cfg: EntityConfiguration.() -> Unit) {
-        return entityService.configureEntity(entityId, cfg)
+    inline fun configureEntity(entity: Entity, cfg: EntityConfiguration.() -> Unit) {
+        return entityService.configureEntity(entity, cfg)
     }
 
-    fun remove(entityId: Int) {
-        entityService.remove(entityId)
+    fun remove(entity: Entity) {
+        entityService.remove(entity)
     }
 
     fun update(deltaTime: Float) {
