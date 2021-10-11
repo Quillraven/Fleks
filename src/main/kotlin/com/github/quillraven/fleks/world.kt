@@ -6,12 +6,12 @@ class WorldConfiguration {
     var entityCapacity = 512
 
     @PublishedApi
-    internal val systemTypes = mutableListOf<KClass<out EntitySystem>>()
+    internal val systemTypes = mutableListOf<KClass<out IntervalSystem>>()
 
     @PublishedApi
     internal val injectables = mutableMapOf<KClass<*>, Any>()
 
-    inline fun <reified T : EntitySystem> system() {
+    inline fun <reified T : IntervalSystem> system() {
         val systemType = T::class
         if (systemType in systemTypes) {
             throw FleksSystemAlreadyAddedException(systemType)

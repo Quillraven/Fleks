@@ -9,7 +9,7 @@ import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.full.primaryConstructor
 
-abstract class EntitySystem(
+abstract class IntervalSystem(
     private val tickRate: Float = 0f,
     var enabled: Boolean = true
 ) {
@@ -40,7 +40,7 @@ abstract class IteratingSystem(
     tickRate: Float = 0f,
     enabled: Boolean = true,
     private val family: Family = Family.EMPTY_FAMILY
-) : EntitySystem(tickRate, enabled) {
+) : IntervalSystem(tickRate, enabled) {
     lateinit var world: World
 
     override fun update(deltaTime: Float) {
@@ -59,12 +59,12 @@ abstract class IteratingSystem(
 
 class SystemService(
     world: World,
-    systemTypes: List<KClass<out EntitySystem>>,
+    systemTypes: List<KClass<out IntervalSystem>>,
     injectables: MutableMap<KClass<*>, Any>,
     entityService: EntityService = world.entityService,
     cmpService: ComponentService = world.componentService
 ) {
-    private val systems: Array<EntitySystem>
+    private val systems: Array<IntervalSystem>
 
     init {
         val allFamilies = mutableListOf<Family>()
@@ -97,10 +97,10 @@ class SystemService(
     }
 
     private fun systemArgs(
-        primaryConstructor: KFunction<EntitySystem>,
+        primaryConstructor: KFunction<IntervalSystem>,
         cmpService: ComponentService,
         injectables: MutableMap<KClass<*>, Any>,
-        sysType: KClass<out EntitySystem>
+        sysType: KClass<out IntervalSystem>
     ): Map<KParameter, Any?> {
         val args = primaryConstructor.parameters
             // filter out default value assignments in the constructor
@@ -132,7 +132,7 @@ class SystemService(
     }
 
     private fun family(
-        sysType: KClass<out EntitySystem>,
+        sysType: KClass<out IntervalSystem>,
         entityService: EntityService,
         cmpService: ComponentService,
         allFamilies: MutableList<Family>

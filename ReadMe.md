@@ -12,7 +12,8 @@ the box with LibGDX and performance wise it was always good enough for me.
 When using [Kotlin](https://kotlinlang.org/) and [LibKTX](https://github.com/libktx/ktx) you even get nice extension
 functions for it but I never was fully happy with how it felt because:
 
-- Defining [ComponentMapper](https://github.com/libgdx/ashley/wiki/How-to-use-Ashley#retrieving-components-with-componentmapper)
+-
+Defining [ComponentMapper](https://github.com/libgdx/ashley/wiki/How-to-use-Ashley#retrieving-components-with-componentmapper)
 for every [Component](https://github.com/libgdx/ashley/wiki/How-to-use-Ashley#components) felt very redundant
 - Ashley is not null-safe and therefore you get e.g. `Entity?` passed in as default to
   an [IteratingSystem](https://github.com/libgdx/ashley/wiki/Built-in-Entity-Systems#iteratingsystem)
@@ -32,8 +33,8 @@ details of this topic and to learn something new!
 
 If you need a lightweight and fast ECS in your Kotlin application then feel free to use Fleks.
 
-If you are looking for a fully fledged ECS that supports almost anything that you can imagine and you
-don't care about Kotlin then use [Artemis-odb](https://github.com/junkdog/artemis-odb) or [Ashley](https://github.com/libgdx/ashley).
+If you are looking for a fully fledged ECS that supports almost anything that you can imagine and you don't care about
+Kotlin then use [Artemis-odb](https://github.com/junkdog/artemis-odb) or [Ashley](https://github.com/libgdx/ashley).
 
 ## Current Status
 
@@ -44,8 +45,8 @@ Discussions or Issues. Help is always appreciated.
 
 ### World
 
-The core of Fleks is the `World` which is the container for entities, components and systems and is the object that
-you need to update your systems.
+The core of Fleks is the `World` which is the container for entities, components and systems and is the object that you
+need to update your systems.
 
 To create a world simply call:
 
@@ -88,7 +89,7 @@ dispatches a game event via an `EventManager`.
 ```Kotlin
 class DayNightSystem(
     private val eventMgr: EventManager
-) : EntitySystem() {
+) : IntervalSystem() {
     private var currentTime = 0f
     private var isDay = false
 
@@ -122,17 +123,17 @@ val world = World {
 
 There are two systems in Fleks:
 
-- `EntitySystem`: system without relation to entities.
+- `IntervalSystem`: system without relation to entities.
 - `IteratingSystem`: system with relation to entities of a specific component configuration.
 
-`EntitySystem` has two optional arguments:
+`IntervalSystem` has two optional arguments:
 
 - `tickRate`: defines the time in milliseconds when the system should be updated. Default is 0 means that it gets called
   every time `world.update` is called
 - `enabled`: defines if the system will be processed or not. Default value is true.
 
-`IteratingSystem` extends `EntitySystem` but in addition it requires you to specify the relevant components of entities
-which the system will iterate over. There are three class annotations to define this component configuration:
+`IteratingSystem` extends `IntervalSystem` but in addition it requires you to specify the relevant components of
+entities which the system will iterate over. There are three class annotations to define this component configuration:
 
 - `AllOf`: entity must have all the components specified
 - `NoneOf`: entity must not have any component specified
@@ -193,24 +194,26 @@ fun main() {
 
 ## Performance
 
-One important topic for me throughout the development of Fleks was performance.
-For that I compared Fleks with Artemis-odb and Ashley in three scenarios:
-1) **AddRemove**: creating 10_000 entities with a single component each and removing those entities
-2) **Simple**: stepping the world 1_000 times for 10_000 entities with an IteratingSystem for a single component
-that gets a `Float` counter increased by one every time
-3) **Complex**: stepping the world 1_000 times for 10_000 entities, two IteratingSystems and three components.
-It is a time-consuming benchmark because all entities get added/removed from the first system each update call.
-   - Each entity gets initialized with ComponentA and ComponentC.
-   - The first system requires ComponentA, ComponentC and not ComponentB. It switches between creating ComponentB or removing ComponentA.
-   That way every entity gets removed from this system each update call.
-   - The second system requires any ComponentA/B/C and removes ComponentC and adds ComponentA.
-   That way every entity gets added again for the first system.
- 
-I used [kotlinx-benchmark](https://github.com/Kotlin/kotlinx-benchmark) to create the benchmarks.
-Measurement is number of executed operations within 3 seconds.
+One important topic for me throughout the development of Fleks was performance. For that I compared Fleks with
+Artemis-odb and Ashley in three scenarios:
 
-All Benchmarks are run within IntelliJ using the `benchmarksBenchmark` gradle task on my local computer.
-The hardware is:
+1) **AddRemove**: creating 10_000 entities with a single component each and removing those entities
+2) **Simple**: stepping the world 1_000 times for 10_000 entities with an IteratingSystem for a single component that
+   gets a `Float` counter increased by one every time
+3) **Complex**: stepping the world 1_000 times for 10_000 entities, two IteratingSystems and three components. It is a
+   time-consuming benchmark because all entities get added/removed from the first system each update call.
+    - Each entity gets initialized with ComponentA and ComponentC.
+    - The first system requires ComponentA, ComponentC and not ComponentB. It switches between creating ComponentB or
+      removing ComponentA. That way every entity gets removed from this system each update call.
+    - The second system requires any ComponentA/B/C and removes ComponentC and adds ComponentA. That way every entity
+      gets added again for the first system.
+
+I used [kotlinx-benchmark](https://github.com/Kotlin/kotlinx-benchmark) to create the benchmarks. Measurement is number
+of executed operations within 3 seconds.
+
+All Benchmarks are run within IntelliJ using the `benchmarksBenchmark` gradle task on my local computer. The hardware
+is:
+
 - Windows 10 64-bit
 - 16 GB Ram
 - Intel i7-5820K @ 3.30Ghz
@@ -234,13 +237,15 @@ Here is the result (the higher the Score the better):
 | Fleks | Simple | thrpt | 3 | 33,639 | ± 5,651 | ops/s |
 | Fleks | Complex | thrpt | 3 | 1,063 | ± 0,374 | ops/s |
 
-I am not an expert for performance measurement, that's why you should take those numbers with a grain of salt but
-as you can see in the table:
+I am not an expert for performance measurement, that's why you should take those numbers with a grain of salt but as you
+can see in the table:
+
 - Ashley is the slowest of the three libraries by far
 - Fleks is ~300% the speed of Artemis in the **AddRemove** benchmark
 - Fleks is ~the same speed as Artemis in the **Simple** benchmark
 - Fleks is ~70% the speed of Artemis in the **Complex** benchmark
 
-As an additional note please be aware that Fleks does not support all the functionalities that the other two libraries offer.
-Fleks' core is very small and simple and therefore it does not need to process as much things as Ashley or Artemis might.
-Still, in those benchmarks all libraries have to fulfill the same need which reflects some common tasks in my own games.
+As an additional note please be aware that Fleks does not support all the functionalities that the other two libraries
+offer. Fleks' core is very small and simple and therefore it does not need to process as much things as Ashley or
+Artemis might. Still, in those benchmarks all libraries have to fulfill the same need which reflects some common tasks
+in my own games.

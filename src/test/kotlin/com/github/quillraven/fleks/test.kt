@@ -16,7 +16,7 @@ class TestSystem(
 class TestSystem2(
     private val positions: ComponentMapper<Position>,
     private val lifes: ComponentMapper<Life>
-) : EntitySystem(enabled = false) {
+) : IntervalSystem(enabled = false) {
     override fun onTick(deltaTime: Float) {
         println("${positions[Entity(0)]} ${lifes[Entity(0)]}")
         println("${positions[Entity(1)]} ${lifes[Entity(1)]}")
