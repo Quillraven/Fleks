@@ -93,7 +93,9 @@ class DayNightSystem(
     private var currentTime = 0f
     private var isDay = false
 
-    override fun onTick(deltaTime: Float) {
+    override fun onTick() {
+        // deltaTime is not needed in every system that's why it is not a parameter of "onTick".
+        // However, if you need it, you can still access it via the IteratingSystem's deltaTime property
         currentTime += deltaTime
         if (currentTime >= 1000 && !isDay) {
             isDay = true
@@ -147,7 +149,7 @@ and at least a `SpriteComponent` or `AnimationComponent` but without a `DeadComp
 @NoneOf([Dead::class])
 @AnyOf([Sprite::class, Animation::class])
 class AnimationSystem() : IteratingSystem() {
-    override fun onEntityAction(entityId: Int, deltaTime: Float) {
+    override fun onEntityAction(entity: Entity) {
         // update entities in here
     }
 }
@@ -166,8 +168,8 @@ Let's see how we can access the `PositionComponent` of an entity in the system a
 class AnimationSystem(
     private val positions: ComponentMapper<Position>
 ) : IteratingSystem() {
-    override fun onEntityAction(entityId: Int, deltaTime: Float) {
-        val entityPosition: Position = positions[entityId]
+    override fun onEntityAction(entity: Entity) {
+        val entityPosition: Position = positions[entity]
     }
 }
 ```
@@ -185,7 +187,7 @@ data class Sprite(var texturePath: String = "")
 fun main() {
     val world = World {}
 
-    val entityId: Int = world.entity {
+    val entity: Entity = world.entity {
         add<Position> { x = 5f }
         add<Sprite>()
     }
