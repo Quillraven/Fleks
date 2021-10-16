@@ -9,52 +9,59 @@ import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.full.primaryConstructor
 
+sealed interface Interval
+object EachFrame : Interval
+data class Fixed(val step: Float) : Interval
+
 abstract class IntervalSystem(
-    private val tickRate: Float = 0f,
+    val interval: Interval = EachFrame,
     var enabled: Boolean = true
 ) {
+    lateinit var world: World
+        private set
     private var accumulator: Float = 0.0f
+    val deltaTime: Float
+        get() = if (interval is Fixed) interval.step else world.deltaTime
 
-    open fun update(deltaTime: Float) {
-        if (tickRate == 0f) {
-            // no tick rate specified -> call every frame
-            onTick(deltaTime)
-            return
+    open fun update() {
+        when (interval) {
+            is EachFrame -> onTick()
+            is Fixed -> {
+                accumulator += world.deltaTime
+                val stepRate = interval.step
+                while (accumulator >= stepRate) {
+                    onTick()
+                    accumulator -= stepRate
+                }
+
+                onAlpha(accumulator / stepRate)
+            }
         }
-
-        accumulator += deltaTime
-        while (accumulator >= tickRate) {
-            onTick(tickRate)
-            accumulator -= tickRate
-        }
-
-        onAlpha(accumulator / tickRate)
     }
 
-    abstract fun onTick(deltaTime: Float)
+    abstract fun onTick()
 
     open fun onAlpha(alpha: Float) = Unit
 }
 
 abstract class IteratingSystem(
-    tickRate: Float = 0f,
+    interval: Interval = EachFrame,
     enabled: Boolean = true,
     private val family: Family = Family.EMPTY_FAMILY
-) : IntervalSystem(tickRate, enabled) {
-    lateinit var world: World
+) : IntervalSystem(interval, enabled) {
 
-    override fun update(deltaTime: Float) {
+    override fun update() {
         if (family.isDirty) {
             family.updateActiveEntities()
         }
-        super.update(deltaTime)
+        super.update()
     }
 
-    override fun onTick(deltaTime: Float) {
-        family.forEach { onEntityAction(it, deltaTime) }
+    override fun onTick() {
+        family.forEach { onEntityAction(it) }
     }
 
-    abstract fun onEntityAction(entity: Entity, deltaTime: Float)
+    abstract fun onEntityAction(entity: Entity)
 }
 
 class SystemService(
@@ -76,23 +83,20 @@ class SystemService(
                 "No primary constructor found"
             )
             val args = systemArgs(primaryConstructor, cmpService, injectables, sysType)
+            val newSystem = primaryConstructor.callBy(args)
+
+            val worldField = field(newSystem, "world")
+            worldField.isAccessible = true
+            worldField.set(newSystem, world)
 
             if (sysType.isSubclassOf(IteratingSystem::class)) {
                 val family = family(sysType, entityService, cmpService, allFamilies)
-                val newSystem = primaryConstructor.callBy(args) as IteratingSystem
-
                 val famField = field(newSystem, "family")
                 famField.isAccessible = true
                 famField.set(newSystem, family)
-
-                val worldField = field(newSystem, "world")
-                worldField.isAccessible = true
-                worldField.set(newSystem, world)
-
-                return@Array newSystem
             }
 
-            return@Array primaryConstructor.callBy(args)
+            newSystem
         }
     }
 
@@ -181,7 +185,7 @@ class SystemService(
         return family
     }
 
-    private fun field(system: IteratingSystem, fieldName: String): Field {
+    private fun field(system: IntervalSystem, fieldName: String): Field {
         var sysClass: Class<*> = system::class.java
         var classField: Field? = null
         while (classField == null) {
@@ -198,10 +202,10 @@ class SystemService(
         return classField
     }
 
-    fun update(deltaTime: Float) {
+    fun update() {
         systems.forEach { system ->
             if (system.enabled) {
-                system.update(deltaTime)
+                system.update()
             }
         }
     }

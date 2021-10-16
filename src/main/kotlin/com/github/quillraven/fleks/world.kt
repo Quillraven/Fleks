@@ -31,6 +31,8 @@ class WorldConfiguration {
 class World(
     cfg: WorldConfiguration.() -> Unit
 ) {
+    var deltaTime = 0f
+        private set
     private val systemService: SystemService
 
     @PublishedApi
@@ -58,6 +60,7 @@ class World(
     }
 
     fun update(deltaTime: Float) {
-        systemService.update(deltaTime.coerceAtMost(1 / 30f))
+        this.deltaTime = deltaTime.coerceAtMost(1 / 30f)
+        systemService.update()
     }
 }
