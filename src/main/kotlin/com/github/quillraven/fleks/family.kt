@@ -35,16 +35,7 @@ data class Family(
 
     fun updateActiveEntities() {
         isDirty = false
-        activeIds.ensureCapacity(entities.length())
-        activeIds.clear()
-        var i = entities.nextSetBit(0)
-        while (i >= 0) {
-            if (i == Int.MAX_VALUE) {
-                break // or (i+1) would overflow
-            }
-            activeIds.add(i)
-            i = entities.nextSetBit(i + 1)
-        }
+        entities.toIntBag(activeIds)
     }
 
     inline fun forEach(action: (Entity) -> Unit) {
@@ -52,10 +43,17 @@ data class Family(
     }
 
     override fun onEntityCfgChanged(entity: Entity, cmpMask: BitArray) {
-        isDirty = true
         if (cmpMask in this) {
+            if (!isDirty && !entities[entity.id]) {
+                // new entity will be added
+                isDirty = true
+            }
             entities.set(entity.id)
         } else {
+            if (!isDirty && entities[entity.id]) {
+                // existing entity will be removed
+                isDirty = true
+            }
             entities.clear(entity.id)
         }
     }

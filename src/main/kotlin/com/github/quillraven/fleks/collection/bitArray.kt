@@ -129,6 +129,22 @@ class BitArray(
         return -1
     }
 
+    fun toIntBag(bag: IntBag) {
+        bag.ensureCapacity(length())
+        bag.clear()
+
+        for (word in bits.size - 1 downTo 0) {
+            val bitsAtWord = bits[word]
+            if (bitsAtWord != 0L) {
+                for (bit in 63 downTo 0) {
+                    if ((bitsAtWord and (1L shl (bit and 0x3F))) != 0L) {
+                        bag.add((word shl 6) + bit)
+                    }
+                }
+            }
+        }
+    }
+
     override fun hashCode(): Int {
         val word = length() ushr 6
         var hash = 0
