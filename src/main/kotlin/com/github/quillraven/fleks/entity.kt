@@ -26,14 +26,14 @@ class EntityConfiguration(
         return mapper.add(entity, cfg)
     }
 
-    inline fun <reified T : Any> add(mapper: ComponentMapper<T>, cfg: T.() -> Unit = {}): T {
-        cmpMask.set(mapper.id)
-        return mapper.add(entity, cfg)
+    inline fun <reified T : Any> ComponentMapper<T>.add(cfg: T.() -> Unit = {}): T {
+        cmpMask.set(this.id)
+        return this.add(entity, cfg)
     }
 
-    inline fun <reified T : Any> remove(mapper: ComponentMapper<T>) {
-        cmpMask.clear(mapper.id)
-        mapper.remove(entity)
+    inline fun <reified T : Any> ComponentMapper<T>.remove() {
+        cmpMask.clear(this.id)
+        this.remove(entity)
     }
 }
 

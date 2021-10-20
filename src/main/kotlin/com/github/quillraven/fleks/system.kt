@@ -49,6 +49,12 @@ abstract class IteratingSystem(
     enabled: Boolean = true,
     private val family: Family = Family.EMPTY_FAMILY
 ) : IntervalSystem(interval, enabled) {
+    @PublishedApi
+    internal lateinit var entityService: EntityService
+
+    inline fun configureEntity(entity: Entity, cfg: EntityConfiguration.() -> Unit) {
+        entityService.configureEntity(entity, cfg)
+    }
 
     override fun update() {
         if (family.isDirty) {
@@ -58,10 +64,16 @@ abstract class IteratingSystem(
     }
 
     override fun onTick() {
-        family.forEach { onEntityAction(it) }
+        family.forEach { onTickEntity(it) }
     }
 
-    abstract fun onEntityAction(entity: Entity)
+    abstract fun onTickEntity(entity: Entity)
+
+    override fun onAlpha(alpha: Float) {
+        family.forEach { onAlphaEntity(it, alpha) }
+    }
+
+    open fun onAlphaEntity(entity: Entity, alpha: Float) = Unit
 }
 
 class SystemService(
@@ -94,6 +106,10 @@ class SystemService(
                 val famField = field(newSystem, "family")
                 famField.isAccessible = true
                 famField.set(newSystem, family)
+
+                val eServiceField = field(newSystem, "entityService")
+                eServiceField.isAccessible = true
+                eServiceField.set(newSystem, entityService)
             }
 
             newSystem

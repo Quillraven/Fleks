@@ -51,10 +51,6 @@ class World(
         return entityService.create(cfg)
     }
 
-    inline fun configureEntity(entity: Entity, cfg: EntityConfiguration.() -> Unit) {
-        return entityService.configureEntity(entity, cfg)
-    }
-
     fun remove(entity: Entity) {
         entityService.remove(entity)
     }

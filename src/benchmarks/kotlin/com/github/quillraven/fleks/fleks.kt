@@ -20,7 +20,7 @@ data class FleksSprite(var path: String = "", var animationTime: Float = 0f)
 class FleksSystemSimple(
     private val positions: ComponentMapper<FleksPosition>
 ) : IteratingSystem() {
-    override fun onEntityAction(entity: Entity) {
+    override fun onTickEntity(entity: Entity) {
         positions[entity].x++
     }
 }
@@ -35,12 +35,12 @@ class FleksSystemComplex1(
 ) : IteratingSystem() {
     private var actionCalls = 0
 
-    override fun onEntityAction(entity: Entity) {
+    override fun onTickEntity(entity: Entity) {
         if (actionCalls % 2 == 0) {
             positions[entity].x++
-            world.configureEntity(entity) { add(lifes) }
+            configureEntity(entity) { lifes.add() }
         } else {
-            world.configureEntity(entity) { remove(positions) }
+            configureEntity(entity) { positions.remove() }
         }
         sprites[entity].animationTime++
         ++actionCalls
@@ -52,10 +52,10 @@ class FleksSystemComplex2(
     private val positions: ComponentMapper<FleksPosition>,
     private val lifes: ComponentMapper<FleksLife>,
 ) : IteratingSystem() {
-    override fun onEntityAction(entity: Entity) {
-        world.configureEntity(entity) {
-            remove(lifes)
-            add(positions)
+    override fun onTickEntity(entity: Entity) {
+        configureEntity(entity) {
+            lifes.remove()
+            positions.add()
         }
     }
 }
