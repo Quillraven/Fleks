@@ -13,8 +13,10 @@ When using [Kotlin](https://kotlinlang.org/) and [LibKTX](https://github.com/lib
 functions for it but I never was fully happy with how it felt because:
 
 -
+
 Defining [ComponentMapper](https://github.com/libgdx/ashley/wiki/How-to-use-Ashley#retrieving-components-with-componentmapper)
 for every [Component](https://github.com/libgdx/ashley/wiki/How-to-use-Ashley#components) felt very redundant
+
 - Ashley is not null-safe and therefore you get e.g. `Entity?` passed in as default to
   an [IteratingSystem](https://github.com/libgdx/ashley/wiki/Built-in-Entity-Systems#iteratingsystem)
   although it will never be null (or at least shouldn't 😉)
@@ -125,14 +127,16 @@ val world = World {
 
 There are two systems in Fleks:
 
-- `IntervalSystem`: system without relation to entities.
-- `IteratingSystem`: system with relation to entities of a specific component configuration.
+- `IntervalSystem`: system without relation to entities
+- `IteratingSystem`: system with relation to entities of a specific component configuration
 
 `IntervalSystem` has two optional arguments:
 
-- `tickRate`: defines the time in milliseconds when the system should be updated. Default is 0 means that it gets called
-  every time `world.update` is called
-- `enabled`: defines if the system will be processed or not. Default value is true.
+- `interval`: defines the time in milliseconds when the system should be updated. Default is `EachFrame` which means
+  that it gets called every time `world.update` is called
+    - The other interval option is `Fixed` which takes a step time in milliseconds and runs the system with that fixed
+      time step
+- `enabled`: defines if the system will be processed or not. Default value is true
 
 `IteratingSystem` extends `IntervalSystem` but in addition it requires you to specify the relevant components of
 entities which the system will iterate over. There are three class annotations to define this component configuration:
@@ -149,7 +153,7 @@ and at least a `SpriteComponent` or `AnimationComponent` but without a `DeadComp
 @NoneOf([Dead::class])
 @AnyOf([Sprite::class, Animation::class])
 class AnimationSystem() : IteratingSystem() {
-    override fun onEntityAction(entity: Entity) {
+    override fun onTickEntity(entity: Entity) {
         // update entities in here
     }
 }
@@ -168,8 +172,50 @@ Let's see how we can access the `PositionComponent` of an entity in the system a
 class AnimationSystem(
     private val positions: ComponentMapper<Position>
 ) : IteratingSystem() {
-    override fun onEntityAction(entity: Entity) {
+    override fun onTickEntity(entity: Entity) {
         val entityPosition: Position = positions[entity]
+    }
+}
+```
+
+If you need to modify the component configuration of an entity then this can be done via the `configureEntity` function
+of an `IteratingSystem`.
+
+Let's see how a system can look like that adds a `DeadComponent` to an entity and removes a `LifeComponent` when its
+hitpoints are <= 0:
+
+```Kotlin
+@AllOf([Life::class])
+@NoneOf([Dead::class])
+class DeathSystem(
+    private val lives: ComponentMapper<Life>,
+    private val deads: ComponentMapper<Dead>
+) : IteratingSystem() {
+    override fun onTickEntity(entity: Entity) {
+        if (lives[entity].hitpoints <= 0f) {
+            configureEntity(entity) {
+                deads.add(it)
+                lives.remove(it)
+            }
+        }
+    }
+}
+```
+
+Sometimes it might be necessary to sort entities before iterating over them like e.g. in a `RenderSystem` that needs to
+render entities by their y or z-coordinate.
+In Fleks this can be achieved by passing an `EntityComparator` to an `IteratingSystem`. Entities are then sorted
+automatically every time the system gets updated. The `compareEntity` function helps to create such a comparator in a concise way.
+
+Here is an example of a `RenderSystem` that sorts entities by their y-coordinate:
+
+```Kotlin
+@AllOf([Position::class, Render::class])
+class RenderSystem(
+    private val positions: ComponentMapper<Position>
+) : IteratingSystem(compareEntity { entA, entB -> positions[entA].y.compareTo(positions[entB].y) }) {
+    override fun onTickEntity(entity: Entity) {
+        // render entities: entities are sorted by their y-coordinate
     }
 }
 ```
@@ -197,7 +243,7 @@ fun main() {
 ## Performance
 
 One important topic for me throughout the development of Fleks was performance. For that I compared Fleks with
-Artemis-odb and Ashley in three scenarios:
+Artemis-odb and Ashley in three scenarios which you can find in the **benchmarks** source set:
 
 1) **AddRemove**: creating 10_000 entities with a single component each and removing those entities
 2) **Simple**: stepping the world 1_000 times for 10_000 entities with an IteratingSystem for a single component that
@@ -237,17 +283,12 @@ Here is the result (the higher the Score the better):
 | |
 | Fleks | AddRemove | thrpt | 3 | 1904,151 | ± 530,426 | ops/s |
 | Fleks | Simple | thrpt | 3 | 33,639 | ± 5,651 | ops/s |
-| Fleks | Complex | thrpt | 3 | 1,063 | ± 0,374 | ops/s |
+| Fleks | Complex | thrpt | 3 | 1,196 | ± 0,210 | ops/s |
 
 I am not an expert for performance measurement, that's why you should take those numbers with a grain of salt but as you
 can see in the table:
 
 - Ashley is the slowest of the three libraries by far
-- Fleks is ~300% the speed of Artemis in the **AddRemove** benchmark
+- Fleks is ~3x the speed of Artemis in the **AddRemove** benchmark
 - Fleks is ~the same speed as Artemis in the **Simple** benchmark
-- Fleks is ~70% the speed of Artemis in the **Complex** benchmark
-
-As an additional note please be aware that Fleks does not support all the functionalities that the other two libraries
-offer. Fleks' core is very small and simple and therefore it does not need to process as much things as Ashley or
-Artemis might. Still, in those benchmarks all libraries have to fulfill the same need which reflects some common tasks
-in my own games.
+- Fleks is ~0.8x the speed of Artemis in the **Complex** benchmark
