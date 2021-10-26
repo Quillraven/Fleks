@@ -25,11 +25,8 @@ data class Family(
         private set
 
     operator fun contains(cmpMask: BitArray): Boolean {
-        if (allOf != null && !cmpMask.contains(allOf)) {
-            return false
-        }
-
-        return (noneOf == null || !cmpMask.intersects(noneOf))
+        return (allOf == null || cmpMask.contains(allOf))
+            && (noneOf == null || !cmpMask.intersects(noneOf))
             && (anyOf == null || cmpMask.intersects(anyOf))
     }
 
