@@ -16,12 +16,14 @@ fun main() {
 
 private fun measureReflectionCreation() {
     val kClass = FleksPosition::class
-    val constructor = FleksPosition::class.java.getConstructor()
-    val lambda = { kClass.createInstance() }
-    kClass.createInstance()
-    println(measureNanoTime { kClass.createInstance() })
-    println(measureNanoTime { constructor.newInstance() })
-    println(measureNanoTime { lambda() })
+    val cstr1 = FleksPosition::class.java.getConstructor()
+    val cstr2 = FleksPosition::class.java.getDeclaredConstructor()
+    val lambda = { FleksPosition() }
+
+    println("Kotlin createInstance  " + measureNanoTime { kClass.createInstance() })
+    println("Java cstr              " + measureNanoTime { cstr1.newInstance() })
+    println("Java declared cstr     " + measureNanoTime { cstr2.newInstance() })
+    println("Kotlin lambda          " + measureNanoTime { lambda() })
 }
 
 /*
