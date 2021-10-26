@@ -1,5 +1,7 @@
 package com.github.quillraven.fleks
 
+import com.github.quillraven.fleks.collection.compareEntity
+
 class EventSystem(val number: Int = 42)
 
 @AllOf([Position::class])
@@ -7,7 +9,7 @@ class TestSystem(
     private val eventSystem: EventSystem,
     private val number: Int = eventSystem.number,
     private val positions: ComponentMapper<Position>
-) : IteratingSystem() {
+) : IteratingSystem(compareEntity { entA, entB -> positions[entA].y.compareTo(positions[entB].y) }) {
     override fun onTickEntity(entity: Entity) {
         println("$number $entity ${positions[entity]} ${world.deltaTime}")
     }
@@ -55,6 +57,11 @@ fun main() {
     w.entity {
         add<Position> { y = 5f }
         add<Life> { points = 75 }
+    }
+
+    w.entity {
+        add<Position> { y = 3f }
+        add<Life> { points = 125 }
     }
 
     w.update(1f)

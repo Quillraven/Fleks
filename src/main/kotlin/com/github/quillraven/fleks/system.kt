@@ -1,6 +1,7 @@
 package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.BitArray
+import com.github.quillraven.fleks.collection.EntityComparator
 import java.lang.reflect.Field
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
@@ -23,7 +24,7 @@ abstract class IntervalSystem(
     val deltaTime: Float
         get() = if (interval is Fixed) interval.step else world.deltaTime
 
-    open fun update() {
+    open fun onUpdate() {
         when (interval) {
             is EachFrame -> onTick()
             is Fixed -> {
@@ -45,6 +46,7 @@ abstract class IntervalSystem(
 }
 
 abstract class IteratingSystem(
+    private val comparator: EntityComparator? = null,
     interval: Interval = EachFrame,
     enabled: Boolean = true,
     private val family: Family = Family.EMPTY_FAMILY
@@ -56,11 +58,14 @@ abstract class IteratingSystem(
         entityService.configureEntity(entity, cfg)
     }
 
-    override fun update() {
+    override fun onUpdate() {
         if (family.isDirty) {
             family.updateActiveEntities()
         }
-        super.update()
+        if (comparator != null) {
+            family.sort(comparator)
+        }
+        super.onUpdate()
     }
 
     override fun onTick() {
@@ -221,7 +226,7 @@ class SystemService(
     fun update() {
         systems.forEach { system ->
             if (system.enabled) {
-                system.update()
+                system.onUpdate()
             }
         }
     }

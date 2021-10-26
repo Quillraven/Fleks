@@ -1,6 +1,7 @@
 package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.BitArray
+import com.github.quillraven.fleks.collection.EntityComparator
 import com.github.quillraven.fleks.collection.IntBag
 import kotlin.reflect.KClass
 
@@ -37,6 +38,10 @@ data class Family(
 
     inline fun forEach(action: (Entity) -> Unit) {
         activeIds.forEach { action(Entity(it)) }
+    }
+
+    fun sort(comparator: EntityComparator) {
+        activeIds.sort(comparator)
     }
 
     override fun onEntityCfgChanged(entity: Entity, cmpMask: BitArray) {

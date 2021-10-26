@@ -27,10 +27,7 @@ class EntityCreateCfg(
     }
 }
 
-class EntityUpdateCfg(
-    @PublishedApi
-    internal val cmpService: ComponentService
-) {
+class EntityUpdateCfg {
     @PublishedApi
     internal lateinit var cmpMask: BitArray
 
@@ -62,7 +59,7 @@ class EntityService(
     internal val createCfg = EntityCreateCfg(cmpService)
 
     @PublishedApi
-    internal val updateCfg = EntityUpdateCfg(cmpService)
+    internal val updateCfg = EntityUpdateCfg()
 
     @PublishedApi
     internal val listeners = bag<EntityListener>()
