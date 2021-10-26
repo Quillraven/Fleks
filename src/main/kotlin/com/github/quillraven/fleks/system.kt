@@ -52,7 +52,7 @@ abstract class IteratingSystem(
     @PublishedApi
     internal lateinit var entityService: EntityService
 
-    inline fun configureEntity(entity: Entity, cfg: EntityConfiguration.() -> Unit) {
+    inline fun configureEntity(entity: Entity, cfg: EntityUpdateCfg.(Entity) -> Unit) {
         entityService.configureEntity(entity, cfg)
     }
 

@@ -10,7 +10,7 @@ interface EntityListener {
     fun onEntityCfgChanged(entity: Entity, cmpMask: BitArray) = Unit
 }
 
-class EntityConfiguration(
+class EntityCreateCfg(
     @PublishedApi
     internal val cmpService: ComponentService
 ) {
@@ -25,13 +25,21 @@ class EntityConfiguration(
         cmpMask.set(mapper.id)
         return mapper.add(entity, cfg)
     }
+}
 
-    inline fun <reified T : Any> ComponentMapper<T>.add(cfg: T.() -> Unit = {}): T {
+class EntityUpdateCfg(
+    @PublishedApi
+    internal val cmpService: ComponentService
+) {
+    @PublishedApi
+    internal lateinit var cmpMask: BitArray
+
+    inline fun <reified T : Any> ComponentMapper<T>.add(entity: Entity, cfg: T.() -> Unit = {}): T {
         cmpMask.set(this.id)
         return this.add(entity, cfg)
     }
 
-    inline fun <reified T : Any> ComponentMapper<T>.remove() {
+    inline fun <reified T : Any> ComponentMapper<T>.remove(entity: Entity) {
         cmpMask.clear(this.id)
         this.remove(entity)
     }
@@ -51,12 +59,15 @@ class EntityService(
     internal val cmpMasks = bag<BitArray>(initialEntityCapacity)
 
     @PublishedApi
-    internal val entityConfiguration = EntityConfiguration(cmpService)
+    internal val createCfg = EntityCreateCfg(cmpService)
+
+    @PublishedApi
+    internal val updateCfg = EntityUpdateCfg(cmpService)
 
     @PublishedApi
     internal val listeners = bag<EntityListener>()
 
-    inline fun create(cfg: EntityConfiguration.() -> Unit): Entity {
+    inline fun create(cfg: EntityCreateCfg.() -> Unit): Entity {
         val newEntity = if (recycledEntities.isEmpty()) {
             Entity(nextId++)
         } else {
@@ -66,17 +77,22 @@ class EntityService(
         if (newEntity.id >= cmpMasks.size) {
             cmpMasks[newEntity.id] = BitArray(64)
         }
-        configureEntity(newEntity, cfg)
+        val cmpMask = cmpMasks[newEntity.id]
+        createCfg.run {
+            this.entity = newEntity
+            this.cmpMask = cmpMask
+            cfg()
+        }
+        listeners.forEach { it.onEntityCfgChanged(newEntity, cmpMask) }
 
         return newEntity
     }
 
-    inline fun configureEntity(entity: Entity, cfg: EntityConfiguration.() -> Unit) {
+    inline fun configureEntity(entity: Entity, cfg: EntityUpdateCfg.(Entity) -> Unit) {
         val cmpMask = cmpMasks[entity.id]
-        entityConfiguration.run {
-            this.entity = entity
+        updateCfg.run {
             this.cmpMask = cmpMask
-            cfg()
+            cfg(entity)
         }
         listeners.forEach { it.onEntityCfgChanged(entity, cmpMask) }
     }

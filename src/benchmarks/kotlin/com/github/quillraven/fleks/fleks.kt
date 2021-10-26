@@ -38,9 +38,9 @@ class FleksSystemComplex1(
     override fun onTickEntity(entity: Entity) {
         if (actionCalls % 2 == 0) {
             positions[entity].x++
-            configureEntity(entity) { lifes.add() }
+            configureEntity(entity) { lifes.add(it) }
         } else {
-            configureEntity(entity) { positions.remove() }
+            configureEntity(entity) { positions.remove(it) }
         }
         sprites[entity].animationTime++
         ++actionCalls
@@ -54,8 +54,8 @@ class FleksSystemComplex2(
 ) : IteratingSystem() {
     override fun onTickEntity(entity: Entity) {
         configureEntity(entity) {
-            lifes.remove()
-            positions.add()
+            lifes.remove(it)
+            positions.add(it)
         }
     }
 }

@@ -47,7 +47,7 @@ class World(
         systemService = SystemService(this, worldCfg.systemTypes, worldCfg.injectables)
     }
 
-    inline fun entity(cfg: EntityConfiguration.() -> Unit = {}): Entity {
+    inline fun entity(cfg: EntityCreateCfg.() -> Unit = {}): Entity {
         return entityService.create(cfg)
     }
 
