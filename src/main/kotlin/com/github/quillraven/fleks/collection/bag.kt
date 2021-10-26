@@ -71,14 +71,6 @@ class IntBag(
         values[size++] = value
     }
 
-    operator fun set(index: Int, value: Int) {
-        if (index >= values.size) {
-            values = values.copyOf(max(size * 2, index + 1))
-        }
-        size = max(size, index + 1)
-        values[index] = value
-    }
-
     operator fun get(index: Int): Int {
         return values[index]
     }
