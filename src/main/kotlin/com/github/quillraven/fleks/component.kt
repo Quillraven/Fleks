@@ -14,10 +14,10 @@ class ComponentMapper<T>(
 ) {
     @PublishedApi
     internal inline fun add(entity: Entity, cfg: T.() -> Unit = {}): T {
-        val newCmp = cstr.newInstance().apply(cfg)
         if (entity.id >= components.size) {
             components = components.copyOf(max(components.size * 2, entity.id + 1))
         }
+        val newCmp = cstr.newInstance().apply(cfg)
         components[entity.id] = newCmp
         return newCmp
     }
@@ -46,13 +46,11 @@ class ComponentService {
 
         if (mapper == null) {
             try {
-                // use java constructor because it is ~4x faster than calling Kotlin's createInstance on a KClass
-                val cstr = type.java.getDeclaredConstructor()
-
                 mapper = ComponentMapper(
                     mappers.size,
                     Array<Any?>(64) { null } as Array<T?>,
-                    cstr
+                    // use java constructor because it is ~4x faster than calling Kotlin's createInstance on a KClass
+                    type.java.getDeclaredConstructor()
                 )
                 mappers[type] = mapper
             } catch (e: Exception) {
