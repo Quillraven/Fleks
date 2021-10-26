@@ -28,8 +28,8 @@ private fun measureReflectionCreation() {
 
 /*
 Complex:
-Artemis: max(754)    min(688)    avg(727.6666666666666)
-Fleks:   max(949)    min(840)    avg(893.0)
+Artemis: max(715)    min(665)  avg(691.6666666666666)
+Fleks:   max(862)    min(793)  avg(835.6666666666666)
  */
 private fun compareArtemisFleksComplex() {
     val artemisTimes = mutableListOf<Long>()

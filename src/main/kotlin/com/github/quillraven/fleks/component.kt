@@ -17,9 +17,14 @@ class ComponentMapper<T>(
         if (entity.id >= components.size) {
             components = components.copyOf(max(components.size * 2, entity.id + 1))
         }
-        val newCmp = cstr.newInstance().apply(cfg)
-        components[entity.id] = newCmp
-        return newCmp
+        var cmp = components[entity.id]
+        return if (cmp == null) {
+            cmp = cstr.newInstance().apply(cfg)
+            components[entity.id] = cmp
+            cmp
+        } else {
+            cmp.apply(cfg)
+        }
     }
 
     @PublishedApi
