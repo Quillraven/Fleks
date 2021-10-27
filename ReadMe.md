@@ -203,9 +203,9 @@ class DeathSystem(
 ```
 
 Sometimes it might be necessary to sort entities before iterating over them like e.g. in a `RenderSystem` that needs to
-render entities by their y or z-coordinate.
-In Fleks this can be achieved by passing an `EntityComparator` to an `IteratingSystem`. Entities are then sorted
-automatically every time the system gets updated. The `compareEntity` function helps to create such a comparator in a concise way.
+render entities by their y or z-coordinate. In Fleks this can be achieved by passing an `EntityComparator` to
+an `IteratingSystem`. Entities are then sorted automatically every time the system gets updated. The `compareEntity`
+function helps to create such a comparator in a concise way.
 
 Here is an example of a `RenderSystem` that sorts entities by their y-coordinate:
 
@@ -214,6 +214,32 @@ Here is an example of a `RenderSystem` that sorts entities by their y-coordinate
 class RenderSystem(
     private val positions: ComponentMapper<Position>
 ) : IteratingSystem(compareEntity { entA, entB -> positions[entA].y.compareTo(positions[entB].y) }) {
+    override fun onTickEntity(entity: Entity) {
+        // render entities: entities are sorted by their y-coordinate
+    }
+}
+```
+
+The default `SortingType` is `Automatic` which means that the `IteratingSystem` is sorting automatically each time it
+gets updated. This can be changed to `Manual` by setting the `sortingType` parameter accordingly. In that case
+the `doSort` flag of the `IteratingSystem`
+needs to be set programmatically whenever sorting should be done. The flag gets cleared after the sorting.
+
+This is how the example above could be written with a `Manual` `SortingType`:
+
+```Kotlin
+@AllOf([Position::class, Render::class])
+class RenderSystem(
+    private val positions: ComponentMapper<Position>
+) : IteratingSystem(
+    compareEntity { entA, entB -> positions[entA].y.compareTo(positions[entB].y) },
+    sortingType = Manual
+) {
+    override fun onTick() {
+        doSort = true
+        super.onTick()
+    }
+
     override fun onTickEntity(entity: Entity) {
         // render entities: entities are sorted by their y-coordinate
     }

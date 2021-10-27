@@ -45,30 +45,33 @@ abstract class IntervalSystem(
     open fun onAlpha(alpha: Float) = Unit
 }
 
+sealed interface SortingType
+object Automatic : SortingType
+object Manual : SortingType
+
 abstract class IteratingSystem(
-    private val comparator: EntityComparator? = null,
+    private val comparator: EntityComparator = EMPTY_COMPARATOR,
+    private val sortingType: SortingType = Automatic,
     interval: Interval = EachFrame,
     enabled: Boolean = true,
     private val family: Family = Family.EMPTY_FAMILY
 ) : IntervalSystem(interval, enabled) {
     @PublishedApi
     internal lateinit var entityService: EntityService
+    var doSort = sortingType == Automatic && comparator != EMPTY_COMPARATOR
 
     inline fun configureEntity(entity: Entity, cfg: EntityUpdateCfg.(Entity) -> Unit) {
         entityService.configureEntity(entity, cfg)
     }
 
-    override fun onUpdate() {
+    override fun onTick() {
         if (family.isDirty) {
             family.updateActiveEntities()
         }
-        if (comparator != null) {
+        if (doSort) {
+            doSort = sortingType == Automatic
             family.sort(comparator)
         }
-        super.onUpdate()
-    }
-
-    override fun onTick() {
         family.forEach { onTickEntity(it) }
     }
 
@@ -79,6 +82,12 @@ abstract class IteratingSystem(
     }
 
     open fun onAlphaEntity(entity: Entity, alpha: Float) = Unit
+
+    companion object {
+        private val EMPTY_COMPARATOR = object : EntityComparator {
+            override fun compare(entityA: Entity, entityB: Entity): Int = 0
+        }
+    }
 }
 
 class SystemService(
