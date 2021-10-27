@@ -21,7 +21,7 @@ data class Family(
 ) : EntityListener {
     @PublishedApi
     internal var activeIds = IntBag()
-    private val entities = BitArray()
+    private val entities = BitArray(1)
     var isDirty = false
         private set
 

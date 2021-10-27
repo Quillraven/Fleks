@@ -73,6 +73,10 @@ class IntBag(
         values[size++] = value
     }
 
+    internal fun unsafeAdd(value: Int) {
+        values[size++] = value
+    }
+
     operator fun get(index: Int): Int {
         return values[index]
     }
@@ -82,17 +86,6 @@ class IntBag(
         values[index] = values[--size]
         values[size] = 0
         return value
-    }
-
-    fun removeValue(value: Int): Boolean {
-        for (i in values.indices) {
-            if (values[i] == value) {
-                values[i] = values[--size]
-                values[size] = 0
-                return true
-            }
-        }
-        return false
     }
 
     fun clear() {
@@ -197,7 +190,7 @@ private fun IntArray.quickSort(fromIdx: Int, toIdx: Int, comparator: EntityCompa
         var l = fromIdx
         var n = toIdx - 1
         if (len > MEDIUM) {
-            // Big arrays, pseudomedian of 9
+            // Big arrays, pseudo median of 9
             val s = len / 8
             l = this.med3(l, l + s, l + 2 * s, comparator)
             m = this.med3(m - s, m, m + s, comparator)

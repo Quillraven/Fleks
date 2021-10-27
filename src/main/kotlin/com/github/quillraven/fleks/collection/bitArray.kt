@@ -5,17 +5,7 @@ import kotlin.math.min
 class BitArray(
     nBits: Int = 0
 ) {
-    private var bits = LongArray(nBits ushr 6)
-
-    val isEmpty: Boolean
-        get() {
-            for (bit in bits) {
-                if (bit != 0L) {
-                    return false
-                }
-            }
-            return true
-        }
+    private var bits = LongArray((nBits + 63) / 64)
 
     operator fun get(idx: Int): Boolean {
         val word = idx ushr 6
@@ -95,42 +85,8 @@ class BitArray(
         return 0
     }
 
-    fun nextSetBit(fromIdx: Int): Int {
-        var word = fromIdx ushr 6
-        val bitsSize = bits.size
-        if (word >= bitsSize) {
-            return -1
-        }
-
-        var bitsAtWord = bits[word]
-        if (bitsAtWord != 0L) {
-            for (bit in (fromIdx and 0x3F) until 64) {
-                if ((bitsAtWord and (1L shl (bit and 0x3F))) != 0L) {
-                    return (word shl 6) + bit
-                }
-            }
-        }
-
-        ++word
-        while (word < bitsSize) {
-            if (word != 0) {
-                bitsAtWord = bits[word]
-                if (bitsAtWord != 0L) {
-                    for (bit in 0 until 64) {
-                        if ((bitsAtWord and (1L shl (bit and 0x3F))) != 0L) {
-                            return (word shl 6) + bit
-                        }
-                    }
-                }
-            }
-            ++word
-        }
-
-        return -1
-    }
-
     fun toIntBag(bag: IntBag) {
-        bag.ensureCapacity(length())
+        var checkSize = true
         bag.clear()
 
         for (word in bits.size - 1 downTo 0) {
@@ -138,7 +94,12 @@ class BitArray(
             if (bitsAtWord != 0L) {
                 for (bit in 63 downTo 0) {
                     if ((bitsAtWord and (1L shl (bit and 0x3F))) != 0L) {
-                        bag.add((word shl 6) + bit)
+                        val idx = (word shl 6) + bit
+                        if (checkSize) {
+                            checkSize = false
+                            bag.ensureCapacity(idx + 1)
+                        }
+                        bag.unsafeAdd(idx)
                     }
                 }
             }

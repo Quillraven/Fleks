@@ -303,11 +303,11 @@ Here is the result (the higher the Score the better):
 | Ashley | Simple | thrpt | 3 | 3,986 | ± 1,390 | ops/s |
 | Ashley | Complex | thrpt | 3 | 0,056 | ± 0,117 | ops/s |
 | |
-| Artemis | AddRemove | thrpt | 3 | 620,550 | ± 1244,013 | ops/s |
+| Artemis | AddRemove | thrpt | 3 | 677,231 | ± 2002,449 | ops/s |
 | Artemis | Simple | thrpt | 3 | 32,830 | ± 2,965 | ops/s |
 | Artemis | Complex | thrpt | 3 | 1,452 | ± 0,452 | ops/s |
 | |
-| Fleks | AddRemove | thrpt | 3 | 1904,151 | ± 530,426 | ops/s |
+| Fleks | AddRemove | thrpt | 3 | 2148,225 | ± 439,121 | ops/s |
 | Fleks | Simple | thrpt | 3 | 33,639 | ± 5,651 | ops/s |
 | Fleks | Complex | thrpt | 3 | 1,196 | ± 0,210 | ops/s |
 
