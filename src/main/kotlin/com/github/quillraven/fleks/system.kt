@@ -97,7 +97,8 @@ class SystemService(
     entityService: EntityService = world.entityService,
     cmpService: ComponentService = world.componentService
 ) {
-    private val systems: Array<IntervalSystem>
+    @PublishedApi
+    internal val systems: Array<IntervalSystem>
 
     init {
         val allFamilies = mutableListOf<Family>()
@@ -230,6 +231,15 @@ class SystemService(
 
         }
         return classField
+    }
+
+    inline fun <reified T : IntervalSystem> system(): T {
+        systems.forEach { system ->
+            if (system is T) {
+                return system
+            }
+        }
+        throw FleksNoSuchSystemException(T::class)
     }
 
     fun update() {

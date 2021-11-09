@@ -65,4 +65,6 @@ fun main() {
     }
 
     w.update(1f)
+    w.system<TestSystem2>().enabled = true
+    w.update(1f)
 }
