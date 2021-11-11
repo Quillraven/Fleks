@@ -42,9 +42,9 @@ abstract class IntervalSystem(
 ) {
     /**
      * Returns the [world][World] to which this system belongs.
+     * This reference gets updated by the [SystemService] when the system gets created via reflection.
      */
-    lateinit var world: World
-        private set
+    val world: World = World.EMPTY_WORLD
 
     private var accumulator: Float = 0.0f
 
@@ -129,10 +129,18 @@ abstract class IteratingSystem(
     interval: Interval = EachFrame,
     enabled: Boolean = true
 ) : IntervalSystem(interval, enabled) {
+    /**
+     * Returns the [family][Family] of this system.
+     * This reference gets updated by the [SystemService] when the system gets created via reflection.
+     */
     private val family: Family = Family.EMPTY_FAMILY
 
+    /**
+     * Returns the [entityService][EntityService] of this system.
+     * This reference gets updated by the [SystemService] when the system gets created via reflection.
+     */
     @PublishedApi
-    internal lateinit var entityService: EntityService
+    internal val entityService: EntityService = world.entityService
 
     /**
      * Flag that defines if sorting of [entities][Entity] will be performed the next time [onTick] is called.

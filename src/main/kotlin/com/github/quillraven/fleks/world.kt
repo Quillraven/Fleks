@@ -110,4 +110,8 @@ class World(
         this.deltaTime = deltaTime
         systemService.update()
     }
+
+    companion object {
+        internal val EMPTY_WORLD = World { entityCapacity = 0 }
+    }
 }
