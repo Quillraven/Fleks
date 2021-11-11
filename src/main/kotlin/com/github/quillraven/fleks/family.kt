@@ -5,45 +5,107 @@ import com.github.quillraven.fleks.collection.EntityComparator
 import com.github.quillraven.fleks.collection.IntBag
 import kotlin.reflect.KClass
 
+/**
+ * An annotation for an [IteratingSystem] to define a [Family].
+ * [Entities][Entity] must have all [components] specified to be part of the [family][Family].
+ */
 @Target(AnnotationTarget.CLASS)
 annotation class AllOf(val components: Array<KClass<*>> = [])
 
+/**
+ * An annotation for an [IteratingSystem] to define a [Family].
+ * [Entities][Entity] must not have any [components] specified to be part of the [family][Family].
+ */
 @Target(AnnotationTarget.CLASS)
 annotation class NoneOf(val components: Array<KClass<*>> = [])
 
+/**
+ * An annotation for an [IteratingSystem] to define a [Family].
+ * [Entities][Entity] must have at least one of the [components] specified to be part of the [family][Family].
+ */
 @Target(AnnotationTarget.CLASS)
 annotation class AnyOf(val components: Array<KClass<*>> = [])
 
+/**
+ * A family of [entities][Entity]. It stores [entities][Entity] that have a specific configuration of components.
+ * A configuration is defined via the three annotations: [AllOf], [NoneOf] and [AnyOf].
+ * Each component is assigned to a unique index. That index is set in the [allOf], [noneOf] or [anyOf][] [BitArray].
+ *
+ * A family is an [EntityListener] and gets notified when an [entity][Entity] is added to the world or the
+ * entity's component configuration changes.
+ *
+ * Every [IteratingSystem] is linked to exactly one family. Families are created by the [SystemService] automatically
+ * when a [world][World] gets created.
+ *
+ * @param allOf all the components that an [entity][Entity] must have. Default value is null.
+ * @param noneOf all the components that an [entity][Entity] must not have. Default value is null.
+ * @param anyOf the components that an [entity][Entity] must have at least one. Default value is null.
+ */
 data class Family(
     internal val allOf: BitArray? = null,
     internal val noneOf: BitArray? = null,
     internal val anyOf: BitArray? = null
 ) : EntityListener {
+    /**
+     * Return the [entities] in form of an [IntBag] for better iteration performance.
+     */
     @PublishedApi
-    internal var activeIds = IntBag()
+    internal val entitiesBag = IntBag()
+
+    /**
+     * Returns the [entities][Entity] that belong to this family.
+     */
     private val entities = BitArray(1)
+
+    /**
+     * Flag to indicate if there are changes in the [entities]. If it is true then the [entitiesBag] should get
+     * updated via a call to [updateActiveEntities].
+     *
+     * Refer to [IteratingSystem.onTick] for an example implementation.
+     */
     var isDirty = false
         private set
 
+    /**
+     * Returns true if the specified [cmpMask] matches the family's component configuration.
+     *
+     * @param cmpMask the component configuration of an [entity][Entity].
+     */
     operator fun contains(cmpMask: BitArray): Boolean {
         return (allOf == null || cmpMask.contains(allOf))
             && (noneOf == null || !cmpMask.intersects(noneOf))
             && (anyOf == null || cmpMask.intersects(anyOf))
     }
 
+    /**
+     * Updates the [entitiesBag] and clears the [isDirty] flag.
+     * This should be called when [isDirty] is true.
+     */
     fun updateActiveEntities() {
         isDirty = false
-        entities.toIntBag(activeIds)
+        entities.toIntBag(entitiesBag)
     }
 
+    /**
+     * Iterates over the [entities][Entity] of this family and runs the given [action].
+     */
     inline fun forEach(action: (Entity) -> Unit) {
-        activeIds.forEach { action(Entity(it)) }
+        entitiesBag.forEach { action(Entity(it)) }
     }
 
+    /**
+     * Sorts the [entities][Entity] of this family by the given [comparator].
+     */
     fun sort(comparator: EntityComparator) {
-        activeIds.sort(comparator)
+        entitiesBag.sort(comparator)
     }
 
+    /**
+     * Checks if the [entity] is part of the family by analyzing the entity's components.
+     * The [cmpMask] is a [BitArray] that indicates which components the [entity] currently has.
+     *
+     * The [entity] gets either added to the [entities] or removed and [isDirty] is set when needed.
+     */
     override fun onEntityCfgChanged(entity: Entity, cmpMask: BitArray) {
         if (cmpMask in this) {
             if (!isDirty && !entities[entity.id]) {
