@@ -161,6 +161,15 @@ abstract class IteratingSystem(
     /**
      * Updates the [family] if needed and calls [onTickEntity] for each [entity][Entity] of the [family].
      * If [doSort] is true then [entities][Entity] are sorted using the [comparator] before calling [onTickEntity].
+     *
+     * **Important note**: There is a potential risk when iterating over entities and one of those entities
+     * gets removed. Removing the entity immediately and cleaning up its components could
+     * cause problems because if you access a component which is mandatory for the family, you will get
+     * a FleksNoSuchComponentException. To avoid that you could check if an entity really has the component
+     * before accessing it but that is redundant in context of a family.
+     *
+     * To avoid these kinds of problems, entity removals are delayed until the end of the iteration. This also means
+     * that a removed entity of this family will still be part of the [onTickEntity] for the current iteration.
      */
     override fun onTick() {
         if (family.isDirty) {
@@ -171,16 +180,6 @@ abstract class IteratingSystem(
             family.sort(comparator)
         }
 
-        // There is a potential risk when iterating over entities and one of those entities
-        // gets removed. Removing the entity immediately and cleaning up its components could
-        // cause problems because users might access its components and since the entity was
-        // part of this family, users will expect that it has those components. But since we
-        // would clean them up immediately users will get FleksNoSuchComponentException, or
-        // they always need to check if an entity really has the component before accessing it
-        // which is redundant in context of a family.
-        //
-        // To avoid these kinds of problems, we will make a delayed removal of entities
-        // while the iteration is performed.
         entityService.delayRemoval = true
         family.forEach { onTickEntity(it) }
         entityService.cleanupDelays()
