@@ -5,7 +5,8 @@ import kotlin.math.min
 class BitArray(
     nBits: Int = 0
 ) {
-    private var bits = LongArray((nBits + 63) / 64)
+    @PublishedApi
+    internal var bits = LongArray((nBits + 63) / 64)
 
     operator fun get(idx: Int): Boolean {
         val word = idx ushr 6
@@ -85,24 +86,28 @@ class BitArray(
         return 0
     }
 
-    fun toIntBag(bag: IntBag) {
-        var checkSize = true
-        bag.clear()
-
+    inline fun forEachSetBit(action: (Int) -> Unit) {
         for (word in bits.size - 1 downTo 0) {
             val bitsAtWord = bits[word]
             if (bitsAtWord != 0L) {
                 for (bit in 63 downTo 0) {
                     if ((bitsAtWord and (1L shl (bit and 0x3F))) != 0L) {
-                        val idx = (word shl 6) + bit
-                        if (checkSize) {
-                            checkSize = false
-                            bag.ensureCapacity(idx + 1)
-                        }
-                        bag.unsafeAdd(idx)
+                        action((word shl 6) + bit)
                     }
                 }
             }
+        }
+    }
+
+    fun toIntBag(bag: IntBag) {
+        var checkSize = true
+        bag.clear()
+        forEachSetBit { idx ->
+            if (checkSize) {
+                checkSize = false
+                bag.ensureCapacity(idx + 1)
+            }
+            bag.unsafeAdd(idx)
         }
     }
 

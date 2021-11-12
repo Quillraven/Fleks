@@ -66,6 +66,9 @@ class IntBag(
     var size: Int = 0
         private set
 
+    val isNotEmpty: Boolean
+        get() = size > 0
+
     fun add(value: Int) {
         if (size == values.size) {
             values = values.copyOf(size * 2)

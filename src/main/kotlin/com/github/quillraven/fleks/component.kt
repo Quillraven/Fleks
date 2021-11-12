@@ -1,5 +1,6 @@
 package com.github.quillraven.fleks
 
+import com.github.quillraven.fleks.collection.bag
 import java.lang.reflect.Constructor
 import kotlin.math.max
 import kotlin.reflect.KClass
@@ -36,6 +37,8 @@ class ComponentMapper<T>(
         return components[entity.id] ?: throw FleksNoSuchComponentException(entity, cstr.name)
     }
 
+    operator fun contains(entity: Entity): Boolean = components.size > entity.id && components[entity.id] != null
+
     override fun toString(): String {
         return "ComponentMapper(id=$id, cstr=${cstr})"
     }
@@ -44,6 +47,7 @@ class ComponentMapper<T>(
 class ComponentService {
     @PublishedApi
     internal val mappers = HashMap<KClass<*>, ComponentMapper<*>>()
+    private val mappersBag = bag<ComponentMapper<*>>()
 
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> mapper(type: KClass<T>): ComponentMapper<T> {
@@ -58,6 +62,7 @@ class ComponentService {
                     type.java.getDeclaredConstructor()
                 )
                 mappers[type] = mapper
+                mappersBag.add(mapper)
             } catch (e: Exception) {
                 throw FleksNoNoArgsComponentConstructorException(type)
             }
@@ -67,4 +72,6 @@ class ComponentService {
     }
 
     inline fun <reified T : Any> mapper(): ComponentMapper<T> = mapper(T::class)
+
+    fun mapper(cmpId: Int) = mappersBag[cmpId]
 }

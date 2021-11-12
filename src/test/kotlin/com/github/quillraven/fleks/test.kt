@@ -10,7 +10,17 @@ class TestSystem(
     private val number: Int = eventSystem.number,
     private val positions: ComponentMapper<Position>
 ) : IteratingSystem(compareEntity { entA, entB -> positions[entA].y.compareTo(positions[entB].y) }) {
+    private var numIterations = 0
+
+    override fun onTick() {
+        ++numIterations
+        super.onTick()
+    }
+
     override fun onTickEntity(entity: Entity) {
+        if (numIterations == 4) {
+            world.remove(Entity(1))
+        }
         println("$number $entity ${positions[entity]} ${world.deltaTime}")
     }
 }
@@ -20,8 +30,12 @@ class TestSystem2(
     private val lifes: ComponentMapper<Life>
 ) : IntervalSystem(enabled = false, interval = Fixed(1f)) {
     override fun onTick() {
-        println("${positions[Entity(0)]} ${lifes[Entity(0)]} $deltaTime")
-        println("${positions[Entity(1)]} ${lifes[Entity(1)]}")
+        if (Entity(0) in positions && Entity(0) in lifes) {
+            println("${positions[Entity(0)]} ${lifes[Entity(0)]} $deltaTime")
+        }
+        if (Entity(1) in positions && Entity(1) in lifes) {
+            println("${positions[Entity(1)]} ${lifes[Entity(1)]}")
+        }
     }
 }
 
@@ -49,7 +63,7 @@ fun main() {
         inject(EventSystem())
     }
 
-    w.entity {
+    val e = w.entity {
         add<Position> { x = 5f }
         add<Life>()
     }
@@ -65,6 +79,15 @@ fun main() {
     }
 
     w.update(1f)
+    println()
+
     w.system<TestSystem2>().enabled = true
+    w.update(1f)
+    println()
+
+    w.remove(e)
+    w.update(1f)
+    println()
+
     w.update(1f)
 }

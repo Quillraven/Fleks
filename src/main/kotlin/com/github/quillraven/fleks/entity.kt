@@ -1,6 +1,7 @@
 package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.BitArray
+import com.github.quillraven.fleks.collection.IntBag
 import com.github.quillraven.fleks.collection.bag
 
 @JvmInline
@@ -44,7 +45,7 @@ class EntityUpdateCfg {
 
 class EntityService(
     initialEntityCapacity: Int,
-    cmpService: ComponentService
+    private val cmpService: ComponentService
 ) {
     @PublishedApi
     internal var nextId = 0
@@ -63,6 +64,9 @@ class EntityService(
 
     @PublishedApi
     internal val listeners = bag<EntityListener>()
+
+    internal var delayRemoval = false
+    private val delayedEntities = IntBag()
 
     inline fun create(cfg: EntityCreateCfg.() -> Unit): Entity {
         val newEntity = if (recycledEntities.isEmpty()) {
@@ -95,8 +99,25 @@ class EntityService(
     }
 
     fun remove(entity: Entity) {
-        recycledEntities.add(entity)
-        cmpMasks[entity.id].clear()
+        if (delayRemoval) {
+            delayedEntities.add(entity.id)
+        } else {
+            val cmpMask = cmpMasks[entity.id]
+            recycledEntities.add(entity)
+            cmpMask.forEachSetBit { cmpId ->
+                cmpService.mapper(cmpId).remove(entity)
+            }
+            cmpMask.clear()
+            listeners.forEach { it.onEntityCfgChanged(entity, cmpMask) }
+        }
+    }
+
+    fun cleanupDelays() {
+        delayRemoval = false
+        if (delayedEntities.isNotEmpty) {
+            delayedEntities.forEach { remove(Entity(it)) }
+            delayedEntities.clear()
+        }
     }
 
     fun addEntityListener(listener: EntityListener) = listeners.add(listener)
