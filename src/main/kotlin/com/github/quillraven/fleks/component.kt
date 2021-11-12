@@ -33,7 +33,7 @@ class ComponentMapper<T>(
     }
 
     operator fun get(entity: Entity): T {
-        return components[entity.id] ?: throw FleksNoSuchComponentException(entity, cstr::class)
+        return components[entity.id] ?: throw FleksNoSuchComponentException(entity, cstr.name)
     }
 
     override fun toString(): String {
