@@ -1,13 +1,6 @@
 package com.github.quillraven.fleks
 
-import org.openjdk.jmh.annotations.Benchmark
-import org.openjdk.jmh.annotations.Fork
-import org.openjdk.jmh.annotations.Level
-import org.openjdk.jmh.annotations.Measurement
-import org.openjdk.jmh.annotations.Scope
-import org.openjdk.jmh.annotations.Setup
-import org.openjdk.jmh.annotations.State
-import org.openjdk.jmh.annotations.Warmup
+import org.openjdk.jmh.annotations.*
 import java.util.concurrent.TimeUnit
 
 data class FleksPosition(var x: Float = 0f, var y: Float = 0f)

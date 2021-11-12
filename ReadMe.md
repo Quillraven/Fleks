@@ -307,14 +307,14 @@ Here is the result (the higher the Score the better):
 | Artemis | Simple | thrpt | 3 | 32,830 | ± 2,965 | ops/s |
 | Artemis | Complex | thrpt | 3 | 1,452 | ± 0,452 | ops/s |
 | |
-| Fleks | AddRemove | thrpt | 3 | 2148,225 | ± 439,121 | ops/s |
-| Fleks | Simple | thrpt | 3 | 33,639 | ± 5,651 | ops/s |
+| Fleks | AddRemove | thrpt | 3 | 806,189 | ± 249,523 | ops/s |
+| Fleks | Simple | thrpt | 3 | 32,639 | ± 5,651 | ops/s |
 | Fleks | Complex | thrpt | 3 | 1,196 | ± 0,210 | ops/s |
 
 I am not an expert for performance measurement, that's why you should take those numbers with a grain of salt but as you
 can see in the table:
 
 - Ashley is the slowest of the three libraries by far
-- Fleks is ~3x the speed of Artemis in the **AddRemove** benchmark
+- Fleks is ~1.2x the speed of Artemis in the **AddRemove** benchmark
 - Fleks is ~the same speed as Artemis in the **Simple** benchmark
 - Fleks is ~0.8x the speed of Artemis in the **Complex** benchmark
