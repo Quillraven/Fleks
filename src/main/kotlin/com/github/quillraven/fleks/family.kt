@@ -107,17 +107,14 @@ data class Family(
      * The [entity] gets either added to the [entities] or removed and [isDirty] is set when needed.
      */
     override fun onEntityCfgChanged(entity: Entity, cmpMask: BitArray) {
-        if (cmpMask in this) {
-            if (!isDirty && !entities[entity.id]) {
-                // new entity will be added
-                isDirty = true
-            }
+        val entityInFamily = cmpMask in this
+        if (entityInFamily && !entities[entity.id]) {
+            // new entity gets added
+            isDirty = true
             entities.set(entity.id)
-        } else {
-            if (!isDirty && entities[entity.id]) {
-                // existing entity will be removed
-                isDirty = true
-            }
+        } else if (!entityInFamily && entities[entity.id]) {
+            // existing entity gets removed
+            isDirty = true
             entities.clear(entity.id)
         }
     }
