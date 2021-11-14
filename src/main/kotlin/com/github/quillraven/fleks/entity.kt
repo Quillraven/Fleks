@@ -27,9 +27,13 @@ interface EntityListener {
     fun onEntityCfgChanged(entity: Entity, cmpMask: BitArray) = Unit
 }
 
+@DslMarker
+annotation class EntityCfgMarker
+
 /**
  * A DSL class to add components to a newly created [entity][Entity].
  */
+@EntityCfgMarker
 class EntityCreateCfg(
     @PublishedApi
     internal val cmpService: ComponentService
@@ -56,6 +60,7 @@ class EntityCreateCfg(
  * It contains extension functions for [ComponentMapper] which is how the component configuration of
  * existing entities is changed. This usually happens within [IteratingSystem] classes.
  */
+@EntityCfgMarker
 class EntityUpdateCfg {
     @PublishedApi
     internal lateinit var cmpMask: BitArray
