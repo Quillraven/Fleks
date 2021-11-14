@@ -6,8 +6,6 @@ import java.lang.reflect.Field
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
-import kotlin.reflect.full.findAnnotation
-import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.full.primaryConstructor
 
 /**
@@ -253,7 +251,7 @@ class SystemService(
             worldField.isAccessible = true
             worldField.set(newSystem, world)
 
-            if (sysType.isSubclassOf(IteratingSystem::class)) {
+            if (IteratingSystem::class.java.isAssignableFrom(sysType.java)) {
                 // set family and entity service reference of newly created iterating system
                 @Suppress("UNCHECKED_CAST")
                 val family = family(sysType as KClass<out IteratingSystem>, entityService, cmpService, allFamilies)
@@ -315,6 +313,13 @@ class SystemService(
     }
 
     /**
+     * Returns [Annotation] of the specific type if the class has that annotation. Otherwise, returns null.
+     */
+    private inline fun <reified T : Annotation> KClass<*>.annotation(): T? {
+        return this.java.getAnnotation(T::class.java)
+    }
+
+    /**
      * Creates or returns an already created [family][Family] for the given [IteratingSystem]
      * by analyzing the system's [AllOf], [AnyOf] and [NoneOf] annotations.
      *
@@ -330,21 +335,21 @@ class SystemService(
         cmpService: ComponentService,
         allFamilies: MutableList<Family>
     ): Family {
-        val allOfAnn = sysType.findAnnotation<AllOf>()
+        val allOfAnn = sysType.annotation<AllOf>()
         val allOfCmps = if (allOfAnn != null && allOfAnn.components.isNotEmpty()) {
             allOfAnn.components.map { cmpService.mapper(it) }
         } else {
             null
         }
 
-        val noneOfAnn = sysType.findAnnotation<NoneOf>()
+        val noneOfAnn = sysType.annotation<NoneOf>()
         val noneOfCmps = if (noneOfAnn != null && noneOfAnn.components.isNotEmpty()) {
             noneOfAnn.components.map { cmpService.mapper(it) }
         } else {
             null
         }
 
-        val anyOfAnn = sysType.findAnnotation<AnyOf>()
+        val anyOfAnn = sysType.annotation<AnyOf>()
         val anyOfCmps = if (anyOfAnn != null && anyOfAnn.components.isNotEmpty()) {
             anyOfAnn.components.map { cmpService.mapper(it) }
         } else {
