@@ -12,11 +12,8 @@ the box with LibGDX and performance wise it was always good enough for me.
 When using [Kotlin](https://kotlinlang.org/) and [LibKTX](https://github.com/libktx/ktx) you even get nice extension
 functions for it but I never was fully happy with how it felt because:
 
--
-
-Defining [ComponentMapper](https://github.com/libgdx/ashley/wiki/How-to-use-Ashley#retrieving-components-with-componentmapper)
-for every [Component](https://github.com/libgdx/ashley/wiki/How-to-use-Ashley#components) felt very redundant
-
+- Defining [ComponentMapper](https://github.com/libgdx/ashley/wiki/How-to-use-Ashley#retrieving-components-with-componentmapper)
+  for every [Component](https://github.com/libgdx/ashley/wiki/How-to-use-Ashley#components) felt very redundant
 - Ashley is not null-safe and therefore you get e.g. `Entity?` passed in as default to
   an [IteratingSystem](https://github.com/libgdx/ashley/wiki/Built-in-Entity-Systems#iteratingsystem)
   although it will never be null (or at least shouldn't 😉)
@@ -152,7 +149,7 @@ and at least a `SpriteComponent` or `AnimationComponent` but without a `DeadComp
 @AllOf([Position::class, Physic::class])
 @NoneOf([Dead::class])
 @AnyOf([Sprite::class, Animation::class])
-class AnimationSystem() : IteratingSystem() {
+class AnimationSystem : IteratingSystem() {
     override fun onTickEntity(entity: Entity) {
         // update entities in here
     }
@@ -300,15 +297,15 @@ Here is the result (the higher the Score the better):
 | ------- | --------- | ---- | --- | ----- | ----- | ----- |
 | |
 | Ashley | AddRemove | thrpt | 3 | 207,007 | ± 39,121 | ops/s |
-| Ashley | Simple | thrpt | 3 | 3,986 | ± 1,390 | ops/s |
-| Ashley | Complex | thrpt | 3 | 0,056 | ± 0,117 | ops/s |
-| |
 | Artemis | AddRemove | thrpt | 3 | 677,231 | ± 2002,449 | ops/s |
-| Artemis | Simple | thrpt | 3 | 32,830 | ± 2,965 | ops/s |
-| Artemis | Complex | thrpt | 3 | 1,452 | ± 0,452 | ops/s |
-| |
 | Fleks | AddRemove | thrpt | 3 | 806,189 | ± 249,523 | ops/s |
+| |
+| Ashley | Simple | thrpt | 3 | 3,986 | ± 1,390 | ops/s |
+| Artemis | Simple | thrpt | 3 | 32,830 | ± 2,965 | ops/s |
 | Fleks | Simple | thrpt | 3 | 32,639 | ± 5,651 | ops/s |
+| |
+| Ashley | Complex | thrpt | 3 | 0,056 | ± 0,117 | ops/s |
+| Artemis | Complex | thrpt | 3 | 1,452 | ± 0,452 | ops/s |
 | Fleks | Complex | thrpt | 3 | 1,196 | ± 0,210 | ops/s |
 
 I am not an expert for performance measurement, that's why you should take those numbers with a grain of salt but as you
