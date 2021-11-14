@@ -2,6 +2,16 @@ package com.github.quillraven.fleks.collection
 
 import kotlin.math.min
 
+/**
+ * A BitArray implementation in Kotlin containing only the necessary functions for Fleks.
+ *
+ * Boolean[] gives a better performance when iterating over a BitArray, but uses more memory and
+ * also the amount of array resizing is increased when enlarging the array which makes it then slower in the end.
+ *
+ * For that reason I used a Long[] implementation which is similar to the one of java.util with inspirations also from
+ * https://github.com/lemire/javaewah/blob/master/src/main/java/com/googlecode/javaewah/datastructure/BitSet.java.
+ * It is more memory efficient and requires less resizing calls since one Long can store up to 64 bits.
+ */
 class BitArray(
     nBits: Int = 0
 ) {
@@ -9,18 +19,18 @@ class BitArray(
     internal var bits = LongArray((nBits + 63) / 64)
 
     operator fun get(idx: Int): Boolean {
-        val word = idx ushr 6
+        val word = idx / 64
         return if (word >= bits.size) {
             false
         } else {
-            (bits[word] and (1L shl (idx and 0x3F))) != 0L
+            (bits[word] and (1L shl (idx % 64))) != 0L
         }
     }
 
     fun set(idx: Int) {
-        val word = idx ushr 6
+        val word = idx / 64
         ensureSize(word)
-        bits[word] = bits[word] or (1L shl (idx and 0x3F))
+        bits[word] = bits[word] or (1L shl (idx % 64))
     }
 
     fun clear() {
@@ -28,9 +38,9 @@ class BitArray(
     }
 
     fun clear(idx: Int) {
-        val word = idx ushr 6
+        val word = idx / 64
         if (word < bits.size) {
-            bits[word] = bits[word] and (1L shl (idx and 0x3F)).inv()
+            bits[word] = bits[word] and (1L shl (idx % 64)).inv()
         }
     }
 
@@ -77,7 +87,7 @@ class BitArray(
             val bitsAtWord = bits[word]
             if (bitsAtWord != 0L) {
                 for (bit in 63 downTo 0) {
-                    if ((bitsAtWord and (1L shl (bit and 0x3F))) != 0L) {
+                    if ((bitsAtWord and (1L shl (bit % 64))) != 0L) {
                         return (word shl 6) + bit + 1
                     }
                 }
@@ -91,7 +101,7 @@ class BitArray(
             val bitsAtWord = bits[word]
             if (bitsAtWord != 0L) {
                 for (bit in 63 downTo 0) {
-                    if ((bitsAtWord and (1L shl (bit and 0x3F))) != 0L) {
+                    if ((bitsAtWord and (1L shl (bit % 64))) != 0L) {
                         action((word shl 6) + bit)
                     }
                 }
@@ -112,7 +122,7 @@ class BitArray(
     }
 
     override fun hashCode(): Int {
-        val word = length() ushr 6
+        val word = length() / 64
         var hash = 0
         for (i in 0..word) {
             hash = 127 * hash + (bits[i] xor (bits[i] ushr 32)).toInt()

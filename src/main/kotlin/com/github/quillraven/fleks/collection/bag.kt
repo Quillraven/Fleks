@@ -4,10 +4,16 @@ import com.github.quillraven.fleks.Entity
 import kotlin.math.max
 import kotlin.math.min
 
+/**
+ * Creates a new [Bag] of the given [capacity] and type. Default capacity is 64.
+ */
 inline fun <reified T> bag(capacity: Int = 64): Bag<T> {
     return Bag(arrayOfNulls(capacity))
 }
 
+/**
+ * A bag implementation in Kotlin containing only the necessary functions for Fleks.
+ */
 class Bag<T>(
     @PublishedApi
     internal var values: Array<T?>
@@ -34,13 +40,6 @@ class Bag<T>(
         return values[index] ?: throw NoSuchElementException("Bag has no value at index $index")
     }
 
-    fun remove(index: Int): T {
-        val value = values[index] ?: throw NoSuchElementException("Bag has no value at index $index")
-        values[index] = values[--size]
-        values[size] = null
-        return value
-    }
-
     fun removeValue(value: T): Boolean {
         for (i in 0 until size) {
             if (values[i] == value) {
@@ -59,6 +58,10 @@ class Bag<T>(
     }
 }
 
+/**
+ * A bag implementation for integer values in Kotlin to avoid autoboxing. It is used for [entities][Entity]
+ * and contains only the necessary functions for Fleks.
+ */
 class IntBag(
     @PublishedApi
     internal var values: IntArray = IntArray(64)
@@ -82,13 +85,6 @@ class IntBag(
 
     operator fun get(index: Int): Int {
         return values[index]
-    }
-
-    fun remove(index: Int): Int {
-        val value = values[index]
-        values[index] = values[--size]
-        values[size] = 0
-        return value
     }
 
     fun clear() {
