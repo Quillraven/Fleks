@@ -212,5 +212,5 @@ class EntityService(
     /**
      * Removes the given [listener] from the list of [EntityListener].
      */
-    fun removeEntityListener(listener: EntityListener) = listeners.remove(listener)
+    fun removeEntityListener(listener: EntityListener) = listeners.removeValue(listener)
 }

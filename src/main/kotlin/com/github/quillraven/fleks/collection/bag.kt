@@ -41,8 +41,8 @@ class Bag<T>(
         return value
     }
 
-    fun remove(value: T): Boolean {
-        for (i in values.indices) {
+    fun removeValue(value: T): Boolean {
+        for (i in 0 until size) {
             if (values[i] == value) {
                 values[i] = values[--size]
                 values[size] = null
