@@ -16,7 +16,7 @@ class FleksNoSuchSystemException(system: KClass<*>) :
 class FleksInjectableAlreadyAddedException(injectable: KClass<*>) :
     FleksException("Injectable ${injectable.simpleName} is already part of the ${WorldConfiguration::class.simpleName}")
 
-class FleksNoNoArgsComponentConstructorException(component: KClass<*>) :
+class FleksMissingNoArgsComponentConstructorException(component: KClass<*>) :
     FleksException("Component ${component.simpleName} is missing a no-args constructor")
 
 class FleksNoSuchComponentException(entity: Entity, component: String) :

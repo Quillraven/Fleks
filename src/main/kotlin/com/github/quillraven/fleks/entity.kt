@@ -47,6 +47,9 @@ class EntityCreateCfg(
     /**
      * Adds and returns a component of the given type to the [entity] and
      * applies the [configuration] to the component.
+     *
+     * @throws [FleksMissingNoArgsComponentConstructorException] if the component of the given type
+     * does not have a no argument constructor.
      */
     inline fun <reified T : Any> add(configuration: T.() -> Unit = {}): T {
         val mapper = cmpService.mapper<T>()

@@ -275,6 +275,9 @@ class SystemService(
      * Arguments are either [injectables] or [ComponentMapper] instances.
      *
      * @throws [FleksSystemCreationException] if [injectables] are missing for the [primaryConstructor].
+     *
+     * @throws [FleksMissingNoArgsComponentConstructorException] if the [primaryConstructor] requires a [ComponentMapper]
+     * with a component type that does not have a no argument constructor.
      */
     private fun systemArgs(
         primaryConstructor: KFunction<IntervalSystem>,
@@ -317,6 +320,9 @@ class SystemService(
      *
      * @throws [FleksSystemCreationException] if the [IteratingSystem] does not contain at least one
      * [AllOf], [AnyOf] or [NoneOf] annotation.
+     *
+     * @throws [FleksMissingNoArgsComponentConstructorException] if the [AllOf], [NoneOf] or [AnyOf] annotations
+     * of the system have a component type that does not have a no argument constructor.
      */
     private fun family(
         sysType: KClass<out IteratingSystem>,
