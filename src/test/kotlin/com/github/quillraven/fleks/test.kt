@@ -6,10 +6,10 @@ class EventSystem(val number: Int = 42)
 
 @AllOf([Position::class])
 class TestSystem(
-    private val eventSystem: EventSystem,
-    private val number: Int = eventSystem.number,
+    eventSystem: EventSystem,
     private val positions: ComponentMapper<Position>
 ) : IteratingSystem(compareEntity { entA, entB -> positions[entA].y.compareTo(positions[entB].y) }) {
+    private val number: Int = eventSystem.number
     private var numIterations = 0
 
     override fun onTick() {

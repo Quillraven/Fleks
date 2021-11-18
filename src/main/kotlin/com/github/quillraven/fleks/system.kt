@@ -2,11 +2,10 @@ package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.BitArray
 import com.github.quillraven.fleks.collection.EntityComparator
+import java.lang.reflect.Constructor
 import java.lang.reflect.Field
+import java.lang.reflect.ParameterizedType
 import kotlin.reflect.KClass
-import kotlin.reflect.KFunction
-import kotlin.reflect.KParameter
-import kotlin.reflect.full.primaryConstructor
 
 /**
  * An interval for an [IntervalSystem]. There are two kind of intervals:
@@ -237,14 +236,18 @@ class SystemService(
         systems = Array(systemTypes.size) { sysIdx ->
             val sysType = systemTypes[sysIdx]
 
-            val primaryConstructor = sysType.primaryConstructor ?: throw FleksSystemCreationException(
-                sysType,
-                "No primary constructor found"
-            )
+            val constructors = sysType.java.declaredConstructors
+            if (constructors.size != 1) {
+                throw FleksSystemCreationException(
+                    sysType,
+                    "Found ${constructors.size} constructors. Only a single primary constructor is supported!"
+                )
+            }
+
             // get constructor arguments
-            val args = systemArgs(primaryConstructor, cmpService, injectables, sysType)
+            val args = systemArgs(constructors.first(), cmpService, injectables, sysType)
             // create new instance using arguments from above
-            val newSystem = primaryConstructor.callBy(args)
+            val newSystem = constructors.first().newInstance(*args) as IntervalSystem
 
             // set world reference of newly created system
             val worldField = field(newSystem, "world")
@@ -278,35 +281,23 @@ class SystemService(
      * with a component type that does not have a no argument constructor.
      */
     private fun systemArgs(
-        primaryConstructor: KFunction<IntervalSystem>,
+        primaryConstructor: Constructor<*>,
         cmpService: ComponentService,
         injectables: MutableMap<KClass<*>, Any>,
         sysType: KClass<out IntervalSystem>
-    ): Map<KParameter, Any?> {
-        val args = primaryConstructor.parameters
-            // filter out default value assignments in the constructor
-            .filterNot { it.isOptional }
-            // for any non-default value parameter assign the value of the injectables map
-            // or a ComponentMapper of the ComponentService
-            .associateWith {
-                val paramClass = it.type.classifier as KClass<*>
-                if (paramClass == ComponentMapper::class) {
-                    val cmpClazz = it.type.arguments[0].type?.classifier as KClass<*>
-                    cmpService.mapper(cmpClazz)
-                } else {
-                    injectables[it.type.classifier]
-                }
+    ): Array<Any> {
+        val params = primaryConstructor.parameters
+        val args = Array(params.size) { idx ->
+            val paramClass = params[idx].type.kotlin
+            if (paramClass == ComponentMapper::class) {
+                val cmpType = (params[idx].parameterizedType as ParameterizedType).actualTypeArguments[0] as Class<*>
+                cmpService.mapper(cmpType.kotlin)
+            } else {
+                injectables[paramClass] ?: throw FleksSystemCreationException(
+                    sysType,
+                    "Missing injectable of type ${paramClass.qualifiedName}"
+                )
             }
-
-
-        val missingInjectables = args
-            .filter { !it.key.type.isMarkedNullable && it.value == null }
-            .map { it.key.type.classifier }
-        if (missingInjectables.isNotEmpty()) {
-            throw FleksSystemCreationException(
-                sysType,
-                "Missing injectables of type $missingInjectables"
-            )
         }
 
         return args
