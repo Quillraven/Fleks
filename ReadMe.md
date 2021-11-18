@@ -32,15 +32,15 @@ details of this topic and to learn something new!
 
 If you need a lightweight and fast ECS in your Kotlin application then feel free to use Fleks.
 
-If you are looking for a fully fledged ECS that supports almost anything that you can imagine and you don't care about
-Kotlin then use [Artemis-odb](https://github.com/junkdog/artemis-odb) or [Ashley](https://github.com/libgdx/ashley).
+If you are looking for a long time verified ECS that supports Java 
+then use [Artemis-odb](https://github.com/junkdog/artemis-odb) or [Ashley](https://github.com/libgdx/ashley).
 
 ## Current Status
 
 There is no official release yet and the library is still under construction. Please feel free to contribute to the
 Discussions or Issues. Help is always appreciated.
 
-## Current API and usage (not final)
+## Current API and usage
 
 ### World
 
@@ -176,7 +176,8 @@ class AnimationSystem(
 ```
 
 If you need to modify the component configuration of an entity then this can be done via the `configureEntity` function
-of an `IteratingSystem`.
+of an `IteratingSystem`. The purpose of this function is performance reasons to trigger internal calculations
+of Fleks only once instead of each time a component gets added or removed.
 
 Let's see how a system can look like that adds a `DeadComponent` to an entity and removes a `LifeComponent` when its
 hitpoints are <= 0:
@@ -268,19 +269,19 @@ fun main() {
 One important topic for me throughout the development of Fleks was performance. For that I compared Fleks with
 Artemis-odb and Ashley in three scenarios which you can find in the **benchmarks** source set:
 
-1) **AddRemove**: creating 10_000 entities with a single component each and removing those entities
-2) **Simple**: stepping the world 1_000 times for 10_000 entities with an IteratingSystem for a single component that
-   gets a `Float` counter increased by one every time
-3) **Complex**: stepping the world 1_000 times for 10_000 entities, two IteratingSystems and three components. It is a
-   time-consuming benchmark because all entities get added/removed from the first system each update call.
+1) **AddRemove**: Creates 10_000 entities with a single component each and removes those entities.
+2) **Simple**: Steps the world 1_000 times for 10_000 entities with an `IteratingSystem` for a single component that
+   gets a `Float` counter increased by one every tick.
+3) **Complex**: Steps the world 1_000 times for 10_000 entities with two `IteratingSystem` and three components. It is a
+   time-consuming benchmark because all entities get added and removed from the first system each tick.
     - Each entity gets initialized with ComponentA and ComponentC.
     - The first system requires ComponentA, ComponentC and not ComponentB. It switches between creating ComponentB or
-      removing ComponentA. That way every entity gets removed from this system each update call.
-    - The second system requires any ComponentA/B/C and removes ComponentC and adds ComponentA. That way every entity
-      gets added again for the first system.
+      removing ComponentA. That way every entity gets removed from this system each tick.
+    - The second system requires any ComponentA/B/C and removes ComponentB and adds ComponentA. That way every entity
+      gets added again to the first system.
 
-I used [kotlinx-benchmark](https://github.com/Kotlin/kotlinx-benchmark) to create the benchmarks. Measurement is number
-of executed operations within 3 seconds.
+I used [kotlinx-benchmark](https://github.com/Kotlin/kotlinx-benchmark) to create the benchmarks with a measurement
+that represents the number of executed operations within three seconds.
 
 All Benchmarks are run within IntelliJ using the `benchmarksBenchmark` gradle task on my local computer. The hardware
 is:
