@@ -1,10 +1,12 @@
 plugins {
     kotlin("jvm") version "1.5.31"
     id("org.jetbrains.kotlinx.benchmark") version "0.3.1"
+    id("org.jetbrains.dokka") version "1.5.30"
+    `maven-publish`
 }
 
 group = "com.github.quillraven.fleks"
-version = "1.0-SNAPSHOT"
+version = "preRelease-20211118"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
 val bmSourceSetName = "benchmarks"
@@ -36,6 +38,45 @@ dependencies {
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     kotlinOptions {
         jvmTarget = "1.8"
+    }
+}
+
+val dokkaHtmlJar = tasks.create<Jar>("dokkaHtmlJar") {
+    group = "build"
+
+    dependsOn(tasks.dokkaJavadoc)
+    from(tasks.dokkaJavadoc.flatMap { it.outputDirectory })
+    archiveClassifier.set("javadoc")
+}
+
+val sourcesJar = tasks.create<Jar>("jarSources") {
+    group = "build"
+
+    from(sourceSets.main.get().allSource)
+    archiveClassifier.set("sources")
+}
+
+publishing {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/Quillraven/Fleks/")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
+
+    publications {
+        register<MavenPublication>("mavenFleks") {
+            from(components["kotlin"])
+            version = project.version.toString()
+            groupId = project.group.toString()
+            artifactId = "Fleks"
+            artifact(dokkaHtmlJar)
+            artifact(sourcesJar)
+        }
     }
 }
 
