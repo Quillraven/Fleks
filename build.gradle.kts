@@ -41,7 +41,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     }
 }
 
-val dokkaHtmlJar = tasks.create<Jar>("dokkaHtmlJar") {
+val dokkaJavadocJar = tasks.create<Jar>("jarDokkaJavadoc") {
     group = "build"
 
     dependsOn(tasks.dokkaJavadoc)
@@ -74,7 +74,7 @@ publishing {
             version = project.version.toString()
             groupId = project.group.toString()
             artifactId = "Fleks"
-            artifact(dokkaHtmlJar)
+            artifact(dokkaJavadocJar)
             artifact(sourcesJar)
         }
     }
