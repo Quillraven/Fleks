@@ -3,10 +3,11 @@ plugins {
     id("org.jetbrains.kotlinx.benchmark") version "0.3.1"
     id("org.jetbrains.dokka") version "1.5.30"
     `maven-publish`
+    signing
 }
 
-group = "com.github.quillraven.fleks"
-version = "preRelease-20211118"
+group = "io.github.quillraven.fleks"
+version = "preRelease-20211120"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
 val bmSourceSetName = "benchmarks"
@@ -56,11 +57,15 @@ val sourcesJar = tasks.create<Jar>("jarSources") {
     archiveClassifier.set("sources")
 }
 
+artifacts {
+    archives(dokkaJavadocJar)
+    archives(sourcesJar)
+}
+
 publishing {
     repositories {
         maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/Quillraven/Fleks/")
+            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
             credentials {
                 username = System.getenv("GITHUB_ACTOR")
                 password = System.getenv("GITHUB_TOKEN")
@@ -70,14 +75,48 @@ publishing {
 
     publications {
         register<MavenPublication>("mavenFleks") {
-            from(components["kotlin"])
             version = project.version.toString()
             groupId = project.group.toString()
             artifactId = "Fleks"
+
+            from(components["kotlin"])
             artifact(dokkaJavadocJar)
             artifact(sourcesJar)
+
+            pom {
+                name.set("Fleks")
+                packaging = "jar"
+                description.set("A lightweight entity component system written in Kotlin.")
+                url.set("https://github.com/Quillraven/Fleks")
+
+                scm {
+                    connection.set("scm:git:git@github.com:quillraven/fleks.git")
+                    developerConnection.set("scm:git:git@github.com:quillraven/fleks.git")
+                    url.set("https://github.com/quillraven/fleks/")
+                }
+
+
+                licenses {
+                    license {
+                        name.set("MIT License")
+                        url.set("https://opensource.org/licenses/MIT")
+                    }
+                }
+
+                developers {
+                    developer {
+                        id.set("Quillraven")
+                        name.set("Simon Klausner")
+                        email.set("quillraven@gmail.com")
+                    }
+                }
+            }
         }
     }
+}
+
+signing {
+    sign(publishing.publications["mavenFleks"])
 }
 
 benchmark {
