@@ -21,6 +21,9 @@ class Bag<T>(
     var size: Int = 0
         private set
 
+    val capacity: Int
+        get() = values.size
+
     fun add(value: T) {
         if (size == values.size) {
             values = values.copyOf(size * 2)

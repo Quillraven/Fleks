@@ -109,6 +109,12 @@ class EntityService(
     internal val recycledEntities = ArrayDeque<Entity>()
 
     /**
+     * Returns the amount of active entities.
+     */
+    val numEntities: Int
+        get() = nextId - recycledEntities.size
+
+    /**
      * The component configuration per [entity][Entity].
      */
     @PublishedApi

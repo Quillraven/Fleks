@@ -72,6 +72,12 @@ class World(
     @PublishedApi
     internal val entityService: EntityService
 
+    /**
+     * Returns the amount of active entities.
+     */
+    val numEntities: Int
+        get() = entityService.numEntities
+
     init {
         val worldCfg = WorldConfiguration().apply(cfg)
         entityService = EntityService(worldCfg.entityCapacity, componentService)
