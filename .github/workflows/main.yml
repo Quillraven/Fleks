@@ -31,11 +31,10 @@ jobs:
       - name: Build project
         run: ./gradlew build
 
-      - name: Decode signing secret key file
-        run: base64 -d ${{secrets.SIGNING_SECRET_RING_FILE}} > ~./gradle/secring.gpg
-
       - name: Publish artifact
-        run: ./gradlew publish -Psigning.keyId=${{secrets.SIGNING_KEY_ID}} -Psigning.password=${{secrets.SIGNING_PASSWORD}} -Psigning.secretKeyRingFile=$(echo ~/.gradle/secring.gpg)
+        run: ./gradlew publish
         env:
           OSSRH_USERNAME: ${{secrets.OSSRH_USERNAME}}
           OSSRH_TOKEN: ${{secrets.OSSRH_TOKEN}}
+          SIGNING_KEY: ${{secrets.SIGNING_KEY}}
+          SIGNING_PASSWORD: ${{secrets.SIGNING_PASSWORD}}
