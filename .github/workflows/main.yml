@@ -29,7 +29,7 @@ jobs:
         uses: gradle/wrapper-validation-action@e6e38bacfdf1a337459f332974bb2327a31aaf4b
 
       - name: Build project
-        run: .&gradlew build
+        run: ./gradlew build
 
       - name: Decode signing secret key file
         run: base64 -d ${{secrets.SIGNING_SECRET_RING_FILE}} > ~./gradle/secring.gpg
