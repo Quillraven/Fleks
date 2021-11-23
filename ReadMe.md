@@ -1,7 +1,6 @@
 # Fleks
 
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/Quillraven/Fleks/blob/master/LICENSE)
-
 [![Maven](https://badgen.net/badge/icon/maven?icon=maven&label=preRelease-20211120)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks)
 
 [![Build Master](https://img.shields.io/github/workflow/status/quillraven/fleks/Build/master?event=push&label=Build%20master)](https://github.com/Quillraven/fleks/actions)
