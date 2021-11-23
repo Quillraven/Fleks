@@ -6,12 +6,12 @@ on:
       - '**.md'
       - 'LICENSE'
       - '.gitignore'
-    pull_request:
-      branches: [ master ]
-      paths-ignore:
-        - '**.md'
-        - 'LICENSE'
-        - '.gitignore'
+  pull_request:
+    branches: [ master ]
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+      - '.gitignore'
 
 jobs:
   build:
