@@ -1,0 +1,35 @@
+name: Build
+on:
+  push:
+    branches: [ master ]
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+      - '.gitignore'
+    pull_request:
+      branches: [ master ]
+      paths-ignore:
+        - '**.md'
+        - 'LICENSE'
+        - '.gitignore'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup JDK 8
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Validate Gradle wrapper
+        uses: gradle/wrapper-validation-action@e6e38bacfdf1a337459f332974bb2327a31aaf4b
+
+      - name: Build project
+        run: ./gradlew build
