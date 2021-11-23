@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "1.5.31"
+    kotlin("jvm") version "1.6.0"
     id("org.jetbrains.kotlinx.benchmark") version "0.3.1"
     id("org.jetbrains.dokka") version "1.5.30"
     `maven-publish`
@@ -62,19 +62,25 @@ artifacts {
     archives(sourcesJar)
 }
 
+val publicationName = "mavenFleks"
 publishing {
     repositories {
         maven {
-            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+            url = if (project.version.toString().endsWith("SNAPSHOT")) {
+                uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+            } else {
+                uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+            }
+
             credentials {
-                username = System.getenv("GITHUB_ACTOR")
-                password = System.getenv("GITHUB_TOKEN")
+                username = System.getenv("OSSRH_USERNAME")
+                password = System.getenv("OSSRH_TOKEN")
             }
         }
     }
 
     publications {
-        register<MavenPublication>("mavenFleks") {
+        register<MavenPublication>(publicationName) {
             version = project.version.toString()
             groupId = project.group.toString()
             artifactId = "Fleks"
@@ -116,7 +122,7 @@ publishing {
 }
 
 signing {
-    sign(publishing.publications["mavenFleks"])
+    sign(publishing.publications[publicationName])
 }
 
 benchmark {
