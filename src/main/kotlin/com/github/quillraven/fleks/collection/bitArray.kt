@@ -122,6 +122,10 @@ class BitArray(
     }
 
     override fun hashCode(): Int {
+        if (bits.isEmpty()) {
+            return 0
+        }
+
         val word = length() / 64
         var hash = 0
         for (i in 0..word) {
