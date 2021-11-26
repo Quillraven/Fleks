@@ -115,6 +115,12 @@ class EntityService(
         get() = nextId - recycledEntities.size
 
     /**
+     * Returns the maximum capacity of active entities.
+     */
+    val capacity: Int
+        get() = cmpMasks.capacity
+
+    /**
      * The component configuration per [entity][Entity].
      */
     @PublishedApi

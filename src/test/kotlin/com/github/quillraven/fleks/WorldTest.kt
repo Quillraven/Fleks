@@ -1,12 +1,10 @@
 package com.github.quillraven.fleks
 
-import io.mockk.spyk
 import org.junit.jupiter.api.Assertions.assertAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 
 private data class TestComponent(val x: Float = 0f)
 
@@ -20,6 +18,13 @@ private class TestIntervalSystem : IntervalSystem() {
 
 @AllOf([TestComponent::class])
 private class TestIteratingSystem(val testInject: String) : IteratingSystem() {
+    var numCalls = 0
+
+    override fun onTick() {
+        ++numCalls
+        super.onTick()
+    }
+
     override fun onTickEntity(entity: Entity) = Unit
 }
 
@@ -30,9 +35,7 @@ internal class WorldTest {
 
         assertAll(
             { assertEquals(0, w.numEntities) },
-            { assertEquals(32, w.entityService.cmpMasks.capacity) },
-            { assertTrue(w.systemService.systems.isEmpty()) },
-            { assertTrue(w.componentService.mappers.isEmpty()) }
+            { assertEquals(32, w.capacity) }
         )
     }
 
@@ -40,10 +43,7 @@ internal class WorldTest {
     fun `create empty world with 1 no-args IntervalSystem`() {
         val w = World { system<TestIntervalSystem>() }
 
-        assertAll(
-            { assertEquals(1, w.systemService.systems.size) },
-            { assertNotNull(w.system<TestIntervalSystem>()) }
-        )
+        assertNotNull(w.system<TestIntervalSystem>())
     }
 
     @Test
@@ -54,18 +54,14 @@ internal class WorldTest {
             inject("42")
         }
 
-        // should also create a component mapper for TestComponent which is used by TestIteratingSystem
         assertAll(
-            { assertEquals(1, w.systemService.systems.size) },
             { assertNotNull(w.system<TestIteratingSystem>()) },
-            { assertEquals("42", w.system<TestIteratingSystem>().testInject) },
-            { assertEquals(1, w.componentService.mappers.size) },
-            { assertEquals(TestComponent::class.java, w.componentService.mapper(0).cstr.declaringClass) }
+            { assertEquals("42", w.system<TestIteratingSystem>().testInject) }
         )
     }
 
     @Test
-    fun `throw FleksSystemAlreadyAddedException`() {
+    fun `cannot add the same system twice`() {
         assertThrows<FleksSystemAlreadyAddedException> {
             World {
                 system<TestIntervalSystem>()
@@ -75,7 +71,7 @@ internal class WorldTest {
     }
 
     @Test
-    fun `throw FleksInjectableAlreadyAddedException`() {
+    fun `cannot inject the same type twice`() {
         assertThrows<FleksInjectableAlreadyAddedException> {
             World {
                 inject("42")
@@ -86,7 +82,7 @@ internal class WorldTest {
 
     @Test
     fun `create new entity`() {
-        val w = spyk(World {})
+        val w = World {}
 
         val e = w.entity()
 
@@ -103,23 +99,24 @@ internal class WorldTest {
 
         w.remove(e)
 
-        assertAll(
-            { assertEquals(0, w.numEntities) },
-            { assertEquals(e, w.entityService.recycledEntities.last()) }
-        )
+        assertEquals(0, w.numEntities)
     }
 
     @Test
     fun `update world with deltaTime of 1`() {
         val w = World {
             system<TestIntervalSystem>()
+            system<TestIteratingSystem>()
+            inject("42")
         }
+        w.system<TestIteratingSystem>().enabled = false
 
         w.update(1f)
 
         assertAll(
             { assertEquals(1f, w.deltaTime) },
-            { assertEquals(1, w.system<TestIntervalSystem>().numCalls) }
+            { assertEquals(1, w.system<TestIntervalSystem>().numCalls) },
+            { assertEquals(0, w.system<TestIteratingSystem>().numCalls) }
         )
     }
 }

@@ -78,6 +78,12 @@ class World(
     val numEntities: Int
         get() = entityService.numEntities
 
+    /**
+     * Returns the maximum capacity of active entities.
+     */
+    val capacity: Int
+        get() = entityService.capacity
+
     init {
         val worldCfg = WorldConfiguration().apply(cfg)
         entityService = EntityService(worldCfg.entityCapacity, componentService)

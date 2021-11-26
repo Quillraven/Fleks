@@ -32,7 +32,6 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 
     testImplementation("org.jetbrains.kotlin:kotlin-test:1.6.0")
-    testImplementation("io.mockk:mockk:1.12.1")
 
     configurations["${bmSourceSetName}Implementation"]("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:0.3.1")
     configurations["${bmSourceSetName}Implementation"]("com.badlogicgames.ashley:ashley:1.7.3")
