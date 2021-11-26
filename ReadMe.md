@@ -1,7 +1,7 @@
 # Fleks
 
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/Quillraven/Fleks/blob/master/LICENSE)
-[![Maven](https://badgen.net/badge/icon/maven?icon=maven&label=preRelease-20211120)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks)
+[![Maven](https://maven-badges.herokuapp.com/maven-central/io.github.quillraven.fleks/Fleks/badge.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks)
 
 [![Build Master](https://img.shields.io/github/workflow/status/quillraven/fleks/Build/master?event=push&label=Build%20master)](https://github.com/Quillraven/fleks/actions)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.6.0-red.svg)](http://kotlinlang.org/)
