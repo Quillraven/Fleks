@@ -6,9 +6,9 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import kotlin.test.assertNotNull
 
-private data class TestComponent(val x: Float = 0f)
+private data class WorldTestComponent(var x: Float = 0f)
 
-private class TestIntervalSystem : IntervalSystem() {
+private class WorldTestIntervalSystem : IntervalSystem() {
     var numCalls = 0
 
     override fun onTick() {
@@ -16,8 +16,11 @@ private class TestIntervalSystem : IntervalSystem() {
     }
 }
 
-@AllOf([TestComponent::class])
-private class TestIteratingSystem(val testInject: String) : IteratingSystem() {
+@AllOf([WorldTestComponent::class])
+private class WorldTestIteratingSystem(
+    val testInject: String,
+    val mapper: ComponentMapper<WorldTestComponent>
+) : IteratingSystem() {
     var numCalls = 0
 
     override fun onTick() {
@@ -41,22 +44,22 @@ internal class WorldTest {
 
     @Test
     fun `create empty world with 1 no-args IntervalSystem`() {
-        val w = World { system<TestIntervalSystem>() }
+        val w = World { system<WorldTestIntervalSystem>() }
 
-        assertNotNull(w.system<TestIntervalSystem>())
+        assertNotNull(w.system<WorldTestIntervalSystem>())
     }
 
     @Test
     fun `create empty world with 1 injectable args IteratingSystem`() {
         val w = World {
-            system<TestIteratingSystem>()
+            system<WorldTestIteratingSystem>()
 
             inject("42")
         }
 
         assertAll(
-            { assertNotNull(w.system<TestIteratingSystem>()) },
-            { assertEquals("42", w.system<TestIteratingSystem>().testInject) }
+            { assertNotNull(w.system<WorldTestIteratingSystem>()) },
+            { assertEquals("42", w.system<WorldTestIteratingSystem>().testInject) }
         )
     }
 
@@ -64,8 +67,8 @@ internal class WorldTest {
     fun `cannot add the same system twice`() {
         assertThrows<FleksSystemAlreadyAddedException> {
             World {
-                system<TestIntervalSystem>()
-                system<TestIntervalSystem>()
+                system<WorldTestIntervalSystem>()
+                system<WorldTestIntervalSystem>()
             }
         }
     }
@@ -82,13 +85,19 @@ internal class WorldTest {
 
     @Test
     fun `create new entity`() {
-        val w = World {}
+        val w = World {
+            system<WorldTestIteratingSystem>()
+            inject("42")
+        }
 
-        val e = w.entity()
+        val e = w.entity {
+            add<WorldTestComponent> { x = 5f }
+        }
 
         assertAll(
             { assertEquals(1, w.numEntities) },
-            { assertEquals(0, e.id) }
+            { assertEquals(0, e.id) },
+            { assertEquals(5f, w.system<WorldTestIteratingSystem>().mapper[e].x) }
         )
     }
 
@@ -105,18 +114,18 @@ internal class WorldTest {
     @Test
     fun `update world with deltaTime of 1`() {
         val w = World {
-            system<TestIntervalSystem>()
-            system<TestIteratingSystem>()
+            system<WorldTestIntervalSystem>()
+            system<WorldTestIteratingSystem>()
             inject("42")
         }
-        w.system<TestIteratingSystem>().enabled = false
+        w.system<WorldTestIteratingSystem>().enabled = false
 
         w.update(1f)
 
         assertAll(
             { assertEquals(1f, w.deltaTime) },
-            { assertEquals(1, w.system<TestIntervalSystem>().numCalls) },
-            { assertEquals(0, w.system<TestIteratingSystem>().numCalls) }
+            { assertEquals(1, w.system<WorldTestIntervalSystem>().numCalls) },
+            { assertEquals(0, w.system<WorldTestIteratingSystem>().numCalls) }
         )
     }
 }

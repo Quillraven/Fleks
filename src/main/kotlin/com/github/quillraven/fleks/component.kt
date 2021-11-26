@@ -41,6 +41,8 @@ class ComponentMapper<T>(
 
     /**
      * Removes a component of the specific type from the given [entity].
+     *
+     * @throws [ArrayIndexOutOfBoundsException] if the id of the [entity] exceeds the components' capacity.
      */
     @PublishedApi
     internal fun remove(entity: Entity) {
