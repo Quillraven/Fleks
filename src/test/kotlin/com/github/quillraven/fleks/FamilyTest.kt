@@ -21,7 +21,7 @@ internal class FamilyTest {
 
 
     @TestFactory
-    fun `test family contains`(): Collection<DynamicTest> {
+    fun `test contains`(): Collection<DynamicTest> {
         return listOf(
             arrayOf(
                 "empty family contains entity without components",
@@ -86,7 +86,7 @@ internal class FamilyTest {
     }
 
     @Test
-    fun `update entities bag`() {
+    fun `update active entities`() {
         val family = Family()
 
         family.onEntityCfgChanged(Entity(0), BitArray())
