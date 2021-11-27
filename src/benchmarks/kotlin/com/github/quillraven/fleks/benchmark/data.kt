@@ -1,4 +1,4 @@
-package com.github.quillraven.fleks
+package com.github.quillraven.fleks.benchmark
 
 const val NUM_ENTITIES = 10_000
 const val WORLD_UPDATES = 1_000

@@ -1,4 +1,4 @@
-package com.github.quillraven.fleks
+package com.github.quillraven.fleks.benchmark
 
 import com.artemis.Component
 import com.artemis.ComponentMapper

@@ -1,4 +1,4 @@
-package com.github.quillraven.fleks
+package com.github.quillraven.fleks.benchmark
 
 import com.badlogic.ashley.core.*
 import com.badlogic.ashley.core.ComponentMapper

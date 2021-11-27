@@ -1,5 +1,6 @@
-package com.github.quillraven.fleks
+package com.github.quillraven.fleks.benchmark
 
+import com.github.quillraven.fleks.*
 import org.openjdk.jmh.annotations.*
 import java.util.concurrent.TimeUnit
 
