@@ -54,7 +54,7 @@ class EntityCreateCfg(
     inline fun <reified T : Any> add(configuration: T.() -> Unit = {}): T {
         val mapper = cmpService.mapper<T>()
         cmpMask.set(mapper.id)
-        return mapper.add(entity, configuration)
+        return mapper.addInternal(entity, configuration)
     }
 }
 
@@ -75,7 +75,7 @@ class EntityUpdateCfg {
      */
     inline fun <reified T : Any> ComponentMapper<T>.add(entity: Entity, configuration: T.() -> Unit = {}): T {
         cmpMask.set(this.id)
-        return this.add(entity, configuration)
+        return this.addInternal(entity, configuration)
     }
 
     /**
@@ -85,7 +85,7 @@ class EntityUpdateCfg {
      */
     inline fun <reified T : Any> ComponentMapper<T>.remove(entity: Entity) {
         cmpMask.clear(this.id)
-        this.remove(entity)
+        this.removeInternal(entity)
     }
 }
 
@@ -203,7 +203,7 @@ class EntityService(
             val cmpMask = cmpMasks[entity.id]
             recycledEntities.add(entity)
             cmpMask.forEachSetBit { cmpId ->
-                cmpService.mapper(cmpId).remove(entity)
+                cmpService.mapper(cmpId).removeInternal(entity)
             }
             cmpMask.clear()
             listeners.forEach { it.onEntityCfgChanged(entity, cmpMask) }
@@ -230,4 +230,9 @@ class EntityService(
      * Removes the given [listener] from the list of [EntityListener].
      */
     fun removeEntityListener(listener: EntityListener) = listeners.removeValue(listener)
+
+    /**
+     * Returns true if and only if the given [listener] is part of the list of [EntityListener].
+     */
+    operator fun contains(listener: EntityListener) = listener in listeners
 }

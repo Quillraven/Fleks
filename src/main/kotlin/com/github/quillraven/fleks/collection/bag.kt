@@ -54,6 +54,15 @@ class Bag<T>(
         return false
     }
 
+    operator fun contains(value: T): Boolean {
+        for (i in 0 until size) {
+            if (values[i] == value) {
+                return true
+            }
+        }
+        return false
+    }
+
     inline fun forEach(action: (T) -> Unit) {
         for (i in 0 until size) {
             values[i]?.let(action)

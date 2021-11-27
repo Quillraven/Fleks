@@ -25,7 +25,7 @@ class ComponentMapper<T>(
      * If the [entity] already has a component of that type then no new instance will be created.
      */
     @PublishedApi
-    internal inline fun add(entity: Entity, configuration: T.() -> Unit = {}): T {
+    internal inline fun addInternal(entity: Entity, configuration: T.() -> Unit = {}): T {
         if (entity.id >= components.size) {
             components = components.copyOf(max(components.size * 2, entity.id + 1))
         }
@@ -39,13 +39,14 @@ class ComponentMapper<T>(
         }
     }
 
+
     /**
      * Removes a component of the specific type from the given [entity].
      *
      * @throws [ArrayIndexOutOfBoundsException] if the id of the [entity] exceeds the components' capacity.
      */
     @PublishedApi
-    internal fun remove(entity: Entity) {
+    internal fun removeInternal(entity: Entity) {
         components[entity.id] = null
     }
 
@@ -64,7 +65,7 @@ class ComponentMapper<T>(
     operator fun contains(entity: Entity): Boolean = components.size > entity.id && components[entity.id] != null
 
     override fun toString(): String {
-        return "ComponentMapper(id=$id, cstr=${cstr})"
+        return "ComponentMapper(id=$id, component=${cstr.name})"
     }
 }
 

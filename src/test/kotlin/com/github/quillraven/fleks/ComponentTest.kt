@@ -19,7 +19,7 @@ internal class ComponentTest {
         val mapper = cmpService.mapper<ComponentTestComponent>()
         val entity = Entity(0)
 
-        val cmp = mapper.add(entity) { x = 5 }
+        val cmp = mapper.addInternal(entity) { x = 5 }
 
         assertAll(
             { assertTrue(entity in mapper) },
@@ -33,7 +33,7 @@ internal class ComponentTest {
         val mapper = cmpService.mapper<ComponentTestComponent>()
         val entity = Entity(10_000)
 
-        val cmp = mapper.add(entity)
+        val cmp = mapper.addInternal(entity)
 
         assertAll(
             { assertTrue(entity in mapper) },
@@ -46,9 +46,9 @@ internal class ComponentTest {
         val cmpService = ComponentService()
         val mapper = cmpService.mapper<ComponentTestComponent>()
         val entity = Entity(10_000)
-        val expected = mapper.add(entity)
+        val expected = mapper.addInternal(entity)
 
-        val actual = mapper.add(entity) { x = 2 }
+        val actual = mapper.addInternal(entity) { x = 2 }
 
         assertAll(
             { assertSame(expected, actual) },
@@ -72,9 +72,9 @@ internal class ComponentTest {
         val cmpService = ComponentService()
         val mapper = cmpService.mapper<ComponentTestComponent>()
         val entity = Entity(0)
-        mapper.add(entity)
+        mapper.addInternal(entity)
 
-        mapper.remove(entity)
+        mapper.removeInternal(entity)
 
         assertFalse(entity in mapper)
     }
@@ -85,7 +85,7 @@ internal class ComponentTest {
         val mapper = cmpService.mapper<ComponentTestComponent>()
         val entity = Entity(10_000)
 
-        assertThrows<ArrayIndexOutOfBoundsException> { mapper.remove(entity) }
+        assertThrows<ArrayIndexOutOfBoundsException> { mapper.removeInternal(entity) }
     }
 
     @Test
@@ -93,7 +93,7 @@ internal class ComponentTest {
         val cmpService = ComponentService()
         val mapper = cmpService.mapper<ComponentTestComponent>()
         val entity = Entity(0)
-        mapper.add(entity) { x = 2 }
+        mapper.addInternal(entity) { x = 2 }
 
         val cmp = mapper[entity]
 
