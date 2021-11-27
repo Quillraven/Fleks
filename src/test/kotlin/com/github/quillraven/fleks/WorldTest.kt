@@ -74,6 +74,20 @@ internal class WorldTest {
     }
 
     @Test
+    fun `cannot access a system that was not added`() {
+        val w = World {}
+
+        assertThrows<FleksNoSuchSystemException> { w.system<WorldTestIntervalSystem>() }
+    }
+
+    @Test
+    fun `cannot create a system when injectables are missing`() {
+        assertThrows<FleksSystemCreationException> {
+            World { system<WorldTestIteratingSystem>() }
+        }
+    }
+
+    @Test
     fun `cannot inject the same type twice`() {
         assertThrows<FleksInjectableAlreadyAddedException> {
             World {
