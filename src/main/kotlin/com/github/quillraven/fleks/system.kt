@@ -223,7 +223,7 @@ abstract class IteratingSystem(
 class SystemService(
     world: World,
     systemTypes: List<KClass<out IntervalSystem>>,
-    injectables: MutableMap<KClass<*>, Any>
+    injectables: Map<KClass<*>, Any>
 ) {
     @PublishedApi
     internal val systems: Array<IntervalSystem>
@@ -283,7 +283,7 @@ class SystemService(
     private fun systemArgs(
         primaryConstructor: Constructor<*>,
         cmpService: ComponentService,
-        injectables: MutableMap<KClass<*>, Any>,
+        injectables: Map<KClass<*>, Any>,
         sysType: KClass<out IntervalSystem>
     ): Array<Any> {
         val params = primaryConstructor.parameters
