@@ -52,7 +52,7 @@ repositories {
 }
 
 dependencies {
-    implementation("io.github.quillraven.fleks:Fleks:preRelease-20211120")
+    implementation("io.github.quillraven.fleks:Fleks:1.0-alpha")
 }
 ```
 

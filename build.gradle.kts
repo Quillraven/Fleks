@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "io.github.quillraven.fleks"
-version = "preRelease-20211120"
+version = "1.0-alpha"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
 val bmSourceSetName = "benchmarks"
