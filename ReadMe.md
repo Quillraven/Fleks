@@ -306,7 +306,6 @@ is:
 - 16 GB Ram
 - Intel i7-5820K @ 3.30Ghz
 - Java 8 target
-- Kotlin 1.5.31
 
 Here is the result (the higher the Score the better):
 
