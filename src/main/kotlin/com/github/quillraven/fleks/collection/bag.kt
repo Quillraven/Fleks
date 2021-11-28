@@ -26,7 +26,7 @@ class Bag<T>(
 
     fun add(value: T) {
         if (size == values.size) {
-            values = values.copyOf(size * 2)
+            values = values.copyOf(max(1, size * 2))
         }
         values[size++] = value
     }
@@ -75,18 +75,23 @@ class Bag<T>(
  * and contains only the necessary functions for Fleks.
  */
 class IntBag(
-    @PublishedApi
-    internal var values: IntArray = IntArray(64)
+    size: Int = 64
 ) {
+    @PublishedApi
+    internal var values: IntArray = IntArray(size)
+
     var size: Int = 0
         private set
+
+    val capacity: Int
+        get() = values.size
 
     val isNotEmpty: Boolean
         get() = size > 0
 
     fun add(value: Int) {
         if (size == values.size) {
-            values = values.copyOf(size * 2)
+            values = values.copyOf(max(1, size * 2))
         }
         values[size++] = value
     }
@@ -105,9 +110,18 @@ class IntBag(
     }
 
     fun ensureCapacity(capacity: Int) {
-        if (capacity >= values.size) {
+        if (capacity > values.size) {
             values = values.copyOf(capacity)
         }
+    }
+
+    operator fun contains(value: Int): Boolean {
+        for (i in 0 until size) {
+            if (values[i] == value) {
+                return true
+            }
+        }
+        return false
     }
 
     inline fun forEach(action: (Int) -> Unit) {
@@ -128,10 +142,10 @@ interface EntityComparator {
     fun compare(entityA: Entity, entityB: Entity): Int
 }
 
-fun compareEntity(compare: (Entity, Entity) -> Int): EntityComparator {
+fun compareEntity(compareFun: (Entity, Entity) -> Int): EntityComparator {
     return object : EntityComparator {
         override fun compare(entityA: Entity, entityB: Entity): Int {
-            return compare(entityA, entityB)
+            return compareFun(entityA, entityB)
         }
     }
 }
@@ -247,10 +261,10 @@ private fun IntArray.quickSort(fromIdx: Int, toIdx: Int, comparator: EntityCompa
     s = min(d - c, toIdx - d - 1)
     this.vecSwap(b, toIdx - s, s)
     // Recursively sort non-partition-elements
-    if (b - a.also { s = it } > 1) {
+    if ((b - a).also { s = it } > 1) {
         this.quickSort(fromIdx, fromIdx + s, comparator)
     }
-    if (d - c.also { s = it } > 1) {
+    if ((d - c).also { s = it } > 1) {
         this.quickSort(toIdx - s, toIdx, comparator)
     }
 }
