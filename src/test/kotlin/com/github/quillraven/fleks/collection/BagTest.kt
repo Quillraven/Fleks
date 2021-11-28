@@ -208,7 +208,7 @@ internal class BagTest {
         fun `do not resize when bag has sufficient capacity`() {
             val bag = IntBag(8)
 
-            bag.ensureCapacity(8)
+            bag.ensureCapacity(7)
 
             assertEquals(8, bag.capacity)
         }
@@ -219,7 +219,7 @@ internal class BagTest {
 
             bag.ensureCapacity(9)
 
-            assertEquals(9, bag.capacity)
+            assertEquals(10, bag.capacity)
         }
 
         @Test

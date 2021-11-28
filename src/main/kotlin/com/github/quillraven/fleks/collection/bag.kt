@@ -110,8 +110,8 @@ class IntBag(
     }
 
     fun ensureCapacity(capacity: Int) {
-        if (capacity > values.size) {
-            values = values.copyOf(capacity)
+        if (capacity >= values.size) {
+            values = values.copyOf(capacity + 1)
         }
     }
 

@@ -205,7 +205,7 @@ class EntityService(
             cmpMask.forEachSetBit { cmpId ->
                 cmpService.mapper(cmpId).removeInternal(entity)
             }
-            cmpMask.clear()
+            cmpMask.clearAll()
             listeners.forEach { it.onEntityCfgChanged(entity, cmpMask) }
         }
     }

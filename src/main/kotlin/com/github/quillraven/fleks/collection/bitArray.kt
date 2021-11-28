@@ -18,6 +18,9 @@ class BitArray(
     @PublishedApi
     internal var bits = LongArray((nBits + 63) / 64)
 
+    val capacity: Int
+        get() = bits.size * 64
+
     operator fun get(idx: Int): Boolean {
         val word = idx / 64
         return if (word >= bits.size) {
@@ -29,11 +32,13 @@ class BitArray(
 
     fun set(idx: Int) {
         val word = idx / 64
-        ensureSize(word)
+        if (word >= bits.size) {
+            bits = bits.copyOf(word + 1)
+        }
         bits[word] = bits[word] or (1L shl (idx % 64))
     }
 
-    fun clear() {
+    fun clearAll() {
         bits.fill(0L)
     }
 
@@ -41,12 +46,6 @@ class BitArray(
         val word = idx / 64
         if (word < bits.size) {
             bits[word] = bits[word] and (1L shl (idx % 64)).inv()
-        }
-    }
-
-    private fun ensureSize(newSize: Int) {
-        if (newSize >= bits.size) {
-            bits = bits.copyOf(newSize + 1)
         }
     }
 
@@ -82,6 +81,12 @@ class BitArray(
         return true
     }
 
+    /**
+     * Returns the logical size of the [BitArray] which is equal to the highest index of the
+     * bit that is set.
+     *
+     * Returns zero if the [BitArray] is empty.
+     */
     fun length(): Int {
         for (word in bits.size - 1 downTo 0) {
             val bitsAtWord = bits[word]
@@ -115,7 +120,7 @@ class BitArray(
         forEachSetBit { idx ->
             if (checkSize) {
                 checkSize = false
-                bag.ensureCapacity(idx + 1)
+                bag.ensureCapacity(idx)
             }
             bag.unsafeAdd(idx)
         }
