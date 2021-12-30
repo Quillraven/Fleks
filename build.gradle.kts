@@ -1,13 +1,13 @@
 plugins {
-    kotlin("jvm") version "1.6.0"
-    id("org.jetbrains.kotlinx.benchmark") version "0.3.1"
-    id("org.jetbrains.dokka") version "1.6.0"
+    kotlin("jvm") version "1.6.10"
+    id("org.jetbrains.kotlinx.benchmark") version "0.4.1"
+    id("org.jetbrains.dokka") version "1.6.10"
     `maven-publish`
     signing
 }
 
 group = "io.github.quillraven.fleks"
-version = "1.0-alpha"
+version = "1.0-RC1"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
 val bmSourceSetName = "benchmarks"
@@ -33,7 +33,7 @@ dependencies {
 
     testImplementation("org.jetbrains.kotlin:kotlin-test:1.6.0")
 
-    configurations["${bmSourceSetName}Implementation"]("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:0.3.1")
+    configurations["${bmSourceSetName}Implementation"]("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:0.4.1")
     configurations["${bmSourceSetName}Implementation"]("com.badlogicgames.ashley:ashley:1.7.3")
     configurations["${bmSourceSetName}Implementation"]("net.onedaybeard.artemis:artemis-odb:2.3.0")
 }
