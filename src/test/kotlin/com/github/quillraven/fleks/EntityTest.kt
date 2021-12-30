@@ -134,6 +134,51 @@ internal class EntityTest {
     }
 
     @Test
+    fun `remove all entities`() {
+        val entityService = EntityService(32, ComponentService())
+        entityService.create {}
+        entityService.create {}
+
+        entityService.removeAll()
+
+        assertAll(
+            { assertEquals(2, entityService.recycledEntities.size) },
+            { assertEquals(0, entityService.numEntities) }
+        )
+    }
+
+    @Test
+    fun `remove all entities with already recycled entities`() {
+        val entityService = EntityService(32, ComponentService())
+        val recycled = entityService.create {}
+        entityService.create {}
+        entityService.remove(recycled)
+
+        entityService.removeAll()
+
+        assertAll(
+            { assertEquals(2, entityService.recycledEntities.size) },
+            { assertEquals(0, entityService.numEntities) }
+        )
+    }
+
+    @Test
+    fun `remove all entities when removal is delayed`() {
+        val entityService = EntityService(32, ComponentService())
+        entityService.create {}
+        entityService.create {}
+        entityService.delayRemoval = true
+
+        entityService.removeAll()
+
+        assertAll(
+            { assertEquals(2, entityService.recycledEntities.size) },
+            { assertEquals(0, entityService.numEntities) },
+            { assertFalse(entityService.delayRemoval) }
+        )
+    }
+
+    @Test
     fun `create recycled entity`() {
         val cmpService = ComponentService()
         val entityService = EntityService(32, cmpService)

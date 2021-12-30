@@ -12,9 +12,15 @@ import kotlin.test.assertSame
 private class SystemTestIntervalSystemEachFrame : IntervalSystem(
     interval = EachFrame
 ) {
+    var numDisposes = 0
     var numCalls = 0
+
     override fun onTick() {
         ++numCalls
+    }
+
+    override fun onDispose() {
+        numDisposes++
     }
 }
 
@@ -366,5 +372,18 @@ internal class SystemTest {
         service.update()
 
         assertEquals(5, system.numEntityCalls)
+    }
+
+    @Test
+    fun `dispose service`() {
+        val service = SystemService(
+            World.EMPTY_WORLD,
+            listOf(SystemTestIntervalSystemEachFrame::class),
+            emptyMap()
+        )
+
+        service.dispose()
+
+        assertEquals(1, service.system<SystemTestIntervalSystemEachFrame>().numDisposes)
     }
 }

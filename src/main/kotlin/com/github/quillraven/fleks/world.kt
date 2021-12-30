@@ -106,6 +106,14 @@ class World(
     }
 
     /**
+     * Removes all [entities][Entity] from the world. The entities will be recycled and reused for
+     * future calls to [World.entity].
+     */
+    fun removeAll() {
+        entityService.removeAll()
+    }
+
+    /**
      * Returns the specified [system][IntervalSystem] of the world.
      *
      * @throws [FleksNoSuchSystemException] if there is no such [system][IntervalSystem].
@@ -121,6 +129,14 @@ class World(
     fun update(deltaTime: Float) {
         this.deltaTime = deltaTime
         systemService.update()
+    }
+
+    /**
+     * Removes all [entities][Entity] of the world and calls the [onDispose][IntervalSystem.onDispose] function of each system.
+     */
+    fun dispose() {
+        entityService.removeAll()
+        systemService.dispose()
     }
 
     companion object {

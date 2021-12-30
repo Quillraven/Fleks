@@ -211,6 +211,22 @@ class EntityService(
     }
 
     /**
+     * Removes all [entities][Entity] and adds them to the [recycledEntities] for future use.
+     *
+     * Refer to [remove] for more details.
+     */
+    fun removeAll() {
+        for (id in 0 until nextId) {
+            val entity = Entity(id)
+            if (entity in recycledEntities) {
+                continue
+            }
+            remove(entity)
+        }
+        cleanupDelays()
+    }
+
+    /**
      * Clears the [delayRemoval] flag and removes [entities][Entity] which are part of the [delayedEntities].
      */
     fun cleanupDelays() {
@@ -230,7 +246,6 @@ class EntityService(
      * Removes the given [listener] from the list of [EntityListener].
      */
     fun removeEntityListener(listener: EntityListener) = listeners.removeValue(listener)
-
     /**
      * Returns true if and only if the given [listener] is part of the list of [EntityListener].
      */
