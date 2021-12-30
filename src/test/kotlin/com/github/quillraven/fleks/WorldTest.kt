@@ -5,14 +5,20 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 private data class WorldTestComponent(var x: Float = 0f)
 
 private class WorldTestIntervalSystem : IntervalSystem() {
     var numCalls = 0
+    var disposed = false
 
     override fun onTick() {
         ++numCalls
+    }
+
+    override fun onDispose() {
+        disposed = true
     }
 }
 
@@ -140,6 +146,33 @@ internal class WorldTest {
             { assertEquals(1f, w.deltaTime) },
             { assertEquals(1, w.system<WorldTestIntervalSystem>().numCalls) },
             { assertEquals(0, w.system<WorldTestIteratingSystem>().numCalls) }
+        )
+    }
+
+    @Test
+    fun `remove all entities`() {
+        val w = World {}
+        w.entity()
+        w.entity()
+
+        w.removeAll()
+
+        assertEquals(0, w.numEntities)
+    }
+
+    @Test
+    fun `dispose world`() {
+        val w = World {
+            system<WorldTestIntervalSystem>()
+        }
+        w.entity()
+        w.entity()
+
+        w.dispose()
+
+        assertAll(
+            { assertTrue(w.system<WorldTestIntervalSystem>().disposed) },
+            { assertEquals(0, w.numEntities) }
         )
     }
 }

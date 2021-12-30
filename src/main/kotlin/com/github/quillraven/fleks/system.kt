@@ -93,6 +93,12 @@ abstract class IntervalSystem(
      * @param alpha a value between 0 (inclusive) and 1 (exclusive) that describes the progress between two ticks.
      */
     open fun onAlpha(alpha: Float) = Unit
+
+    /**
+     * Optional function to dispose any resources of the system if needed. Gets called when the world's [dispose][World.dispose]
+     * function is called.
+     */
+    open fun onDispose() = Unit
 }
 
 /**
@@ -416,5 +422,12 @@ class SystemService(
                 system.onUpdate()
             }
         }
+    }
+
+    /**
+     * Calls the [onDispose][IntervalSystem.onDispose] function of all [systems].
+     */
+    fun dispose() {
+        systems.forEach { it.onDispose() }
     }
 }

@@ -260,6 +260,45 @@ class RenderSystem(
 }
 ```
 
+Sometimes a system might allocate special resources that you want to free before closing
+your application. An example would be a [LibGDX](https://github.com/libgdx/libgdx) game where
+a system might create a [disposable](https://github.com/libgdx/libgdx/wiki/Memory-management)
+resource internally.
+
+For this purpose the world's `dispose` function can be used which first removes all
+entities of the world and afterwards calls the `onDispose` function of each system.
+
+Here is an example of a `DebugSystem` that creates a [Box2D](https://box2d.org/) 
+debug renderer for the physics internally and disposes it:
+
+```Kotlin
+class DebugSystem(
+    private val box2dWorld: World,
+    private val camera: Camera,
+    stage: Stage
+) : IntervalSystem() {
+    private val renderer = Box2DDebugRenderer()
+
+    override fun onTick() {
+        physicRenderer.render(box2dWorld, camera.combined)
+    }
+
+    // this is an optional function that can be used to free specific resources
+    override fun onDispose() {
+        renderer.dispose()
+    }
+}
+
+fun main() {
+    val world = World {
+        system<DebugSystem>()
+    }
+
+    // following call disposes the DebugSystem
+    world.dispose()
+}
+```
+
 ### Entity and Components
 
 We now know how to create a world and add systems to it, but we don't know how to add entities to our world. This can be
