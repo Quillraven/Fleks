@@ -5,6 +5,8 @@ import kotlin.reflect.KClass
 /**
  * A configuration for an entity [world][World] to define the initial maximum entity capacity,
  * the systems of the [world][World] and the systems' dependencies to be injected.
+ * Additionally, you can define [ComponentListener] to define custom logic when a specific component is
+ * added or removed from an [entity][Entity].
  */
 class WorldConfiguration {
     /**
@@ -19,6 +21,9 @@ class WorldConfiguration {
 
     @PublishedApi
     internal val injectables = mutableMapOf<KClass<*>, Any>()
+
+    @PublishedApi
+    internal val cmpListeners = mutableMapOf<KClass<*>, MutableList<ComponentListener<out Any>>>()
 
     /**
      * Adds the specified [IntervalSystem] to the [world][World].
@@ -45,6 +50,17 @@ class WorldConfiguration {
             throw FleksInjectableAlreadyAddedException(injectType)
         }
         injectables[injectType] = dependency
+    }
+
+    /**
+     * Adds the specified [listener] as a [ComponentListener] of the [world][World].
+     */
+    inline fun <reified T : Any> componentListener(listener: ComponentListener<T>) {
+        val listeners = cmpListeners.getOrPut(T::class) { mutableListOf() }
+        if (listener in listeners) {
+            throw FleksComponentListenerAlreadyAddedException(listener)
+        }
+        listeners.add(listener)
     }
 }
 
@@ -88,6 +104,10 @@ class World(
         val worldCfg = WorldConfiguration().apply(cfg)
         entityService = EntityService(worldCfg.entityCapacity, componentService)
         systemService = SystemService(this, worldCfg.systemTypes, worldCfg.injectables)
+        worldCfg.cmpListeners.forEach { (type, listeners) ->
+            val mapper = componentService.mapper(type)
+            listeners.forEach { mapper.addComponentListenerInternal(it) }
+        }
     }
 
     /**

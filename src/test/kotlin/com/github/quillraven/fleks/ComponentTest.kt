@@ -12,6 +12,25 @@ private data class ComponentTestComponent(var x: Int = 0)
 
 private data class ComponentTestExceptionComponent(var y: Int)
 
+private class ComponentTestComponentListener : ComponentListener<ComponentTestComponent> {
+    var numAddCalls = 0
+    var numRemoveCalls = 0
+    lateinit var cmpCalled: ComponentTestComponent
+    var entityCalled = Entity(-1)
+
+    override fun onComponentAdded(entity: Entity, component: ComponentTestComponent) {
+        numAddCalls++
+        cmpCalled = component
+        entityCalled = entity
+    }
+
+    override fun onComponentRemoved(entity: Entity, component: ComponentTestComponent) {
+        numRemoveCalls++
+        cmpCalled = component
+        entityCalled = entity
+    }
+}
+
 internal class ComponentTest {
     @Test
     fun `add entity to mapper with sufficient capacity`() {
@@ -145,5 +164,46 @@ internal class ComponentTest {
         val actual = cmpService.mapper(0)
 
         assertSame(expected, actual)
+    }
+
+    @Test
+    fun `add ComponentListener`() {
+        val cmpService = ComponentService()
+        val listener = ComponentTestComponentListener()
+        val mapper = cmpService.mapper<ComponentTestComponent>()
+
+        mapper.addComponentListenerInternal(listener)
+
+        assertTrue(listener in mapper)
+    }
+
+    @Test
+    fun `remove ComponentListener`() {
+        val cmpService = ComponentService()
+        val listener = ComponentTestComponentListener()
+        val mapper = cmpService.mapper<ComponentTestComponent>()
+        mapper.addComponentListenerInternal(listener)
+
+        mapper.removeComponentListener(listener)
+
+        assertFalse(listener in mapper)
+    }
+
+    @Test
+    fun `add component with ComponentListener`() {
+        val cmpService = ComponentService()
+        val mapper = cmpService.mapper<ComponentTestComponent>()
+        val listener = ComponentTestComponentListener()
+        mapper.addComponentListener(listener)
+        val expectedEntity = Entity(1)
+
+        val expectedCmp = mapper.addInternal(expectedEntity)
+
+        assertAll(
+            { assertEquals(1, listener.numAddCalls) },
+            { assertEquals(0, listener.numRemoveCalls) },
+            { assertEquals(expectedEntity, listener.entityCalled) },
+            { assertEquals(expectedCmp, listener.cmpCalled) }
+        )
     }
 }

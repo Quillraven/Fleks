@@ -37,6 +37,11 @@ private class WorldTestIteratingSystem(
     override fun onTickEntity(entity: Entity) = Unit
 }
 
+private class WorldTestComponentListener : ComponentListener<WorldTestComponent> {
+    override fun onComponentAdded(entity: Entity, component: WorldTestComponent) = Unit
+    override fun onComponentRemoved(entity: Entity, component: WorldTestComponent) = Unit
+}
+
 internal class WorldTest {
     @Test
     fun `create empty world for 32 entities`() {
@@ -174,5 +179,26 @@ internal class WorldTest {
             { assertTrue(w.system<WorldTestIntervalSystem>().disposed) },
             { assertEquals(0, w.numEntities) }
         )
+    }
+
+    @Test
+    fun `create world with ComponentListener`() {
+        val listener = WorldTestComponentListener()
+        val w = World {
+            componentListener(listener)
+        }
+
+        assertTrue { listener in w.componentService.mapper<WorldTestComponent>() }
+    }
+
+    @Test
+    fun `cannot add same ComponentListener twice`() {
+        assertThrows<FleksComponentListenerAlreadyAddedException> {
+            val listener = WorldTestComponentListener()
+            World {
+                componentListener(listener)
+                componentListener(listener)
+            }
+        }
     }
 }
