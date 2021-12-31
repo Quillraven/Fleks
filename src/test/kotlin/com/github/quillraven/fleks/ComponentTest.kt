@@ -17,17 +17,20 @@ private class ComponentTestComponentListener : ComponentListener<ComponentTestCo
     var numRemoveCalls = 0
     lateinit var cmpCalled: ComponentTestComponent
     var entityCalled = Entity(-1)
+    var lastCall = ""
 
     override fun onComponentAdded(entity: Entity, component: ComponentTestComponent) {
         numAddCalls++
         cmpCalled = component
         entityCalled = entity
+        lastCall = "add"
     }
 
     override fun onComponentRemoved(entity: Entity, component: ComponentTestComponent) {
         numRemoveCalls++
         cmpCalled = component
         entityCalled = entity
+        lastCall = "remove"
     }
 }
 
@@ -204,6 +207,26 @@ internal class ComponentTest {
             { assertEquals(0, listener.numRemoveCalls) },
             { assertEquals(expectedEntity, listener.entityCalled) },
             { assertEquals(expectedCmp, listener.cmpCalled) }
+        )
+    }
+
+    @Test
+    fun `add component with ComponentListener when component already present`() {
+        val cmpService = ComponentService()
+        val mapper = cmpService.mapper<ComponentTestComponent>()
+        val expectedEntity = Entity(1)
+        mapper.addInternal(expectedEntity)
+        val listener = ComponentTestComponentListener()
+        mapper.addComponentListener(listener)
+
+        val expectedCmp = mapper.addInternal(expectedEntity)
+
+        assertAll(
+            { assertEquals(1, listener.numAddCalls) },
+            { assertEquals(1, listener.numRemoveCalls) },
+            { assertEquals(expectedEntity, listener.entityCalled) },
+            { assertEquals(expectedCmp, listener.cmpCalled) },
+            { assertEquals("add", listener.lastCall) }
         )
     }
 }

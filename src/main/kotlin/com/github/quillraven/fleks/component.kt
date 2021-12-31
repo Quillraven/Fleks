@@ -49,6 +49,11 @@ class ComponentMapper<T>(
             listeners.forEach { it.onComponentAdded(entity, newCmp) }
             newCmp
         } else {
+            // component already added -> reuse it and do not create a new instance.
+            // Call onComponentRemoved first in case users do something special in onComponentAdded.
+            // Otherwise, onComponentAdded will be executed twice on a single component without executing onComponentRemoved
+            // which is not correct.
+            listeners.forEach { it.onComponentRemoved(entity, cmp) }
             val existingCmp = cmp.apply(configuration)
             listeners.forEach { it.onComponentAdded(entity, existingCmp) }
             existingCmp
