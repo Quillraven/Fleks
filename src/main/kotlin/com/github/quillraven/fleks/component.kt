@@ -7,6 +7,15 @@ import kotlin.math.max
 import kotlin.reflect.KClass
 
 /**
+ * Interface of a component listener that gets notified when a component of a specific type
+ * gets added or removed from an [entity][Entity].
+ */
+interface ComponentListener<T> {
+    fun onComponentAdded(entity: Entity, component: T)
+    fun onComponentRemoved(entity: Entity, component: T)
+}
+
+/**
  * A class that is responsible to store components of a specific type for all [entities][Entity] in a [world][World].
  * Each component is assigned a unique [id] for fast access and to avoid lookups via a class which is slow.
  *
@@ -20,33 +29,48 @@ class ComponentMapper<T>(
     @PublishedApi
     internal val cstr: Constructor<T>
 ) {
+    @PublishedApi
+    internal val listeners = bag<ComponentListener<T>>(2)
+
     /**
      * Creates and returns a new component of the specific type for the given [entity] and applies the [configuration].
      * If the [entity] already has a component of that type then no new instance will be created.
+     * Notifies any registered [ComponentListener].
      */
     @PublishedApi
     internal inline fun addInternal(entity: Entity, configuration: T.() -> Unit = {}): T {
         if (entity.id >= components.size) {
             components = components.copyOf(max(components.size * 2, entity.id + 1))
         }
-        var cmp = components[entity.id]
+        val cmp = components[entity.id]
         return if (cmp == null) {
-            cmp = cstr.newInstance().apply(configuration)
-            components[entity.id] = cmp
-            cmp
+            val newCmp = cstr.newInstance().apply(configuration)
+            components[entity.id] = newCmp
+            listeners.forEach { it.onComponentAdded(entity, newCmp) }
+            newCmp
         } else {
-            cmp.apply(configuration)
+            // component already added -> reuse it and do not create a new instance.
+            // Call onComponentRemoved first in case users do something special in onComponentAdded.
+            // Otherwise, onComponentAdded will be executed twice on a single component without executing onComponentRemoved
+            // which is not correct.
+            listeners.forEach { it.onComponentRemoved(entity, cmp) }
+            val existingCmp = cmp.apply(configuration)
+            listeners.forEach { it.onComponentAdded(entity, existingCmp) }
+            existingCmp
         }
     }
 
-
     /**
      * Removes a component of the specific type from the given [entity].
+     * Notifies any registered [ComponentListener].
      *
      * @throws [ArrayIndexOutOfBoundsException] if the id of the [entity] exceeds the components' capacity.
      */
     @PublishedApi
     internal fun removeInternal(entity: Entity) {
+        components[entity.id]?.let { cmp ->
+            listeners.forEach { it.onComponentRemoved(entity, cmp) }
+        }
         components[entity.id] = null
     }
 
@@ -63,6 +87,29 @@ class ComponentMapper<T>(
      * Returns true if and only if the given [entity] has a component of the specific type.
      */
     operator fun contains(entity: Entity): Boolean = components.size > entity.id && components[entity.id] != null
+
+    /**
+     * Adds the given [listener] to the list of [ComponentListener].
+     */
+    fun addComponentListener(listener: ComponentListener<T>) = listeners.add(listener)
+
+    /**
+     * Adds the given [listener] to the list of [ComponentListener]. This function is only used internally
+     * to add listeners through the [WorldConfiguration].
+     */
+    @Suppress("UNCHECKED_CAST")
+    internal fun addComponentListenerInternal(listener: ComponentListener<*>) =
+        addComponentListener(listener as ComponentListener<T>)
+
+    /**
+     * Removes the given [listener] from the list of [ComponentListener].
+     */
+    fun removeComponentListener(listener: ComponentListener<T>) = listeners.removeValue(listener)
+
+    /**
+     * Returns true if and only if the given [listener] is part of the list of [ComponentListener].
+     */
+    operator fun contains(listener: ComponentListener<T>) = listener in listeners
 
     override fun toString(): String {
         return "ComponentMapper(id=$id, component=${cstr.name})"

@@ -246,6 +246,7 @@ class EntityService(
      * Removes the given [listener] from the list of [EntityListener].
      */
     fun removeEntityListener(listener: EntityListener) = listeners.removeValue(listener)
+
     /**
      * Returns true if and only if the given [listener] is part of the list of [EntityListener].
      */

@@ -21,3 +21,6 @@ class FleksMissingNoArgsComponentConstructorException(component: KClass<*>) :
 
 class FleksNoSuchComponentException(entity: Entity, component: String) :
     FleksException("Entity $entity has no component of type $component")
+
+class FleksComponentListenerAlreadyAddedException(listener: ComponentListener<*>) :
+    FleksException("ComponentListener ${listener.javaClass.simpleName} is already part of the ${WorldConfiguration::class.simpleName}")

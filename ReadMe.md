@@ -319,6 +319,37 @@ fun main() {
 }
 ```
 
+There might be situations where you need to execute a specific code when a component gets added or removed from an entity.
+This can be done via `ComponentListener` in Fleks. 
+
+Here is an example of a listener that reacts on add/remove of a `Box2dComponent` and destroys the [body](https://github.com/libgdx/libgdx/wiki/Box2d#objectsbodies)
+when the component gets removed from an entity:
+
+```Kotlin
+data class Box2dComponent{
+    lateinit var body: Body
+}
+
+class Box2dComponentListener : ComponentListener<Box2dComponent> {
+    override fun onComponentAdded(entity: Entity, component: Box2dComponent) {
+        component.body = // body creation code omitted
+        component.body.userData = entity
+    }
+    
+    override fun onComponentRemoved(entity: Entity, component: Box2dComponent) {
+        component.body.world.destroyBody(body)
+        component.body.userData = null
+    }
+}
+
+fun main() {
+    val world = World {
+        // register the listener to the world
+        componentListener(Box2dComponentListener())
+    }
+}
+```
+
 ## Performance
 
 One important topic for me throughout the development of Fleks was performance. For that I compared Fleks with
