@@ -64,15 +64,20 @@ internal class EntityTest {
         val entityService = EntityService(32, cmpService)
         val listener = EntityTestListener()
         entityService.addEntityListener(listener)
+        var processedEntity = Entity(-1)
 
-        val expectedEntity = entityService.create { add<EntityTestComponent>() }
+        val expectedEntity = entityService.create { entity ->
+            add<EntityTestComponent>()
+            processedEntity = entity
+        }
         val mapper = cmpService.mapper<EntityTestComponent>()
 
         assertAll(
             { assertEquals(1, listener.numCalls) },
             { assertEquals(expectedEntity, listener.entityReceived) },
             { assertTrue(listener.cmpMaskReceived[0]) },
-            { assertEquals(0f, mapper[listener.entityReceived].x) }
+            { assertEquals(0f, mapper[listener.entityReceived].x) },
+            { assertEquals(expectedEntity, processedEntity) }
         )
     }
 

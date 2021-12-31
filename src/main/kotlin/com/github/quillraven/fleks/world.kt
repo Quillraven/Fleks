@@ -113,7 +113,7 @@ class World(
     /**
      * Adds a new [entity][Entity] to the world using the given [configuration][EntityCreateCfg].
      */
-    inline fun entity(configuration: EntityCreateCfg.() -> Unit = {}): Entity {
+    inline fun entity(configuration: EntityCreateCfg.(Entity) -> Unit = {}): Entity {
         return entityService.create(configuration)
     }
 
