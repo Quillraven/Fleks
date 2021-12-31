@@ -316,6 +316,13 @@ fun main() {
         add<Position> { x = 5f }
         add<Sprite>()
     }
+    
+    // if needed, you can already access the new entity within the entity{} block
+    val entity2 = world.entity { e -> 
+        // e is the same as entity2
+        // this can be useful in some cases where you want to set the entity as
+        // custom userData on certain third-party library objects directly
+    }
 }
 ```
 

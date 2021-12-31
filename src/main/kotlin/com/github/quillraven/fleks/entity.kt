@@ -154,7 +154,7 @@ class EntityService(
      * If there are [recycledEntities] then they will be preferred over creating new entities.
      * Notifies any registered [EntityListener].
      */
-    inline fun create(configuration: EntityCreateCfg.() -> Unit): Entity {
+    inline fun create(configuration: EntityCreateCfg.(Entity) -> Unit): Entity {
         val newEntity = if (recycledEntities.isEmpty()) {
             Entity(nextId++)
         } else {
@@ -168,7 +168,7 @@ class EntityService(
         createCfg.run {
             this.entity = newEntity
             this.cmpMask = cmpMask
-            configuration()
+            configuration(this.entity)
         }
         listeners.forEach { it.onEntityCfgChanged(newEntity, cmpMask) }
 
