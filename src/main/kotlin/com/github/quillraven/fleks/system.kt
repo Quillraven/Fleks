@@ -200,7 +200,13 @@ abstract class IteratingSystem(
      * @param alpha a value between 0 (inclusive) and 1 (exclusive) that describes the progress between two ticks.
      */
     override fun onAlpha(alpha: Float) {
+        if (family.isDirty) {
+            family.updateActiveEntities()
+        }
+
+        entityService.delayRemoval = true
         family.forEach { onAlphaEntity(it, alpha) }
+        entityService.cleanupDelays()
     }
 
     /**
@@ -388,10 +394,8 @@ class SystemService(
             try {
                 classField = sysClass.getDeclaredField(fieldName)
             } catch (e: NoSuchFieldException) {
-                sysClass = sysClass.superclass
-                if (sysClass == null) {
-                    throw FleksSystemCreationException(system::class, "No '$fieldName' field found")
-                }
+                val supC = sysClass.superclass ?: throw FleksSystemCreationException(system::class, "No '$fieldName' field found")
+                sysClass = supC
             }
 
         }
