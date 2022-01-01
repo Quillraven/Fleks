@@ -97,6 +97,30 @@ private class SystemTestIteratingSystemSortAutomatic(
 }
 
 @AllOf([SystemTestComponent::class])
+private class SystemTestFixedSystemRemoval(
+    private val mapper: ComponentMapper<SystemTestComponent>
+) : IteratingSystem(interval = Fixed(1f)) {
+    var numEntityCalls = 0
+    var lastEntityProcess = Entity(-1)
+    var entityToRemove: Entity? = null
+
+    override fun onTickEntity(entity: Entity) {
+        entityToRemove?.let {
+            world.remove(it)
+            entityToRemove = null
+        }
+    }
+
+    override fun onAlphaEntity(entity: Entity, alpha: Float) {
+        // the next line would cause an exception if we don't update the family properly in alpha
+        // because component removal is instantly
+        mapper[entity].x++
+        lastEntityProcess = entity
+        ++numEntityCalls
+    }
+}
+
+@AllOf([SystemTestComponent::class])
 private class SystemTestIteratingSystemSortManual(
     val mapper: ComponentMapper<SystemTestComponent>
 ) : IteratingSystem(
@@ -353,7 +377,7 @@ internal class SystemTest {
     }
 
     @Test
-    fun `removing an entity during iteration is delayed`() {
+    fun `removing an entity during update is delayed`() {
         val world = World {}
         val service = SystemService(
             world,
@@ -372,6 +396,30 @@ internal class SystemTest {
         service.update()
 
         assertEquals(5, system.numEntityCalls)
+    }
+
+    @Test
+    fun `removing an entity during alpha is delayed`() {
+        val world = World {}
+        val service = SystemService(
+            world,
+            listOf(SystemTestFixedSystemRemoval::class),
+            emptyMap()
+        )
+        // set delta time to 1f for the fixed interval
+        world.update(1f)
+        world.entity { add<SystemTestComponent> { x = 15f } }
+        val entityToRemove = world.entity { add<SystemTestComponent> { x = 10f } }
+        world.entity { add<SystemTestComponent> { x = 5f } }
+        val system = service.system<SystemTestFixedSystemRemoval>()
+        system.entityToRemove = entityToRemove
+
+        // call it twice - first call still iterates over all three entities
+        // while the second call will only iterate over the remaining two entities
+        service.update()
+        service.update()
+
+        assertEquals(4, system.numEntityCalls)
     }
 
     @Test
