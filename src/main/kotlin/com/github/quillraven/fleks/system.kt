@@ -235,7 +235,7 @@ abstract class IteratingSystem(
 class SystemService(
     world: World,
     systemTypes: List<KClass<out IntervalSystem>>,
-    injectables: Map<KClass<*>, Any>
+    injectables: Map<KClass<*>, Injectable>
 ) {
     @PublishedApi
     internal val systems: Array<IntervalSystem>
@@ -281,6 +281,12 @@ class SystemService(
 
             newSystem
         }
+
+        // verify that there are no unused injectables
+        val unusedInjectables = injectables.filterValues { !it.used }.map { it.value.injObj::class }
+        if (unusedInjectables.isNotEmpty()) {
+            throw FleksUnusedInjectablesException(unusedInjectables)
+        }
     }
 
     /**
@@ -295,7 +301,7 @@ class SystemService(
     private fun systemArgs(
         primaryConstructor: Constructor<*>,
         cmpService: ComponentService,
-        injectables: Map<KClass<*>, Any>,
+        injectables: Map<KClass<*>, Injectable>,
         sysType: KClass<out IntervalSystem>
     ): Array<Any> {
         val params = primaryConstructor.parameters
@@ -305,10 +311,12 @@ class SystemService(
                 val cmpType = (params[idx].parameterizedType as ParameterizedType).actualTypeArguments[0] as Class<*>
                 cmpService.mapper(cmpType.kotlin)
             } else {
-                injectables[paramClass] ?: throw FleksSystemCreationException(
+                val injectable = injectables[paramClass] ?: throw FleksSystemCreationException(
                     sysType,
                     "Missing injectable of type ${paramClass.qualifiedName}"
                 )
+                injectable.used = true
+                injectable.injObj
             }
         }
 

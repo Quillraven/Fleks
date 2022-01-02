@@ -24,3 +24,6 @@ class FleksNoSuchComponentException(entity: Entity, component: String) :
 
 class FleksComponentListenerAlreadyAddedException(listener: ComponentListener<*>) :
     FleksException("ComponentListener ${listener.javaClass.simpleName} is already part of the ${WorldConfiguration::class.simpleName}")
+
+class FleksUnusedInjectablesException(unused: List<KClass<*>>) :
+    FleksException("There are unused injectables of following types: ${unused.map { it.simpleName }}")
