@@ -3,6 +3,12 @@ package com.github.quillraven.fleks
 import kotlin.reflect.KClass
 
 /**
+ * Wrapper class for injectables of the [WorldConfiguration].
+ * It is used in the [SystemService] to find out any unused injectables.
+ */
+data class Injectable(val injObj: Any, var used: Boolean = false)
+
+/**
  * A configuration for an entity [world][World] to define the initial maximum entity capacity,
  * the systems of the [world][World] and the systems' dependencies to be injected.
  * Additionally, you can define [ComponentListener] to define custom logic when a specific component is
@@ -20,7 +26,7 @@ class WorldConfiguration {
     internal val systemTypes = mutableListOf<KClass<out IntervalSystem>>()
 
     @PublishedApi
-    internal val injectables = mutableMapOf<KClass<*>, Any>()
+    internal val injectables = mutableMapOf<KClass<*>, Injectable>()
 
     @PublishedApi
     internal val cmpListeners = mutableMapOf<KClass<*>, MutableList<ComponentListener<out Any>>>()
@@ -49,7 +55,7 @@ class WorldConfiguration {
         if (injectType in injectables) {
             throw FleksInjectableAlreadyAddedException(injectType)
         }
-        injectables[injectType] = dependency
+        injectables[injectType] = Injectable(dependency)
     }
 
     /**

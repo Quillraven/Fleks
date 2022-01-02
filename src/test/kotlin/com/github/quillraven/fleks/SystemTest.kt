@@ -225,7 +225,7 @@ internal class SystemTest {
         val service = SystemService(
             expectedWorld,
             listOf(SystemTestIteratingSystemInjectable::class),
-            mapOf(String::class to "42")
+            mapOf(String::class to Injectable("42"))
         )
 
         val actualSystem = service.system<SystemTestIteratingSystemInjectable>()
@@ -254,6 +254,17 @@ internal class SystemTest {
                 World.EMPTY_WORLD,
                 listOf(SystemTestIteratingSystemInjectable::class),
                 emptyMap()
+            )
+        }
+    }
+
+    @Test
+    fun `throw exception when there are unused injectables`() {
+        assertThrows<FleksUnusedInjectablesException> {
+            SystemService(
+                World.EMPTY_WORLD,
+                listOf(SystemTestIntervalSystemEachFrame::class),
+                mapOf(String::class to Injectable("42"))
             )
         }
     }
