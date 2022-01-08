@@ -43,17 +43,30 @@ then use [Artemis-odb](https://github.com/junkdog/artemis-odb) or [Ashley](https
 
 ## Current Status
 
-There is a pre-release available since 2021-11-20. Please feel free to contribute to the
-Discussions or Issues. Help is always appreciated. To use the pre-release add following lines to your `build.gradle` file.
+Release Candidate version 1 is available on maven central since 02-Jan-2022. Please feel free to contribute to the
+Discussions or Issues. Help is always appreciated. 
+To use Fleks add it as a dependency to your project:
+
+#### Apache Maven
 
 ```kotlin
-repositories {
-    mavenCentral()
-}
+<dependency>
+  <groupId>io.github.quillraven.fleks</groupId>
+  <artifactId>Fleks</artifactId>
+  <version>1.0-RC1</version>
+</dependency>
+```
 
-dependencies {
-    implementation("io.github.quillraven.fleks:Fleks:1.0-alpha")
-}
+#### Gradle (Groovy)
+
+```kotlin
+implementation 'io.github.quillraven.fleks:Fleks:1.0-RC1'
+```
+
+#### Gradle (Kotlin)
+
+```kotlin
+implementation("io.github.quillraven.fleks:Fleks:1.0-RC1")
 ```
 
 ## Current API and usage
