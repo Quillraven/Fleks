@@ -241,4 +241,21 @@ internal class EntityTest {
 
         assertFalse(listener in entityService)
     }
+
+    @Test
+    fun `remove entity twice`() {
+        val cmpService = ComponentService()
+        val entityService = EntityService(32, cmpService)
+        val entity = entityService.create { }
+        val listener = EntityTestListener()
+        entityService.addEntityListener(listener)
+
+        entityService.remove(entity)
+        entityService.remove(entity)
+
+        assertAll(
+            { assertEquals(1, entityService.recycledEntities.size) },
+            { assertEquals(1, listener.numCalls) }
+        )
+    }
 }

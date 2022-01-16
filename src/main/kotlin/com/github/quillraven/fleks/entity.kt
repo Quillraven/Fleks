@@ -105,6 +105,13 @@ class EntityService(
     internal var nextId = 0
 
     /**
+     * Separate BitArray to remember if an [entity][Entity] was already removed.
+     * This is faster than looking up the [recycledEntities].
+     */
+    @PublishedApi
+    internal val removedEntities = BitArray(initialEntityCapacity)
+
+    /**
      * The already removed [entities][Entity] which can be reused whenever a new entity is needed.
      */
     @PublishedApi
@@ -158,7 +165,9 @@ class EntityService(
         val newEntity = if (recycledEntities.isEmpty()) {
             Entity(nextId++)
         } else {
-            recycledEntities.removeLast()
+            val recycled = recycledEntities.removeLast()
+            removedEntities.clear(recycled.id)
+            recycled
         }
 
         if (newEntity.id >= cmpMasks.size) {
@@ -197,9 +206,15 @@ class EntityService(
      * Notifies any registered [EntityListener] when the [entity] gets removed.
      */
     fun remove(entity: Entity) {
+        if (removedEntities[entity.id]) {
+            // entity is already removed
+            return
+        }
+
         if (delayRemoval) {
             delayedEntities.add(entity.id)
         } else {
+            removedEntities.set(entity.id)
             val cmpMask = cmpMasks[entity.id]
             recycledEntities.add(entity)
             cmpMask.forEachSetBit { cmpId ->
@@ -218,7 +233,7 @@ class EntityService(
     fun removeAll() {
         for (id in 0 until nextId) {
             val entity = Entity(id)
-            if (entity in recycledEntities) {
+            if (removedEntities[entity.id]) {
                 continue
             }
             remove(entity)
