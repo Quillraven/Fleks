@@ -53,20 +53,20 @@ To use Fleks add it as a dependency to your project:
 <dependency>
   <groupId>io.github.quillraven.fleks</groupId>
   <artifactId>Fleks</artifactId>
-  <version>1.0-RC1</version>
+  <version>1.0-RC2</version>
 </dependency>
 ```
 
 #### Gradle (Groovy)
 
 ```kotlin
-implementation 'io.github.quillraven.fleks:Fleks:1.0-RC1'
+implementation 'io.github.quillraven.fleks:Fleks:1.0-RC2'
 ```
 
 #### Gradle (Kotlin)
 
 ```kotlin
-implementation("io.github.quillraven.fleks:Fleks:1.0-RC1")
+implementation("io.github.quillraven.fleks:Fleks:1.0-RC2")
 ```
 
 ## Current API and usage
