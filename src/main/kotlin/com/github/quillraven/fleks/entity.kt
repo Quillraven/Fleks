@@ -223,7 +223,6 @@ class EntityService(
             }
             remove(entity)
         }
-        cleanupDelays()
     }
 
     /**

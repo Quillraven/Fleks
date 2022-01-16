@@ -173,13 +173,14 @@ internal class EntityTest {
         entityService.create {}
         entityService.create {}
         entityService.delayRemoval = true
+        val listener = EntityTestListener()
+        entityService.addEntityListener(listener)
 
         entityService.removeAll()
 
         assertAll(
-            { assertEquals(2, entityService.recycledEntities.size) },
-            { assertEquals(0, entityService.numEntities) },
-            { assertFalse(entityService.delayRemoval) }
+            { assertEquals(0, listener.numCalls) },
+            { assertTrue(entityService.delayRemoval) }
         )
     }
 
