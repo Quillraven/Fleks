@@ -89,6 +89,7 @@ class World(
     @PublishedApi
     internal val systemService: SystemService
 
+    @PublishedApi
     internal val componentService = ComponentService()
 
     @PublishedApi
@@ -147,6 +148,14 @@ class World(
     inline fun <reified T : IntervalSystem> system(): T {
         return systemService.system()
     }
+
+    /**
+     * Returns a [ComponentMapper] for the given type. If the mapper does not exist then it will be created.
+     *
+     * @throws [FleksMissingNoArgsComponentConstructorException] if the component of the given type does not have
+     * a no argument constructor.
+     */
+    inline fun <reified T : Any> mapper(): ComponentMapper<T> = componentService.mapper(T::class)
 
     /**
      * Updates all [enabled][IntervalSystem.enabled] [systems][IntervalSystem] of the world

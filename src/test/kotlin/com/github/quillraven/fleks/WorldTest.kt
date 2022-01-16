@@ -201,4 +201,13 @@ internal class WorldTest {
             }
         }
     }
+
+    @Test
+    fun `get mapper`() {
+        val w = World {}
+
+        val mapper = w.mapper<WorldTestComponent>()
+
+        assertEquals(0, mapper.id)
+    }
 }

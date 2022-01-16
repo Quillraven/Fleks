@@ -229,6 +229,18 @@ class DeathSystem(
 }
 ```
 
+`ComponentMapper` are not restricted to systems. You can get a mapper also from your world whenever needed.
+Here is an example that gets the `LifeComponent` mapper of the snippet above:
+
+```Kotlin
+fun main() {
+    val world = World {}
+    val lives = world.mapper<Life>()
+}
+```
+
+----
+
 Sometimes it might be necessary to sort entities before iterating over them like e.g. in a `RenderSystem` that needs to
 render entities by their y or z-coordinate. In Fleks this can be achieved by passing an `EntityComparator` to
 an `IteratingSystem`. Entities are then sorted automatically every time the system gets updated. The `compareEntity`
