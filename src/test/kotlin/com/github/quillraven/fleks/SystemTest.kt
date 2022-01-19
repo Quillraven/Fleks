@@ -53,17 +53,13 @@ private class SystemTestIteratingSystemNoFamily : IteratingSystem() {
     override fun onTickEntity(entity: Entity) = Unit
 }
 
-private class SystemTestInitBlock() : IntervalSystem() {
-    private val someValue: Float
-
-    init {
-        someValue = world.deltaTime
-    }
+private class SystemTestInitBlock : IntervalSystem() {
+    private val someValue: Float = world.deltaTime
 
     override fun onTick() = Unit
 }
 
-private class SystemTestOnInitBlock() : IntervalSystem() {
+private class SystemTestOnInitBlock : IntervalSystem() {
     var someValue: Float = 42f
 
     override fun onInit() {
@@ -295,22 +291,12 @@ internal class SystemTest {
 
     @Test
     fun `cannot create IteratingSystem with missing injectables`() {
-        assertThrows<FleksSystemCreationException> { systemService(listOf(SystemTestIteratingSystemInjectable::class)) }
-    }
-
-    @Test
-    fun `throw exception when there are unused injectables`() {
-        assertThrows<FleksUnusedInjectablesException> {
-            systemService(
-                listOf(SystemTestIntervalSystemEachFrame::class),
-                mapOf(String::class.qualifiedName!! to Injectable("42"))
-            )
-        }
+        assertThrows<FleksReflectionException> { systemService(listOf(SystemTestIteratingSystemInjectable::class)) }
     }
 
     @Test
     fun `cannot create system with multiple constructors`() {
-        assertThrows<FleksSystemCreationException> { systemService(listOf(SystemTestIntervalSystemMultipleCstrs::class)) }
+        assertThrows<FleksReflectionException> { systemService(listOf(SystemTestIntervalSystemMultipleCstrs::class)) }
     }
 
     @Test
