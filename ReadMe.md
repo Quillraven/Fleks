@@ -239,7 +239,23 @@ fun main() {
 }
 ```
 
-----
+Some systems might need an initialization code that requires the `world`. Unfortunately, it is not possible to
+get access to the world in a normal `init` block. The field is not initialized at that time. However, there is
+of course a solution. In case you need the world for your initialization logic you can use the `onInit` function of a system like this:
+
+```Kotlin
+private class PlayerSpawnSystem() : IntervalSystem() {
+    override fun onInit() {
+        // spawn player when the system gets created
+        // Note: access to the world field works inside this method
+        world.entity {
+            // ...
+        }
+    }
+
+    // ...
+}
+```
 
 Sometimes it might be necessary to sort entities before iterating over them like e.g. in a `RenderSystem` that needs to
 render entities by their y or z-coordinate. In Fleks this can be achieved by passing an `EntityComparator` to
