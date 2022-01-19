@@ -54,7 +54,7 @@ class WorldConfiguration {
     }
 
     /**
-     * Adds the specified []dependency] under the given [name] which can then be injected to any [IntervalSystem].
+     * Adds the specified [dependency] under the given [name] which can then be injected to any [IntervalSystem].
      *
      * @throws [FleksInjectableAlreadyAddedException] if the dependency was already added before.
      */
