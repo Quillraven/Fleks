@@ -151,6 +151,29 @@ val world = World {
 }
 ```
 
+There might be cases where you need multiple dependencies of the same type. In Fleks this can be solved via
+named dependencies using the `Qualifier` annotation. Here is an example of a system that takes two String parameters.
+They are registered by name `HighscoreKey` and `LevelKey`:
+
+```Kotlin
+private class NamedDependenciesSystem(
+    @Qualifier("HighscoreKey") val hsKey: String, // will have the value hs-key
+    @Qualifier("LevelKey") val levelKey: String // will have the value Level001
+) : IntervalSystem() {
+    // ...
+}
+
+fun main() {
+    val world = World {
+        system<NamedDependenciesSystem>()
+
+        // inject String dependencies from above via their qualifier names
+        inject("HighscoreKey", "hs-key")
+        inject("LevelKey", "Level001")
+    }
+}
+```
+
 There are two systems in Fleks:
 
 - `IntervalSystem`: system without relation to entities
@@ -368,7 +391,8 @@ fun main() {
 ```
 
 There might be situations where you need to execute a specific code when a component gets added or removed from an entity.
-This can be done via `ComponentListener` in Fleks. 
+This can be done via `ComponentListener` in Fleks. They are created in a similar way like systems meaning that they are created
+by Fleks using dependency injection.
 
 Here is an example of a listener that reacts on add/remove of a `Box2dComponent` and destroys the [body](https://github.com/libgdx/libgdx/wiki/Box2d#objectsbodies)
 when the component gets removed from an entity:
@@ -393,7 +417,7 @@ class Box2dComponentListener : ComponentListener<Box2dComponent> {
 fun main() {
     val world = World {
         // register the listener to the world
-        componentListener(Box2dComponentListener())
+        componentListener<Box2dComponentListener>()
     }
 }
 ```

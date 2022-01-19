@@ -1,6 +1,15 @@
 package com.github.quillraven.fleks
 
+import java.lang.reflect.ParameterizedType
 import kotlin.reflect.KClass
+
+/**
+ * An optional annotation for an [IntervalSystem] constructor parameter to
+ * inject a dependency exactly by that qualifier's [name].
+ */
+@Target(AnnotationTarget.FIELD, AnnotationTarget.VALUE_PARAMETER, AnnotationTarget.TYPE_PARAMETER)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class Qualifier(val name: String)
 
 /**
  * Wrapper class for injectables of the [WorldConfiguration].
@@ -26,10 +35,10 @@ class WorldConfiguration {
     internal val systemTypes = mutableListOf<KClass<out IntervalSystem>>()
 
     @PublishedApi
-    internal val injectables = mutableMapOf<KClass<*>, Injectable>()
+    internal val injectables = mutableMapOf<String, Injectable>()
 
     @PublishedApi
-    internal val cmpListeners = mutableMapOf<KClass<*>, MutableList<ComponentListener<out Any>>>()
+    internal val cmpListenerTypes = mutableListOf<KClass<out ComponentListener<out Any>>>()
 
     /**
      * Adds the specified [IntervalSystem] to the [world][World].
@@ -46,27 +55,41 @@ class WorldConfiguration {
     }
 
     /**
-     * Adds the specified dependency which can then be injected to any [IntervalSystem].
+     * Adds the specified [dependency] under the given [name] which can then be injected to any [IntervalSystem].
      *
      * @throws [FleksInjectableAlreadyAddedException] if the dependency was already added before.
      */
-    inline fun <reified T : Any> inject(dependency: T) {
-        val injectType = T::class
-        if (injectType in injectables) {
-            throw FleksInjectableAlreadyAddedException(injectType)
+    fun <T : Any> inject(name: String, dependency: T) {
+        if (name in injectables) {
+            throw FleksInjectableAlreadyAddedException(name)
         }
-        injectables[injectType] = Injectable(dependency)
+
+        injectables[name] = Injectable(dependency)
     }
 
     /**
-     * Adds the specified [listener] as a [ComponentListener] of the [world][World].
+     * Adds the specified dependency which can then be injected to any [IntervalSystem].
+     * Refer to [inject]: the name is the qualifiedName of the class of the [dependency].
+     *
+     * @throws [FleksInjectableAlreadyAddedException] if the dependency was already added before.
+     * @throws [FleksInjectableWithoutNameException] if the qualifiedName of the [dependency] is null.
      */
-    inline fun <reified T : Any> componentListener(listener: ComponentListener<T>) {
-        val listeners = cmpListeners.getOrPut(T::class) { mutableListOf() }
-        if (listener in listeners) {
-            throw FleksComponentListenerAlreadyAddedException(listener)
+    inline fun <reified T : Any> inject(dependency: T) {
+        val key = T::class.qualifiedName ?: throw FleksInjectableWithoutNameException()
+        inject(key, dependency)
+    }
+
+    /**
+     * Adds the specified [ComponentListener] to the [world][World].
+     *
+     * @throws [FleksComponentListenerAlreadyAddedException] if the listener was already added before.
+     */
+    inline fun <reified T : ComponentListener<out Any>> componentListener() {
+        val listenerType = T::class
+        if (listenerType in cmpListenerTypes) {
+            throw FleksComponentListenerAlreadyAddedException(listenerType)
         }
-        listeners.add(listener)
+        cmpListenerTypes.add(listenerType)
     }
 }
 
@@ -110,10 +133,24 @@ class World(
     init {
         val worldCfg = WorldConfiguration().apply(cfg)
         entityService = EntityService(worldCfg.entityCapacity, componentService)
-        systemService = SystemService(this, worldCfg.systemTypes, worldCfg.injectables)
-        worldCfg.cmpListeners.forEach { (type, listeners) ->
-            val mapper = componentService.mapper(type)
-            listeners.forEach { mapper.addComponentListenerInternal(it) }
+        val injectables = worldCfg.injectables
+        systemService = SystemService(this, worldCfg.systemTypes, injectables)
+
+        // create and register ComponentListener
+        worldCfg.cmpListenerTypes.forEach { listenerType ->
+            val listener = newInstance(listenerType, componentService, injectables)
+            val genInter = listener.javaClass.genericInterfaces.first {
+                it is ParameterizedType && it.rawType == ComponentListener::class.java
+            }
+            val cmpType = (genInter as ParameterizedType).actualTypeArguments[0]
+            val mapper = componentService.mapper((cmpType as Class<*>).kotlin)
+            mapper.addComponentListenerInternal(listener)
+        }
+
+        // verify that there are no unused injectables
+        val unusedInjectables = injectables.filterValues { !it.used }.map { it.value.injObj::class }
+        if (unusedInjectables.isNotEmpty()) {
+            throw FleksUnusedInjectablesException(unusedInjectables)
         }
     }
 

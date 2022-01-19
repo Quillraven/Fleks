@@ -53,17 +53,13 @@ private class SystemTestIteratingSystemNoFamily : IteratingSystem() {
     override fun onTickEntity(entity: Entity) = Unit
 }
 
-private class SystemTestInitBlock() : IntervalSystem() {
-    private val someValue: Float
-
-    init {
-        someValue = world.deltaTime
-    }
+private class SystemTestInitBlock : IntervalSystem() {
+    private val someValue: Float = world.deltaTime
 
     override fun onTick() = Unit
 }
 
-private class SystemTestOnInitBlock() : IntervalSystem() {
+private class SystemTestOnInitBlock : IntervalSystem() {
     var someValue: Float = 42f
 
     override fun onInit() {
@@ -166,10 +162,19 @@ private class SystemTestIteratingSystemInjectable(
     override fun onTickEntity(entity: Entity) = Unit
 }
 
+@NoneOf([SystemTestComponent::class])
+@AnyOf([SystemTestComponent::class])
+private class SystemTestIteratingSystemQualifiedInjectable(
+    val injectable: String,
+    @Qualifier("q1") val injectable2: String
+) : IteratingSystem() {
+    override fun onTickEntity(entity: Entity) = Unit
+}
+
 internal class SystemTest {
     private fun systemService(
         systemTypes: List<KClass<out IntervalSystem>>,
-        injectables: Map<KClass<*>, Injectable> = emptyMap(),
+        injectables: Map<String, Injectable> = emptyMap(),
         world: World = World { }
     ) = SystemService(
         world,
@@ -248,7 +253,7 @@ internal class SystemTest {
 
         val service = systemService(
             listOf(SystemTestIteratingSystemInjectable::class),
-            mapOf(String::class to Injectable("42")),
+            mapOf(String::class.qualifiedName!! to Injectable("42")),
             expectedWorld
         )
 
@@ -261,25 +266,37 @@ internal class SystemTest {
     }
 
     @Test
+    fun `create IteratingSystem with qualified args`() {
+        val expectedWorld = World {}
+
+        val service = systemService(
+            listOf(SystemTestIteratingSystemQualifiedInjectable::class),
+            mapOf(String::class.qualifiedName!! to Injectable("42"), "q1" to Injectable("43")),
+            expectedWorld
+        )
+
+        val actualSystem = service.system<SystemTestIteratingSystemQualifiedInjectable>()
+        assertAll(
+            { assertEquals(1, service.systems.size) },
+            { assertSame(expectedWorld, actualSystem.world) },
+            { assertEquals("42", actualSystem.injectable) },
+            { assertEquals("43", actualSystem.injectable2) },
+        )
+    }
+
+    @Test
     fun `cannot create IteratingSystem without family annotations`() {
         assertThrows<FleksSystemCreationException> { systemService(listOf(SystemTestIteratingSystemNoFamily::class)) }
     }
 
     @Test
     fun `cannot create IteratingSystem with missing injectables`() {
-        assertThrows<FleksSystemCreationException> { systemService(listOf(SystemTestIteratingSystemInjectable::class)) }
-    }
-
-    @Test
-    fun `throw exception when there are unused injectables`() {
-        assertThrows<FleksUnusedInjectablesException> {
-            systemService(listOf(SystemTestIntervalSystemEachFrame::class), mapOf(String::class to Injectable("42")))
-        }
+        assertThrows<FleksReflectionException> { systemService(listOf(SystemTestIteratingSystemInjectable::class)) }
     }
 
     @Test
     fun `cannot create system with multiple constructors`() {
-        assertThrows<FleksSystemCreationException> { systemService(listOf(SystemTestIntervalSystemMultipleCstrs::class)) }
+        assertThrows<FleksReflectionException> { systemService(listOf(SystemTestIntervalSystemMultipleCstrs::class)) }
     }
 
     @Test

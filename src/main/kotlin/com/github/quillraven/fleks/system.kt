@@ -2,9 +2,7 @@ package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.BitArray
 import com.github.quillraven.fleks.collection.EntityComparator
-import java.lang.reflect.Constructor
 import java.lang.reflect.Field
-import java.lang.reflect.ParameterizedType
 import kotlin.reflect.KClass
 
 /**
@@ -243,7 +241,7 @@ abstract class IteratingSystem(
 class SystemService(
     world: World,
     systemTypes: List<KClass<out IntervalSystem>>,
-    injectables: Map<KClass<*>, Injectable>
+    injectables: Map<String, Injectable>
 ) {
     @PublishedApi
     internal val systems: Array<IntervalSystem>
@@ -255,19 +253,7 @@ class SystemService(
         val allFamilies = mutableListOf<Family>()
         systems = Array(systemTypes.size) { sysIdx ->
             val sysType = systemTypes[sysIdx]
-
-            val constructors = sysType.java.declaredConstructors
-            if (constructors.size != 1) {
-                throw FleksSystemCreationException(
-                    sysType,
-                    "Found ${constructors.size} constructors. Only a single primary constructor is supported!"
-                )
-            }
-
-            // get constructor arguments
-            val args = systemArgs(constructors.first(), cmpService, injectables, sysType)
-            // create new instance using arguments from above
-            val newSystem = constructors.first().newInstance(*args) as IntervalSystem
+            val newSystem = newInstance(sysType, cmpService, injectables)
 
             // set world reference of newly created system
             val worldField = field(newSystem, "world")
@@ -289,46 +275,6 @@ class SystemService(
 
             newSystem.apply { onInit() }
         }
-
-        // verify that there are no unused injectables
-        val unusedInjectables = injectables.filterValues { !it.used }.map { it.value.injObj::class }
-        if (unusedInjectables.isNotEmpty()) {
-            throw FleksUnusedInjectablesException(unusedInjectables)
-        }
-    }
-
-    /**
-     * Returns map of arguments for the given [primaryConstructor] of a [system][IntervalSystem].
-     * Arguments are either [injectables] or [ComponentMapper] instances.
-     *
-     * @throws [FleksSystemCreationException] if [injectables] are missing for the [primaryConstructor].
-     *
-     * @throws [FleksMissingNoArgsComponentConstructorException] if the [primaryConstructor] requires a [ComponentMapper]
-     * with a component type that does not have a no argument constructor.
-     */
-    private fun systemArgs(
-        primaryConstructor: Constructor<*>,
-        cmpService: ComponentService,
-        injectables: Map<KClass<*>, Injectable>,
-        sysType: KClass<out IntervalSystem>
-    ): Array<Any> {
-        val params = primaryConstructor.parameters
-        val args = Array(params.size) { idx ->
-            val paramClass = params[idx].type.kotlin
-            if (paramClass == ComponentMapper::class) {
-                val cmpType = (params[idx].parameterizedType as ParameterizedType).actualTypeArguments[0] as Class<*>
-                cmpService.mapper(cmpType.kotlin)
-            } else {
-                val injectable = injectables[paramClass] ?: throw FleksSystemCreationException(
-                    sysType,
-                    "Missing injectable of type ${paramClass.qualifiedName}"
-                )
-                injectable.used = true
-                injectable.injObj
-            }
-        }
-
-        return args
     }
 
     /**
