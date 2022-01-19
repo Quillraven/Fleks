@@ -173,8 +173,4 @@ class World(
         entityService.removeAll()
         systemService.dispose()
     }
-
-    companion object {
-        internal val EMPTY_WORLD = World { entityCapacity = 0 }
-    }
 }

@@ -41,7 +41,8 @@ abstract class IntervalSystem(
      * Returns the [world][World] to which this system belongs.
      * This reference gets updated by the [SystemService] when the system gets created via reflection.
      */
-    val world: World = World.EMPTY_WORLD
+    lateinit var world: World
+        internal set
 
     private var accumulator: Float = 0.0f
 
@@ -54,6 +55,12 @@ abstract class IntervalSystem(
      */
     val deltaTime: Float
         get() = if (interval is Fixed) interval.step else world.deltaTime
+
+    /**
+     * Optional function for any initialization logic that requires access to the [world].
+     * This is necessary because the normal init block does not have an initialized [world] yet.
+     */
+    open fun onInit() = Unit
 
     /**
      * Updates the system according to its [interval]. This function gets called from [World.update] when
@@ -136,14 +143,15 @@ abstract class IteratingSystem(
      * Returns the [family][Family] of this system.
      * This reference gets updated by the [SystemService] when the system gets created via reflection.
      */
-    private val family: Family = Family.EMPTY_FAMILY
+    private lateinit var family: Family
 
     /**
      * Returns the [entityService][EntityService] of this system.
      * This reference gets updated by the [SystemService] when the system gets created via reflection.
      */
     @PublishedApi
-    internal val entityService: EntityService = world.entityService
+    internal lateinit var entityService: EntityService
+        private set
 
     /**
      * Flag that defines if sorting of [entities][Entity] will be performed the next time [onTick] is called.
@@ -279,7 +287,7 @@ class SystemService(
                 eServiceField.set(newSystem, entityService)
             }
 
-            newSystem
+            newSystem.apply { onInit() }
         }
 
         // verify that there are no unused injectables

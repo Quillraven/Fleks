@@ -118,8 +118,4 @@ data class Family(
             entities.clear(entity.id)
         }
     }
-
-    companion object {
-        internal val EMPTY_FAMILY = Family()
-    }
 }
