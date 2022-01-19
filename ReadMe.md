@@ -151,6 +151,29 @@ val world = World {
 }
 ```
 
+There might be cases where you need multiple dependencies of the same type. In Fleks this can be solved via
+named dependencies using the `Qualifier` annotation. Here is an example of a system that takes two String parameters.
+They are registered by name `HighscoreKey` and `LevelKey`:
+
+```Kotlin
+private class NamedDependenciesSystem(
+    @Qualifier("HighscoreKey") val hsKey: String, // will have the value hs-key
+    @Qualifier("LevelKey") val levelKey: String // will have the value Level001
+) : IntervalSystem() {
+    // ...
+}
+
+fun main() {
+    val world = World {
+        system<NamedDependenciesSystem>()
+
+        // inject String dependencies from above via their qualifier names
+        inject("HighscoreKey", "hs-key")
+        inject("LevelKey", "Level001")
+    }
+}
+```
+
 There are two systems in Fleks:
 
 - `IntervalSystem`: system without relation to entities

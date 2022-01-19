@@ -3,6 +3,14 @@ package com.github.quillraven.fleks
 import kotlin.reflect.KClass
 
 /**
+ * An optional annotation for an [IntervalSystem] constructor parameter to
+ * inject a dependency exactly by that qualifier's [name].
+ */
+@Target(AnnotationTarget.FIELD, AnnotationTarget.VALUE_PARAMETER, AnnotationTarget.TYPE_PARAMETER)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class Qualifier(val name: String)
+
+/**
  * Wrapper class for injectables of the [WorldConfiguration].
  * It is used in the [SystemService] to find out any unused injectables.
  */
@@ -26,7 +34,7 @@ class WorldConfiguration {
     internal val systemTypes = mutableListOf<KClass<out IntervalSystem>>()
 
     @PublishedApi
-    internal val injectables = mutableMapOf<KClass<*>, Injectable>()
+    internal val injectables = mutableMapOf<String, Injectable>()
 
     @PublishedApi
     internal val cmpListeners = mutableMapOf<KClass<*>, MutableList<ComponentListener<out Any>>>()
@@ -46,16 +54,28 @@ class WorldConfiguration {
     }
 
     /**
-     * Adds the specified dependency which can then be injected to any [IntervalSystem].
+     * Adds the specified []dependency] under the given [name] which can then be injected to any [IntervalSystem].
      *
      * @throws [FleksInjectableAlreadyAddedException] if the dependency was already added before.
      */
-    inline fun <reified T : Any> inject(dependency: T) {
-        val injectType = T::class
-        if (injectType in injectables) {
-            throw FleksInjectableAlreadyAddedException(injectType)
+    fun <T : Any> inject(name: String, dependency: T) {
+        if (name in injectables) {
+            throw FleksInjectableAlreadyAddedException(name)
         }
-        injectables[injectType] = Injectable(dependency)
+
+        injectables[name] = Injectable(dependency)
+    }
+
+    /**
+     * Adds the specified dependency which can then be injected to any [IntervalSystem].
+     * Refer to [inject]: the name is the qualifiedName of the class of the [dependency].
+     *
+     * @throws [FleksInjectableAlreadyAddedException] if the dependency was already added before.
+     * @throws [FleksInjectableWithoutNameException] if the qualifiedName of the [dependency] is null.
+     */
+    inline fun <reified T : Any> inject(dependency: T) {
+        val key = T::class.qualifiedName ?: throw FleksInjectableWithoutNameException()
+        inject(key, dependency)
     }
 
     /**

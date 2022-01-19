@@ -243,7 +243,7 @@ abstract class IteratingSystem(
 class SystemService(
     world: World,
     systemTypes: List<KClass<out IntervalSystem>>,
-    injectables: Map<KClass<*>, Injectable>
+    injectables: Map<String, Injectable>
 ) {
     @PublishedApi
     internal val systems: Array<IntervalSystem>
@@ -309,17 +309,24 @@ class SystemService(
     private fun systemArgs(
         primaryConstructor: Constructor<*>,
         cmpService: ComponentService,
-        injectables: Map<KClass<*>, Injectable>,
+        injectables: Map<String, Injectable>,
         sysType: KClass<out IntervalSystem>
     ): Array<Any> {
         val params = primaryConstructor.parameters
+        val paramAnnotations = primaryConstructor.parameterAnnotations
+
         val args = Array(params.size) { idx ->
-            val paramClass = params[idx].type.kotlin
+            val param = params[idx]
+            val paramClass = param.type.kotlin
             if (paramClass == ComponentMapper::class) {
-                val cmpType = (params[idx].parameterizedType as ParameterizedType).actualTypeArguments[0] as Class<*>
+                val cmpType = (param.parameterizedType as ParameterizedType).actualTypeArguments[0] as Class<*>
                 cmpService.mapper(cmpType.kotlin)
             } else {
-                val injectable = injectables[paramClass] ?: throw FleksSystemCreationException(
+                // check if qualifier is specified
+                val qualifierAnn = paramAnnotations[idx].firstOrNull { it is Qualifier } as Qualifier?
+                // if no -> use qualified class name
+                val name = qualifierAnn?.name ?: paramClass.qualifiedName
+                val injectable = injectables[name] ?: throw FleksSystemCreationException(
                     sysType,
                     "Missing injectable of type ${paramClass.qualifiedName}"
                 )

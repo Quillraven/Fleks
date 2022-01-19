@@ -37,6 +37,15 @@ private class WorldTestIteratingSystem(
     override fun onTickEntity(entity: Entity) = Unit
 }
 
+private class WorldTestNamedDependencySystem(
+    @Qualifier("name") _name: String,
+    @Qualifier("level") val level: String
+) : IntervalSystem() {
+    val name: String = _name
+
+    override fun onTick() = Unit
+}
+
 private class WorldTestComponentListener : ComponentListener<WorldTestComponent> {
     override fun onComponentAdded(entity: Entity, component: WorldTestComponent) = Unit
     override fun onComponentRemoved(entity: Entity, component: WorldTestComponent) = Unit
@@ -71,6 +80,24 @@ internal class WorldTest {
         assertAll(
             { assertNotNull(w.system<WorldTestIteratingSystem>()) },
             { assertEquals("42", w.system<WorldTestIteratingSystem>().testInject) }
+        )
+    }
+
+    @Test
+    fun `create empty world with 2 named injectables system`() {
+        val expectedName = "myName"
+        val expectedLevel = "myLevel"
+        val w = World {
+            system<WorldTestNamedDependencySystem>()
+
+            inject("name", expectedName)
+            inject("level", "myLevel")
+        }
+
+        assertAll(
+            { assertNotNull(w.system<WorldTestNamedDependencySystem>()) },
+            { assertEquals(expectedName, w.system<WorldTestNamedDependencySystem>().name) },
+            { assertEquals(expectedLevel, w.system<WorldTestNamedDependencySystem>().level) }
         )
     }
 
