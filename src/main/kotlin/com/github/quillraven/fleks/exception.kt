@@ -13,8 +13,11 @@ class FleksSystemCreationException(system: KClass<*>, details: String) :
 class FleksNoSuchSystemException(system: KClass<*>) :
     FleksException("There is no system of type ${system.simpleName} in the world")
 
-class FleksInjectableAlreadyAddedException(injectable: KClass<*>) :
-    FleksException("Injectable ${injectable.simpleName} is already part of the ${WorldConfiguration::class.simpleName}")
+class FleksInjectableAlreadyAddedException(name: String) :
+    FleksException("Injectable with name $name is already part of the ${WorldConfiguration::class.simpleName}")
+
+class FleksInjectableWithoutNameException :
+    FleksException("Injectables must be registered with a non-null name")
 
 class FleksMissingNoArgsComponentConstructorException(component: KClass<*>) :
     FleksException("Component ${component.simpleName} is missing a no-args constructor")
@@ -22,8 +25,11 @@ class FleksMissingNoArgsComponentConstructorException(component: KClass<*>) :
 class FleksNoSuchComponentException(entity: Entity, component: String) :
     FleksException("Entity $entity has no component of type $component")
 
-class FleksComponentListenerAlreadyAddedException(listener: ComponentListener<*>) :
-    FleksException("ComponentListener ${listener.javaClass.simpleName} is already part of the ${WorldConfiguration::class.simpleName}")
+class FleksComponentListenerAlreadyAddedException(listener: KClass<out ComponentListener<*>>) :
+    FleksException("ComponentListener ${listener.simpleName} is already part of the ${WorldConfiguration::class.simpleName}")
 
 class FleksUnusedInjectablesException(unused: List<KClass<*>>) :
     FleksException("There are unused injectables of following types: ${unused.map { it.simpleName }}")
+
+class FleksReflectionException(type: KClass<*>, details: String) :
+    FleksException("Cannot create ${type.simpleName}.\nDetails: $details")

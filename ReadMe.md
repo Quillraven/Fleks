@@ -1,7 +1,7 @@
 # Fleks
 
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/Quillraven/Fleks/blob/master/LICENSE)
-[![Maven](https://maven-badges.herokuapp.com/maven-central/io.github.quillraven.fleks/Fleks/badge.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks)
+[![Maven](https://img.shields.io/maven-central/v/io.github.quillraven.fleks/Fleks?color=success)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks)
 
 [![Build Master](https://img.shields.io/github/workflow/status/quillraven/fleks/Build/master?event=push&label=Build%20master)](https://github.com/Quillraven/fleks/actions)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.6.10-red.svg)](http://kotlinlang.org/)
@@ -155,6 +155,29 @@ val world = World {
 }
 ```
 
+There might be cases where you need multiple dependencies of the same type. In Fleks this can be solved via
+named dependencies using the `Qualifier` annotation. Here is an example of a system that takes two String parameters.
+They are registered by name `HighscoreKey` and `LevelKey`:
+
+```Kotlin
+private class NamedDependenciesSystem(
+    @Qualifier("HighscoreKey") val hsKey: String, // will have the value hs-key
+    @Qualifier("LevelKey") val levelKey: String // will have the value Level001
+) : IntervalSystem() {
+    // ...
+}
+
+fun main() {
+    val world = World {
+        system<NamedDependenciesSystem>()
+
+        // inject String dependencies from above via their qualifier names
+        inject("HighscoreKey", "hs-key")
+        inject("LevelKey", "Level001")
+    }
+}
+```
+
 There are two systems in Fleks:
 
 - `IntervalSystem`: system without relation to entities
@@ -243,7 +266,23 @@ fun main() {
 }
 ```
 
-----
+Some systems might need an initialization code that requires the `world`. Unfortunately, it is not possible to
+get access to the world in a normal `init` block. The field is not initialized at that time. However, there is
+of course a solution. In case you need the world for your initialization logic you can use the `onInit` function of a system like this:
+
+```Kotlin
+private class PlayerSpawnSystem() : IntervalSystem() {
+    override fun onInit() {
+        // spawn player when the system gets created
+        // Note: access to the world field works inside this method
+        world.entity {
+            // ...
+        }
+    }
+
+    // ...
+}
+```
 
 Sometimes it might be necessary to sort entities before iterating over them like e.g. in a `RenderSystem` that needs to
 render entities by their y or z-coordinate. In Fleks this can be achieved by passing an `EntityComparator` to
@@ -356,7 +395,8 @@ fun main() {
 ```
 
 There might be situations where you need to execute a specific code when a component gets added or removed from an entity.
-This can be done via `ComponentListener` in Fleks. 
+This can be done via `ComponentListener` in Fleks. They are created in a similar way like systems meaning that they are created
+by Fleks using dependency injection.
 
 Here is an example of a listener that reacts on add/remove of a `Box2dComponent` and destroys the [body](https://github.com/libgdx/libgdx/wiki/Box2d#objectsbodies)
 when the component gets removed from an entity:
@@ -381,7 +421,7 @@ class Box2dComponentListener : ComponentListener<Box2dComponent> {
 fun main() {
     val world = World {
         // register the listener to the world
-        componentListener(Box2dComponentListener())
+        componentListener<Box2dComponentListener>()
     }
 }
 ```
