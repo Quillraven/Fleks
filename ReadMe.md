@@ -41,9 +41,13 @@ If you need a lightweight and fast ECS in your Kotlin application then feel free
 If you are looking for a long time verified ECS that supports Java 
 then use [Artemis-odb](https://github.com/junkdog/artemis-odb) or [Ashley](https://github.com/libgdx/ashley).
 
+## Example game using Fleks
+
+[Dinoleon](https://github.com/Quillraven/Dinoleon) is a small game using Fleks that showcases all functionalities in action!
+
 ## Current Status
 
-Release Candidate version 1 is available on maven central since 02-Jan-2022. Please feel free to contribute to the
+Release Candidate version 1.0-RC2 is available on maven central since 19-Jan-2022. Please feel free to contribute to the
 Discussions or Issues. Help is always appreciated. 
 To use Fleks add it as a dependency to your project:
 
