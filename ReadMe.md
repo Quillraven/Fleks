@@ -47,7 +47,7 @@ then use [Artemis-odb](https://github.com/junkdog/artemis-odb) or [Ashley](https
 
 ## Current Status
 
-Release Candidate version 1.0-RC2 is available on maven central since 19-Jan-2022. Please feel free to contribute to the
+Release Candidate version 1.0-RC3 is available on maven central since 30-Jan-2022. Please feel free to contribute to the
 Discussions or Issues. Help is always appreciated. 
 To use Fleks add it as a dependency to your project:
 
@@ -57,20 +57,20 @@ To use Fleks add it as a dependency to your project:
 <dependency>
   <groupId>io.github.quillraven.fleks</groupId>
   <artifactId>Fleks</artifactId>
-  <version>1.0-RC2</version>
+  <version>1.0-RC3</version>
 </dependency>
 ```
 
 #### Gradle (Groovy)
 
 ```kotlin
-implementation 'io.github.quillraven.fleks:Fleks:1.0-RC2'
+implementation 'io.github.quillraven.fleks:Fleks:1.0-RC3'
 ```
 
 #### Gradle (Kotlin)
 
 ```kotlin
-implementation("io.github.quillraven.fleks:Fleks:1.0-RC2")
+implementation("io.github.quillraven.fleks:Fleks:1.0-RC3")
 ```
 
 ## Current API and usage
@@ -233,7 +233,11 @@ class AnimationSystem(
 
 If you need to modify the component configuration of an entity then this can be done via the `configureEntity` function
 of an `IteratingSystem`. The purpose of this function is performance reasons to trigger internal calculations
-of Fleks only once instead of each time a component gets added or removed.
+of Fleks only once instead of each time a component gets added or removed. Inside `configureEntity` you get access to
+three special `ComponentMapper` functions:
+- `add`: adds a component to an entity
+- `remove`: removes a component from an entity
+- `addOrUpdate`: adds a component only if it does not exist yet. Otherwise, it just updates the existing component
 
 Let's see how a system can look like that adds a `DeadComponent` to an entity and removes a `LifeComponent` when its
 hitpoints are <= 0:
@@ -364,6 +368,25 @@ fun main() {
 
     // following call disposes the DebugSystem
     world.dispose()
+}
+```
+
+If you ever need to iterate over entities outside a system then this is also possible but please note that
+systems are always the preferred way of iteration in an entity component system.
+The world's `forEach` function allows you to iterate over all active entities:
+
+```Kotlin
+ fun main() {
+    val world = World {}
+    val e1 = world.entity()
+    val e2 = world.entity()
+    val e3 = world.entity()
+    world.remove(e2)
+
+    // this will iterate over entities e1 and e3
+    world.forEach { entity ->
+        // do something with the entity
+    }
 }
 ```
 
