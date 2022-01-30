@@ -120,6 +120,27 @@ internal class EntityTest {
     }
 
     @Test
+    fun `update component of entity if it already exists with custom listener`() {
+        val cmpService = ComponentService()
+        val entityService = EntityService(32, cmpService)
+        val listener = EntityTestListener()
+        val expectedEntity = entityService.create { }
+        val mapper = cmpService.mapper<EntityTestComponent>()
+        entityService.addEntityListener(listener)
+
+        entityService.configureEntity(expectedEntity) {
+            mapper.add(expectedEntity) { ++x }
+            mapper.addOrUpdate(expectedEntity) { x++ }
+        }
+
+        assertAll(
+            { assertTrue(expectedEntity in mapper) },
+            { assertEquals(2f, mapper[expectedEntity].x) },
+            { assertEquals(1, listener.numCalls) }
+        )
+    }
+
+    @Test
     fun `remove entity with a component immediately with custom listener`() {
         val cmpService = ComponentService()
         val entityService = EntityService(32, cmpService)

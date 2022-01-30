@@ -229,4 +229,34 @@ internal class ComponentTest {
             { assertEquals("add", listener.lastCall) }
         )
     }
+
+    @Test
+    fun `add component if it does not exist yet`() {
+        val cmpService = ComponentService()
+        val mapper = cmpService.mapper<ComponentTestComponent>()
+        val entity = Entity(1)
+
+        val cmp = mapper.addOrUpdateInternal(entity) { x++ }
+
+        assertAll(
+            { assertTrue(entity in mapper) },
+            { assertEquals(1, cmp.x) }
+        )
+    }
+
+    @Test
+    fun `update component if it already exists`() {
+        val cmpService = ComponentService()
+        val mapper = cmpService.mapper<ComponentTestComponent>()
+        val entity = Entity(1)
+        val expectedCmp = mapper.addOrUpdateInternal(entity) { x++ }
+
+        val actualCmp = mapper.addOrUpdateInternal(entity) { x++ }
+
+        assertAll(
+            { assertTrue(entity in mapper) },
+            { assertEquals(expectedCmp, actualCmp) },
+            { assertEquals(2, actualCmp.x) }
+        )
+    }
 }
