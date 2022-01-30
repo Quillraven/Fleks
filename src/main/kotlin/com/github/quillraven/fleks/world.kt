@@ -178,6 +178,13 @@ class World(
     }
 
     /**
+     * Performs the given [action] on each active [entity][Entity].
+     */
+    fun forEach(action: (Entity) -> Unit) {
+        entityService.forEach(action)
+    }
+
+    /**
      * Returns the specified [system][IntervalSystem] of the world.
      *
      * @throws [FleksNoSuchSystemException] if there is no such [system][IntervalSystem].

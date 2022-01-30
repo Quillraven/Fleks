@@ -255,6 +255,19 @@ class EntityService(
     }
 
     /**
+     * Performs the given [action] on each active [entity][Entity].
+     */
+    fun forEach(action: (Entity) -> Unit) {
+        for (id in 0 until nextId) {
+            val entity = Entity(id)
+            if (removedEntities[entity.id]) {
+                continue
+            }
+            entity.run(action)
+        }
+    }
+
+    /**
      * Clears the [delayRemoval] flag and removes [entities][Entity] which are part of the [delayedEntities].
      */
     fun cleanupDelays() {
