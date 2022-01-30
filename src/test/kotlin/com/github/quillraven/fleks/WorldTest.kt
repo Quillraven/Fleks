@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions.assertAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import kotlin.test.assertContentEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -254,5 +255,19 @@ internal class WorldTest {
                 inject(Local())
             }
         }
+    }
+
+    @Test
+    fun `iterate over all active entities`() {
+        val w = World {}
+        val e1 = w.entity()
+        val e2 = w.entity()
+        val e3 = w.entity()
+        w.remove(e2)
+        val actualEntities = mutableListOf<Entity>()
+
+        w.forEach { actualEntities.add(it) }
+
+        assertContentEquals(listOf(e1, e3), actualEntities)
     }
 }
