@@ -61,6 +61,20 @@ class ComponentMapper<T>(
     }
 
     /**
+     * Creates a new component if the [entity] does not have it yet. Otherwise, updates the existing component.
+     * Applies the [configuration] in both cases and returns the component.
+     * Notifies any registered [ComponentListener] if a new component is created.
+     */
+    @PublishedApi
+    internal inline fun addOrUpdateInternal(entity: Entity, configuration: T.() -> Unit = {}): T {
+        return if (entity in this) {
+            this[entity].apply(configuration)
+        } else {
+            addInternal(entity, configuration)
+        }
+    }
+
+    /**
      * Removes a component of the specific type from the given [entity].
      * Notifies any registered [ComponentListener].
      *
