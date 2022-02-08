@@ -2,7 +2,6 @@ package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.BitArray
 import com.github.quillraven.fleks.collection.EntityComparator
-import java.lang.reflect.Field
 import kotlin.reflect.KClass
 
 /**
@@ -122,8 +121,10 @@ object Automatic : SortingType
 object Manual : SortingType
 
 /**
- * An [IntervalSystem] of a [world][World] with a context to [entities][Entity]. It must be linked to a
- * [family][Family] using at least one of the [AllOf], [AnyOf] or [NoneOf] annotations.
+ * An [IntervalSystem] of a [world][World] with a context to [entities][Entity].
+ *
+ * It must have at least one of [allOf], [anyOf] or [noneOf] objects defined.
+ * These objects define a [Family] of entities for which the [IteratingSystem] will get active and.
  *
  * @param comparator an optional [EntityComparator] that is used to sort [entities][Entity].
  * Default value is an empty comparator which means no sorting.
@@ -132,6 +133,9 @@ object Manual : SortingType
  * @param enabled defines if the system gets updated when the [world][World] gets updated. Default is true.
  */
 abstract class IteratingSystem(
+    val allOf: AllOf? = null,
+    val noneOf: NoneOf? = null,
+    val anyOf: AnyOf? = null,
     private val comparator: EntityComparator = EMPTY_COMPARATOR,
     private val sortingType: SortingType = Automatic,
     interval: Interval = EachFrame,
@@ -141,7 +145,7 @@ abstract class IteratingSystem(
      * Returns the [family][Family] of this system.
      * This reference gets updated by the [SystemService] when the system gets created via reflection.
      */
-    private lateinit var family: Family
+    internal lateinit var family: Family
 
     /**
      * Returns the [entityService][EntityService] of this system.
@@ -149,7 +153,6 @@ abstract class IteratingSystem(
      */
     @PublishedApi
     internal lateinit var entityService: EntityService
-        private set
 
     /**
      * Flag that defines if sorting of [entities][Entity] will be performed the next time [onTick] is called.
@@ -235,42 +238,36 @@ abstract class IteratingSystem(
  * each time [update] is called.
  *
  * @param world the [world][World] the service belongs to.
- * @param systemTypes the [systems][IntervalSystem] to be created.
+ * @param systemFactory the factory methods to create the [systems][IntervalSystem].
  * @param injectables the required dependencies to create the [systems][IntervalSystem].
  */
 class SystemService(
     world: World,
-    systemTypes: List<KClass<out IntervalSystem>>,
-    injectables: Map<String, Injectable>
+    systemFactory: MutableMap<KClass<*>, () -> IntervalSystem>,
+    injectables: MutableMap<KClass<*>, Injectable>
 ) {
     @PublishedApi
     internal val systems: Array<IntervalSystem>
 
     init {
-        // create systems
+        // Configure injector before instantiating systems
+        val compService = world.componentService
+        Inject.injectObjects = injectables
+        Inject.mapperObjects = compService.mappers
+        // Create systems
         val entityService = world.entityService
-        val cmpService = world.componentService
         val allFamilies = mutableListOf<Family>()
-        systems = Array(systemTypes.size) { sysIdx ->
-            val sysType = systemTypes[sysIdx]
-            val newSystem = newInstance(sysType, cmpService, injectables)
+        val systemList = systemFactory.toList()
+        systems = Array(systemFactory.size) { sysIdx ->
+            val newSystem = systemList[sysIdx].second.invoke()
 
-            // set world reference of newly created system
-            val worldField = field(newSystem, "world")
-            worldField.isAccessible = true
-            worldField.set(newSystem, world)
+            // Set world reference of newly created system
+            newSystem.world = world
 
-            if (IteratingSystem::class.java.isAssignableFrom(sysType.java)) {
-                // set family and entity service reference of newly created iterating system
-                @Suppress("UNCHECKED_CAST")
-                val family = family(sysType as KClass<out IteratingSystem>, entityService, cmpService, allFamilies)
-                val famField = field(newSystem, "family")
-                famField.isAccessible = true
-                famField.set(newSystem, family)
-
-                val eServiceField = field(newSystem, "entityService")
-                eServiceField.isAccessible = true
-                eServiceField.set(newSystem, entityService)
+            // Set family and entity service reference of newly created iterating system
+            if (newSystem is IteratingSystem) {
+                newSystem.family = family(newSystem, entityService, compService, allFamilies)
+                newSystem.entityService = entityService
             }
 
             newSystem.apply { onInit() }
@@ -278,62 +275,35 @@ class SystemService(
     }
 
     /**
-     * Returns [Annotation] of the specific type if the class has that annotation. Otherwise, returns null.
-     */
-    private inline fun <reified T : Annotation> KClass<*>.annotation(): T? {
-        return this.java.getAnnotation(T::class.java)
-    }
-
-    /**
      * Creates or returns an already created [family][Family] for the given [IteratingSystem]
-     * by analyzing the system's [AllOf], [AnyOf] and [NoneOf] annotations.
+     * by analyzing the system's "allOfComponents", "anyOfComponents" and "noneOfComponents" properties.
      *
      * @throws [FleksSystemCreationException] if the [IteratingSystem] does not contain at least one
-     * [AllOf], [AnyOf] or [NoneOf] annotation.
+     * "allOfComponents", "anyOfComponents" and "noneOfComponents" property.
      *
-     * @throws [FleksMissingNoArgsComponentConstructorException] if the [AllOf], [NoneOf] or [AnyOf] annotations
-     * of the system have a component type that does not have a no argument constructor.
+     * @throws [FleksNoSuchComponentException] if the component of the given type from the family does not exist in the
+     * world configuration.
      */
     private fun family(
-        sysType: KClass<out IteratingSystem>,
+        system: IteratingSystem,
         entityService: EntityService,
-        cmpService: ComponentService,
+        compService: ComponentService,
         allFamilies: MutableList<Family>
     ): Family {
-        val allOfAnn = sysType.annotation<AllOf>()
-        val allOfCmps = if (allOfAnn != null && allOfAnn.components.isNotEmpty()) {
-            allOfAnn.components.map { cmpService.mapper(it) }
-        } else {
-            null
-        }
+        val allOfComps = system.allOf?.components?.map { compService.mapper(it) }
+        val noneOfComps = system.noneOf?.components?.map { compService.mapper(it) }
+        val anyOfComps = system.anyOf?.components?.map { compService.mapper(it) }
 
-        val noneOfAnn = sysType.annotation<NoneOf>()
-        val noneOfCmps = if (noneOfAnn != null && noneOfAnn.components.isNotEmpty()) {
-            noneOfAnn.components.map { cmpService.mapper(it) }
-        } else {
-            null
-        }
-
-        val anyOfAnn = sysType.annotation<AnyOf>()
-        val anyOfCmps = if (anyOfAnn != null && anyOfAnn.components.isNotEmpty()) {
-            anyOfAnn.components.map { cmpService.mapper(it) }
-        } else {
-            null
-        }
-
-        if ((allOfCmps == null || allOfCmps.isEmpty())
-            && (noneOfCmps == null || noneOfCmps.isEmpty())
-            && (anyOfCmps == null || anyOfCmps.isEmpty())
+        if ((allOfComps == null || allOfComps.isEmpty())
+            && (noneOfComps == null || noneOfComps.isEmpty())
+            && (anyOfComps == null || anyOfComps.isEmpty())
         ) {
-            throw FleksSystemCreationException(
-                sysType,
-                "IteratingSystem must define at least one of AllOf, NoneOf or AnyOf"
-            )
+            throw FleksSystemCreationException(system)
         }
 
-        val allBs = if (allOfCmps == null) null else BitArray().apply { allOfCmps.forEach { this.set(it.id) } }
-        val noneBs = if (noneOfCmps == null) null else BitArray().apply { noneOfCmps.forEach { this.set(it.id) } }
-        val anyBs = if (anyOfCmps == null) null else BitArray().apply { anyOfCmps.forEach { this.set(it.id) } }
+        val allBs = if (allOfComps == null) null else BitArray().apply { allOfComps.forEach { this.set(it.id) } }
+        val noneBs = if (noneOfComps == null) null else BitArray().apply { noneOfComps.forEach { this.set(it.id) } }
+        val anyBs = if (anyOfComps == null) null else BitArray().apply { anyOfComps.forEach { this.set(it.id) } }
 
         var family = allFamilies.find { it.allOf == allBs && it.noneOf == noneBs && it.anyOf == anyBs }
         if (family == null) {
@@ -342,26 +312,6 @@ class SystemService(
             allFamilies.add(family)
         }
         return family
-    }
-
-    /**
-     * Returns a [Field] of name [fieldName] of the given [system].
-     *
-     * @throws [FleksSystemCreationException] if the [system] does not have a [Field] of name [fieldName].
-     */
-    private fun field(system: IntervalSystem, fieldName: String): Field {
-        var sysClass: Class<*> = system::class.java
-        var classField: Field? = null
-        while (classField == null) {
-            try {
-                classField = sysClass.getDeclaredField(fieldName)
-            } catch (e: NoSuchFieldException) {
-                val supC = sysClass.superclass ?: throw FleksSystemCreationException(system::class, "No '$fieldName' field found")
-                sysClass = supC
-            }
-
-        }
-        return classField
     }
 
     /**
@@ -395,5 +345,40 @@ class SystemService(
      */
     fun dispose() {
         systems.forEach { it.onDispose() }
+    }
+}
+
+/**
+ * An [injector][Inject] which is used to inject objects from outside the [IntervalSystem].
+ *
+ * @throws [FleksSystemInjectException] if the Injector does not contain an entry
+ * for the given type in its internal maps.
+ */
+object Inject {
+    @PublishedApi
+    internal lateinit var injectObjects: Map<KClass<*>, Injectable>
+    @PublishedApi
+    internal lateinit var mapperObjects: Map<KClass<*>, ComponentMapper<*>>
+
+    inline fun <reified T : Any> dependency(): T {
+        val injectType = T::class
+        return when {
+            (injectType in injectObjects) -> {
+                injectObjects[injectType]!!.used = true
+                injectObjects[injectType]!!.injObj as T
+            }
+            (injectType in mapperObjects) -> {
+                mapperObjects[injectType]!! as T
+            }
+            else -> throw FleksSystemInjectException(injectType)
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    inline fun <reified T : Any> componentMapper(): ComponentMapper<T> {
+        val injectType = T::class
+        return if (injectType in mapperObjects) {
+            mapperObjects[injectType]!! as ComponentMapper<T>
+        } else throw FleksSystemInjectException(injectType)
     }
 }

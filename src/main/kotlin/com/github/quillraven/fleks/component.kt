@@ -2,7 +2,6 @@ package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.Bag
 import com.github.quillraven.fleks.collection.bag
-import java.lang.reflect.Constructor
 import kotlin.math.max
 import kotlin.reflect.KClass
 
@@ -18,16 +17,18 @@ interface ComponentListener<T> {
 /**
  * A class that is responsible to store components of a specific type for all [entities][Entity] in a [world][World].
  * Each component is assigned a unique [id] for fast access and to avoid lookups via a class which is slow.
+ * Hint: A component at index [id] in the [components] array belongs to [Entity] with the same [id].
  *
  * Refer to [ComponentService] for more details.
  */
 class ComponentMapper<T>(
     @PublishedApi
-    internal val id: Int,
+    internal val id: Int = 0,
     @PublishedApi
-    internal var components: Array<T?>,
+    @Suppress("UNCHECKED_CAST")
+    internal var components: Array<T?> = Array<Any?>(64) { null } as Array<T?>,
     @PublishedApi
-    internal val cstr: Constructor<T>
+    internal val factory: () -> T
 ) {
     @PublishedApi
     internal val listeners = bag<ComponentListener<T>>(2)
@@ -42,21 +43,21 @@ class ComponentMapper<T>(
         if (entity.id >= components.size) {
             components = components.copyOf(max(components.size * 2, entity.id + 1))
         }
-        val cmp = components[entity.id]
-        return if (cmp == null) {
-            val newCmp = cstr.newInstance().apply(configuration)
-            components[entity.id] = newCmp
-            listeners.forEach { it.onComponentAdded(entity, newCmp) }
-            newCmp
+        val comp = components[entity.id]
+        return if (comp == null) {
+            val newComp = factory.invoke().apply(configuration)
+            components[entity.id] = newComp
+            listeners.forEach { it.onComponentAdded(entity, newComp) }
+            newComp
         } else {
             // component already added -> reuse it and do not create a new instance.
             // Call onComponentRemoved first in case users do something special in onComponentAdded.
             // Otherwise, onComponentAdded will be executed twice on a single component without executing onComponentRemoved
             // which is not correct.
-            listeners.forEach { it.onComponentRemoved(entity, cmp) }
-            val existingCmp = cmp.apply(configuration)
-            listeners.forEach { it.onComponentAdded(entity, existingCmp) }
-            existingCmp
+            listeners.forEach { it.onComponentRemoved(entity, comp) }
+            val existingComp = comp.apply(configuration)
+            listeners.forEach { it.onComponentAdded(entity, existingComp) }
+            existingComp
         }
     }
 
@@ -82,8 +83,8 @@ class ComponentMapper<T>(
      */
     @PublishedApi
     internal fun removeInternal(entity: Entity) {
-        components[entity.id]?.let { cmp ->
-            listeners.forEach { it.onComponentRemoved(entity, cmp) }
+        components[entity.id]?.let { comp ->
+            listeners.forEach { it.onComponentRemoved(entity, comp) }
         }
         components[entity.id] = null
     }
@@ -91,10 +92,10 @@ class ComponentMapper<T>(
     /**
      * Returns a component of the specific type of the given [entity].
      *
-     * @throws [FleksNoSuchComponentException] if the [entity] does not have such a component.
+     * @throws [FleksNoSuchEntityComponentException] if the [entity] does not have such a component.
      */
     operator fun get(entity: Entity): T {
-        return components[entity.id] ?: throw FleksNoSuchComponentException(entity, cstr.name)
+        return components[entity.id] ?: throw FleksNoSuchEntityComponentException(entity, factory.toString())
     }
 
     /**
@@ -126,7 +127,7 @@ class ComponentMapper<T>(
     operator fun contains(listener: ComponentListener<T>) = listener in listeners
 
     override fun toString(): String {
-        return "ComponentMapper(id=$id, component=${cstr.name})"
+        return "ComponentMapper(id=$id, component=${factory})"
     }
 }
 
@@ -134,13 +135,15 @@ class ComponentMapper<T>(
  * A service class that is responsible for managing [ComponentMapper] instances.
  * It creates a [ComponentMapper] for every unique component type and assigns a unique id for each mapper.
  */
-class ComponentService {
+class ComponentService(
+    componentFactory: Map<KClass<out Any>, () -> Any>
+) {
     /**
      * Returns map of [ComponentMapper] that stores mappers by its component type.
      * It is used by the [SystemService] during system creation and by the [EntityService] for entity creation.
      */
     @PublishedApi
-    internal val mappers = HashMap<KClass<*>, ComponentMapper<*>>()
+    internal val mappers: Map<KClass<*>, ComponentMapper<*>>
 
     /**
      * Returns [Bag] of [ComponentMapper]. The id of the mapper is the index of the bag.
@@ -148,44 +151,37 @@ class ComponentService {
      */
     private val mappersBag = bag<ComponentMapper<*>>()
 
+    init {
+        // Create component mappers with help of constructor functions from component factory
+        mappers = componentFactory.mapValues {
+            val compMapper = ComponentMapper(id = mappersBag.size, factory = it.value)
+            mappersBag.add(compMapper)
+            compMapper
+        }
+    }
+
     /**
-     * Returns a [ComponentMapper] for the given [type]. If the mapper does not exist then it will be created.
+     * Returns a [ComponentMapper] for the given [type].
      *
-     * @throws [FleksMissingNoArgsComponentConstructorException] if the component of the given [type] does not have
-     * a no argument constructor.
+     * @throws [FleksNoSuchComponentException] if the component of the given [type] does not exist in the
+     * world configuration.
      */
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> mapper(type: KClass<T>): ComponentMapper<T> {
-        var mapper = mappers[type]
-
-        if (mapper == null) {
-            try {
-                mapper = ComponentMapper(
-                    mappers.size,
-                    Array<Any?>(64) { null } as Array<T?>,
-                    // use java constructor because it is ~4x faster than calling Kotlin's createInstance on a KClass
-                    type.java.getDeclaredConstructor()
-                )
-                mappers[type] = mapper
-                mappersBag.add(mapper)
-            } catch (e: Exception) {
-                throw FleksMissingNoArgsComponentConstructorException(type)
-            }
-        }
-
+        val mapper = mappers[type] ?: throw FleksNoSuchComponentException(type)
         return mapper as ComponentMapper<T>
     }
 
     /**
-     * Returns a [ComponentMapper] for the specific type. If the mapper does not exist then it will be created.
+     * Returns a [ComponentMapper] for the specific type.
      *
-     * @throws [FleksMissingNoArgsComponentConstructorException] if the component of the specific type does not have
-     * a no argument constructor.
+     * @throws [FleksNoSuchComponentException] if the component of the given [type] does not exist in the
+     * world configuration.
      */
     inline fun <reified T : Any> mapper(): ComponentMapper<T> = mapper(T::class)
 
     /**
-     * Returns an already existing [ComponentMapper] for the given [cmpId].
+     * Returns an already existing [ComponentMapper] for the given [compId].
      */
-    fun mapper(cmpId: Int) = mappersBag[cmpId]
+    fun mapper(compId: Int) = mappersBag[compId]
 }

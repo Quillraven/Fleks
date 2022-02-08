@@ -70,7 +70,7 @@ implementation 'io.github.quillraven.fleks:Fleks:1.0-RC3'
 #### Gradle (Kotlin)
 
 ```kotlin
-implementation("io.github.quillraven.fleks:Fleks:1.0-RC3")
+implementation("io.github.quillraven.fleks:Fleks:1.0-MPP")
 ```
 
 ## Current API and usage
@@ -94,6 +94,7 @@ to configure it accordingly:
   of `Array.copy` calls in the background which are slow.
 - Use `system` to add a system to your world. The order of `system` calls defines the order in which they are called
   when calling `world.update`
+- Use `component` to register components and its component listeners (if needed and available, see below) to your world.
 
 Here is an example that creates a world for 1000 entities with a Move- and PhysicSystem:
 
@@ -101,8 +102,12 @@ Here is an example that creates a world for 1000 entities with a Move- and Physi
 val world = World {
     entityCapacity = 1000
 
-    system<MoveSystem>()
-    system<PhysicSystem>()
+    system(::MoveSystem)
+    system(::PhysicSystem)
+
+    component(::Position)
+    component(::Physic)
+    component(::Box2dComponent, ::Box2dComponentListener)
 }
 ```
 
@@ -119,11 +124,11 @@ called. It is a made up example of a Day-Night-Cycle system which switches betwe
 dispatches a game event via an `EventManager`.
 
 ```Kotlin
-class DayNightSystem(
-    private val eventMgr: EventManager
-) : IntervalSystem() {
+class DayNightSystem() : IntervalSystem() {
     private var currentTime = 0f
     private var isDay = false
+
+    private val eventMgr: EventManager = Inject.dependency()
 
     override fun onTick() {
         // deltaTime is not needed in every system that's why it is not a parameter of "onTick".
@@ -149,32 +154,9 @@ val eventManager = EventManager()
 val world = World {
     entityCapacity = 1000
 
-    system<DayNightSystem>()
+    system(::DayNightSystem)
 
     inject(eventManager)
-}
-```
-
-There might be cases where you need multiple dependencies of the same type. In Fleks this can be solved via
-named dependencies using the `Qualifier` annotation. Here is an example of a system that takes two String parameters.
-They are registered by name `HighscoreKey` and `LevelKey`:
-
-```Kotlin
-private class NamedDependenciesSystem(
-    @Qualifier("HighscoreKey") val hsKey: String, // will have the value hs-key
-    @Qualifier("LevelKey") val levelKey: String // will have the value Level001
-) : IntervalSystem() {
-    // ...
-}
-
-fun main() {
-    val world = World {
-        system<NamedDependenciesSystem>()
-
-        // inject String dependencies from above via their qualifier names
-        inject("HighscoreKey", "hs-key")
-        inject("LevelKey", "Level001")
-    }
 }
 ```
 
@@ -192,7 +174,7 @@ There are two systems in Fleks:
 - `enabled`: defines if the system will be processed or not. Default value is true
 
 `IteratingSystem` extends `IntervalSystem` but in addition it requires you to specify the relevant components of
-entities which the system will iterate over. There are three class annotations to define this component configuration:
+entities which the system will iterate over. There are three class properties to define this component configuration:
 
 - `AllOf`: entity must have all the components specified
 - `NoneOf`: entity must not have any component specified
@@ -202,10 +184,11 @@ Let's create an `IteratingSystem` that iterates over all entities with a `Positi
 and at least a `SpriteComponent` or `AnimationComponent` but without a `DeadComponent`:
 
 ```Kotlin
-@AllOf([Position::class, Physic::class])
-@NoneOf([Dead::class])
-@AnyOf([Sprite::class, Animation::class])
-class AnimationSystem : IteratingSystem() {
+class AnimationSystem : IteratingSystem(
+    allOf = AllOf(arrayOf(Position::class, Physic::class)),
+    noneOf = AllOf(arrayOf(Dead::class)),
+    anyOf = AllOf(arrayOf(Sprite::class, Animation::class))
+) {
     override fun onTickEntity(entity: Entity) {
         // update entities in here
     }
@@ -219,12 +202,14 @@ the world's configuration.
 Let's see how we can access the `PositionComponent` of an entity in the system above:
 
 ```Kotlin
-@AllOf([Position::class, Physic::class])
-@NoneOf([Dead::class])
-@AnyOf([Sprite::class, Animation::class])
-class AnimationSystem(
-    private val positions: ComponentMapper<Position>
-) : IteratingSystem() {
+class AnimationSystem() : IteratingSystem(
+    allOf = AllOf(arrayOf(Position::class, Physic::class)),
+    noneOf = AllOf(arrayOf(Dead::class)),
+    anyOf = AllOf(arrayOf(Sprite::class, Animation::class))
+) {
+
+    private val positions: ComponentMapper<Position> = Inject.componentMapper()
+
     override fun onTickEntity(entity: Entity) {
         val entityPosition: Position = positions[entity]
     }
@@ -243,12 +228,14 @@ Let's see how a system can look like that adds a `DeadComponent` to an entity an
 hitpoints are <= 0:
 
 ```Kotlin
-@AllOf([Life::class])
-@NoneOf([Dead::class])
-class DeathSystem(
-    private val lives: ComponentMapper<Life>,
-    private val deads: ComponentMapper<Dead>
-) : IteratingSystem() {
+class DeathSystem() : IteratingSystem(
+    allOf = AllOf(arrayOf(Life::class)),
+    noneOf = NoneOf(arrayOf(Dead::class))
+) {
+
+    private val lives: ComponentMapper<Life> = Inject.componentMapper()
+    private val deads: ComponentMapper<Dead> = Inject.componentMapper()
+
     override fun onTickEntity(entity: Entity) {
         if (lives[entity].hitpoints <= 0f) {
             configureEntity(entity) {
@@ -296,10 +283,13 @@ function helps to create such a comparator in a concise way.
 Here is an example of a `RenderSystem` that sorts entities by their y-coordinate:
 
 ```Kotlin
-@AllOf([Position::class, Render::class])
-class RenderSystem(
-    private val positions: ComponentMapper<Position>
-) : IteratingSystem(compareEntity { entA, entB -> positions[entA].y.compareTo(positions[entB].y) }) {
+class RenderSystem() : IteratingSystem(
+    allOf = AllOf(arrayOf(Position::class, Render::class)),
+    comparator = compareEntity { entA, entB -> positions[entA].y.compareTo(positions[entB].y) }
+) {
+
+    private val positions: ComponentMapper<Position> = Inject.componentMapper()
+
     override fun onTickEntity(entity: Entity) {
         // render entities: entities are sorted by their y-coordinate
     }
@@ -314,13 +304,14 @@ needs to be set programmatically whenever sorting should be done. The flag gets 
 This is how the example above could be written with a `Manual` `SortingType`:
 
 ```Kotlin
-@AllOf([Position::class, Render::class])
-class RenderSystem(
-    private val positions: ComponentMapper<Position>
-) : IteratingSystem(
-    compareEntity { entA, entB -> positions[entA].y.compareTo(positions[entB].y) },
+class RenderSystem() : IteratingSystem(
+    allOf = AllOf(arrayOf(Position::class, Render::class)),
+    comparator = compareEntity { entA, entB -> positions[entA].y.compareTo(positions[entB].y) },
     sortingType = Manual
 ) {
+
+    private val positions: ComponentMapper<Position> = Inject.componentMapper()
+
     override fun onTick() {
         doSort = true
         super.onTick()
@@ -344,11 +335,12 @@ Here is an example of a `DebugSystem` that creates a [Box2D](https://box2d.org/)
 debug renderer for the physics internally and disposes it:
 
 ```Kotlin
-class DebugSystem(
-    private val box2dWorld: World,
-    private val camera: Camera,
-    stage: Stage
-) : IntervalSystem() {
+class DebugSystem : IntervalSystem() {
+
+    private val box2dWorld: World = Inject.dependency()
+    private val camera: Camera = Inject.dependency()
+    private val stage: Stage = Inject.dependency()
+
     private val renderer = Box2DDebugRenderer()
 
     override fun onTick() {
@@ -363,7 +355,7 @@ class DebugSystem(
 
 fun main() {
     val world = World {
-        system<DebugSystem>()
+        system(::DebugSystem)
     }
 
     // following call disposes the DebugSystem

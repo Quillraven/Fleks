@@ -10,23 +10,25 @@ data class FleksLife(var life: Float = 0f)
 
 data class FleksSprite(var path: String = "", var animationTime: Float = 0f)
 
-@AllOf([FleksPosition::class])
 class FleksSystemSimple(
     private val positions: ComponentMapper<FleksPosition>
-) : IteratingSystem() {
+) : IteratingSystem(
+    allOf = AllOf(arrayOf(FleksPosition::class))
+    ) {
     override fun onTickEntity(entity: Entity) {
         positions[entity].x++
     }
 }
 
-@AllOf([FleksPosition::class])
-@NoneOf([FleksLife::class])
-@AnyOf([FleksSprite::class])
 class FleksSystemComplex1(
     private val positions: ComponentMapper<FleksPosition>,
     private val lifes: ComponentMapper<FleksLife>,
     private val sprites: ComponentMapper<FleksSprite>
-) : IteratingSystem() {
+) : IteratingSystem(
+    allOf = AllOf(arrayOf(FleksPosition::class)),
+    noneOf = NoneOf(arrayOf(FleksLife::class)),
+    anyOf = AnyOf(arrayOf(FleksSprite::class))
+) {
     private var actionCalls = 0
 
     override fun onTickEntity(entity: Entity) {
@@ -41,11 +43,12 @@ class FleksSystemComplex1(
     }
 }
 
-@AnyOf([FleksPosition::class, FleksLife::class, FleksSprite::class])
 class FleksSystemComplex2(
     private val positions: ComponentMapper<FleksPosition>,
     private val lifes: ComponentMapper<FleksLife>,
-) : IteratingSystem() {
+) : IteratingSystem(
+    anyOf = AnyOf(arrayOf(FleksPosition::class, FleksLife::class, FleksSprite::class))
+) {
     override fun onTickEntity(entity: Entity) {
         configureEntity(entity) {
             lifes.remove(it)
@@ -74,7 +77,7 @@ open class FleksStateSimple {
     fun setup() {
         world = World {
             entityCapacity = NUM_ENTITIES
-            system<FleksSystemSimple>()
+            system(::FleksSystemSimple)
         }
 
         repeat(NUM_ENTITIES) {
@@ -91,8 +94,8 @@ open class FleksStateComplex {
     fun setup() {
         world = World {
             entityCapacity = NUM_ENTITIES
-            system<FleksSystemComplex1>()
-            system<FleksSystemComplex2>()
+            system(::FleksSystemComplex1)
+            system(::FleksSystemComplex2)
         }
 
         repeat(NUM_ENTITIES) {
