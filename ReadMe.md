@@ -3,7 +3,7 @@
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/Quillraven/Fleks/blob/master/LICENSE)
 [![Maven](https://img.shields.io/maven-central/v/io.github.quillraven.fleks/Fleks?color=success)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks)
 
-[![Build Master](https://img.shields.io/github/workflow/status/quillraven/fleks/Build/master?event=push&label=Build%20master)](https://github.com/Quillraven/fleks/actions)
+[![Build KMP](https://img.shields.io/github/workflow/status/quillraven/fleks/Build/kmp?event=push&label=Build%20kmp)](https://github.com/Quillraven/fleks/actions)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.6.10-red.svg)](http://kotlinlang.org/)
 
 A **f**ast, **l**ightweight, **e**ntity component **s**ystem library written in **K**otlin.
@@ -47,7 +47,10 @@ then use [Artemis-odb](https://github.com/junkdog/artemis-odb) or [Ashley](https
 
 ## Current Status
 
-Release Candidate version 1.0-RC3 is available on maven central since 30-Jan-2022. Please feel free to contribute to the
+This branch contains a special Kotlin Multiplatform compatible verion of Fleks. It has a slightly different API when compared with the normal 1.0 release.
+But still similar enough that it should not be much work to switch between (normal) release 1.0 and release 1.0-KMP.
+
+Release version 1.0-KMP-RC3 is available on maven central since XX-YYY-2022. Please feel free to contribute to the
 Discussions or Issues. Help is always appreciated. 
 To use Fleks add it as a dependency to your project:
 
@@ -57,20 +60,20 @@ To use Fleks add it as a dependency to your project:
 <dependency>
   <groupId>io.github.quillraven.fleks</groupId>
   <artifactId>Fleks</artifactId>
-  <version>1.0-RC3</version>
+  <version>1.0-KMP-RC3</version>
 </dependency>
 ```
 
 #### Gradle (Groovy)
 
 ```kotlin
-implementation 'io.github.quillraven.fleks:Fleks:1.0-RC3'
+implementation 'io.github.quillraven.fleks:Fleks:1.0-KMP-RC3'
 ```
 
 #### Gradle (Kotlin)
 
 ```kotlin
-implementation("io.github.quillraven.fleks:Fleks:1.0-MPP")
+implementation("io.github.quillraven.fleks:Fleks:1.0-KMP-RC3")
 ```
 
 ## Current API and usage
