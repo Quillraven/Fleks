@@ -50,7 +50,7 @@ then use [Artemis-odb](https://github.com/junkdog/artemis-odb) or [Ashley](https
 This branch contains a special Kotlin Multiplatform compatible verion of Fleks. It has a slightly different API when compared with the normal 1.0 release.
 But still similar enough that it should not be much work to switch between (normal) release 1.0 and release 1.0-KMP.
 
-Release version 1.0-KMP-RC3 is available on maven central since XX-YYY-2022. Please feel free to contribute to the
+Release version 1.0-KMP-RC1 is available on maven central since XX-YYY-2022. Please feel free to contribute to the
 Discussions or Issues. Help is always appreciated. 
 To use Fleks add it as a dependency to your project:
 
@@ -60,20 +60,20 @@ To use Fleks add it as a dependency to your project:
 <dependency>
   <groupId>io.github.quillraven.fleks</groupId>
   <artifactId>Fleks</artifactId>
-  <version>1.0-KMP-RC3</version>
+  <version>1.0-KMP-RC1</version>
 </dependency>
 ```
 
 #### Gradle (Groovy)
 
 ```kotlin
-implementation 'io.github.quillraven.fleks:Fleks:1.0-KMP-RC3'
+implementation 'io.github.quillraven.fleks:Fleks:1.0-KMP-RC1'
 ```
 
 #### Gradle (Kotlin)
 
 ```kotlin
-implementation("io.github.quillraven.fleks:Fleks:1.0-KMP-RC3")
+implementation("io.github.quillraven.fleks:Fleks:1.0-KMP-RC1")
 ```
 
 ## Current API and usage
