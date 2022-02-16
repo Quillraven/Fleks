@@ -56,7 +56,7 @@ To use Fleks add it as a dependency to your project:
 
 #### Apache Maven
 
-```kotlin
+```xml
 <dependency>
   <groupId>io.github.quillraven.fleks</groupId>
   <artifactId>Fleks</artifactId>
@@ -127,7 +127,7 @@ called. It is a made up example of a Day-Night-Cycle system which switches betwe
 dispatches a game event via an `EventManager`.
 
 ```Kotlin
-class DayNightSystem() : IntervalSystem() {
+class DayNightSystem : IntervalSystem() {
     private var currentTime = 0f
     private var isDay = false
 
@@ -160,6 +160,31 @@ val world = World {
     system(::DayNightSystem)
 
     inject(eventManager)
+}
+```
+
+There might be cases where you need multiple dependencies of the same type. In Fleks this can be solved by
+specifying a unique type name as parameter in inject() function in world configuration  and in
+Inject.dependency() in your system or component listener. Here is an example of a system that takes
+two String parameters. They are registered by name `HighscoreKey` and `LevelKey`:
+
+```Kotlin
+private class NamedDependenciesSystem : IntervalSystem() {
+
+    private val hsKey: String = Inject.dependency("HighscoreKey") // will have the value "hs-key"
+    private val levelKey: String = Inject.dependency("LevelKey")  // will have the value "Level001"
+
+    // ...
+}
+
+fun main() {
+    val world = World {
+        system<NamedDependenciesSystem>()
+
+        // inject String dependencies from above via their type names
+        inject("HighscoreKey", "hs-key")
+        inject("LevelKey", "Level001")
+    }
 }
 ```
 
@@ -205,7 +230,7 @@ the world's configuration.
 Let's see how we can access the `PositionComponent` of an entity in the system above:
 
 ```Kotlin
-class AnimationSystem() : IteratingSystem(
+class AnimationSystem : IteratingSystem(
     allOf = AllOf(arrayOf(Position::class, Physic::class)),
     noneOf = AllOf(arrayOf(Dead::class)),
     anyOf = AllOf(arrayOf(Sprite::class, Animation::class))
@@ -231,7 +256,7 @@ Let's see how a system can look like that adds a `DeadComponent` to an entity an
 hitpoints are <= 0:
 
 ```Kotlin
-class DeathSystem() : IteratingSystem(
+class DeathSystem : IteratingSystem(
     allOf = AllOf(arrayOf(Life::class)),
     noneOf = NoneOf(arrayOf(Dead::class))
 ) {
@@ -265,7 +290,7 @@ get access to the world in a normal `init` block. The field is not initialized a
 of course a solution. In case you need the world for your initialization logic you can use the `onInit` function of a system like this:
 
 ```Kotlin
-private class PlayerSpawnSystem() : IntervalSystem() {
+private class PlayerSpawnSystem : IntervalSystem() {
     override fun onInit() {
         // spawn player when the system gets created
         // Note: access to the world field works inside this method
@@ -286,7 +311,7 @@ function helps to create such a comparator in a concise way.
 Here is an example of a `RenderSystem` that sorts entities by their y-coordinate:
 
 ```Kotlin
-class RenderSystem() : IteratingSystem(
+class RenderSystem : IteratingSystem(
     allOf = AllOf(arrayOf(Position::class, Render::class)),
     comparator = compareEntity { entA, entB -> positions[entA].y.compareTo(positions[entB].y) }
 ) {
@@ -307,7 +332,7 @@ needs to be set programmatically whenever sorting should be done. The flag gets 
 This is how the example above could be written with a `Manual` `SortingType`:
 
 ```Kotlin
-class RenderSystem() : IteratingSystem(
+class RenderSystem : IteratingSystem(
     allOf = AllOf(arrayOf(Position::class, Render::class)),
     comparator = compareEntity { entA, entB -> positions[entA].y.compareTo(positions[entB].y) },
     sortingType = Manual
@@ -392,7 +417,6 @@ done via the `entity` function of the world. Let's create an entity with a `Posi
 
 ```Kotlin
 data class Position(var x: Float = 0f, var y: Float = 0f)
-
 data class Sprite(var texturePath: String = "")
 
 fun main() {
@@ -438,8 +462,8 @@ class Box2dComponentListener : ComponentListener<Box2dComponent> {
 
 fun main() {
     val world = World {
-        // register the listener to the world
-        componentListener<Box2dComponentListener>()
+        // register component together with its listener to the world
+        component(::Box2dComponent, ::Box2dComponentListener)
     }
 }
 ```

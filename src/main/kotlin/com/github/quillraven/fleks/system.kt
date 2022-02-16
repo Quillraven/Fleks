@@ -249,7 +249,7 @@ abstract class IteratingSystem(
 class SystemService(
     world: World,
     systemFactory: MutableMap<KClass<*>, () -> IntervalSystem>,
-    injectables: MutableMap<KClass<*>, Injectable>
+    injectables: MutableMap<String, Injectable>
 ) {
     @PublishedApi
     internal val systems: Array<IntervalSystem>
@@ -295,9 +295,15 @@ class SystemService(
         compService: ComponentService,
         allFamilies: MutableList<Family>
     ): Family {
-        val allOfComps = system.allOf?.components?.map { compService.mapper(it) }
-        val noneOfComps = system.noneOf?.components?.map { compService.mapper(it) }
-        val anyOfComps = system.anyOf?.components?.map { compService.mapper(it) }
+        val allOfComps = system.allOf?.components?.map {
+            val type = it.simpleName ?: throw FleksInjectableTypeHasNoName(it)
+            compService.mapper(type) }
+        val noneOfComps = system.noneOf?.components?.map {
+            val type = it.simpleName ?: throw FleksInjectableTypeHasNoName(it)
+            compService.mapper(type) }
+        val anyOfComps = system.anyOf?.components?.map {
+            val type = it.simpleName ?: throw FleksInjectableTypeHasNoName(it)
+            compService.mapper(type) }
 
         if ((allOfComps == null || allOfComps.isEmpty())
             && (noneOfComps == null || noneOfComps.isEmpty())
@@ -358,30 +364,32 @@ class SystemService(
  *
  * @throws [FleksSystemInjectException] if the Injector does not contain an entry
  * for the given type in its internal maps.
+ * @throws [FleksInjectableTypeHasNoName] if the dependency type has no T::class.simpleName.
  */
 object Inject {
     @PublishedApi
-    internal lateinit var injectObjects: Map<KClass<*>, Injectable>
+    internal lateinit var injectObjects: Map<String, Injectable>
     @PublishedApi
-    internal lateinit var mapperObjects: Map<KClass<*>, ComponentMapper<*>>
+    internal lateinit var mapperObjects: Map<String, ComponentMapper<*>>
 
     inline fun <reified T : Any> dependency(): T {
-        val injectType = T::class
-        return when {
-            (injectType in injectObjects) -> {
-                injectObjects[injectType]!!.used = true
-                injectObjects[injectType]!!.injObj as T
-            }
-            (injectType in mapperObjects) -> {
-                mapperObjects[injectType]!! as T
-            }
-            else -> throw FleksSystemInjectException(injectType)
-        }
+        val injectType = T::class.simpleName ?: throw FleksInjectableTypeHasNoName(T::class)
+        return if (injectType in injectObjects) {
+            injectObjects[injectType]!!.used = true
+            injectObjects[injectType]!!.injObj as T
+        } else throw FleksSystemInjectException(injectType)
+    }
+
+    inline fun <reified T : Any> dependency(type: String): T {
+        return if (type in injectObjects) {
+            injectObjects[type]!!.used = true
+            injectObjects[type]!!.injObj as T
+        } else throw FleksSystemInjectException(type)
     }
 
     @Suppress("UNCHECKED_CAST")
     inline fun <reified T : Any> componentMapper(): ComponentMapper<T> {
-        val injectType = T::class
+        val injectType = T::class.simpleName ?: throw FleksInjectableTypeHasNoName(T::class)
         return if (injectType in mapperObjects) {
             mapperObjects[injectType]!! as ComponentMapper<T>
         } else throw FleksSystemInjectException(injectType)
