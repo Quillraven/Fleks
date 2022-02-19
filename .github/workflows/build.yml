@@ -1,13 +1,13 @@
 name: Build
 on:
   push:
-    branches: [ master ]
+    branches: [ master, kmp ]
     paths-ignore:
       - '**.md'
       - 'LICENSE'
       - '.gitignore'
   pull_request:
-    branches: [ master ]
+    branches: [ master, kmp ]
     paths-ignore:
       - '**.md'
       - 'LICENSE'
