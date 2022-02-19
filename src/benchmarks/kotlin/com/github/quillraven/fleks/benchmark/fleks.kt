@@ -10,23 +10,27 @@ data class FleksLife(var life: Float = 0f)
 
 data class FleksSprite(var path: String = "", var animationTime: Float = 0f)
 
-@AllOf([FleksPosition::class])
-class FleksSystemSimple(
-    private val positions: ComponentMapper<FleksPosition>
-) : IteratingSystem() {
+class FleksSystemSimple : IteratingSystem(
+    allOf = AllOf(arrayOf(FleksPosition::class))
+    ) {
+
+    private val positions: ComponentMapper<FleksPosition> = Inject.componentMapper()
+
     override fun onTickEntity(entity: Entity) {
         positions[entity].x++
     }
 }
 
-@AllOf([FleksPosition::class])
-@NoneOf([FleksLife::class])
-@AnyOf([FleksSprite::class])
-class FleksSystemComplex1(
-    private val positions: ComponentMapper<FleksPosition>,
-    private val lifes: ComponentMapper<FleksLife>,
-    private val sprites: ComponentMapper<FleksSprite>
-) : IteratingSystem() {
+class FleksSystemComplex1 : IteratingSystem(
+    allOf = AllOf(arrayOf(FleksPosition::class)),
+    noneOf = NoneOf(arrayOf(FleksLife::class)),
+    anyOf = AnyOf(arrayOf(FleksSprite::class))
+) {
+
+    private val positions: ComponentMapper<FleksPosition> = Inject.componentMapper()
+    private val lifes: ComponentMapper<FleksLife> = Inject.componentMapper()
+    private val sprites: ComponentMapper<FleksSprite> = Inject.componentMapper()
+
     private var actionCalls = 0
 
     override fun onTickEntity(entity: Entity) {
@@ -41,11 +45,13 @@ class FleksSystemComplex1(
     }
 }
 
-@AnyOf([FleksPosition::class, FleksLife::class, FleksSprite::class])
-class FleksSystemComplex2(
-    private val positions: ComponentMapper<FleksPosition>,
-    private val lifes: ComponentMapper<FleksLife>,
-) : IteratingSystem() {
+class FleksSystemComplex2 : IteratingSystem(
+    anyOf = AnyOf(arrayOf(FleksPosition::class, FleksLife::class, FleksSprite::class))
+) {
+
+    private val positions: ComponentMapper<FleksPosition> = Inject.componentMapper()
+    private val lifes: ComponentMapper<FleksLife> = Inject.componentMapper()
+
     override fun onTickEntity(entity: Entity) {
         configureEntity(entity) {
             lifes.remove(it)
@@ -62,6 +68,8 @@ open class FleksStateAddRemove {
     fun setup() {
         world = World {
             entityCapacity = NUM_ENTITIES
+
+            component(::FleksPosition)
         }
     }
 }
@@ -74,7 +82,9 @@ open class FleksStateSimple {
     fun setup() {
         world = World {
             entityCapacity = NUM_ENTITIES
-            system<FleksSystemSimple>()
+            system(::FleksSystemSimple)
+
+            component(::FleksPosition)
         }
 
         repeat(NUM_ENTITIES) {
@@ -91,8 +101,12 @@ open class FleksStateComplex {
     fun setup() {
         world = World {
             entityCapacity = NUM_ENTITIES
-            system<FleksSystemComplex1>()
-            system<FleksSystemComplex2>()
+            system(::FleksSystemComplex1)
+            system(::FleksSystemComplex2)
+
+            component(::FleksPosition)
+            component(::FleksLife)
+            component(::FleksSprite)
         }
 
         repeat(NUM_ENTITIES) {

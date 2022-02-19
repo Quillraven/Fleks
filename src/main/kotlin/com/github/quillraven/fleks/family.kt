@@ -6,29 +6,23 @@ import com.github.quillraven.fleks.collection.IntBag
 import kotlin.reflect.KClass
 
 /**
- * An annotation for an [IteratingSystem] to define a [Family].
  * [Entities][Entity] must have all [components] specified to be part of the [family][Family].
  */
-@Target(AnnotationTarget.CLASS)
-annotation class AllOf(val components: Array<KClass<*>> = [])
+class AllOf(val components: Array<KClass<*>>)
 
 /**
- * An annotation for an [IteratingSystem] to define a [Family].
  * [Entities][Entity] must not have any [components] specified to be part of the [family][Family].
  */
-@Target(AnnotationTarget.CLASS)
-annotation class NoneOf(val components: Array<KClass<*>> = [])
+class NoneOf(val components: Array<KClass<*>>)
 
 /**
- * An annotation for an [IteratingSystem] to define a [Family].
  * [Entities][Entity] must have at least one of the [components] specified to be part of the [family][Family].
  */
-@Target(AnnotationTarget.CLASS)
-annotation class AnyOf(val components: Array<KClass<*>> = [])
+class AnyOf(val components: Array<KClass<*>>)
 
 /**
  * A family of [entities][Entity]. It stores [entities][Entity] that have a specific configuration of components.
- * A configuration is defined via the three annotations: [AllOf], [NoneOf] and [AnyOf].
+ * A configuration is defined via the three [IteratingSystem] properties "allOf", "noneOf" and "anyOf".
  * Each component is assigned to a unique index. That index is set in the [allOf], [noneOf] or [anyOf][] [BitArray].
  *
  * A family is an [EntityListener] and gets notified when an [entity][Entity] is added to the world or the
@@ -67,14 +61,14 @@ data class Family(
         private set
 
     /**
-     * Returns true if the specified [cmpMask] matches the family's component configuration.
+     * Returns true if the specified [compMask] matches the family's component configuration.
      *
-     * @param cmpMask the component configuration of an [entity][Entity].
+     * @param compMask the component configuration of an [entity][Entity].
      */
-    operator fun contains(cmpMask: BitArray): Boolean {
-        return (allOf == null || cmpMask.contains(allOf))
-            && (noneOf == null || !cmpMask.intersects(noneOf))
-            && (anyOf == null || cmpMask.intersects(anyOf))
+    operator fun contains(compMask: BitArray): Boolean {
+        return (allOf == null || compMask.contains(allOf))
+            && (noneOf == null || !compMask.intersects(noneOf))
+            && (anyOf == null || compMask.intersects(anyOf))
     }
 
     /**
@@ -102,12 +96,12 @@ data class Family(
 
     /**
      * Checks if the [entity] is part of the family by analyzing the entity's components.
-     * The [cmpMask] is a [BitArray] that indicates which components the [entity] currently has.
+     * The [compMask] is a [BitArray] that indicates which components the [entity] currently has.
      *
      * The [entity] gets either added to the [entities] or removed and [isDirty] is set when needed.
      */
-    override fun onEntityCfgChanged(entity: Entity, cmpMask: BitArray) {
-        val entityInFamily = cmpMask in this
+    override fun onEntityCfgChanged(entity: Entity, compMask: BitArray) {
+        val entityInFamily = compMask in this
         if (entityInFamily && !entities[entity.id]) {
             // new entity gets added
             isDirty = true

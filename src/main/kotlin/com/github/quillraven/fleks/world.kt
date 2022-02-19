@@ -1,15 +1,6 @@
 package com.github.quillraven.fleks
 
-import java.lang.reflect.ParameterizedType
 import kotlin.reflect.KClass
-
-/**
- * An optional annotation for an [IntervalSystem] constructor parameter to
- * inject a dependency exactly by that qualifier's [name].
- */
-@Target(AnnotationTarget.FIELD, AnnotationTarget.VALUE_PARAMETER, AnnotationTarget.TYPE_PARAMETER)
-@Retention(AnnotationRetention.RUNTIME)
-annotation class Qualifier(val name: String)
 
 /**
  * Wrapper class for injectables of the [WorldConfiguration].
@@ -32,64 +23,80 @@ class WorldConfiguration {
     var entityCapacity = 512
 
     @PublishedApi
-    internal val systemTypes = mutableListOf<KClass<out IntervalSystem>>()
+    internal val systemFactory = mutableMapOf<KClass<*>, () -> IntervalSystem>()
 
     @PublishedApi
     internal val injectables = mutableMapOf<String, Injectable>()
 
     @PublishedApi
-    internal val cmpListenerTypes = mutableListOf<KClass<out ComponentListener<out Any>>>()
+    internal val compListenerFactory = mutableMapOf<String, () -> ComponentListener<*>>()
+
+    @PublishedApi
+    internal val componentFactory = mutableMapOf<String, () -> Any>()
 
     /**
      * Adds the specified [IntervalSystem] to the [world][World].
      * The order in which systems are added is the order in which they will be executed when calling [World.update].
      *
+     * @param factory A function which creates an object of type [T].
      * @throws [FleksSystemAlreadyAddedException] if the system was already added before.
      */
-    inline fun <reified T : IntervalSystem> system() {
+    inline fun <reified T : IntervalSystem> system(noinline factory: () -> T) {
         val systemType = T::class
-        if (systemType in systemTypes) {
+        if (systemType in systemFactory) {
             throw FleksSystemAlreadyAddedException(systemType)
         }
-        systemTypes.add(systemType)
+        systemFactory[systemType] = factory
     }
 
     /**
-     * Adds the specified [dependency] under the given [name] which can then be injected to any [IntervalSystem].
+     * Adds the specified [dependency] under the given [type] which can then be injected to any [IntervalSystem] or [ComponentListener].
      *
      * @throws [FleksInjectableAlreadyAddedException] if the dependency was already added before.
      */
-    fun <T : Any> inject(name: String, dependency: T) {
-        if (name in injectables) {
-            throw FleksInjectableAlreadyAddedException(name)
+    fun <T : Any> inject(type: String, dependency: T) {
+        if (type in injectables) {
+            throw FleksInjectableAlreadyAddedException(type)
         }
 
-        injectables[name] = Injectable(dependency)
+        injectables[type] = Injectable(dependency)
     }
 
     /**
-     * Adds the specified dependency which can then be injected to any [IntervalSystem].
-     * Refer to [inject]: the name is the qualifiedName of the class of the [dependency].
+     * Adds the specified dependency which can then be injected to any [IntervalSystem] or [ComponentListener].
+     * Refer to [inject]: the type is the simpleName of the class of the [dependency].
      *
      * @throws [FleksInjectableAlreadyAddedException] if the dependency was already added before.
-     * @throws [FleksInjectableWithoutNameException] if the qualifiedName of the [dependency] is null.
+     * @throws [FleksInjectableTypeHasNoName] if the dependency type has no T::class.simpleName.
      */
     inline fun <reified T : Any> inject(dependency: T) {
-        val key = T::class.qualifiedName ?: throw FleksInjectableWithoutNameException()
-        inject(key, dependency)
+        val type = T::class.simpleName ?: throw FleksInjectableTypeHasNoName(T::class)
+        inject(type, dependency)
     }
 
     /**
-     * Adds the specified [ComponentListener] to the [world][World].
+     * Adds the specified [Component] and its [ComponentListener] to the [world][World]. If a component listener
+     * is not needed than it can be omitted.
      *
+     * @param compFactory the constructor method for creating the component.
+     * @param listenerFactory the constructor method for creating the component listener.
+     * @throws [FleksComponentAlreadyAddedException] if the component was already added before.
      * @throws [FleksComponentListenerAlreadyAddedException] if the listener was already added before.
+     * @throws [FleksInjectableTypeHasNoName] if the dependency type has no T::class.simpleName.
      */
-    inline fun <reified T : ComponentListener<out Any>> componentListener() {
-        val listenerType = T::class
-        if (listenerType in cmpListenerTypes) {
-            throw FleksComponentListenerAlreadyAddedException(listenerType)
+    inline fun <reified T : Any> component(noinline compFactory: () -> T, noinline listenerFactory: (() -> ComponentListener<*>)? = null) {
+        val compType = T::class.simpleName ?: throw FleksInjectableTypeHasNoName(T::class)
+
+        if (compType in componentFactory) {
+            throw FleksComponentAlreadyAddedException(compType)
         }
-        cmpListenerTypes.add(listenerType)
+        componentFactory[compType] = compFactory
+        if (listenerFactory != null) {
+            if (compType in compListenerFactory) {
+                throw FleksComponentListenerAlreadyAddedException(compType)
+            }
+            compListenerFactory[compType] = listenerFactory
+        }
     }
 }
 
@@ -113,7 +120,7 @@ class World(
     internal val systemService: SystemService
 
     @PublishedApi
-    internal val componentService = ComponentService()
+    internal val componentService: ComponentService
 
     @PublishedApi
     internal val entityService: EntityService
@@ -132,18 +139,16 @@ class World(
 
     init {
         val worldCfg = WorldConfiguration().apply(cfg)
+        componentService = ComponentService(worldCfg.componentFactory)
         entityService = EntityService(worldCfg.entityCapacity, componentService)
         val injectables = worldCfg.injectables
-        systemService = SystemService(this, worldCfg.systemTypes, injectables)
+        systemService = SystemService(this, worldCfg.systemFactory, injectables)
 
         // create and register ComponentListener
-        worldCfg.cmpListenerTypes.forEach { listenerType ->
-            val listener = newInstance(listenerType, componentService, injectables)
-            val genInter = listener.javaClass.genericInterfaces.first {
-                it is ParameterizedType && it.rawType == ComponentListener::class.java
-            }
-            val cmpType = (genInter as ParameterizedType).actualTypeArguments[0]
-            val mapper = componentService.mapper((cmpType as Class<*>).kotlin)
+        worldCfg.compListenerFactory.forEach {
+            val compType = it.key
+            val listener = it.value.invoke()
+            val mapper = componentService.mapper(compType)
             mapper.addComponentListenerInternal(listener)
         }
 
@@ -196,10 +201,15 @@ class World(
     /**
      * Returns a [ComponentMapper] for the given type. If the mapper does not exist then it will be created.
      *
-     * @throws [FleksMissingNoArgsComponentConstructorException] if the component of the given type does not have
-     * a no argument constructor.
+     * @throws [FleksNoSuchComponentException] if the component of the given [type] does not exist in the
+     * world configuration.
+     * @throws [FleksInjectableTypeHasNoName] if the dependency type has no T::class.simpleName.
      */
-    inline fun <reified T : Any> mapper(): ComponentMapper<T> = componentService.mapper(T::class)
+    @Suppress("UNCHECKED_CAST")
+    inline fun <reified T : Any> mapper(): ComponentMapper<T> {
+        val type = T::class.simpleName ?: throw FleksInjectableTypeHasNoName(T::class)
+        return componentService.mapper(type) as ComponentMapper<T>
+    }
 
     /**
      * Updates all [enabled][IntervalSystem.enabled] [systems][IntervalSystem] of the world
