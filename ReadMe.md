@@ -1,7 +1,7 @@
 # Fleks
 
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/Quillraven/Fleks/blob/master/LICENSE)
-[![Maven](https://img.shields.io/maven-central/v/io.github.quillraven.fleks/Fleks?color=success)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks)
+[![Maven](https://img.shields.io/badge/Maven-1.0--KMP--RC1-success.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks/1.0-KMP-RC1/jar)
 
 [![Build KMP](https://img.shields.io/github/workflow/status/quillraven/fleks/Build/kmp?event=push&label=Build%20kmp)](https://github.com/Quillraven/fleks/actions)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.6.10-red.svg)](http://kotlinlang.org/)
@@ -47,8 +47,8 @@ then use [Artemis-odb](https://github.com/junkdog/artemis-odb) or [Ashley](https
 
 ## Current Status
 
-This branch contains a special Kotlin Multiplatform compatible verion of Fleks. It has a slightly different API when compared with the normal 1.0 release.
-But still similar enough that it should not be much work to switch between (normal) release 1.0 and release 1.0-KMP.
+This branch contains a special Kotlin Multiplatform compatible version of Fleks. It has a slightly different API when compared with the master branch version.
+But still similar enough that it should not be much work to switch between the two versions.
 
 Release version 1.0-KMP-RC1 is available on maven central since XX-YYY-2022. Please feel free to contribute to the
 Discussions or Issues. Help is always appreciated. 
@@ -497,20 +497,20 @@ is:
 
 Here is the result (the higher the Score the better):
 
-| Library | Benchmark | Mode | Cnt | Score | Error | Units |
-| ------- | --------- | ---- | --- | ----- | ----- | ----- |
+| Library | Benchmark | Mode | Cnt | Score   | Error      | Units |
+| ------- | --------- | ---- | --- |---------|------------| ----- |
 | |
-| Ashley | AddRemove | thrpt | 3 | 207,007 | ± 39,121 | ops/s |
+| Ashley | AddRemove | thrpt | 3 | 207,007 | ± 39,121   | ops/s |
 | Artemis | AddRemove | thrpt | 3 | 677,231 | ± 2002,449 | ops/s |
-| Fleks | AddRemove | thrpt | 3 | 806,189 | ± 249,523 | ops/s |
+| Fleks | AddRemove | thrpt | 3 | 810,189 | ± 289,080  | ops/s |
 | |
-| Ashley | Simple | thrpt | 3 | 3,986 | ± 1,390 | ops/s |
-| Artemis | Simple | thrpt | 3 | 32,830 | ± 2,965 | ops/s |
-| Fleks | Simple | thrpt | 3 | 32,639 | ± 5,651 | ops/s |
+| Ashley | Simple | thrpt | 3 | 3,986   | ± 1,390    | ops/s |
+| Artemis | Simple | thrpt | 3 | 32,830  | ± 2,965    | ops/s |
+| Fleks | Simple | thrpt | 3 | 32,098  | ± 7,348    | ops/s |
 | |
-| Ashley | Complex | thrpt | 3 | 0,056 | ± 0,117 | ops/s |
-| Artemis | Complex | thrpt | 3 | 1,452 | ± 0,452 | ops/s |
-| Fleks | Complex | thrpt | 3 | 1,196 | ± 0,210 | ops/s |
+| Ashley | Complex | thrpt | 3 | 0,056   | ± 0,117    | ops/s |
+| Artemis | Complex | thrpt | 3 | 1,452   | ± 0,452    | ops/s |
+| Fleks | Complex | thrpt | 3 | 1,326   | ± 0,269    | ops/s |
 
 I am not an expert for performance measurement, that's why you should take those numbers with a grain of salt but as you
 can see in the table:
