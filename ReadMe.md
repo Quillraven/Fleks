@@ -518,4 +518,4 @@ can see in the table:
 - Ashley is the slowest of the three libraries by far
 - Fleks is ~1.2x the speed of Artemis in the **AddRemove** benchmark
 - Fleks is ~the same speed as Artemis in the **Simple** benchmark
-- Fleks is ~0.8x the speed of Artemis in the **Complex** benchmark
+- Fleks is ~0.9x the speed of Artemis in the **Complex** benchmark
