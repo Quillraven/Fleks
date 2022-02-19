@@ -73,6 +73,13 @@ implementation 'io.github.quillraven.fleks:Fleks:1.0-RC3'
 implementation("io.github.quillraven.fleks:Fleks:1.0-RC3")
 ```
 
+### Kotlin Multiplatform Version
+
+Thanks to [jobe-m](https://github.com/jobe-m) Fleks also has a KMP branch which will be the future for Fleks.
+Right now it will have two versions in parallel because the API for Fleks-KMP is not final yet and might change
+but if you want to use Fleks for example for a [KorGE](https://korge.org/) game then please use the [kmp](https://github.com/Quillraven/Fleks/tree/kmp)
+version. Simply replace the version from above with the latest KMP version like `1.0-KMP-RC1`.
+
 ## Current API and usage
 
 ### World
