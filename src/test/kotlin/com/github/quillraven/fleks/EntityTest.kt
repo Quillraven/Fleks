@@ -9,19 +9,34 @@ private class EntityTestListener : EntityListener {
     var entityReceived = Entity(-1)
     lateinit var cmpMaskReceived: BitArray
 
-    override fun onEntityCfgChanged(entity: Entity, cmpMask: BitArray) {
+    override fun onEntityCfgChanged(entity: Entity, compMask: BitArray) {
         ++numCalls
         entityReceived = entity
-        cmpMaskReceived = cmpMask
+        cmpMaskReceived = compMask
     }
 }
 
 private data class EntityTestComponent(var x: Float = 0f)
 
 internal class EntityTest {
+    private val componentFactory = mutableMapOf<String, () -> Any>()
+
+    private inline fun <reified T : Any> initComponentFactory(noinline compFactory: () -> T) {
+        val compType = T::class.simpleName ?: throw FleksInjectableTypeHasNoName(T::class)
+
+        if (compType in componentFactory) {
+            throw FleksComponentAlreadyAddedException(compType)
+        }
+        componentFactory[compType] = compFactory
+    }
+
+    init {
+        initComponentFactory(::EntityTestComponent)
+    }
+
     @Test
     fun `create empty service for 32 entities`() {
-        val cmpService = ComponentService()
+        val cmpService = ComponentService(componentFactory)
 
         val entityService = EntityService(32, cmpService)
 
@@ -33,7 +48,7 @@ internal class EntityTest {
 
     @Test
     fun `create entity without configuration and sufficient capacity`() {
-        val cmpService = ComponentService()
+        val cmpService = ComponentService(componentFactory)
         val entityService = EntityService(32, cmpService)
 
         val entity = entityService.create {}
@@ -46,7 +61,7 @@ internal class EntityTest {
 
     @Test
     fun `create entity without configuration and insufficient capacity`() {
-        val cmpService = ComponentService()
+        val cmpService = ComponentService(componentFactory)
         val entityService = EntityService(0, cmpService)
 
         val entity = entityService.create {}
@@ -60,7 +75,7 @@ internal class EntityTest {
 
     @Test
     fun `create entity with configuration and custom listener`() {
-        val cmpService = ComponentService()
+        val cmpService = ComponentService(componentFactory)
         val entityService = EntityService(32, cmpService)
         val listener = EntityTestListener()
         entityService.addEntityListener(listener)
@@ -83,7 +98,7 @@ internal class EntityTest {
 
     @Test
     fun `remove component from entity with custom listener`() {
-        val cmpService = ComponentService()
+        val cmpService = ComponentService(componentFactory)
         val entityService = EntityService(32, cmpService)
         val listener = EntityTestListener()
         val expectedEntity = entityService.create { add<EntityTestComponent>() }
@@ -102,7 +117,7 @@ internal class EntityTest {
 
     @Test
     fun `add component to entity with custom listener`() {
-        val cmpService = ComponentService()
+        val cmpService = ComponentService(componentFactory)
         val entityService = EntityService(32, cmpService)
         val listener = EntityTestListener()
         val expectedEntity = entityService.create { }
@@ -121,7 +136,7 @@ internal class EntityTest {
 
     @Test
     fun `update component of entity if it already exists with custom listener`() {
-        val cmpService = ComponentService()
+        val cmpService = ComponentService(componentFactory)
         val entityService = EntityService(32, cmpService)
         val listener = EntityTestListener()
         val expectedEntity = entityService.create { }
@@ -142,7 +157,7 @@ internal class EntityTest {
 
     @Test
     fun `remove entity with a component immediately with custom listener`() {
-        val cmpService = ComponentService()
+        val cmpService = ComponentService(componentFactory)
         val entityService = EntityService(32, cmpService)
         val listener = EntityTestListener()
         val expectedEntity = entityService.create { add<EntityTestComponent>() }
@@ -161,7 +176,7 @@ internal class EntityTest {
 
     @Test
     fun `remove all entities`() {
-        val entityService = EntityService(32, ComponentService())
+        val entityService = EntityService(32, ComponentService(componentFactory))
         entityService.create {}
         entityService.create {}
 
@@ -175,7 +190,7 @@ internal class EntityTest {
 
     @Test
     fun `remove all entities with already recycled entities`() {
-        val entityService = EntityService(32, ComponentService())
+        val entityService = EntityService(32, ComponentService(componentFactory))
         val recycled = entityService.create {}
         entityService.create {}
         entityService.remove(recycled)
@@ -190,7 +205,7 @@ internal class EntityTest {
 
     @Test
     fun `remove all entities when removal is delayed`() {
-        val entityService = EntityService(32, ComponentService())
+        val entityService = EntityService(32, ComponentService(componentFactory))
         entityService.create {}
         entityService.create {}
         entityService.delayRemoval = true
@@ -207,7 +222,7 @@ internal class EntityTest {
 
     @Test
     fun `create recycled entity`() {
-        val cmpService = ComponentService()
+        val cmpService = ComponentService(componentFactory)
         val entityService = EntityService(32, cmpService)
         val expectedEntity = entityService.create { }
         entityService.remove(expectedEntity)
@@ -219,7 +234,7 @@ internal class EntityTest {
 
     @Test
     fun `delay entity removal`() {
-        val cmpService = ComponentService()
+        val cmpService = ComponentService(componentFactory)
         val entityService = EntityService(32, cmpService)
         val entity = entityService.create { }
         val listener = EntityTestListener()
@@ -233,7 +248,7 @@ internal class EntityTest {
 
     @Test
     fun `remove delayed entity`() {
-        val cmpService = ComponentService()
+        val cmpService = ComponentService(componentFactory)
         val entityService = EntityService(32, cmpService)
         val entity = entityService.create { }
         val listener = EntityTestListener()
@@ -253,7 +268,7 @@ internal class EntityTest {
 
     @Test
     fun `remove existing listener`() {
-        val cmpService = ComponentService()
+        val cmpService = ComponentService(componentFactory)
         val entityService = EntityService(32, cmpService)
         val listener = EntityTestListener()
         entityService.addEntityListener(listener)
@@ -265,7 +280,7 @@ internal class EntityTest {
 
     @Test
     fun `remove entity twice`() {
-        val cmpService = ComponentService()
+        val cmpService = ComponentService(componentFactory)
         val entityService = EntityService(32, cmpService)
         val entity = entityService.create { }
         val listener = EntityTestListener()
