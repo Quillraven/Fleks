@@ -128,9 +128,9 @@ object Manual : SortingType
  * The [IteratingSystem] will use those components which are part of the family config for
  * any specific processing within this system.
  *
- * @param allOf is specifying the family to which this system belongs.
- * @param noneOf is specifying the family to which this system belongs.
- * @param anyOf is specifying the family to which this system belongs.
+ * @param allOfComponents is specifying the family to which this system belongs.
+ * @param noneOfComponents is specifying the family to which this system belongs.
+ * @param anyOfComponents is specifying the family to which this system belongs.
  * @param comparator an optional [EntityComparator] that is used to sort [entities][Entity].
  * Default value is an empty comparator which means no sorting.
  * @param sortingType the [type][SortingType] of sorting for entities when using a [comparator].
@@ -138,9 +138,9 @@ object Manual : SortingType
  * @param enabled defines if the system gets updated when the [world][World] gets updated. Default is true.
  */
 abstract class IteratingSystem(
-    val allOf: AllOf? = null,
-    val noneOf: NoneOf? = null,
-    val anyOf: AnyOf? = null,
+    val allOfComponents: Array<KClass<*>>? = null,
+    val noneOfComponents: Array<KClass<*>>? = null,
+    val anyOfComponents: Array<KClass<*>>? = null,
     private val comparator: EntityComparator = EMPTY_COMPARATOR,
     private val sortingType: SortingType = Automatic,
     interval: Interval = EachFrame,
@@ -295,13 +295,13 @@ class SystemService(
         compService: ComponentService,
         allFamilies: MutableList<Family>
     ): Family {
-        val allOfComps = system.allOf?.components?.map {
+        val allOfComps = system.allOfComponents?.map {
             val type = it.simpleName ?: throw FleksInjectableTypeHasNoName(it)
             compService.mapper(type) }
-        val noneOfComps = system.noneOf?.components?.map {
+        val noneOfComps = system.noneOfComponents?.map {
             val type = it.simpleName ?: throw FleksInjectableTypeHasNoName(it)
             compService.mapper(type) }
-        val anyOfComps = system.anyOf?.components?.map {
+        val anyOfComps = system.anyOfComponents?.map {
             val type = it.simpleName ?: throw FleksInjectableTypeHasNoName(it)
             compService.mapper(type) }
 
@@ -362,8 +362,10 @@ class SystemService(
 /**
  * An [injector][Inject] which is used to inject objects from outside the [IntervalSystem].
  *
- * @throws [FleksSystemInjectException] if the Injector does not contain an entry
- * for the given type in its internal maps.
+ * @throws [FleksSystemDependencyInjectException] if the Injector does not contain an entry
+ * for the given type in its internal map.
+ * @throws [FleksSystemComponentInjectException] if the Injector does not contain a component mapper
+ * for the given type in its internal map.
  * @throws [FleksInjectableTypeHasNoName] if the dependency type has no T::class.simpleName.
  */
 object Inject {
@@ -377,14 +379,14 @@ object Inject {
         return if (injectType in injectObjects) {
             injectObjects[injectType]!!.used = true
             injectObjects[injectType]!!.injObj as T
-        } else throw FleksSystemInjectException(injectType)
+        } else throw FleksSystemDependencyInjectException(injectType)
     }
 
     inline fun <reified T : Any> dependency(type: String): T {
         return if (type in injectObjects) {
             injectObjects[type]!!.used = true
             injectObjects[type]!!.injObj as T
-        } else throw FleksSystemInjectException(type)
+        } else throw FleksSystemDependencyInjectException(type)
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -392,6 +394,6 @@ object Inject {
         val injectType = T::class.simpleName ?: throw FleksInjectableTypeHasNoName(T::class)
         return if (injectType in mapperObjects) {
             mapperObjects[injectType]!! as ComponentMapper<T>
-        } else throw FleksSystemInjectException(injectType)
+        } else throw FleksSystemComponentInjectException(injectType)
     }
 }

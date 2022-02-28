@@ -1,6 +1,6 @@
 package com.github.quillraven.fleks
 
-import com.github.quillraven.fleks.collection.compareEntity
+import com.github.quillraven.fleks.collection.EntityComparator
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertAll
@@ -41,17 +41,8 @@ private class SystemTestIntervalSystemFixed : IntervalSystem(
     }
 }
 
-private class SystemTestIntervalSystemMultipleCstrs(
-    val arg: String = ""
-) : IntervalSystem() {
-    override fun onTick() = Unit
-}
-
 private data class SystemTestComponent(var x: Float = 0f)
 
-private class SystemTestIteratingSystemNoFamily : IteratingSystem() {
-    override fun onTickEntity(entity: Entity) = Unit
-}
 
 private class SystemTestInitBlock : IntervalSystem() {
     private val someValue: Float = world.deltaTime
@@ -69,14 +60,16 @@ private class SystemTestOnInitBlock : IntervalSystem() {
     override fun onTick() = Unit
 }
 
-@AllOf([SystemTestComponent::class])
-private class SystemTestIteratingSystemMapper(
-    val mapper: ComponentMapper<SystemTestComponent>
-) : IteratingSystem(interval = Fixed(0.25f)) {
+private class SystemTestIteratingSystemMapper : IteratingSystem(
+    allOfComponents = arrayOf(SystemTestComponent::class),
+    interval = Fixed(0.25f)
+) {
     var numEntityCalls = 0
     var numAlphaCalls = 0
     var lastAlpha = 0f
     var entityToConfigure: Entity? = null
+
+    val mapper = Inject.componentMapper<SystemTestComponent>()
 
     override fun onTickEntity(entity: Entity) {
         entityToConfigure?.let { e ->
@@ -93,11 +86,14 @@ private class SystemTestIteratingSystemMapper(
     }
 }
 
-@AllOf([SystemTestComponent::class])
-private class SystemTestIteratingSystemSortAutomatic(
-    val mapper: ComponentMapper<SystemTestComponent>
-) : IteratingSystem(
-    compareEntity { e1, e2 -> mapper[e2].x.compareTo(mapper[e1].x) }
+private class SystemTestIteratingSystemSortAutomatic : IteratingSystem(
+    allOfComponents = arrayOf(SystemTestComponent::class),
+    comparator = object : EntityComparator {
+        private val mapper: ComponentMapper<SystemTestComponent> = Inject.componentMapper()
+        override fun compare(entityA: Entity, entityB: Entity) : Int {
+            return mapper[entityB].x.compareTo(mapper[entityA].x)
+        }
+    },
 ) {
     var numEntityCalls = 0
     var lastEntityProcess = Entity(-1)
@@ -114,13 +110,15 @@ private class SystemTestIteratingSystemSortAutomatic(
     }
 }
 
-@AllOf([SystemTestComponent::class])
-private class SystemTestFixedSystemRemoval(
-    private val mapper: ComponentMapper<SystemTestComponent>
-) : IteratingSystem(interval = Fixed(1f)) {
+private class SystemTestFixedSystemRemoval : IteratingSystem(
+    allOfComponents = arrayOf(SystemTestComponent::class),
+    interval = Fixed(1f)
+) {
     var numEntityCalls = 0
     var lastEntityProcess = Entity(-1)
     var entityToRemove: Entity? = null
+
+    private val mapper = Inject.componentMapper<SystemTestComponent>()
 
     override fun onTickEntity(entity: Entity) {
         entityToRemove?.let {
@@ -138,11 +136,14 @@ private class SystemTestFixedSystemRemoval(
     }
 }
 
-@AllOf([SystemTestComponent::class])
-private class SystemTestIteratingSystemSortManual(
-    val mapper: ComponentMapper<SystemTestComponent>
-) : IteratingSystem(
-    compareEntity { e1, e2 -> mapper[e2].x.compareTo(mapper[e1].x) },
+private class SystemTestIteratingSystemSortManual : IteratingSystem(
+    allOfComponents = arrayOf(SystemTestComponent::class),
+    comparator = object : EntityComparator {
+        private val mapper: ComponentMapper<SystemTestComponent> = Inject.componentMapper()
+        override fun compare(entityA: Entity, entityB: Entity) : Int {
+            return mapper[entityB].x.compareTo(mapper[entityA].x)
+        }
+    },
     sortingType = Manual
 ) {
     var numEntityCalls = 0
@@ -154,31 +155,33 @@ private class SystemTestIteratingSystemSortManual(
     }
 }
 
-@NoneOf([SystemTestComponent::class])
-@AnyOf([SystemTestComponent::class])
-private class SystemTestIteratingSystemInjectable(
-    val injectable: String
-) : IteratingSystem() {
+private class SystemTestIteratingSystemInjectable : IteratingSystem(
+    noneOfComponents = arrayOf(SystemTestComponent::class),
+    anyOfComponents = arrayOf(SystemTestComponent::class)
+    ) {
+    val injectable: String = Inject.dependency()
+
     override fun onTickEntity(entity: Entity) = Unit
 }
 
-@NoneOf([SystemTestComponent::class])
-@AnyOf([SystemTestComponent::class])
-private class SystemTestIteratingSystemQualifiedInjectable(
-    val injectable: String,
-    @Qualifier("q1") val injectable2: String
-) : IteratingSystem() {
+private class SystemTestIteratingSystemQualifiedInjectable : IteratingSystem(
+    noneOfComponents = arrayOf(SystemTestComponent::class),
+    anyOfComponents = arrayOf(SystemTestComponent::class)
+) {
+    val injectable: String = Inject.dependency()
+    val injectable2: String = Inject.dependency("q1")
+
     override fun onTickEntity(entity: Entity) = Unit
 }
 
 internal class SystemTest {
     private fun systemService(
-        systemTypes: List<KClass<out IntervalSystem>>,
-        injectables: Map<String, Injectable> = emptyMap(),
-        world: World = World { }
+        systemFactory: MutableMap<KClass<*>, () -> IntervalSystem> = mutableMapOf(),
+        injectables: MutableMap<String, Injectable> = mutableMapOf(),
+        world: World = World {}
     ) = SystemService(
         world,
-        systemTypes,
+        systemFactory,
         injectables
     )
 
@@ -222,9 +225,11 @@ internal class SystemTest {
 
     @Test
     fun `create IntervalSystem with no-args`() {
-        val expectedWorld = World {}
+        val expectedWorld = World {
+            component(::SystemTestComponent)
+        }
 
-        val service = systemService(listOf(SystemTestIntervalSystemEachFrame::class), world = expectedWorld)
+        val service = systemService(mutableMapOf(SystemTestIntervalSystemEachFrame::class to ::SystemTestIntervalSystemEachFrame), world = expectedWorld)
 
         assertAll(
             { assertEquals(1, service.systems.size) },
@@ -235,25 +240,29 @@ internal class SystemTest {
 
     @Test
     fun `create IteratingSystem with a ComponentMapper arg`() {
-        val expectedWorld = World {}
+        val expectedWorld = World {
+            component(::SystemTestComponent)
+        }
 
-        val service = systemService(listOf(SystemTestIteratingSystemMapper::class), world = expectedWorld)
+        val service = systemService(mutableMapOf(SystemTestIteratingSystemMapper::class to ::SystemTestIteratingSystemMapper), world = expectedWorld)
 
         val actualSystem = service.system<SystemTestIteratingSystemMapper>()
         assertAll(
             { assertEquals(1, service.systems.size) },
             { assertSame(expectedWorld, actualSystem.world) },
-            { assertEquals(SystemTestComponent::class.java.name, actualSystem.mapper.cstr.name) },
+            { assertEquals(SystemTestComponent::class.simpleName, "SystemTestComponent") }
         )
     }
 
     @Test
     fun `create IteratingSystem with an injectable arg`() {
-        val expectedWorld = World {}
+        val expectedWorld = World {
+            component(::SystemTestComponent)
+        }
 
         val service = systemService(
-            listOf(SystemTestIteratingSystemInjectable::class),
-            mapOf(String::class.qualifiedName!! to Injectable("42")),
+            mutableMapOf(SystemTestIteratingSystemInjectable::class to ::SystemTestIteratingSystemInjectable),
+            mutableMapOf(String::class.simpleName!! to Injectable("42")),
             expectedWorld
         )
 
@@ -267,11 +276,13 @@ internal class SystemTest {
 
     @Test
     fun `create IteratingSystem with qualified args`() {
-        val expectedWorld = World {}
+        val expectedWorld = World {
+            component(::SystemTestComponent)
+        }
 
         val service = systemService(
-            listOf(SystemTestIteratingSystemQualifiedInjectable::class),
-            mapOf(String::class.qualifiedName!! to Injectable("42"), "q1" to Injectable("43")),
+            mutableMapOf(SystemTestIteratingSystemQualifiedInjectable::class to ::SystemTestIteratingSystemQualifiedInjectable),
+            mutableMapOf(String::class.simpleName!! to Injectable("42"), "q1" to Injectable("43")),
             expectedWorld
         )
 
@@ -285,24 +296,16 @@ internal class SystemTest {
     }
 
     @Test
-    fun `cannot create IteratingSystem without family annotations`() {
-        assertThrows<FleksSystemCreationException> { systemService(listOf(SystemTestIteratingSystemNoFamily::class)) }
-    }
-
-    @Test
     fun `cannot create IteratingSystem with missing injectables`() {
-        assertThrows<FleksReflectionException> { systemService(listOf(SystemTestIteratingSystemInjectable::class)) }
-    }
-
-    @Test
-    fun `cannot create system with multiple constructors`() {
-        assertThrows<FleksReflectionException> { systemService(listOf(SystemTestIntervalSystemMultipleCstrs::class)) }
+        assertThrows<FleksSystemDependencyInjectException> { systemService(mutableMapOf(SystemTestIteratingSystemInjectable::class to ::SystemTestIteratingSystemInjectable)) }
     }
 
     @Test
     fun `IteratingSystem calls onTick and onAlpha for each entity of the system`() {
-        val world = World {}
-        val service = systemService(listOf(SystemTestIteratingSystemMapper::class), world = world)
+        val world = World {
+            component(::SystemTestComponent)
+        }
+        val service = systemService(mutableMapOf(SystemTestIteratingSystemMapper::class to ::SystemTestIteratingSystemMapper), world = world)
         world.entity { add<SystemTestComponent>() }
         world.entity { add<SystemTestComponent>() }
         world.update(0.3f)
@@ -319,8 +322,10 @@ internal class SystemTest {
 
     @Test
     fun `configure entity during iteration`() {
-        val world = World {}
-        val service = systemService(listOf(SystemTestIteratingSystemMapper::class), world = world)
+        val world = World {
+            component(::SystemTestComponent)
+        }
+        val service = systemService(mutableMapOf(SystemTestIteratingSystemMapper::class to ::SystemTestIteratingSystemMapper), world = world)
         world.update(0.3f)
         val entity = world.entity { add<SystemTestComponent>() }
         val system = service.system<SystemTestIteratingSystemMapper>()
@@ -333,8 +338,10 @@ internal class SystemTest {
 
     @Test
     fun `sort entities automatically`() {
-        val world = World {}
-        val service = systemService(listOf(SystemTestIteratingSystemSortAutomatic::class), world = world)
+        val world = World {
+            component(::SystemTestComponent)
+        }
+        val service = systemService(mutableMapOf(SystemTestIteratingSystemSortAutomatic::class to ::SystemTestIteratingSystemSortAutomatic), world = world)
         world.entity { add<SystemTestComponent> { x = 15f } }
         world.entity { add<SystemTestComponent> { x = 10f } }
         val expectedEntity = world.entity { add<SystemTestComponent> { x = 5f } }
@@ -346,8 +353,10 @@ internal class SystemTest {
 
     @Test
     fun `sort entities programmatically`() {
-        val world = World {}
-        val service = systemService(listOf(SystemTestIteratingSystemSortManual::class), world = world)
+        val world = World {
+            component(::SystemTestComponent)
+        }
+        val service = systemService(mutableMapOf(SystemTestIteratingSystemSortManual::class to ::SystemTestIteratingSystemSortManual), world = world)
         world.entity { add<SystemTestComponent> { x = 15f } }
         world.entity { add<SystemTestComponent> { x = 10f } }
         val expectedEntity = world.entity { add<SystemTestComponent> { x = 5f } }
@@ -364,7 +373,10 @@ internal class SystemTest {
 
     @Test
     fun `cannot get a non-existing system`() {
-        val service = systemService(listOf(SystemTestIteratingSystemSortAutomatic::class))
+        val world = World {
+            component(::SystemTestComponent)
+        }
+        val service = systemService(mutableMapOf(SystemTestIteratingSystemSortAutomatic::class to ::SystemTestIteratingSystemSortAutomatic), world = world)
 
         assertThrows<FleksNoSuchSystemException> {
             service.system<SystemTestIntervalSystemEachFrame>()
@@ -373,7 +385,7 @@ internal class SystemTest {
 
     @Test
     fun `update only calls enabled systems`() {
-        val service = systemService(listOf(SystemTestIntervalSystemEachFrame::class))
+        val service = systemService(mutableMapOf(SystemTestIntervalSystemEachFrame::class to ::SystemTestIntervalSystemEachFrame))
         val system = service.system<SystemTestIntervalSystemEachFrame>()
         system.enabled = false
 
@@ -384,8 +396,10 @@ internal class SystemTest {
 
     @Test
     fun `removing an entity during update is delayed`() {
-        val world = World {}
-        val service = systemService(listOf(SystemTestIteratingSystemSortAutomatic::class), world = world)
+        val world = World {
+            component(::SystemTestComponent)
+        }
+        val service = systemService(mutableMapOf(SystemTestIteratingSystemSortAutomatic::class to ::SystemTestIteratingSystemSortAutomatic), world = world)
         world.entity { add<SystemTestComponent> { x = 15f } }
         val entityToRemove = world.entity { add<SystemTestComponent> { x = 10f } }
         world.entity { add<SystemTestComponent> { x = 5f } }
@@ -402,8 +416,10 @@ internal class SystemTest {
 
     @Test
     fun `removing an entity during alpha is delayed`() {
-        val world = World {}
-        val service = systemService(listOf(SystemTestFixedSystemRemoval::class), world = world)
+        val world = World {
+            component(::SystemTestComponent)
+        }
+        val service = systemService(mutableMapOf(SystemTestFixedSystemRemoval::class to ::SystemTestFixedSystemRemoval), world = world)
         // set delta time to 1f for the fixed interval
         world.update(1f)
         world.entity { add<SystemTestComponent> { x = 15f } }
@@ -422,7 +438,7 @@ internal class SystemTest {
 
     @Test
     fun `dispose service`() {
-        val service = systemService(listOf(SystemTestIntervalSystemEachFrame::class))
+        val service = systemService(mutableMapOf(SystemTestIntervalSystemEachFrame::class to ::SystemTestIntervalSystemEachFrame))
 
         service.dispose()
 
@@ -431,14 +447,14 @@ internal class SystemTest {
 
     @Test
     fun `init block of a system constructor has no access to the world`() {
-        assertThrows<InvocationTargetException> { systemService(listOf(SystemTestInitBlock::class)) }
+        assertThrows<UninitializedPropertyAccessException> { systemService(mutableMapOf(SystemTestInitBlock::class to ::SystemTestInitBlock)) }
     }
 
     @Test
     fun `onInit block is called for any newly created system`() {
         val expected = 0f
 
-        val service = systemService(listOf(SystemTestOnInitBlock::class))
+        val service = systemService(mutableMapOf(SystemTestOnInitBlock::class to ::SystemTestOnInitBlock))
 
         assertEquals(expected, service.system<SystemTestOnInitBlock>().someValue)
     }

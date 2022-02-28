@@ -26,14 +26,14 @@ class FleksInjectableAlreadyAddedException(type: String) :
 class FleksInjectableTypeHasNoName(type: KClass<*>) :
     FleksException("Injectable '$type' does not have simpleName in its class type.")
 
-class FleksSystemInjectException(injectType: String) :
+class FleksSystemDependencyInjectException(injectType: String) :
     FleksException("Injection object of type '$injectType' cannot be found. Did you add all necessary injectables?")
+
+class FleksSystemComponentInjectException(injectType: String) :
+    FleksException("Component mapper for type '$injectType' cannot be found. Did you add that component to the world configuration?")
 
 class FleksNoSuchEntityComponentException(entity: Entity, component: String) :
     FleksException("Entity '$entity' has no component of type '$component'.")
-
-class FleksComponentListenerAlreadyAddedException(listener: String) :
-    FleksException("ComponentListener '$listener' is already part of the '${WorldConfiguration::class.simpleName}'.")
 
 class FleksUnusedInjectablesException(unused: List<KClass<*>>) :
     FleksException("There are unused injectables of following types: ${unused.map { it.simpleName }}")

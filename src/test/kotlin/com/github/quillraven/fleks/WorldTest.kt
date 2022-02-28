@@ -23,12 +23,13 @@ private class WorldTestIntervalSystem : IntervalSystem() {
     }
 }
 
-@AllOf([WorldTestComponent::class])
-private class WorldTestIteratingSystem(
-    val testInject: String,
-    val mapper: ComponentMapper<WorldTestComponent>
-) : IteratingSystem() {
+private class WorldTestIteratingSystem : IteratingSystem(
+    allOfComponents = arrayOf(WorldTestComponent::class)
+) {
     var numCalls = 0
+
+    val testInject: String = Inject.dependency()
+    val mapper: ComponentMapper<WorldTestComponent> = Inject.componentMapper()
 
     override fun onTick() {
         ++numCalls
@@ -38,10 +39,10 @@ private class WorldTestIteratingSystem(
     override fun onTickEntity(entity: Entity) = Unit
 }
 
-private class WorldTestNamedDependencySystem(
-    @Qualifier("name") _name: String,
-    @Qualifier("level") val level: String
-) : IntervalSystem() {
+private class WorldTestNamedDependencySystem : IntervalSystem() {
+    val _name: String = Inject.dependency("name")
+    val level: String = Inject.dependency("level")
+
     val name: String = _name
 
     override fun onTick() = Unit
@@ -65,7 +66,7 @@ internal class WorldTest {
 
     @Test
     fun `create empty world with 1 no-args IntervalSystem`() {
-        val w = World { system<WorldTestIntervalSystem>() }
+        val w = World { system(::WorldTestIntervalSystem) }
 
         assertNotNull(w.system<WorldTestIntervalSystem>())
     }
@@ -73,7 +74,8 @@ internal class WorldTest {
     @Test
     fun `create empty world with 1 injectable args IteratingSystem`() {
         val w = World {
-            system<WorldTestIteratingSystem>()
+            system(::WorldTestIteratingSystem)
+            component(::WorldTestComponent)
 
             inject("42")
         }
@@ -89,7 +91,8 @@ internal class WorldTest {
         val expectedName = "myName"
         val expectedLevel = "myLevel"
         val w = World {
-            system<WorldTestNamedDependencySystem>()
+            system(::WorldTestNamedDependencySystem)
+            component(::WorldTestComponent)
 
             inject("name", expectedName)
             inject("level", "myLevel")
@@ -106,8 +109,8 @@ internal class WorldTest {
     fun `cannot add the same system twice`() {
         assertThrows<FleksSystemAlreadyAddedException> {
             World {
-                system<WorldTestIntervalSystem>()
-                system<WorldTestIntervalSystem>()
+                system(::WorldTestIntervalSystem)
+                system(::WorldTestIntervalSystem)
             }
         }
     }
@@ -121,8 +124,8 @@ internal class WorldTest {
 
     @Test
     fun `cannot create a system when injectables are missing`() {
-        assertThrows<FleksReflectionException> {
-            World { system<WorldTestIteratingSystem>() }
+        assertThrows<FleksSystemDependencyInjectException> {
+            World { system(::WorldTestIteratingSystem) }
         }
     }
 
@@ -139,7 +142,8 @@ internal class WorldTest {
     @Test
     fun `create new entity`() {
         val w = World {
-            system<WorldTestIteratingSystem>()
+            system(::WorldTestIteratingSystem)
+            component(::WorldTestComponent)
             inject("42")
         }
 
@@ -167,8 +171,10 @@ internal class WorldTest {
     @Test
     fun `update world with deltaTime of 1`() {
         val w = World {
-            system<WorldTestIntervalSystem>()
-            system<WorldTestIteratingSystem>()
+            system(::WorldTestIntervalSystem)
+            system(::WorldTestIteratingSystem)
+            component(::WorldTestComponent)
+
             inject("42")
         }
         w.system<WorldTestIteratingSystem>().enabled = false
@@ -196,7 +202,7 @@ internal class WorldTest {
     @Test
     fun `dispose world`() {
         val w = World {
-            system<WorldTestIntervalSystem>()
+            system(::WorldTestIntervalSystem)
         }
         w.entity()
         w.entity()
@@ -212,25 +218,27 @@ internal class WorldTest {
     @Test
     fun `create world with ComponentListener`() {
         val w = World {
-            componentListener<WorldTestComponentListener>()
+            component(::WorldTestComponent, ::WorldTestComponentListener)
         }
 
         assertEquals(1, w.componentService.mapper<WorldTestComponent>().listeners.size)
     }
 
     @Test
-    fun `cannot add same ComponentListener twice`() {
-        assertThrows<FleksComponentListenerAlreadyAddedException> {
+    fun `cannot add same Component twice`() {
+        assertThrows<FleksComponentAlreadyAddedException> {
             World {
-                componentListener<WorldTestComponentListener>()
-                componentListener<WorldTestComponentListener>()
+                component(::WorldTestComponent)
+                component(::WorldTestComponent)
             }
         }
     }
 
     @Test
     fun `get mapper`() {
-        val w = World {}
+        val w = World {
+            component(::WorldTestComponent)
+        }
 
         val mapper = w.mapper<WorldTestComponent>()
 
@@ -242,17 +250,6 @@ internal class WorldTest {
         assertThrows<FleksUnusedInjectablesException> {
             World {
                 inject("42")
-            }
-        }
-    }
-
-    @Test
-    fun `cannot use local classes as dependencies`() {
-        class Local
-
-        assertThrows<FleksInjectableWithoutNameException> {
-            World {
-                inject(Local())
             }
         }
     }

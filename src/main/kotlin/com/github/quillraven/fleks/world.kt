@@ -81,10 +81,9 @@ class WorldConfiguration {
      * @param compFactory the constructor method for creating the component.
      * @param listenerFactory the constructor method for creating the component listener.
      * @throws [FleksComponentAlreadyAddedException] if the component was already added before.
-     * @throws [FleksComponentListenerAlreadyAddedException] if the listener was already added before.
      * @throws [FleksInjectableTypeHasNoName] if the dependency type has no T::class.simpleName.
      */
-    inline fun <reified T : Any> component(noinline compFactory: () -> T, noinline listenerFactory: (() -> ComponentListener<*>)? = null) {
+    inline fun <reified T : Any> component(noinline compFactory: () -> T, noinline listenerFactory: (() -> ComponentListener<T>)? = null) {
         val compType = T::class.simpleName ?: throw FleksInjectableTypeHasNoName(T::class)
 
         if (compType in componentFactory) {
@@ -92,9 +91,7 @@ class WorldConfiguration {
         }
         componentFactory[compType] = compFactory
         if (listenerFactory != null) {
-            if (compType in compListenerFactory) {
-                throw FleksComponentListenerAlreadyAddedException(compType)
-            }
+            // No need to check compType again in compListenerFactory - it is already guarded with check in componentFactory
             compListenerFactory[compType] = listenerFactory
         }
     }
@@ -142,6 +139,11 @@ class World(
         componentService = ComponentService(worldCfg.componentFactory)
         entityService = EntityService(worldCfg.entityCapacity, componentService)
         val injectables = worldCfg.injectables
+
+        // Add world to inject object so that component listeners can get it form injectables, too
+        // Set "used" to true to make this injectable not mandatory
+        injectables["World"] = Injectable(this, true)
+
         systemService = SystemService(this, worldCfg.systemFactory, injectables)
 
         // create and register ComponentListener

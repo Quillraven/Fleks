@@ -16,7 +16,7 @@ interface ComponentListener<T> {
 /**
  * A class that is responsible to store components of a specific type for all [entities][Entity] in a [world][World].
  * Each component is assigned a unique [id] for fast access and to avoid lookups via a class which is slow.
- * A component of the [components] array at index X belongs to the [Entity] of id X.
+ * Hint: A component at index [id] in the [components] array belongs to [Entity] with the same [id].
  *
  * Refer to [ComponentService] for more details.
  */
