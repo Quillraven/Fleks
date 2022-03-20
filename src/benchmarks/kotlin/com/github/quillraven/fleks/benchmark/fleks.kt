@@ -11,7 +11,7 @@ data class FleksLife(var life: Float = 0f)
 data class FleksSprite(var path: String = "", var animationTime: Float = 0f)
 
 class FleksSystemSimple : IteratingSystem(
-    allOf = AllOf(arrayOf(FleksPosition::class))
+    allOfComponents = arrayOf(FleksPosition::class)
     ) {
 
     private val positions: ComponentMapper<FleksPosition> = Inject.componentMapper()
@@ -22,9 +22,9 @@ class FleksSystemSimple : IteratingSystem(
 }
 
 class FleksSystemComplex1 : IteratingSystem(
-    allOf = AllOf(arrayOf(FleksPosition::class)),
-    noneOf = NoneOf(arrayOf(FleksLife::class)),
-    anyOf = AnyOf(arrayOf(FleksSprite::class))
+    allOfComponents = arrayOf(FleksPosition::class),
+    noneOfComponents = arrayOf(FleksLife::class),
+    anyOfComponents = arrayOf(FleksSprite::class)
 ) {
 
     private val positions: ComponentMapper<FleksPosition> = Inject.componentMapper()
@@ -46,7 +46,7 @@ class FleksSystemComplex1 : IteratingSystem(
 }
 
 class FleksSystemComplex2 : IteratingSystem(
-    anyOf = AnyOf(arrayOf(FleksPosition::class, FleksLife::class, FleksSprite::class))
+    anyOfComponents = arrayOf(FleksPosition::class, FleksLife::class, FleksSprite::class)
 ) {
 
     private val positions: ComponentMapper<FleksPosition> = Inject.componentMapper()
