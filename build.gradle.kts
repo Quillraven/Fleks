@@ -15,13 +15,29 @@ repositories {
 }
 
 kotlin {
-    jvm {
-        compilations.all {
-            kotlinOptions.jvmTarget = "1.8"
-        }
-        withJava()
-        testRuns["test"].executionTask.configure {
-            useJUnitPlatform()
+    targets {
+        jvm {
+            compilations {
+                all {
+                    kotlinOptions {
+                        jvmTarget = "1.8"
+                    }
+                }
+                val main by getting { }
+                // custom benchmark compilation
+                val benchmarks by compilations.creating {
+                    defaultSourceSet {
+                        dependencies {
+                            // Compile against the main compilation's compile classpath and outputs:
+                            implementation(main.compileDependencyFiles + main.output.classesDirs)
+                        }
+                    }
+                }
+            }
+            withJava()
+            testRuns["test"].executionTask.configure {
+                useJUnitPlatform()
+            }
         }
     }
     /*js(BOTH) {
@@ -41,54 +57,34 @@ kotlin {
     }*/
 
     sourceSets {
-        val commonMain by getting
+        val commonMain by getting { }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
             }
         }
-        /*val jvmMain by getting
+        val jvmMain by getting
         val jvmTest by getting
-        val jsMain by getting
+        val jvmBenchmarks by getting {
+            dependsOn(commonMain)
+            dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:0.4.2")
+                implementation("com.badlogicgames.ashley:ashley:1.7.4")
+                implementation("net.onedaybeard.artemis:artemis-odb:2.3.0")
+            }
+        }
+        /*val jsMain by getting
         val jsTest by getting
         val nativeMain by getting
         val nativeTest by getting*/
     }
 }
 
-/*val bmSourceSetName = "benchmarks"
-sourceSets {
-    create(bmSourceSetName) {
-        compileClasspath += sourceSets["main"].output
-        runtimeClasspath += sourceSets["main"].output
+benchmark {
+    targets {
+        register("jvmBenchmarks")
     }
 }
-
-configurations {
-    getByName("${bmSourceSetName}Implementation") {
-        extendsFrom(configurations["implementation"])
-    }
-}
-
-dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-
-    testImplementation("org.jetbrains.kotlin:kotlin-test:1.6.10")
-
-    configurations["${bmSourceSetName}Implementation"]("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:0.4.2")
-    configurations["${bmSourceSetName}Implementation"]("com.badlogicgames.ashley:ashley:1.7.4")
-    configurations["${bmSourceSetName}Implementation"]("net.onedaybeard.artemis:artemis-odb:2.3.0")
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions {
-        jvmTarget = "1.8"
-    }
-}
-
-tasks.test {
-    useJUnitPlatform()
-}*/
 
 val dokkaJavadocJar = tasks.create<Jar>("jarDokkaJavadoc") {
     group = "build"
@@ -173,10 +169,3 @@ signing {
     useInMemoryPgpKeys(System.getenv("SIGNING_KEY"), System.getenv("SIGNING_PASSWORD"))
     sign(publishing.publications[publicationName])
 }
-
-/*benchmark {
-    targets {
-        register(bmSourceSetName)
-    }
-}
-*/
