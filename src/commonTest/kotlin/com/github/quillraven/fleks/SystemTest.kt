@@ -192,7 +192,7 @@ internal class SystemTest {
     }
 
     @Test
-    fun systemWithIntervalEachFramereturnsWorldDeltaTime() {
+    fun systemWithIntervalEachFrameReturnsWorldDeltaTime() {
         val system = SystemTestIntervalSystemEachFrame().apply { this.world = World {} }
         system.world.update(42f)
 

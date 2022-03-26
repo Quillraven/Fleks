@@ -2,6 +2,7 @@ package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.BitArray
 import com.github.quillraven.fleks.collection.EntityComparator
+import kotlin.native.concurrent.ThreadLocal
 import kotlin.reflect.KClass
 
 /**
@@ -368,6 +369,7 @@ class SystemService(
  * for the given type in its internal map.
  * @throws [FleksInjectableTypeHasNoName] if the dependency type has no T::class.simpleName.
  */
+@ThreadLocal
 object Inject {
     @PublishedApi
     internal lateinit var injectObjects: Map<String, Injectable>
