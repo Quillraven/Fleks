@@ -82,13 +82,6 @@ class GenericBagTest {
     }
 
     @Test
-    fun cannotGetStringValueOfInvalidOutOfBoundsIndex() {
-        val bag = bag<String>(2)
-
-        assertFailsWith<IndexOutOfBoundsException> { bag[2] }
-    }
-
-    @Test
     fun executeActionForEachValueOfStringBag() {
         val bag = bag<String>(4)
         bag[1] = "42"
@@ -149,13 +142,6 @@ class IntBagTest {
     }
 
     @Test
-    fun addValueUnsafeWithInsufficientCapacity() {
-        val bag = IntBag(0)
-
-        assertFailsWith<IndexOutOfBoundsException> { bag.unsafeAdd(42) }
-    }
-
-    @Test
     fun addValueToBagWithInsufficientCapacity() {
         val bag = IntBag(0)
 
@@ -164,13 +150,6 @@ class IntBagTest {
         assertEquals(1, bag.size)
         assertEquals(42, bag[0])
         assertEquals(1, bag.capacity)
-    }
-
-    @Test
-    fun cannotGetValueOfOutOfBoundsIndex() {
-        val bag = IntBag(2)
-
-        assertFailsWith<IndexOutOfBoundsException> { bag[2] }
     }
 
     @Test

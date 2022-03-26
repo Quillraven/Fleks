@@ -40,14 +40,10 @@ kotlin {
             }
         }
     }
-    /*js(BOTH) {
-        browser {
-            commonWebpackConfig {
-                cssSupport.enabled = true
-            }
-        }
+    js(BOTH) {
+        browser { }
     }
-    val hostOs = System.getProperty("os.name")
+    /*val hostOs = System.getProperty("os.name")
     val isMingwX64 = hostOs.startsWith("Windows")
     val nativeTarget = when {
         hostOs == "Mac OS X" -> macosX64("native")
@@ -73,9 +69,9 @@ kotlin {
                 implementation("net.onedaybeard.artemis:artemis-odb:2.3.0")
             }
         }
-        /*val jsMain by getting
+        val jsMain by getting
         val jsTest by getting
-        val nativeMain by getting
+        /*val nativeMain by getting
         val nativeTest by getting*/
     }
 }

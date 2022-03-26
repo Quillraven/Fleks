@@ -2,31 +2,32 @@ package com.github.quillraven.fleks
 
 import kotlin.test.*
 
-private data class ComponentTestComponent(var x: Int = 0)
-
-private class ComponentTestComponentListener : ComponentListener<ComponentTestComponent> {
-    var numAddCalls = 0
-    var numRemoveCalls = 0
-    lateinit var cmpCalled: ComponentTestComponent
-    var entityCalled = Entity(-1)
-    var lastCall = ""
-
-    override fun onComponentAdded(entity: Entity, component: ComponentTestComponent) {
-        numAddCalls++
-        cmpCalled = component
-        entityCalled = entity
-        lastCall = "add"
-    }
-
-    override fun onComponentRemoved(entity: Entity, component: ComponentTestComponent) {
-        numRemoveCalls++
-        cmpCalled = component
-        entityCalled = entity
-        lastCall = "remove"
-    }
-}
-
 internal class ComponentTest {
+
+    private data class ComponentTestComponent(var x: Int = 0)
+
+    private class ComponentTestComponentListener : ComponentListener<ComponentTestComponent> {
+        var numAddCalls = 0
+        var numRemoveCalls = 0
+        lateinit var cmpCalled: ComponentTestComponent
+        var entityCalled = Entity(-1)
+        var lastCall = ""
+
+        override fun onComponentAdded(entity: Entity, component: ComponentTestComponent) {
+            numAddCalls++
+            cmpCalled = component
+            entityCalled = entity
+            lastCall = "add"
+        }
+
+        override fun onComponentRemoved(entity: Entity, component: ComponentTestComponent) {
+            numRemoveCalls++
+            cmpCalled = component
+            entityCalled = entity
+            lastCall = "remove"
+        }
+    }
+
     private val componentFactory = mutableMapOf<String, () -> Any>()
 
     private inline fun <reified T : Any> initComponentFactory(noinline compFactory: () -> T) {
@@ -98,15 +99,6 @@ internal class ComponentTest {
         mapper.removeInternal(entity)
 
         assertFalse(entity in mapper)
-    }
-
-    @Test
-    fun cannotRemoveNonExistingEntityFromMapperWithInsufficientCapacity() {
-        val cmpService = ComponentService(componentFactory)
-        val mapper = cmpService.mapper<ComponentTestComponent>()
-        val entity = Entity(10_000)
-
-        assertFailsWith<IndexOutOfBoundsException> { mapper.removeInternal(entity) }
     }
 
     @Test
