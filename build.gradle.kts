@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "io.github.quillraven.fleks"
-version = "1.0-KMP-RC1"
+version = "2.0-RC1"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
 repositories {
@@ -86,27 +86,6 @@ benchmark {
     }
 }
 
-val dokkaJavadocJar = tasks.create<Jar>("jarDokkaJavadoc") {
-    group = "build"
-
-    dependsOn(tasks.dokkaJavadoc)
-    from(tasks.dokkaJavadoc.flatMap { it.outputDirectory })
-    archiveClassifier.set("javadoc")
-}
-
-val sourcesJar = tasks.create<Jar>("jarSources") {
-    group = "build"
-
-    //from(sourceSets.main.get().allSource)
-    archiveClassifier.set("sources")
-}
-
-artifacts {
-    archives(dokkaJavadocJar)
-    archives(sourcesJar)
-}
-
-val publicationName = "mavenFleks"
 publishing {
     repositories {
         maven {
@@ -124,14 +103,10 @@ publishing {
     }
 
     publications {
-        register<MavenPublication>(publicationName) {
+        val kotlinMultiplatform by getting(MavenPublication::class) {
             version = project.version.toString()
             groupId = project.group.toString()
             artifactId = "Fleks"
-
-            from(components["kotlin"])
-            artifact(dokkaJavadocJar)
-            artifact(sourcesJar)
 
             pom {
                 name.set("Fleks")
@@ -162,10 +137,10 @@ publishing {
                 }
             }
         }
-    }
-}
 
-signing {
-    useInMemoryPgpKeys(System.getenv("SIGNING_KEY"), System.getenv("SIGNING_PASSWORD"))
-    sign(publishing.publications[publicationName])
+        signing {
+            useInMemoryPgpKeys(System.getenv("SIGNING_KEY"), System.getenv("SIGNING_PASSWORD"))
+            sign(kotlinMultiplatform)
+        }
+    }
 }
