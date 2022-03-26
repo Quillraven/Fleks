@@ -1,57 +1,50 @@
 package com.github.quillraven.fleks.collection
 
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertAll
+import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 internal class BitArrayTest {
     @Test
-    fun `create empty BitArray`() {
+    fun createEmptyBitArray() {
         val bits = BitArray(0)
 
-        assertAll(
-            { assertEquals(0, bits.length()) },
-            { assertEquals(0, bits.capacity) }
-        )
+        assertEquals(0, bits.length())
+        assertEquals(0, bits.capacity)
     }
 
     @Test
-    fun `set bit at index 3 with sufficient capacity`() {
+    fun setBitAtIndex3WithSufficientCapacity() {
         val bits = BitArray(3)
 
         bits.set(2)
 
-        assertAll(
-            { assertEquals(3, bits.length()) },
-            { assertEquals(64, bits.capacity) },
-            { assertTrue { bits[2] } }
-        )
+        assertEquals(3, bits.length())
+        assertEquals(64, bits.capacity)
+        assertTrue { bits[2] }
     }
 
     @Test
-    fun `set bit at index 3 with insufficient capacity`() {
+    fun setBitAtIndex3WithInsufficientCapacity() {
         val bits = BitArray(0)
 
         bits.set(2)
 
-        assertAll(
-            { assertEquals(3, bits.length()) },
-            { assertEquals(64, bits.capacity) },
-            { assertTrue { bits[2] } }
-        )
+        assertEquals(3, bits.length())
+        assertEquals(64, bits.capacity)
+        assertTrue { bits[2] }
     }
 
     @Test
-    fun `get bit of out of bounds index`() {
+    fun getBitOfOutOfBoundsIndex() {
         val bits = BitArray(0)
 
         assertFalse(bits[64])
     }
 
     @Test
-    fun `clear all set bits`() {
+    fun clearAllSetBits() {
         val bits = BitArray()
         bits.set(2)
         bits.set(4)
@@ -62,7 +55,7 @@ internal class BitArrayTest {
     }
 
     @Test
-    fun `clear specific bit`() {
+    fun clearSpecificBit() {
         val bits = BitArray()
         bits.set(2)
 
@@ -72,7 +65,7 @@ internal class BitArrayTest {
     }
 
     @Test
-    fun `two BitArrays intersect when they have at least one bit set at the same index`() {
+    fun twoBitArraysIntersectWhenTheyHaveAtLeastOneBitSetAtTheSameIndex() {
         val bitsA = BitArray(256)
         val bitsB = BitArray(1)
         bitsA.set(2)
@@ -83,14 +76,12 @@ internal class BitArrayTest {
         val actualA = bitsA.intersects(bitsB)
         val actualB = bitsB.intersects(bitsA)
 
-        assertAll(
-            { assertTrue(actualA) },
-            { assertTrue(actualB) }
-        )
+        assertTrue(actualA)
+        assertTrue(actualB)
     }
 
     @Test
-    fun `two BitArrays do not intersect when they do not have at least one bit set at the same index`() {
+    fun twoBitArraysDoNotIntersectWhenTheyDoNotHaveAtLeastOneBitSetAtTheSameIndex() {
         val bitsA = BitArray(256)
         val bitsB = BitArray(1)
         bitsA.set(2)
@@ -101,14 +92,12 @@ internal class BitArrayTest {
         val actualA = bitsA.intersects(bitsB)
         val actualB = bitsB.intersects(bitsA)
 
-        assertAll(
-            { assertFalse(actualA) },
-            { assertFalse(actualB) }
-        )
+        assertFalse(actualA)
+        assertFalse(actualB)
     }
 
     @Test
-    fun `BitArray contains BitArray if the same bits are set`() {
+    fun bitArrayContainsBitArrayIfTheSameBitsAreSet() {
         val bitsA = BitArray(256)
         val bitsB = BitArray(1)
         bitsA.set(2)
@@ -119,14 +108,12 @@ internal class BitArrayTest {
         val actualA = bitsA.contains(bitsB)
         val actualB = bitsB.contains(bitsA)
 
-        assertAll(
-            { assertTrue(actualA) },
-            { assertTrue(actualB) }
-        )
+        assertTrue(actualA)
+        assertTrue(actualB)
     }
 
     @Test
-    fun `BitArray does not contain BitArray if different bits are set`() {
+    fun bitArrayDoesNotContainBitArrayIfDifferentBitsAreSet() {
         val bitsA = BitArray(256)
         val bitsB = BitArray(1)
         bitsA.set(2)
@@ -137,14 +124,12 @@ internal class BitArrayTest {
         val actualA = bitsA.contains(bitsB)
         val actualB = bitsB.contains(bitsA)
 
-        assertAll(
-            { assertFalse(actualA) },
-            { assertFalse(actualB) }
-        )
+        assertFalse(actualA)
+        assertFalse(actualB)
     }
 
     @Test
-    fun `run action for each set bit`() {
+    fun runActionForEachSetBit() {
         val bits = BitArray(128)
         bits.set(3)
         bits.set(5)
@@ -157,9 +142,7 @@ internal class BitArrayTest {
             bitsCalled.add(it)
         }
 
-        assertAll(
-            { assertEquals(3, numCalls) },
-            { assertEquals(listOf(117, 5, 3), bitsCalled) }
-        )
+        assertEquals(3, numCalls)
+        assertEquals(listOf(117, 5, 3), bitsCalled)
     }
 }

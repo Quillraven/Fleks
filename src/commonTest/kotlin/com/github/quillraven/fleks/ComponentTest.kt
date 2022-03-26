@@ -1,12 +1,6 @@
 package com.github.quillraven.fleks
 
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertAll
-import org.junit.jupiter.api.assertThrows
-import kotlin.test.assertEquals
-import kotlin.test.assertSame
+import kotlin.test.*
 
 private data class ComponentTestComponent(var x: Int = 0)
 
@@ -49,35 +43,31 @@ internal class ComponentTest {
     }
 
     @Test
-    fun `add entity to mapper with sufficient capacity`() {
+    fun addEntityToMapperWithSufficientCapacity() {
         val cmpService = ComponentService(componentFactory)
         val mapper = cmpService.mapper<ComponentTestComponent>()
         val entity = Entity(0)
 
         val cmp = mapper.addInternal(entity) { x = 5 }
 
-        assertAll(
-            { assertTrue(entity in mapper) },
-            { assertEquals(5, cmp.x) }
-        )
+        assertTrue(entity in mapper)
+        assertEquals(5, cmp.x)
     }
 
     @Test
-    fun `add entity to mapper with insufficient capacity`() {
+    fun addEntityToMapperWithInsufficientCapacity() {
         val cmpService = ComponentService(componentFactory)
         val mapper = cmpService.mapper<ComponentTestComponent>()
         val entity = Entity(10_000)
 
         val cmp = mapper.addInternal(entity)
 
-        assertAll(
-            { assertTrue(entity in mapper) },
-            { assertEquals(0, cmp.x) }
-        )
+        assertTrue(entity in mapper)
+        assertEquals(0, cmp.x)
     }
 
     @Test
-    fun `add already existing entity to mapper`() {
+    fun addAlreadyExistingEntityToMapper() {
         val cmpService = ComponentService(componentFactory)
         val mapper = cmpService.mapper<ComponentTestComponent>()
         val entity = Entity(10_000)
@@ -85,25 +75,21 @@ internal class ComponentTest {
 
         val actual = mapper.addInternal(entity) { x = 2 }
 
-        assertAll(
-            { assertSame(expected, actual) },
-            { assertEquals(2, actual.x) }
-        )
+        assertSame(expected, actual)
+        assertEquals(2, actual.x)
     }
 
     @Test
-    fun `returns false when entity is not part of mapper`() {
+    fun returnsFalseWhenEntityIsNotPartOfMapper() {
         val cmpService = ComponentService(componentFactory)
         val mapper = cmpService.mapper<ComponentTestComponent>()
 
-        assertAll(
-            { assertFalse(Entity(0) in mapper) },
-            { assertFalse(Entity(10_000) in mapper) }
-        )
+        assertFalse(Entity(0) in mapper)
+        assertFalse(Entity(10_000) in mapper)
     }
 
     @Test
-    fun `remove existing entity from mapper`() {
+    fun removeExistingEntityFromMapper() {
         val cmpService = ComponentService(componentFactory)
         val mapper = cmpService.mapper<ComponentTestComponent>()
         val entity = Entity(0)
@@ -115,16 +101,16 @@ internal class ComponentTest {
     }
 
     @Test
-    fun `cannot remove non-existing entity from mapper with insufficient capacity`() {
+    fun cannotRemoveNonExistingEntityFromMapperWithInsufficientCapacity() {
         val cmpService = ComponentService(componentFactory)
         val mapper = cmpService.mapper<ComponentTestComponent>()
         val entity = Entity(10_000)
 
-        assertThrows<ArrayIndexOutOfBoundsException> { mapper.removeInternal(entity) }
+        assertFailsWith<IndexOutOfBoundsException> { mapper.removeInternal(entity) }
     }
 
     @Test
-    fun `get component of existing entity`() {
+    fun getComponentOfExistingEntity() {
         val cmpService = ComponentService(componentFactory)
         val mapper = cmpService.mapper<ComponentTestComponent>()
         val entity = Entity(0)
@@ -136,16 +122,16 @@ internal class ComponentTest {
     }
 
     @Test
-    fun `cannot get component of non-existing entity`() {
+    fun cannotGetComponentOfNonExistingEntity() {
         val cmpService = ComponentService(componentFactory)
         val mapper = cmpService.mapper<ComponentTestComponent>()
         val entity = Entity(0)
 
-        assertThrows<FleksNoSuchEntityComponentException> { mapper[entity] }
+        assertFailsWith<FleksNoSuchEntityComponentException> { mapper[entity] }
     }
 
     @Test
-    fun `create new mapper`() {
+    fun createNewMapper() {
         val cmpService = ComponentService(componentFactory)
 
         val mapper = cmpService.mapper<ComponentTestComponent>()
@@ -154,7 +140,7 @@ internal class ComponentTest {
     }
 
     @Test
-    fun `do not create the same mapper twice`() {
+    fun doNotCreateTheSameMapperTwice() {
         val cmpService = ComponentService(componentFactory)
         val expected = cmpService.mapper<ComponentTestComponent>()
 
@@ -164,7 +150,7 @@ internal class ComponentTest {
     }
 
     @Test
-    fun `get mapper by component id`() {
+    fun getMapperByComponentId() {
         val cmpService = ComponentService(componentFactory)
         val expected = cmpService.mapper<ComponentTestComponent>()
 
@@ -174,7 +160,7 @@ internal class ComponentTest {
     }
 
     @Test
-    fun `add ComponentListener`() {
+    fun addComponentListener() {
         val cmpService = ComponentService(componentFactory)
         val listener = ComponentTestComponentListener()
         val mapper = cmpService.mapper<ComponentTestComponent>()
@@ -185,7 +171,7 @@ internal class ComponentTest {
     }
 
     @Test
-    fun `remove ComponentListener`() {
+    fun removeComponentListener() {
         val cmpService = ComponentService(componentFactory)
         val listener = ComponentTestComponentListener()
         val mapper = cmpService.mapper<ComponentTestComponent>()
@@ -197,7 +183,7 @@ internal class ComponentTest {
     }
 
     @Test
-    fun `add component with ComponentListener`() {
+    fun addComponentWithComponentListener() {
         val cmpService = ComponentService(componentFactory)
         val mapper = cmpService.mapper<ComponentTestComponent>()
         val listener = ComponentTestComponentListener()
@@ -206,16 +192,14 @@ internal class ComponentTest {
 
         val expectedCmp = mapper.addInternal(expectedEntity)
 
-        assertAll(
-            { assertEquals(1, listener.numAddCalls) },
-            { assertEquals(0, listener.numRemoveCalls) },
-            { assertEquals(expectedEntity, listener.entityCalled) },
-            { assertEquals(expectedCmp, listener.cmpCalled) }
-        )
+        assertEquals(1, listener.numAddCalls)
+        assertEquals(0, listener.numRemoveCalls)
+        assertEquals(expectedEntity, listener.entityCalled)
+        assertEquals(expectedCmp, listener.cmpCalled)
     }
 
     @Test
-    fun `add component with ComponentListener when component already present`() {
+    fun addComponentWithComponentListenerWhenComponentAlreadyPresent() {
         val cmpService = ComponentService(componentFactory)
         val mapper = cmpService.mapper<ComponentTestComponent>()
         val expectedEntity = Entity(1)
@@ -225,31 +209,27 @@ internal class ComponentTest {
 
         val expectedCmp = mapper.addInternal(expectedEntity)
 
-        assertAll(
-            { assertEquals(1, listener.numAddCalls) },
-            { assertEquals(1, listener.numRemoveCalls) },
-            { assertEquals(expectedEntity, listener.entityCalled) },
-            { assertEquals(expectedCmp, listener.cmpCalled) },
-            { assertEquals("add", listener.lastCall) }
-        )
+        assertEquals(1, listener.numAddCalls)
+        assertEquals(1, listener.numRemoveCalls)
+        assertEquals(expectedEntity, listener.entityCalled)
+        assertEquals(expectedCmp, listener.cmpCalled)
+        assertEquals("add", listener.lastCall)
     }
 
     @Test
-    fun `add component if it does not exist yet`() {
+    fun addComponentIfItDoesNotExistYet() {
         val cmpService = ComponentService(componentFactory)
         val mapper = cmpService.mapper<ComponentTestComponent>()
         val entity = Entity(1)
 
         val cmp = mapper.addOrUpdateInternal(entity) { x++ }
 
-        assertAll(
-            { assertTrue(entity in mapper) },
-            { assertEquals(1, cmp.x) }
-        )
+        assertTrue(entity in mapper)
+        assertEquals(1, cmp.x)
     }
 
     @Test
-    fun `update component if it already exists`() {
+    fun updateComponentIfItAlreadyExists() {
         val cmpService = ComponentService(componentFactory)
         val mapper = cmpService.mapper<ComponentTestComponent>()
         val entity = Entity(1)
@@ -257,10 +237,8 @@ internal class ComponentTest {
 
         val actualCmp = mapper.addOrUpdateInternal(entity) { x++ }
 
-        assertAll(
-            { assertTrue(entity in mapper) },
-            { assertEquals(expectedCmp, actualCmp) },
-            { assertEquals(2, actualCmp.x) }
-        )
+        assertTrue(entity in mapper)
+        assertEquals(expectedCmp, actualCmp)
+        assertEquals(2, actualCmp.x)
     }
 }

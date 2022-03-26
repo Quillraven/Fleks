@@ -1,8 +1,10 @@
 package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.BitArray
-import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 private class EntityTestListener : EntityListener {
     var numCalls = 0
@@ -35,46 +37,40 @@ internal class EntityTest {
     }
 
     @Test
-    fun `create empty service for 32 entities`() {
+    fun createEmptyServiceFor32Entities() {
         val cmpService = ComponentService(componentFactory)
 
         val entityService = EntityService(32, cmpService)
 
-        assertAll(
-            { assertEquals(0, entityService.numEntities) },
-            { assertEquals(32, entityService.capacity) }
-        )
+        assertEquals(0, entityService.numEntities)
+        assertEquals(32, entityService.capacity)
     }
 
     @Test
-    fun `create entity without configuration and sufficient capacity`() {
+    fun createEntityWithoutConfigurationAndSufficientCapacity() {
         val cmpService = ComponentService(componentFactory)
         val entityService = EntityService(32, cmpService)
 
         val entity = entityService.create {}
 
-        assertAll(
-            { assertEquals(0, entity.id) },
-            { assertEquals(1, entityService.numEntities) }
-        )
+        assertEquals(0, entity.id)
+        assertEquals(1, entityService.numEntities)
     }
 
     @Test
-    fun `create entity without configuration and insufficient capacity`() {
+    fun createEntityWithoutConfigurationAndInsufficientCapacity() {
         val cmpService = ComponentService(componentFactory)
         val entityService = EntityService(0, cmpService)
 
         val entity = entityService.create {}
 
-        assertAll(
-            { assertEquals(0, entity.id) },
-            { assertEquals(1, entityService.numEntities) },
-            { assertEquals(1, entityService.capacity) },
-        )
+        assertEquals(0, entity.id)
+        assertEquals(1, entityService.numEntities)
+        assertEquals(1, entityService.capacity)
     }
 
     @Test
-    fun `create entity with configuration and custom listener`() {
+    fun createEntityWithConfigurationAndCustomListener() {
         val cmpService = ComponentService(componentFactory)
         val entityService = EntityService(32, cmpService)
         val listener = EntityTestListener()
@@ -87,17 +83,15 @@ internal class EntityTest {
         }
         val mapper = cmpService.mapper<EntityTestComponent>()
 
-        assertAll(
-            { assertEquals(1, listener.numCalls) },
-            { assertEquals(expectedEntity, listener.entityReceived) },
-            { assertTrue(listener.cmpMaskReceived[0]) },
-            { assertEquals(0f, mapper[listener.entityReceived].x) },
-            { assertEquals(expectedEntity, processedEntity) }
-        )
+        assertEquals(1, listener.numCalls)
+        assertEquals(expectedEntity, listener.entityReceived)
+        assertTrue(listener.cmpMaskReceived[0])
+        assertEquals(0f, mapper[listener.entityReceived].x)
+        assertEquals(expectedEntity, processedEntity)
     }
 
     @Test
-    fun `remove component from entity with custom listener`() {
+    fun removeComponentFromEntityWithCustomListener() {
         val cmpService = ComponentService(componentFactory)
         val entityService = EntityService(32, cmpService)
         val listener = EntityTestListener()
@@ -107,16 +101,14 @@ internal class EntityTest {
 
         entityService.configureEntity(expectedEntity) { mapper.remove(expectedEntity) }
 
-        assertAll(
-            { assertEquals(1, listener.numCalls) },
-            { assertEquals(expectedEntity, listener.entityReceived) },
-            { assertFalse(listener.cmpMaskReceived[0]) },
-            { assertFalse(expectedEntity in mapper) }
-        )
+        assertEquals(1, listener.numCalls)
+        assertEquals(expectedEntity, listener.entityReceived)
+        assertFalse(listener.cmpMaskReceived[0])
+        assertFalse(expectedEntity in mapper)
     }
 
     @Test
-    fun `add component to entity with custom listener`() {
+    fun addComponentToEntityWithCustomListener() {
         val cmpService = ComponentService(componentFactory)
         val entityService = EntityService(32, cmpService)
         val listener = EntityTestListener()
@@ -126,16 +118,14 @@ internal class EntityTest {
 
         entityService.configureEntity(expectedEntity) { mapper.add(expectedEntity) }
 
-        assertAll(
-            { assertEquals(1, listener.numCalls) },
-            { assertEquals(expectedEntity, listener.entityReceived) },
-            { assertTrue(listener.cmpMaskReceived[0]) },
-            { assertTrue(expectedEntity in mapper) }
-        )
+        assertEquals(1, listener.numCalls)
+        assertEquals(expectedEntity, listener.entityReceived)
+        assertTrue(listener.cmpMaskReceived[0])
+        assertTrue(expectedEntity in mapper)
     }
 
     @Test
-    fun `update component of entity if it already exists with custom listener`() {
+    fun updateComponentOfEntityIfItAlreadyExistsWithCustomListener() {
         val cmpService = ComponentService(componentFactory)
         val entityService = EntityService(32, cmpService)
         val listener = EntityTestListener()
@@ -148,15 +138,13 @@ internal class EntityTest {
             mapper.addOrUpdate(expectedEntity) { x++ }
         }
 
-        assertAll(
-            { assertTrue(expectedEntity in mapper) },
-            { assertEquals(2f, mapper[expectedEntity].x) },
-            { assertEquals(1, listener.numCalls) }
-        )
+        assertTrue(expectedEntity in mapper)
+        assertEquals(2f, mapper[expectedEntity].x)
+        assertEquals(1, listener.numCalls)
     }
 
     @Test
-    fun `remove entity with a component immediately with custom listener`() {
+    fun removeEntityWithComponentImmediatelyWithCustomListener() {
         val cmpService = ComponentService(componentFactory)
         val entityService = EntityService(32, cmpService)
         val listener = EntityTestListener()
@@ -166,30 +154,26 @@ internal class EntityTest {
 
         entityService.remove(expectedEntity)
 
-        assertAll(
-            { assertEquals(1, listener.numCalls) },
-            { assertEquals(expectedEntity, listener.entityReceived) },
-            { assertFalse(listener.cmpMaskReceived[0]) },
-            { assertFalse(expectedEntity in mapper) }
-        )
+        assertEquals(1, listener.numCalls)
+        assertEquals(expectedEntity, listener.entityReceived)
+        assertFalse(listener.cmpMaskReceived[0])
+        assertFalse(expectedEntity in mapper)
     }
 
     @Test
-    fun `remove all entities`() {
+    fun removeAllEntities() {
         val entityService = EntityService(32, ComponentService(componentFactory))
         entityService.create {}
         entityService.create {}
 
         entityService.removeAll()
 
-        assertAll(
-            { assertEquals(2, entityService.recycledEntities.size) },
-            { assertEquals(0, entityService.numEntities) }
-        )
+        assertEquals(2, entityService.recycledEntities.size)
+        assertEquals(0, entityService.numEntities)
     }
 
     @Test
-    fun `remove all entities with already recycled entities`() {
+    fun removeAllEntitiesWithAlreadyRecycledEntities() {
         val entityService = EntityService(32, ComponentService(componentFactory))
         val recycled = entityService.create {}
         entityService.create {}
@@ -197,14 +181,12 @@ internal class EntityTest {
 
         entityService.removeAll()
 
-        assertAll(
-            { assertEquals(2, entityService.recycledEntities.size) },
-            { assertEquals(0, entityService.numEntities) }
-        )
+        assertEquals(2, entityService.recycledEntities.size)
+        assertEquals(0, entityService.numEntities)
     }
 
     @Test
-    fun `remove all entities when removal is delayed`() {
+    fun removeAllEntitiesWhenRemovalIsDelayed() {
         val entityService = EntityService(32, ComponentService(componentFactory))
         entityService.create {}
         entityService.create {}
@@ -214,14 +196,12 @@ internal class EntityTest {
 
         entityService.removeAll()
 
-        assertAll(
-            { assertEquals(0, listener.numCalls) },
-            { assertTrue(entityService.delayRemoval) }
-        )
+        assertEquals(0, listener.numCalls)
+        assertTrue(entityService.delayRemoval)
     }
 
     @Test
-    fun `create recycled entity`() {
+    fun createRecycledEntity() {
         val cmpService = ComponentService(componentFactory)
         val entityService = EntityService(32, cmpService)
         val expectedEntity = entityService.create { }
@@ -233,7 +213,7 @@ internal class EntityTest {
     }
 
     @Test
-    fun `delay entity removal`() {
+    fun delayEntityRemoval() {
         val cmpService = ComponentService(componentFactory)
         val entityService = EntityService(32, cmpService)
         val entity = entityService.create { }
@@ -247,7 +227,7 @@ internal class EntityTest {
     }
 
     @Test
-    fun `remove delayed entity`() {
+    fun removeDelayedEntity() {
         val cmpService = ComponentService(componentFactory)
         val entityService = EntityService(32, cmpService)
         val entity = entityService.create { }
@@ -260,14 +240,12 @@ internal class EntityTest {
         entityService.cleanupDelays()
         entityService.cleanupDelays()
 
-        assertAll(
-            { assertFalse(entityService.delayRemoval) },
-            { assertEquals(1, listener.numCalls) }
-        )
+        assertFalse(entityService.delayRemoval)
+        assertEquals(1, listener.numCalls)
     }
 
     @Test
-    fun `remove existing listener`() {
+    fun removeExistingListener() {
         val cmpService = ComponentService(componentFactory)
         val entityService = EntityService(32, cmpService)
         val listener = EntityTestListener()
@@ -279,7 +257,7 @@ internal class EntityTest {
     }
 
     @Test
-    fun `remove entity twice`() {
+    fun removeEntityTwice() {
         val cmpService = ComponentService(componentFactory)
         val entityService = EntityService(32, cmpService)
         val entity = entityService.create { }
@@ -289,9 +267,7 @@ internal class EntityTest {
         entityService.remove(entity)
         entityService.remove(entity)
 
-        assertAll(
-            { assertEquals(1, entityService.recycledEntities.size) },
-            { assertEquals(1, listener.numCalls) }
-        )
+        assertEquals(1, entityService.recycledEntities.size)
+        assertEquals(1, listener.numCalls)
     }
 }

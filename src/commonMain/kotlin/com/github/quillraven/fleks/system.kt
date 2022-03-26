@@ -123,7 +123,7 @@ object Manual : SortingType
 /**
  * An [IntervalSystem] of a [world][World] with a context to [entities][Entity].
  *
- * It must have at least one of [allOf], [anyOf] or [noneOf] objects defined.
+ * It must have at least one of [allOfComponents], [anyOfComponents] or [noneOfComponents] objects defined.
  * These objects define a [Family] of entities for which the [IteratingSystem] will get active.
  * The [IteratingSystem] will use those components which are part of the family config for
  * any specific processing within this system.

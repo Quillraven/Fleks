@@ -2,11 +2,7 @@ package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.BitArray
 import com.github.quillraven.fleks.collection.compareEntity
-import org.junit.jupiter.api.DynamicTest
-import org.junit.jupiter.api.DynamicTest.dynamicTest
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestFactory
-import org.junit.jupiter.api.assertAll
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 
@@ -20,9 +16,9 @@ internal class FamilyTest {
     }
 
 
-    @TestFactory
-    fun `test contains`(): Collection<DynamicTest> {
-        return listOf(
+    @Test
+    fun testContains() {
+        val testCases = listOf(
             arrayOf(
                 "empty family contains entity without components",
                 BitArray(), // entity component mask
@@ -71,36 +67,34 @@ internal class FamilyTest {
                 0, 0, 1,                     // family allOf, noneOf, anyOf indices
                 true                         // expected
             ),
-        ).map {
-            dynamicTest("test ${it[0]}") {
-                val eCmpMask = it[1] as BitArray
-                val fAllOf = createCmpBitmask(it[2] as Int)
-                val fNoneOf = createCmpBitmask(it[3] as Int)
-                val fAnyOf = createCmpBitmask(it[4] as Int)
-                val family = Family(fAllOf, fNoneOf, fAnyOf)
-                val expected = it[5] as Boolean
+        )
 
-                assertEquals(expected, eCmpMask in family)
-            }
+        testCases.forEach {
+            val eCmpMask = it[1] as BitArray
+            val fAllOf = createCmpBitmask(it[2] as Int)
+            val fNoneOf = createCmpBitmask(it[3] as Int)
+            val fAnyOf = createCmpBitmask(it[4] as Int)
+            val family = Family(fAllOf, fNoneOf, fAnyOf)
+            val expected = it[5] as Boolean
+
+            assertEquals(expected, eCmpMask in family)
         }
     }
 
     @Test
-    fun `update active entities`() {
+    fun updateActiveEntities() {
         val family = Family()
 
         family.onEntityCfgChanged(Entity(0), BitArray())
         family.updateActiveEntities()
 
-        assertAll(
-            { assertFalse { family.isDirty } },
-            { assertEquals(1, family.entitiesBag.size) },
-            { assertEquals(0, family.entitiesBag[0]) }
-        )
+        assertFalse { family.isDirty }
+        assertEquals(1, family.entitiesBag.size)
+        assertEquals(0, family.entitiesBag[0])
     }
 
     @Test
-    fun `call action for each entity`() {
+    fun callActionForEachEntity() {
         val family = Family()
         family.onEntityCfgChanged(Entity(0), BitArray())
         family.updateActiveEntities()
@@ -112,14 +106,12 @@ internal class FamilyTest {
             processedEntity = it.id
         }
 
-        assertAll(
-            { assertEquals(0, processedEntity) },
-            { assertEquals(1, numExecutions) }
-        )
+        assertEquals(0, processedEntity)
+        assertEquals(1, numExecutions)
     }
 
     @Test
-    fun `sort entities`() {
+    fun sortEntities() {
         val family = Family()
         family.onEntityCfgChanged(Entity(0), BitArray())
         family.onEntityCfgChanged(Entity(2), BitArray())
@@ -129,42 +121,40 @@ internal class FamilyTest {
         // sort descending by entity id
         family.sort(compareEntity { e1, e2 -> e2.id.compareTo(e1.id) })
 
-        assertAll(
-            { assertEquals(2, family.entitiesBag[0]) },
-            { assertEquals(1, family.entitiesBag[1]) },
-            { assertEquals(0, family.entitiesBag[2]) },
-        )
+        assertEquals(2, family.entitiesBag[0])
+        assertEquals(1, family.entitiesBag[1])
+        assertEquals(0, family.entitiesBag[2])
     }
 
-    @TestFactory
-    fun `test onEntityCfgChange`(): Collection<DynamicTest> {
-        return listOf(
+    @Test
+    fun testOnEntityCfgChange() {
+        val testCases = listOf(
             // first = add entity to family before calling onChange
             // second = make entity part of family
             Pair(false, false),
             Pair(false, true),
             Pair(true, false),
             Pair(true, true),
-        ).map {
-            dynamicTest("addEntityBefore=${it.first}, addEntity=${it.second}") {
-                val family = Family(BitArray().apply { set(1) }, null, null)
-                val addEntityBeforeCall = it.first
-                val addEntityToFamily = it.second
-                val entity = Entity(1)
-                if (addEntityBeforeCall) {
-                    family.onEntityCfgChanged(entity, BitArray().apply { set(1) })
-                    family.updateActiveEntities()
-                }
+        )
 
-                if (addEntityToFamily) {
-                    family.onEntityCfgChanged(entity, BitArray().apply { set(1) })
+        testCases.forEach {
+            val family = Family(BitArray().apply { set(1) }, null, null)
+            val addEntityBeforeCall = it.first
+            val addEntityToFamily = it.second
+            val entity = Entity(1)
+            if (addEntityBeforeCall) {
+                family.onEntityCfgChanged(entity, BitArray().apply { set(1) })
+                family.updateActiveEntities()
+            }
 
-                    assertEquals(!addEntityBeforeCall, family.isDirty)
-                } else {
-                    family.onEntityCfgChanged(entity, BitArray())
+            if (addEntityToFamily) {
+                family.onEntityCfgChanged(entity, BitArray().apply { set(1) })
 
-                    assertEquals(addEntityBeforeCall, family.isDirty)
-                }
+                assertEquals(!addEntityBeforeCall, family.isDirty)
+            } else {
+                family.onEntityCfgChanged(entity, BitArray())
+
+                assertEquals(addEntityBeforeCall, family.isDirty)
             }
         }
     }

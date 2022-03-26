@@ -1,12 +1,6 @@
 package com.github.quillraven.fleks
 
-import org.junit.jupiter.api.Assertions.assertAll
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
-import kotlin.test.assertContentEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 private data class WorldTestComponent(var x: Float = 0f)
 
@@ -40,10 +34,10 @@ private class WorldTestIteratingSystem : IteratingSystem(
 }
 
 private class WorldTestNamedDependencySystem : IntervalSystem() {
-    val _name: String = Inject.dependency("name")
+    val injName: String = Inject.dependency("name")
     val level: String = Inject.dependency("level")
 
-    val name: String = _name
+    val name: String = injName
 
     override fun onTick() = Unit
 }
@@ -55,24 +49,22 @@ private class WorldTestComponentListener : ComponentListener<WorldTestComponent>
 
 internal class WorldTest {
     @Test
-    fun `create empty world for 32 entities`() {
+    fun createEmptyWorldFor32Entities() {
         val w = World { entityCapacity = 32 }
 
-        assertAll(
-            { assertEquals(0, w.numEntities) },
-            { assertEquals(32, w.capacity) }
-        )
+        assertEquals(0, w.numEntities)
+        assertEquals(32, w.capacity)
     }
 
     @Test
-    fun `create empty world with 1 no-args IntervalSystem`() {
+    fun createEmptyWorldWith1NoArgsIntervalSystem() {
         val w = World { system(::WorldTestIntervalSystem) }
 
         assertNotNull(w.system<WorldTestIntervalSystem>())
     }
 
     @Test
-    fun `create empty world with 1 injectable args IteratingSystem`() {
+    fun createEmptyWorldWith1InjectableArgsIteratingSystem() {
         val w = World {
             system(::WorldTestIteratingSystem)
             component(::WorldTestComponent)
@@ -80,14 +72,12 @@ internal class WorldTest {
             inject("42")
         }
 
-        assertAll(
-            { assertNotNull(w.system<WorldTestIteratingSystem>()) },
-            { assertEquals("42", w.system<WorldTestIteratingSystem>().testInject) }
-        )
+        assertNotNull(w.system<WorldTestIteratingSystem>())
+        assertEquals("42", w.system<WorldTestIteratingSystem>().testInject)
     }
 
     @Test
-    fun `create empty world with 2 named injectables system`() {
+    fun createEmptyWorldWith2NamedInjectablesSystem() {
         val expectedName = "myName"
         val expectedLevel = "myLevel"
         val w = World {
@@ -98,16 +88,14 @@ internal class WorldTest {
             inject("level", "myLevel")
         }
 
-        assertAll(
-            { assertNotNull(w.system<WorldTestNamedDependencySystem>()) },
-            { assertEquals(expectedName, w.system<WorldTestNamedDependencySystem>().name) },
-            { assertEquals(expectedLevel, w.system<WorldTestNamedDependencySystem>().level) }
-        )
+        assertNotNull(w.system<WorldTestNamedDependencySystem>())
+        assertEquals(expectedName, w.system<WorldTestNamedDependencySystem>().name)
+        assertEquals(expectedLevel, w.system<WorldTestNamedDependencySystem>().level)
     }
 
     @Test
-    fun `cannot add the same system twice`() {
-        assertThrows<FleksSystemAlreadyAddedException> {
+    fun cannotAddTheSameSystemTwice() {
+        assertFailsWith<FleksSystemAlreadyAddedException> {
             World {
                 system(::WorldTestIntervalSystem)
                 system(::WorldTestIntervalSystem)
@@ -116,22 +104,22 @@ internal class WorldTest {
     }
 
     @Test
-    fun `cannot access a system that was not added`() {
+    fun cannotAccessSystemThatWasNotAdded() {
         val w = World {}
 
-        assertThrows<FleksNoSuchSystemException> { w.system<WorldTestIntervalSystem>() }
+        assertFailsWith<FleksNoSuchSystemException> { w.system<WorldTestIntervalSystem>() }
     }
 
     @Test
-    fun `cannot create a system when injectables are missing`() {
-        assertThrows<FleksSystemDependencyInjectException> {
+    fun cannotCreateSystemWhenInjectablesAreMissing() {
+        assertFailsWith<FleksSystemDependencyInjectException> {
             World { system(::WorldTestIteratingSystem) }
         }
     }
 
     @Test
-    fun `cannot inject the same type twice`() {
-        assertThrows<FleksInjectableAlreadyAddedException> {
+    fun cannotInjectTheSameTypeTwice() {
+        assertFailsWith<FleksInjectableAlreadyAddedException> {
             World {
                 inject("42")
                 inject("42")
@@ -140,7 +128,7 @@ internal class WorldTest {
     }
 
     @Test
-    fun `create new entity`() {
+    fun createNewEntity() {
         val w = World {
             system(::WorldTestIteratingSystem)
             component(::WorldTestComponent)
@@ -151,15 +139,13 @@ internal class WorldTest {
             add<WorldTestComponent> { x = 5f }
         }
 
-        assertAll(
-            { assertEquals(1, w.numEntities) },
-            { assertEquals(0, e.id) },
-            { assertEquals(5f, w.system<WorldTestIteratingSystem>().mapper[e].x) }
-        )
+        assertEquals(1, w.numEntities)
+        assertEquals(0, e.id)
+        assertEquals(5f, w.system<WorldTestIteratingSystem>().mapper[e].x)
     }
 
     @Test
-    fun `remove existing entity`() {
+    fun removeExistingEntity() {
         val w = World {}
         val e = w.entity()
 
@@ -169,7 +155,7 @@ internal class WorldTest {
     }
 
     @Test
-    fun `update world with deltaTime of 1`() {
+    fun updateWorldWithDeltaTimeOf1() {
         val w = World {
             system(::WorldTestIntervalSystem)
             system(::WorldTestIteratingSystem)
@@ -181,15 +167,13 @@ internal class WorldTest {
 
         w.update(1f)
 
-        assertAll(
-            { assertEquals(1f, w.deltaTime) },
-            { assertEquals(1, w.system<WorldTestIntervalSystem>().numCalls) },
-            { assertEquals(0, w.system<WorldTestIteratingSystem>().numCalls) }
-        )
+        assertEquals(1f, w.deltaTime)
+        assertEquals(1, w.system<WorldTestIntervalSystem>().numCalls)
+        assertEquals(0, w.system<WorldTestIteratingSystem>().numCalls)
     }
 
     @Test
-    fun `remove all entities`() {
+    fun removeAllEntities() {
         val w = World {}
         w.entity()
         w.entity()
@@ -200,7 +184,7 @@ internal class WorldTest {
     }
 
     @Test
-    fun `dispose world`() {
+    fun disposeWorld() {
         val w = World {
             system(::WorldTestIntervalSystem)
         }
@@ -209,14 +193,12 @@ internal class WorldTest {
 
         w.dispose()
 
-        assertAll(
-            { assertTrue(w.system<WorldTestIntervalSystem>().disposed) },
-            { assertEquals(0, w.numEntities) }
-        )
+        assertTrue(w.system<WorldTestIntervalSystem>().disposed)
+        assertEquals(0, w.numEntities)
     }
 
     @Test
-    fun `create world with ComponentListener`() {
+    fun createWorldWithComponentListener() {
         val w = World {
             component(::WorldTestComponent, ::WorldTestComponentListener)
         }
@@ -225,8 +207,8 @@ internal class WorldTest {
     }
 
     @Test
-    fun `cannot add same Component twice`() {
-        assertThrows<FleksComponentAlreadyAddedException> {
+    fun cannotAddSameComponentTwice() {
+        assertFailsWith<FleksComponentAlreadyAddedException> {
             World {
                 component(::WorldTestComponent)
                 component(::WorldTestComponent)
@@ -235,7 +217,7 @@ internal class WorldTest {
     }
 
     @Test
-    fun `get mapper`() {
+    fun getMapper() {
         val w = World {
             component(::WorldTestComponent)
         }
@@ -246,8 +228,8 @@ internal class WorldTest {
     }
 
     @Test
-    fun `throw exception when there are unused injectables`() {
-        assertThrows<FleksUnusedInjectablesException> {
+    fun throwExceptionWhenThereAreUnusedInjectables() {
+        assertFailsWith<FleksUnusedInjectablesException> {
             World {
                 inject("42")
             }
@@ -255,7 +237,7 @@ internal class WorldTest {
     }
 
     @Test
-    fun `iterate over all active entities`() {
+    fun iterateOverAllActiveEntities() {
         val w = World {}
         val e1 = w.entity()
         val e2 = w.entity()

@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "1.6.10"
+    kotlin("multiplatform") version "1.6.10"
     id("org.jetbrains.kotlinx.benchmark") version "0.4.2"
     id("org.jetbrains.dokka") version "1.6.10"
     `maven-publish`
@@ -10,7 +10,53 @@ group = "io.github.quillraven.fleks"
 version = "1.0-KMP-RC1"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
-val bmSourceSetName = "benchmarks"
+repositories {
+    mavenCentral()
+}
+
+kotlin {
+    jvm {
+        compilations.all {
+            kotlinOptions.jvmTarget = "1.8"
+        }
+        withJava()
+        testRuns["test"].executionTask.configure {
+            useJUnitPlatform()
+        }
+    }
+    /*js(BOTH) {
+        browser {
+            commonWebpackConfig {
+                cssSupport.enabled = true
+            }
+        }
+    }
+    val hostOs = System.getProperty("os.name")
+    val isMingwX64 = hostOs.startsWith("Windows")
+    val nativeTarget = when {
+        hostOs == "Mac OS X" -> macosX64("native")
+        hostOs == "Linux" -> linuxX64("native")
+        isMingwX64 -> mingwX64("native")
+        else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
+    }*/
+
+    sourceSets {
+        val commonMain by getting
+        val commonTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
+        /*val jvmMain by getting
+        val jvmTest by getting
+        val jsMain by getting
+        val jsTest by getting
+        val nativeMain by getting
+        val nativeTest by getting*/
+    }
+}
+
+/*val bmSourceSetName = "benchmarks"
 sourceSets {
     create(bmSourceSetName) {
         compileClasspath += sourceSets["main"].output
@@ -22,10 +68,6 @@ configurations {
     getByName("${bmSourceSetName}Implementation") {
         extendsFrom(configurations["implementation"])
     }
-}
-
-repositories {
-    mavenCentral()
 }
 
 dependencies {
@@ -46,7 +88,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 
 tasks.test {
     useJUnitPlatform()
-}
+}*/
 
 val dokkaJavadocJar = tasks.create<Jar>("jarDokkaJavadoc") {
     group = "build"
@@ -59,7 +101,7 @@ val dokkaJavadocJar = tasks.create<Jar>("jarDokkaJavadoc") {
 val sourcesJar = tasks.create<Jar>("jarSources") {
     group = "build"
 
-    from(sourceSets.main.get().allSource)
+    //from(sourceSets.main.get().allSource)
     archiveClassifier.set("sources")
 }
 
@@ -132,8 +174,9 @@ signing {
     sign(publishing.publications[publicationName])
 }
 
-benchmark {
+/*benchmark {
     targets {
         register(bmSourceSetName)
     }
 }
+*/

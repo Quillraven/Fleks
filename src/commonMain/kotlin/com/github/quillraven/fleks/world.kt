@@ -75,7 +75,7 @@ class WorldConfiguration {
     }
 
     /**
-     * Adds the specified [Component] and its [ComponentListener] to the [world][World]. If a component listener
+     * Adds the specified component and its [ComponentListener] to the [world][World]. If a component listener
      * is not needed than it can be omitted.
      *
      * @param compFactory the constructor method for creating the component.
@@ -203,7 +203,7 @@ class World(
     /**
      * Returns a [ComponentMapper] for the given type. If the mapper does not exist then it will be created.
      *
-     * @throws [FleksNoSuchComponentException] if the component of the given [type] does not exist in the
+     * @throws [FleksNoSuchComponentException] if the component of the given type does not exist in the
      * world configuration.
      * @throws [FleksInjectableTypeHasNoName] if the dependency type has no T::class.simpleName.
      */

@@ -3,7 +3,6 @@ package com.github.quillraven.fleks
 import com.github.quillraven.fleks.collection.BitArray
 import com.github.quillraven.fleks.collection.EntityComparator
 import com.github.quillraven.fleks.collection.IntBag
-import kotlin.reflect.KClass
 
 /**
  * A family of [entities][Entity]. It stores [entities][Entity] that have a specific configuration of components.
