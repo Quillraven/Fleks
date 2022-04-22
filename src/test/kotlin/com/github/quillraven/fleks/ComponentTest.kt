@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertAll
 import org.junit.jupiter.api.assertThrows
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertSame
 
 private data class ComponentTestComponent(var x: Int = 0)
@@ -129,6 +130,40 @@ internal class ComponentTest {
         val entity = Entity(0)
 
         assertThrows<FleksNoSuchComponentException> { mapper[entity] }
+    }
+
+    @Test
+    fun `get component of non-existing entity with sufficient capacity`() {
+        val cmpService = ComponentService()
+        val mapper = cmpService.mapper<ComponentTestComponent>()
+        val entity = Entity(0)
+
+        val cmp = mapper.getOrNull(entity)
+
+        assertNull(cmp)
+    }
+
+    @Test
+    fun `get component of non-existing entity without sufficient capacity`() {
+        val cmpService = ComponentService()
+        val mapper = cmpService.mapper<ComponentTestComponent>()
+        val entity = Entity(2048)
+
+        val cmp = mapper.getOrNull(entity)
+
+        assertNull(cmp)
+    }
+
+    @Test
+    fun `get component of existing entity via getOrNull`() {
+        val cmpService = ComponentService()
+        val mapper = cmpService.mapper<ComponentTestComponent>()
+        val entity = Entity(0)
+        mapper.addInternal(entity) { x = 2 }
+
+        val cmp = mapper.getOrNull(entity)
+
+        assertEquals(2, cmp?.x)
     }
 
     @Test

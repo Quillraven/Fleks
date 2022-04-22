@@ -241,6 +241,24 @@ class AnimationSystem(
 }
 ```
 
+There is also a `getOrNull` version available in case a component is not mandatory
+for every entity that gets processed by a system. An example is:
+
+```Kotlin
+@AllOf([Position::class, Physic::class])
+@NoneOf([Dead::class])
+@AnyOf([Sprite::class, Animation::class])
+class AnimationSystem(
+    private val animations: ComponentMapper<Animation>
+) : IteratingSystem() {
+    override fun onTickEntity(entity: Entity) {
+        animations.getOrNull(entity)?.let { animation ->
+            // entity has animation component which can be modified inside this block
+        }
+    }
+}
+```
+
 If you need to modify the component configuration of an entity then this can be done via the `configureEntity` function
 of an `IteratingSystem`. The purpose of this function is performance reasons to trigger internal calculations
 of Fleks only once instead of each time a component gets added or removed. Inside `configureEntity` you get access to
