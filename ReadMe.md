@@ -41,10 +41,6 @@ If you need a lightweight and fast ECS in your Kotlin application then feel free
 If you are looking for a long time verified ECS that supports Java 
 then use [Artemis-odb](https://github.com/junkdog/artemis-odb) or [Ashley](https://github.com/libgdx/ashley).
 
-## Example game using Fleks
-
-[Dinoleon](https://github.com/Quillraven/Dinoleon) is a small game using Fleks that showcases all functionalities in action!
-
 ## Current Status
 
 Thanks to [jobe-m](https://github.com/jobe-m) Fleks also has a Kotlin Multiplatform version which will be the future for Fleks.
@@ -82,6 +78,10 @@ implementation 'io.github.quillraven.fleks:Fleks:1.0-JVM'
 ```kotlin
 implementation("io.github.quillraven.fleks:Fleks:1.0-JVM")
 ```
+
+## Example game using Fleks
+
+[Dinoleon](https://github.com/Quillraven/Dinoleon) is a small game using Fleks JVM that showcases all functionalities in action!
 
 ## Current API and usage
 
