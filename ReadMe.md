@@ -1,10 +1,10 @@
 # Fleks
 
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/Quillraven/Fleks/blob/master/LICENSE)
-[![Maven](https://img.shields.io/badge/Maven-1.0--RC3-success.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks/1.0-RC3/jar)
+[![Maven](https://img.shields.io/badge/Maven-1.0--JVM-success.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks/1.0-JVM/jar)
 
 [![Build Master](https://img.shields.io/github/workflow/status/quillraven/fleks/Build/master?event=push&label=Build%20master)](https://github.com/Quillraven/fleks/actions)
-[![Kotlin](https://img.shields.io/badge/Kotlin-1.6.10-red.svg)](http://kotlinlang.org/)
+[![Kotlin](https://img.shields.io/badge/Kotlin-1.6.20-red.svg)](http://kotlinlang.org/)
 
 A **f**ast, **l**ightweight, **e**ntity component **s**ystem library written in **K**otlin.
 
@@ -47,8 +47,18 @@ then use [Artemis-odb](https://github.com/junkdog/artemis-odb) or [Ashley](https
 
 ## Current Status
 
-Release Candidate version 1.0-RC3 is available on maven central since 30-Jan-2022. Please feel free to contribute to the
-Discussions or Issues. Help is always appreciated. 
+Thanks to [jobe-m](https://github.com/jobe-m) Fleks also has a Kotlin Multiplatform version which will be the future for Fleks.
+However, since KMP is still in alpha and in my opinion the developer experience is not yet there where it should be,
+Fleks will come in two flavors and will also have two releases in parallel:
+- **JVM** which can be used for any backend that supports a JVM like native Java applications or Android
+- **KMP** which can be used for any platform and can also be used in a [KorGE](https://korge.org/) game
+
+You can find the KMP version [here](https://github.com/Quillraven/Fleks/tree/kmp).
+It has a slightly different API for the world's configuration due to limitations in reflection but after that
+everything is the same as in the JVM version. And as mentioned above, in the future those
+two flavors will be combined into a single one which is most likely the KMP version once I figured out
+how to support a similar nice user experience as in the JVM flavor ;)
+
 To use Fleks add it as a dependency to your project:
 
 #### Apache Maven
@@ -57,28 +67,21 @@ To use Fleks add it as a dependency to your project:
 <dependency>
   <groupId>io.github.quillraven.fleks</groupId>
   <artifactId>Fleks</artifactId>
-  <version>1.0-RC3</version>
+  <version>1.0-JVM</version>
 </dependency>
 ```
 
 #### Gradle (Groovy)
 
 ```kotlin
-implementation 'io.github.quillraven.fleks:Fleks:1.0-RC3'
+implementation 'io.github.quillraven.fleks:Fleks:1.0-JVM'
 ```
 
 #### Gradle (Kotlin)
 
 ```kotlin
-implementation("io.github.quillraven.fleks:Fleks:1.0-RC3")
+implementation("io.github.quillraven.fleks:Fleks:1.0-JVM")
 ```
-
-### Kotlin Multiplatform Version
-
-Thanks to [jobe-m](https://github.com/jobe-m) Fleks also has a KMP branch which will be the future for Fleks.
-Right now it will have two versions in parallel because the API for Fleks-KMP is not final yet and might change
-but if you want to use Fleks for example for a [KorGE](https://korge.org/) game then please use the [kmp](https://github.com/Quillraven/Fleks/tree/kmp)
-version. Simply replace the version from above with the latest KMP version like `1.0-KMP-RC1`.
 
 ## Current API and usage
 
