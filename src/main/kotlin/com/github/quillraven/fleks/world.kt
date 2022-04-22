@@ -11,6 +11,9 @@ import kotlin.reflect.KClass
 @Retention(AnnotationRetention.RUNTIME)
 annotation class Qualifier(val name: String)
 
+@DslMarker
+annotation class WorldCfgMarker
+
 /**
  * Wrapper class for injectables of the [WorldConfiguration].
  * It is used in the [SystemService] to find out any unused injectables.
@@ -23,6 +26,7 @@ data class Injectable(val injObj: Any, var used: Boolean = false)
  * Additionally, you can define [ComponentListener] to define custom logic when a specific component is
  * added or removed from an [entity][Entity].
  */
+@WorldCfgMarker
 class WorldConfiguration {
     /**
      * Initial maximum entity capacity.
@@ -132,8 +136,15 @@ class World(
 
     init {
         val worldCfg = WorldConfiguration().apply(cfg)
+        // It is important to create the EntityService before the SystemService
+        // since this reference is assigned to newly created systems that are
+        // created inside the SystemService below.
         entityService = EntityService(worldCfg.entityCapacity, componentService)
         val injectables = worldCfg.injectables
+        // set a Fleks internal global reference to the current world that
+        // gets created. This is used to correctly initialize the world
+        // reference of any created system in the SystemService below.
+        CURRENT_WORLD = this
         systemService = SystemService(this, worldCfg.systemTypes, injectables)
 
         // create and register ComponentListener
@@ -216,5 +227,9 @@ class World(
     fun dispose() {
         entityService.removeAll()
         systemService.dispose()
+    }
+
+    companion object {
+        internal lateinit var CURRENT_WORLD: World
     }
 }
