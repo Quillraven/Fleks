@@ -1,13 +1,13 @@
 plugins {
-    kotlin("jvm") version "1.6.10"
-    id("org.jetbrains.kotlinx.benchmark") version "0.4.1"
+    kotlin("jvm") version "1.6.20"
+    id("org.jetbrains.kotlinx.benchmark") version "0.4.2"
     id("org.jetbrains.dokka") version "1.6.10"
     `maven-publish`
     signing
 }
 
 group = "io.github.quillraven.fleks"
-version = "1.0-RC3"
+version = "1.0-JVM"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
 val bmSourceSetName = "benchmarks"
