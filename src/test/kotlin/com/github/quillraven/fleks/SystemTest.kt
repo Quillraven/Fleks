@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertAll
 import org.junit.jupiter.api.assertThrows
-import java.lang.reflect.InvocationTargetException
 import kotlin.reflect.KClass
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
@@ -51,22 +50,6 @@ private data class SystemTestComponent(var x: Float = 0f)
 
 private class SystemTestIteratingSystemNoFamily : IteratingSystem() {
     override fun onTickEntity(entity: Entity) = Unit
-}
-
-private class SystemTestInitBlock : IntervalSystem() {
-    private val someValue: Float = world.deltaTime
-
-    override fun onTick() = Unit
-}
-
-private class SystemTestOnInitBlock : IntervalSystem() {
-    var someValue: Float = 42f
-
-    override fun onInit() {
-        someValue = world.deltaTime
-    }
-
-    override fun onTick() = Unit
 }
 
 @AllOf([SystemTestComponent::class])
@@ -194,7 +177,8 @@ internal class SystemTest {
 
     @Test
     fun `system with interval EachFrame returns world's delta time`() {
-        val system = SystemTestIntervalSystemEachFrame().apply { this.world = World {} }
+        World.CURRENT_WORLD = World { }
+        val system = SystemTestIntervalSystemEachFrame()
         system.world.update(42f)
 
         assertEquals(42f, system.deltaTime)
@@ -202,7 +186,8 @@ internal class SystemTest {
 
     @Test
     fun `system with fixed interval of 0,25f gets called four times when delta time is 1,1f`() {
-        val system = SystemTestIntervalSystemFixed().apply { this.world = World {} }
+        World.CURRENT_WORLD = World { }
+        val system = SystemTestIntervalSystemFixed()
         system.world.update(1.1f)
 
         system.onUpdate()
@@ -427,19 +412,5 @@ internal class SystemTest {
         service.dispose()
 
         assertEquals(1, service.system<SystemTestIntervalSystemEachFrame>().numDisposes)
-    }
-
-    @Test
-    fun `init block of a system constructor has no access to the world`() {
-        assertThrows<InvocationTargetException> { systemService(listOf(SystemTestInitBlock::class)) }
-    }
-
-    @Test
-    fun `onInit block is called for any newly created system`() {
-        val expected = 0f
-
-        val service = systemService(listOf(SystemTestOnInitBlock::class))
-
-        assertEquals(expected, service.system<SystemTestOnInitBlock>().someValue)
     }
 }

@@ -99,6 +99,18 @@ class ComponentMapper<T>(
     }
 
     /**
+     * Returns a component of the specific type of the given [entity] or null if the entity does not have this component.
+     */
+    fun getOrNull(entity: Entity): T? {
+        if (components.size > entity.id) {
+            // entity potentially has this component. However, return value can still be null
+            return components[entity.id]
+        }
+        // entity is not part of mapper
+        return null
+    }
+
+    /**
      * Returns true if and only if the given [entity] has a component of the specific type.
      */
     operator fun contains(entity: Entity): Boolean = components.size > entity.id && components[entity.id] != null

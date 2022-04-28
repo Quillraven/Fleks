@@ -37,10 +37,8 @@ abstract class IntervalSystem(
 ) {
     /**
      * Returns the [world][World] to which this system belongs.
-     * This reference gets updated by the [SystemService] when the system gets created via reflection.
      */
-    lateinit var world: World
-        internal set
+    val world: World = World.CURRENT_WORLD
 
     private var accumulator: Float = 0.0f
 
@@ -53,12 +51,6 @@ abstract class IntervalSystem(
      */
     val deltaTime: Float
         get() = if (interval is Fixed) interval.step else world.deltaTime
-
-    /**
-     * Optional function for any initialization logic that requires access to the [world].
-     * This is necessary because the normal init block does not have an initialized [world] yet.
-     */
-    open fun onInit() = Unit
 
     /**
      * Updates the system according to its [interval]. This function gets called from [World.update] when
@@ -145,11 +137,9 @@ abstract class IteratingSystem(
 
     /**
      * Returns the [entityService][EntityService] of this system.
-     * This reference gets updated by the [SystemService] when the system gets created via reflection.
      */
     @PublishedApi
-    internal lateinit var entityService: EntityService
-        private set
+    internal val entityService: EntityService = world.entityService
 
     /**
      * Flag that defines if sorting of [entities][Entity] will be performed the next time [onTick] is called.
@@ -255,25 +245,16 @@ class SystemService(
             val sysType = systemTypes[sysIdx]
             val newSystem = newInstance(sysType, cmpService, injectables)
 
-            // set world reference of newly created system
-            val worldField = field(newSystem, "world")
-            worldField.isAccessible = true
-            worldField.set(newSystem, world)
-
             if (IteratingSystem::class.java.isAssignableFrom(sysType.java)) {
-                // set family and entity service reference of newly created iterating system
+                // set family reference of newly created iterating system
                 @Suppress("UNCHECKED_CAST")
                 val family = family(sysType as KClass<out IteratingSystem>, entityService, cmpService, allFamilies)
                 val famField = field(newSystem, "family")
                 famField.isAccessible = true
                 famField.set(newSystem, family)
-
-                val eServiceField = field(newSystem, "entityService")
-                eServiceField.isAccessible = true
-                eServiceField.set(newSystem, entityService)
             }
 
-            newSystem.apply { onInit() }
+            newSystem
         }
     }
 
@@ -356,7 +337,10 @@ class SystemService(
             try {
                 classField = sysClass.getDeclaredField(fieldName)
             } catch (e: NoSuchFieldException) {
-                val supC = sysClass.superclass ?: throw FleksSystemCreationException(system::class, "No '$fieldName' field found")
+                val supC = sysClass.superclass ?: throw FleksSystemCreationException(
+                    system::class,
+                    "No '$fieldName' field found"
+                )
                 sysClass = supC
             }
 

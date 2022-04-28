@@ -38,6 +38,15 @@ private class WorldTestIteratingSystem(
     override fun onTickEntity(entity: Entity) = Unit
 }
 
+@AllOf([WorldTestComponent::class])
+private class WorldTestInitSystem : IteratingSystem() {
+    init {
+        world.entity { add<WorldTestComponent>() }
+    }
+
+    override fun onTickEntity(entity: Entity) = Unit
+}
+
 private class WorldTestNamedDependencySystem(
     @Qualifier("name") _name: String,
     @Qualifier("level") val level: String
@@ -269,5 +278,22 @@ internal class WorldTest {
         w.forEach { actualEntities.add(it) }
 
         assertContentEquals(listOf(e1, e3), actualEntities)
+    }
+
+    @Test
+    fun `create two worlds with systems`() {
+        val w1 = World {
+            system<WorldTestInitSystem>()
+        }
+        val w2 = World {
+            system<WorldTestInitSystem>()
+        }
+
+        assertAll(
+            { assertEquals(w1, w1.system<WorldTestInitSystem>().world) },
+            { assertEquals(1, w1.numEntities) },
+            { assertEquals(w2, w2.system<WorldTestInitSystem>().world) },
+            { assertEquals(1, w2.numEntities) },
+        )
     }
 }
