@@ -33,7 +33,7 @@ data class Fixed(val step: Float) : Interval
  */
 abstract class IntervalSystem(
     val interval: Interval = EachFrame,
-    var enabled: Boolean = true
+    var enabled: Boolean = true,
 ) {
     /**
      * Returns the [world][World] to which this system belongs.
@@ -255,6 +255,16 @@ class SystemService(
             }
 
             newSystem
+        }
+
+        // Families are created above together with its system. This can have the side effect that they are
+        // not updated correctly if entities get created in a system's init block because they are not existing
+        // at the time of entity creation.
+        // To fix this we notify them manually for each entity that got created that way.
+        allFamilies.forEach { family ->
+            entityService.forEach { entity ->
+                family.onEntityCfgChanged(entity, entityService.cmpMasks[entity.id])
+            }
         }
     }
 

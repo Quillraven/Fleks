@@ -154,6 +154,19 @@ private class SystemTestIteratingSystemQualifiedInjectable(
     override fun onTickEntity(entity: Entity) = Unit
 }
 
+@AnyOf([SystemTestComponent::class])
+private class SystemTestEntityCreation : IteratingSystem() {
+    var numTicks = 0
+
+    init {
+        world.entity { add<SystemTestComponent>() }
+    }
+
+    override fun onTickEntity(entity: Entity) {
+        ++numTicks
+    }
+}
+
 internal class SystemTest {
     private fun systemService(
         systemTypes: List<KClass<out IntervalSystem>>,
@@ -412,5 +425,18 @@ internal class SystemTest {
         service.dispose()
 
         assertEquals(1, service.system<SystemTestIntervalSystemEachFrame>().numDisposes)
+    }
+
+    @Test
+    fun `create entity during system init`() {
+        // this test verifies that entities that are created in a system's init block
+        // are correctly added to families
+        val world = World {}
+
+        val service = systemService(listOf(SystemTestEntityCreation::class), world = world)
+        service.update()
+
+        val system = service.system<SystemTestEntityCreation>()
+        assertEquals(1, system.numTicks)
     }
 }
