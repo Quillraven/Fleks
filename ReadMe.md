@@ -1,7 +1,7 @@
 # Fleks
 
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/Quillraven/Fleks/blob/master/LICENSE)
-[![Maven](https://img.shields.io/badge/Maven-1.0--KMP-success.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks/1.0-KMP/jar)
+[![Maven](https://img.shields.io/badge/Maven-1.1--KMP-success.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks/1.1-KMP/jar)
 
 [![Build KMP](https://img.shields.io/github/workflow/status/quillraven/fleks/Build/next?event=push&label=Build%20next)](https://github.com/Quillraven/fleks/actions)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.6.21-red.svg)](http://kotlinlang.org/)
@@ -69,20 +69,20 @@ To use Fleks add it as a dependency to your project:
 <dependency>
   <groupId>io.github.quillraven.fleks</groupId>
   <artifactId>Fleks</artifactId>
-  <version>1.0-KMP-RC1</version>
+  <version>1.1-KMP</version>
 </dependency>
 ```
 
 #### Gradle (Groovy)
 
 ```kotlin
-implementation 'io.github.quillraven.fleks:Fleks:1.0-KMP-RC1'
+implementation 'io.github.quillraven.fleks:Fleks:1.1-KMP'
 ```
 
 #### Gradle (Kotlin)
 
 ```kotlin
-implementation("io.github.quillraven.fleks:Fleks:1.0-KMP-RC1")
+implementation("io.github.quillraven.fleks:Fleks:1.1-KMP")
 ```
 
 ## Example game using Fleks
