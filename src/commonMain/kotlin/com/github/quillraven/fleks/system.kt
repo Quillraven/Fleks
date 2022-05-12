@@ -33,7 +33,7 @@ data class Fixed(val step: Float) : Interval
  */
 abstract class IntervalSystem(
     val interval: Interval = EachFrame,
-    var enabled: Boolean = true
+    var enabled: Boolean = true,
 ) {
     /**
      * Returns the [world][World] to which this system belongs.
@@ -177,7 +177,7 @@ abstract class IteratingSystem(
      * a FleksNoSuchComponentException. To avoid that you could check if an entity really has the component
      * before accessing it but that is redundant in context of a family.
      *
-     * To avoid these kinds of problems, entity removals are delayed until the end of the iteration. This also means
+     * To avoid these kinds of issues, entity removals are delayed until the end of the iteration. This also means
      * that a removed entity of this family will still be part of the [onTickEntity] for the current iteration.
      */
     override fun onTick() {
@@ -264,6 +264,12 @@ class SystemService(
 
             newSystem
         }
+
+        // Families are created above together with its system. This can have the side effect that they are
+        // not updated correctly if entities get created in a system's init block because the family might not exist
+        // at that time.
+        // Therefore, we need to notify them one time after all families are available to update them correctly.
+        entityService.notifyAll()
     }
 
     /**

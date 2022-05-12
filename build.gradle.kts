@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "io.github.quillraven.fleks"
-version = "1.0-KMP" // later: "2.0-RC1"
+version = "1.0-KMP-SNAPSHOT" // later: "2.0-RC1"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
 repositories {
@@ -132,6 +132,12 @@ publishing {
                     }
                 }
             }
+        }
+
+        // only sign if version is not a SNAPSHOT release.
+        // this makes it easier to publish to mavenLocal and test the packed version.
+        tasks.withType<Sign>().configureEach {
+            onlyIf { !project.version.toString().endsWith("SNAPSHOT") }
         }
 
         signing {
