@@ -127,6 +127,12 @@ publishing {
     }
 }
 
+// only sign if version is not a SNAPSHOT release.
+// this makes it easier to publish to mavenLocal and test the packed version.
+tasks.withType<Sign>().configureEach {
+    onlyIf { !project.version.toString().endsWith("SNAPSHOT") }
+}
+
 signing {
     useInMemoryPgpKeys(System.getenv("SIGNING_KEY"), System.getenv("SIGNING_PASSWORD"))
     sign(publishing.publications[publicationName])
