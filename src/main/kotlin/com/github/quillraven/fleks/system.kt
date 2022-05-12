@@ -2,7 +2,6 @@ package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.BitArray
 import com.github.quillraven.fleks.collection.EntityComparator
-import java.lang.reflect.Field
 import kotlin.reflect.KClass
 
 /**
@@ -33,7 +32,7 @@ data class Fixed(val step: Float) : Interval
  */
 abstract class IntervalSystem(
     val interval: Interval = EachFrame,
-    var enabled: Boolean = true
+    var enabled: Boolean = true,
 ) {
     /**
      * Returns the [world][World] to which this system belongs.
@@ -133,7 +132,7 @@ abstract class IteratingSystem(
      * Returns the [family][Family] of this system.
      * This reference gets updated by the [SystemService] when the system gets created via reflection.
      */
-    private lateinit var family: Family
+    internal lateinit var family: Family
 
     /**
      * Returns the [entityService][EntityService] of this system.
@@ -167,7 +166,7 @@ abstract class IteratingSystem(
      * a FleksNoSuchComponentException. To avoid that you could check if an entity really has the component
      * before accessing it but that is redundant in context of a family.
      *
-     * To avoid these kinds of problems, entity removals are delayed until the end of the iteration. This also means
+     * To avoid these kinds of issues, entity removals are delayed until the end of the iteration. This also means
      * that a removed entity of this family will still be part of the [onTickEntity] for the current iteration.
      */
     override fun onTick() {
@@ -245,17 +244,20 @@ class SystemService(
             val sysType = systemTypes[sysIdx]
             val newSystem = newInstance(sysType, cmpService, injectables)
 
-            if (IteratingSystem::class.java.isAssignableFrom(sysType.java)) {
+            if (newSystem is IteratingSystem) {
                 // set family reference of newly created iterating system
                 @Suppress("UNCHECKED_CAST")
-                val family = family(sysType as KClass<out IteratingSystem>, entityService, cmpService, allFamilies)
-                val famField = field(newSystem, "family")
-                famField.isAccessible = true
-                famField.set(newSystem, family)
+                newSystem.family = family(sysType as KClass<out IteratingSystem>, entityService, cmpService, allFamilies)
             }
 
             newSystem
         }
+
+        // Families are created above together with its system. This can have the side effect that they are
+        // not updated correctly if entities get created in a system's init block because the family might not exist
+        // at that time.
+        // Therefore, we need to notify them one time after all families are available to update them correctly.
+        entityService.notifyAll()
     }
 
     /**
@@ -323,29 +325,6 @@ class SystemService(
             allFamilies.add(family)
         }
         return family
-    }
-
-    /**
-     * Returns a [Field] of name [fieldName] of the given [system].
-     *
-     * @throws [FleksSystemCreationException] if the [system] does not have a [Field] of name [fieldName].
-     */
-    private fun field(system: IntervalSystem, fieldName: String): Field {
-        var sysClass: Class<*> = system::class.java
-        var classField: Field? = null
-        while (classField == null) {
-            try {
-                classField = sysClass.getDeclaredField(fieldName)
-            } catch (e: NoSuchFieldException) {
-                val supC = sysClass.superclass ?: throw FleksSystemCreationException(
-                    system::class,
-                    "No '$fieldName' field found"
-                )
-                sysClass = supC
-            }
-
-        }
-        return classField
     }
 
     /**
