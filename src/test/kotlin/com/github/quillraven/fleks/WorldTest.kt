@@ -80,6 +80,13 @@ internal class WorldTest {
     }
 
     @Test
+    fun `get world systems`() {
+        val w = World { system<WorldTestIntervalSystem>() }
+
+        assertEquals(w.systemService.systems, w.systems)
+    }
+
+    @Test
     fun `create empty world with 1 injectable args IteratingSystem`() {
         val w = World {
             system<WorldTestIteratingSystem>()
