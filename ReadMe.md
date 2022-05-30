@@ -429,7 +429,8 @@ fun main() {
 
 There might be situations where you need to execute a specific code when a component gets added or removed from an entity.
 This can be done via `ComponentListener` in Fleks. They are created in a similar way like systems meaning that they are created
-by Fleks using dependency injection.
+by Fleks using dependency injection. The `world` of a `ComponentListener`
+is automatically available as a dependency like any `ComponentMapper`.
 
 Here is an example of a listener that reacts on add/remove of a `Box2dComponent` and destroys the [body](https://github.com/libgdx/libgdx/wiki/Box2d#objectsbodies)
 when the component gets removed from an entity:

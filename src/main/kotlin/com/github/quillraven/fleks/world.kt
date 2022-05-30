@@ -147,6 +147,8 @@ class World(
         // created inside the SystemService below.
         entityService = EntityService(worldCfg.entityCapacity, componentService)
         val injectables = worldCfg.injectables
+        // add the world as a used dependency in case any system or ComponentListener needs it
+        injectables[World::class.qualifiedName!!] = Injectable(this, true)
         // set a Fleks internal global reference to the current world that
         // gets created. This is used to correctly initialize the world
         // reference of any created system in the SystemService below.

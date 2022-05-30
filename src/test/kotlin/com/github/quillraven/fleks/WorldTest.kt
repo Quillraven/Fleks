@@ -59,7 +59,9 @@ private class WorldTestNamedDependencySystem(
     override fun onTick() = Unit
 }
 
-private class WorldTestComponentListener : ComponentListener<WorldTestComponent> {
+private class WorldTestComponentListener(
+    val world: World
+) : ComponentListener<WorldTestComponent> {
     override fun onComponentAdded(entity: Entity, component: WorldTestComponent) = Unit
     override fun onComponentRemoved(entity: Entity, component: WorldTestComponent) = Unit
 }
@@ -233,8 +235,12 @@ internal class WorldTest {
         val w = World {
             componentListener<WorldTestComponentListener>()
         }
+        val actualListeners = w.componentService.mapper<WorldTestComponent>().listeners
 
-        assertEquals(1, w.componentService.mapper<WorldTestComponent>().listeners.size)
+        assertAll(
+            { assertEquals(1, actualListeners.size) },
+            { assertEquals(w, (actualListeners[0] as WorldTestComponentListener).world) }
+        )
     }
 
     @Test
