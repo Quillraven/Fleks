@@ -134,6 +134,12 @@ class World(
     val capacity: Int
         get() = entityService.capacity
 
+    /**
+     * Returns the world's systems.
+     */
+    val systems: Array<IntervalSystem>
+        get() = systemService.systems
+
     init {
         val worldCfg = WorldConfiguration().apply(cfg)
         // It is important to create the EntityService before the SystemService
