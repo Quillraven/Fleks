@@ -393,12 +393,55 @@ The world's `forEach` function allows you to iterate over all active entities:
     val e3 = world.entity()
     world.remove(e2)
 
-    // this will iterate over entities e1 and e3
+    // this will iterate over entities e1..e3
     world.forEach { entity ->
         // do something with the entity
     }
 }
 ```
+
+In case you need to iterate over entities with a specific component configuration
+that is not part of a system then this is possible via the `family` function
+of a `world`. 
+A `family` keeps track of entities with a specific config and allows sorting
+and iteration over these entities. The following example shows how to
+get a `family` for entities with a MoveComponent but without a DeadComponent:
+
+```kotlin
+fun main() {
+    val world = World {}
+    val e1 = w.entity { 
+        add<MoveComponent> { speed = 70f } 
+    }
+    val e2 = w.entity { 
+        add<MoveComponent> { speed = 50f }
+        add<DeadComponent>()
+    }
+    val e3 = w.entity { 
+        add<MoveComponent> { speed = 30f } 
+    }
+
+    // get family for entities with a MoveComponent
+    // and without a DeadComponent
+    val family = world.family(
+        allOf = arrayOf(MoveComponent::class),
+        noneOf = arrayOf(DeadComponent::class),
+    )
+
+    // you can sort entities of a family
+    val moves = world.mapper<MoveComponent>()
+    family.sort(compareEntity { entity1, entity2 -> moves[entity1].speed.compareTo(moves[entity2].speed) })
+    
+    // And you can iterate over entities of a family.
+    // In this example it will iterate in following order:
+    // 1) e3
+    // 2) e1
+    family.forEach { entity ->
+        // do something with the entity
+    }
+}
+```
+
 
 ### Entity and Components
 
