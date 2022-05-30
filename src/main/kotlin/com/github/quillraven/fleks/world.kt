@@ -173,6 +173,13 @@ class World(
     }
 
     /**
+     * Updates an [entity] using the given [configuration] to add and remove components.
+     */
+    inline fun configureEntity(entity: Entity, configuration: EntityUpdateCfg.(Entity) -> Unit) {
+        entityService.configureEntity(entity, configuration)
+    }
+
+    /**
      * Removes the given [entity] from the world. The [entity] will be recycled and reused for
      * future calls to [World.entity].
      */

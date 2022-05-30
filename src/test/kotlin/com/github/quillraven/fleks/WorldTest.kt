@@ -29,13 +29,16 @@ private class WorldTestIteratingSystem(
     val mapper: ComponentMapper<WorldTestComponent>
 ) : IteratingSystem() {
     var numCalls = 0
+    var numCallsEntity = 0
 
     override fun onTick() {
         ++numCalls
         super.onTick()
     }
 
-    override fun onTickEntity(entity: Entity) = Unit
+    override fun onTickEntity(entity: Entity) {
+        ++numCallsEntity
+    }
 }
 
 @AllOf([WorldTestComponent::class])
@@ -295,5 +298,20 @@ internal class WorldTest {
             { assertEquals(w2, w2.system<WorldTestInitSystem>().world) },
             { assertEquals(1, w2.numEntities) },
         )
+    }
+
+    @Test
+    fun `configure entity after creation`() {
+        val w = World {
+            inject("test")
+            system<WorldTestIteratingSystem>()
+        }
+        val e = w.entity()
+        val mapper: ComponentMapper<WorldTestComponent> = w.mapper()
+
+        w.configureEntity(e) { mapper.add(it) }
+        w.update(0f)
+
+        assertEquals(1, w.system<WorldTestIteratingSystem>().numCallsEntity)
     }
 }
