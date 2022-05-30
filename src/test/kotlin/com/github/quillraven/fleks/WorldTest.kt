@@ -1,5 +1,6 @@
 package com.github.quillraven.fleks
 
+import com.github.quillraven.fleks.collection.compareEntity
 import org.junit.jupiter.api.Assertions.assertAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -9,6 +10,8 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 private data class WorldTestComponent(var x: Float = 0f)
+
+private class WorldTestComponent2
 
 private class WorldTestIntervalSystem : IntervalSystem() {
     var numCalls = 0
@@ -45,6 +48,20 @@ private class WorldTestIteratingSystem(
 private class WorldTestInitSystem : IteratingSystem() {
     init {
         world.entity { add<WorldTestComponent>() }
+    }
+
+    override fun onTickEntity(entity: Entity) = Unit
+}
+
+@AllOf([WorldTestComponent::class])
+private class WorldTestInitSystemExtraFamily : IteratingSystem() {
+    val extraFamily = world.family(
+        anyOf = arrayOf(WorldTestComponent2::class),
+        noneOf = arrayOf(WorldTestComponent::class)
+    )
+
+    init {
+        world.entity { add<WorldTestComponent2>() }
     }
 
     override fun onTickEntity(entity: Entity) = Unit
@@ -326,5 +343,73 @@ internal class WorldTest {
         w.update(0f)
 
         assertEquals(1, w.system<WorldTestIteratingSystem>().numCallsEntity)
+    }
+
+    @Test
+    fun `get WorldFamily after world creation`() {
+        // WorldTestInitSystem creates an entity in its init block
+        // -> family must be dirty and has a size of 1
+        val w = World {
+            system<WorldTestInitSystem>()
+        }
+
+        val wFamily = w.family(allOf = arrayOf(WorldTestComponent::class))
+
+        assertAll(
+            { assertTrue(wFamily.family.isDirty) },
+            { assertEquals(1, wFamily.family.numEntities) }
+        )
+    }
+
+    @Test
+    fun `get WorldFamily within system's constructor`() {
+        // WorldTestInitSystemExtraFamily creates an entity in its init block and
+        // also a family with a different configuration that the system itself
+        // -> system family is empty and extra family contains 1 entity
+        val w = World {
+            system<WorldTestInitSystemExtraFamily>()
+        }
+        val s = w.system<WorldTestInitSystemExtraFamily>()
+
+        assertAll(
+            { assertEquals(1, s.extraFamily.family.numEntities) },
+            { assertEquals(0, s.family.numEntities) }
+        )
+    }
+
+    @Test
+    fun `iterate over WorldFamily`() {
+        val w = World {}
+        val e1 = w.entity { add<WorldTestComponent>() }
+        val e2 = w.entity { add<WorldTestComponent>() }
+        val f = w.family(allOf = arrayOf(WorldTestComponent::class))
+        val actualEntities = mutableListOf<Entity>()
+
+        f.forEach { actualEntities.add(it) }
+
+        assertTrue(actualEntities.containsAll(arrayListOf(e1, e2)))
+    }
+
+    @Test
+    fun `sorted iteration over WorldFamily`() {
+        val w = World {}
+        val e1 = w.entity { add<WorldTestComponent> { x = 15f } }
+        val e2 = w.entity { add<WorldTestComponent> { x = 10f } }
+        val f = w.family(allOf = arrayOf(WorldTestComponent::class))
+        val actualEntities = mutableListOf<Entity>()
+        val mapper = w.mapper<WorldTestComponent>()
+
+        f.sort(compareEntity { entity1, entity2 -> mapper[entity1].x.compareTo(mapper[entity2].x) })
+        f.forEach { actualEntities.add(it) }
+
+        assertEquals(arrayListOf(e2, e1), actualEntities)
+    }
+
+    @Test
+    fun `cannot create family without any configuration`() {
+        val w = World {}
+
+        assertThrows<FleksFamilyException> { w.family() }
+        assertThrows<FleksFamilyException> { w.family(arrayOf(), arrayOf(), arrayOf()) }
     }
 }

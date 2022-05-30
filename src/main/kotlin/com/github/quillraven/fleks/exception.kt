@@ -33,3 +33,14 @@ class FleksUnusedInjectablesException(unused: List<KClass<*>>) :
 
 class FleksReflectionException(type: KClass<*>, details: String) :
     FleksException("Cannot create ${type.simpleName}.\nDetails: $details")
+
+class FleksFamilyException(
+    allOf: List<ComponentMapper<*>>?,
+    noneOf: List<ComponentMapper<*>>?,
+    anyOf: List<ComponentMapper<*>>?,
+) : FleksException(
+    """Family must have at least one of allOf, noneOf or anyOf.
+        |allOf: $allOf
+        |noneOf: $noneOf
+        |anyOf: $anyOf""".trimMargin()
+)

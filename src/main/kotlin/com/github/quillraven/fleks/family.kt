@@ -58,6 +58,12 @@ data class Family(
     private val entities = BitArray(1)
 
     /**
+     * Returns the number of [entities][Entity] that belong to this family.
+     */
+    val numEntities: Int
+        get() = entities.length()
+
+    /**
      * Flag to indicate if there are changes in the [entities]. If it is true then the [entitiesBag] should get
      * updated via a call to [updateActiveEntities].
      *
@@ -117,5 +123,38 @@ data class Family(
             isDirty = true
             entities.clear(entity.id)
         }
+    }
+}
+
+/**
+ * A [family][Family] of [entities][Entity] created without an [IteratingSystem].
+ * It stores [entities][Entity] that have a specific configuration of components.
+ */
+class WorldFamily(
+    internal val family: Family,
+    private val entityService: EntityService,
+) {
+    /**
+     * Sorts the [entities][Entity] of this family by the given [comparator].
+     */
+    fun sort(comparator: EntityComparator) {
+        if (family.isDirty) {
+            family.updateActiveEntities()
+        }
+
+        family.sort(comparator)
+    }
+
+    /**
+     * Performs the given [action] on each [entity][Entity] of the [family].
+     */
+    fun forEach(action: (Entity) -> Unit) {
+        if (family.isDirty) {
+            family.updateActiveEntities()
+        }
+
+        entityService.delayRemoval = true
+        family.forEach { action(it) }
+        entityService.cleanupDelays()
     }
 }

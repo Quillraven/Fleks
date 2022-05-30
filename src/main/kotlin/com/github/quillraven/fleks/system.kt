@@ -1,6 +1,5 @@
 package com.github.quillraven.fleks
 
-import com.github.quillraven.fleks.collection.BitArray
 import com.github.quillraven.fleks.collection.EntityComparator
 import kotlin.reflect.KClass
 
@@ -237,9 +236,7 @@ class SystemService(
 
     init {
         // create systems
-        val entityService = world.entityService
         val cmpService = world.componentService
-        val allFamilies = mutableListOf<Family>()
         systems = Array(systemTypes.size) { sysIdx ->
             val sysType = systemTypes[sysIdx]
             val newSystem = newInstance(sysType, cmpService, injectables)
@@ -247,17 +244,11 @@ class SystemService(
             if (newSystem is IteratingSystem) {
                 // set family reference of newly created iterating system
                 @Suppress("UNCHECKED_CAST")
-                newSystem.family = family(sysType as KClass<out IteratingSystem>, entityService, cmpService, allFamilies)
+                newSystem.family = familyOfSystem(sysType as KClass<out IteratingSystem>, world, cmpService)
             }
 
             newSystem
         }
-
-        // Families are created above together with its system. This can have the side effect that they are
-        // not updated correctly if entities get created in a system's init block because the family might not exist
-        // at that time.
-        // Therefore, we need to notify them one time after all families are available to update them correctly.
-        entityService.notifyAll()
     }
 
     /**
@@ -277,11 +268,10 @@ class SystemService(
      * @throws [FleksMissingNoArgsComponentConstructorException] if the [AllOf], [NoneOf] or [AnyOf] annotations
      * of the system have a component type that does not have a no argument constructor.
      */
-    private fun family(
+    private fun familyOfSystem(
         sysType: KClass<out IteratingSystem>,
-        entityService: EntityService,
-        cmpService: ComponentService,
-        allFamilies: MutableList<Family>
+        world: World,
+        cmpService: ComponentService
     ): Family {
         val allOfAnn = sysType.annotation<AllOf>()
         val allOfCmps = if (allOfAnn != null && allOfAnn.components.isNotEmpty()) {
@@ -304,27 +294,14 @@ class SystemService(
             null
         }
 
-        if ((allOfCmps == null || allOfCmps.isEmpty())
-            && (noneOfCmps == null || noneOfCmps.isEmpty())
-            && (anyOfCmps == null || anyOfCmps.isEmpty())
-        ) {
+        try {
+            return world.familyOfMappers(allOfCmps, noneOfCmps, anyOfCmps)
+        } catch (e: FleksFamilyException) {
             throw FleksSystemCreationException(
                 sysType,
                 "IteratingSystem must define at least one of AllOf, NoneOf or AnyOf"
             )
         }
-
-        val allBs = if (allOfCmps == null) null else BitArray().apply { allOfCmps.forEach { this.set(it.id) } }
-        val noneBs = if (noneOfCmps == null) null else BitArray().apply { noneOfCmps.forEach { this.set(it.id) } }
-        val anyBs = if (anyOfCmps == null) null else BitArray().apply { anyOfCmps.forEach { this.set(it.id) } }
-
-        var family = allFamilies.find { it.allOf == allBs && it.noneOf == noneBs && it.anyOf == anyBs }
-        if (family == null) {
-            family = Family(allBs, noneBs, anyBs)
-            entityService.addEntityListener(family)
-            allFamilies.add(family)
-        }
-        return family
     }
 
     /**
