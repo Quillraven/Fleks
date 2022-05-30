@@ -195,13 +195,6 @@ class EntityService(
     }
 
     /**
-     * Notifies all registered [EntityListener].
-     */
-    internal fun notifyAll() {
-        forEach { e -> listeners.forEach { l -> l.onEntityCfgChanged(e, compMasks[e.id]) } }
-    }
-
-    /**
      * Updates an [entity] with the given [configuration].
      * Notifies any registered [EntityListener].
      */

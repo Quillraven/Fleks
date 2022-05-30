@@ -1,7 +1,7 @@
 # Fleks
 
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/Quillraven/Fleks/blob/master/LICENSE)
-[![Maven](https://img.shields.io/badge/Maven-1.1--KMP-success.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks/1.1-KMP/jar)
+[![Maven](https://img.shields.io/badge/Maven-1.2--KMP-success.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks/1.2-KMP/jar)
 
 [![Build KMP](https://img.shields.io/github/workflow/status/quillraven/fleks/Build/next?event=push&label=Build%20next)](https://github.com/Quillraven/fleks/actions)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.6.21-red.svg)](http://kotlinlang.org/)
@@ -49,8 +49,9 @@ Fleks will come in two flavors and will also have two releases in parallel:
 - **JVM** which can be used for any backend that supports a JVM like native Java applications or Android
 - **KMP** which can be used for any platform and can also be used in a [KorGE](https://korge.org/) game
 
-You can find the KMP version [here](https://github.com/Quillraven/Fleks/tree/kmp).
-It has a slightly different API for the world's configuration due to limitations in reflection but after that
+You can find the JVM version [here](https://github.com/Quillraven/Fleks/tree/master).
+The KMP version is [here](https://github.com/Quillraven/Fleks/tree/next).
+The KMP version has a slightly different API for the world's configuration due to limitations in reflection but after that
 everything is the same as in the JVM version. And as mentioned above, in the future those
 two flavors will be combined into a single one which is most likely the KMP version once I figured out
 how to support a similar nice user experience as in the JVM flavor ;)
@@ -58,7 +59,7 @@ how to support a similar nice user experience as in the JVM flavor ;)
 This branch contains a special Kotlin Multiplatform compatible version of Fleks. It has a slightly different API when compared with the master branch version.
 But still similar enough that it should not be much work to switch between the two versions.
 
-Release version 1.0-KMP is available on maven central since XX-XXX-2022. Please feel free to contribute to the
+Release version 1.2-KMP is available on maven central since XX-XXX-2022. Please feel free to contribute to the
 Discussions or Issues. Help is always appreciated. 
 
 To use Fleks add it as a dependency to your project:
@@ -69,20 +70,20 @@ To use Fleks add it as a dependency to your project:
 <dependency>
   <groupId>io.github.quillraven.fleks</groupId>
   <artifactId>Fleks</artifactId>
-  <version>1.1-KMP</version>
+  <version>1.2-KMP</version>
 </dependency>
 ```
 
 #### Gradle (Groovy)
 
 ```kotlin
-implementation 'io.github.quillraven.fleks:Fleks:1.1-KMP'
+implementation 'io.github.quillraven.fleks:Fleks:1.2-KMP'
 ```
 
 #### Gradle (Kotlin)
 
 ```kotlin
-implementation("io.github.quillraven.fleks:Fleks:1.1-KMP")
+implementation("io.github.quillraven.fleks:Fleks:1.2-KMP")
 ```
 
 ## Example game using Fleks
@@ -416,12 +417,55 @@ The world's `forEach` function allows you to iterate over all active entities:
     val e3 = world.entity()
     world.remove(e2)
 
-    // this will iterate over entities e1 and e3
+    // this will iterate over entities e1..e3
     world.forEach { entity ->
         // do something with the entity
     }
 }
 ```
+
+In case you need to iterate over entities with a specific component configuration
+that is not part of a system then this is possible via the `family` function
+of a `world`. 
+A `family` keeps track of entities with a specific config and allows sorting
+and iteration over these entities. The following example shows how to
+get a `family` for entities with a MoveComponent but without a DeadComponent:
+
+```kotlin
+fun main() {
+    val world = World {}
+    val e1 = w.entity { 
+        add<MoveComponent> { speed = 70f } 
+    }
+    val e2 = w.entity { 
+        add<MoveComponent> { speed = 50f }
+        add<DeadComponent>()
+    }
+    val e3 = w.entity { 
+        add<MoveComponent> { speed = 30f } 
+    }
+
+    // get family for entities with a MoveComponent
+    // and without a DeadComponent
+    val family = world.family(
+        allOf = arrayOf(MoveComponent::class),
+        noneOf = arrayOf(DeadComponent::class),
+    )
+
+    // you can sort entities of a family
+    val moves = world.mapper<MoveComponent>()
+    family.sort(compareEntity { entity1, entity2 -> moves[entity1].speed.compareTo(moves[entity2].speed) })
+    
+    // And you can iterate over entities of a family.
+    // In this example it will iterate in following order:
+    // 1) e3
+    // 2) e1
+    family.forEach { entity ->
+        // do something with the entity
+    }
+}
+```
+
 
 ### Entity and Components
 
@@ -451,7 +495,8 @@ fun main() {
 
 There might be situations where you need to execute a specific code when a component gets added or removed from an entity.
 This can be done via `ComponentListener` in Fleks. They are created in a similar way like systems meaning that they are created
-by Fleks using dependency injection.
+by Fleks using dependency injection. The `world` of a `ComponentListener`
+is automatically available as a dependency like any `ComponentMapper`.
 
 Here is an example of a listener that reacts on add/remove of a `Box2dComponent` and destroys the [body](https://github.com/libgdx/libgdx/wiki/Box2d#objectsbodies)
 when the component gets removed from an entity:

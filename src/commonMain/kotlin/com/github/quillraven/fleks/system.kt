@@ -1,6 +1,5 @@
 package com.github.quillraven.fleks
 
-import com.github.quillraven.fleks.collection.BitArray
 import com.github.quillraven.fleks.collection.EntityComparator
 import kotlin.native.concurrent.ThreadLocal
 import kotlin.reflect.KClass
@@ -252,24 +251,16 @@ class SystemService(
         Inject.injectObjects = injectables
         Inject.mapperObjects = compService.mappers
         // Create systems
-        val entityService = world.entityService
-        val allFamilies = mutableListOf<Family>()
         val systemList = systemFactory.toList()
         systems = Array(systemFactory.size) { sysIdx ->
             val newSystem = systemList[sysIdx].second.invoke()
             // Set family and entity service reference of newly created iterating system
             if (newSystem is IteratingSystem) {
-                newSystem.family = family(newSystem, entityService, compService, allFamilies)
+                newSystem.family = family(newSystem, world, compService)
             }
 
             newSystem
         }
-
-        // Families are created above together with its system. This can have the side effect that they are
-        // not updated correctly if entities get created in a system's init block because the family might not exist
-        // at that time.
-        // Therefore, we need to notify them one time after all families are available to update them correctly.
-        entityService.notifyAll()
     }
 
     /**
@@ -284,38 +275,24 @@ class SystemService(
      */
     private fun family(
         system: IteratingSystem,
-        entityService: EntityService,
-        compService: ComponentService,
-        allFamilies: MutableList<Family>
+        world: World,
+        compService: ComponentService
     ): Family {
         val allOfComps = system.allOfComponents?.map {
-            val type = it.simpleName ?: throw FleksInjectableTypeHasNoName(it)
-            compService.mapper(type) }
+            compService.mapper(it.simpleName ?: throw FleksInjectableTypeHasNoName(it))
+        }
         val noneOfComps = system.noneOfComponents?.map {
-            val type = it.simpleName ?: throw FleksInjectableTypeHasNoName(it)
-            compService.mapper(type) }
+            compService.mapper(it.simpleName ?: throw FleksInjectableTypeHasNoName(it))
+        }
         val anyOfComps = system.anyOfComponents?.map {
-            val type = it.simpleName ?: throw FleksInjectableTypeHasNoName(it)
-            compService.mapper(type) }
+            compService.mapper(it.simpleName ?: throw FleksInjectableTypeHasNoName(it))
+        }
 
-        if ((allOfComps == null || allOfComps.isEmpty())
-            && (noneOfComps == null || noneOfComps.isEmpty())
-            && (anyOfComps == null || anyOfComps.isEmpty())
-        ) {
+        try {
+            return world.familyOfMappers(allOfComps, noneOfComps, anyOfComps)
+        } catch (e: FleksFamilyException) {
             throw FleksSystemCreationException(system)
         }
-
-        val allBs = if (allOfComps == null) null else BitArray().apply { allOfComps.forEach { this.set(it.id) } }
-        val noneBs = if (noneOfComps == null) null else BitArray().apply { noneOfComps.forEach { this.set(it.id) } }
-        val anyBs = if (anyOfComps == null) null else BitArray().apply { anyOfComps.forEach { this.set(it.id) } }
-
-        var family = allFamilies.find { it.allOf == allBs && it.noneOf == noneBs && it.anyOf == anyBs }
-        if (family == null) {
-            family = Family(allBs, noneBs, anyBs)
-            entityService.addEntityListener(family)
-            allFamilies.add(family)
-        }
-        return family
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.github.quillraven.fleks
 
+import com.github.quillraven.fleks.collection.BitArray
 import kotlin.reflect.KClass
 
 /**
@@ -132,6 +133,13 @@ class World(
     internal val entityService: EntityService
 
     /**
+     * List of all [families][Family] of the world that are created either via
+     * an [IteratingSystem] or via the world's [family] function to
+     * avoid creating duplicates.
+     */
+    private val allFamilies = mutableListOf<Family>()
+
+    /**
      * Returns the amount of active entities.
      */
     val numEntities: Int
@@ -143,6 +151,12 @@ class World(
     val capacity: Int
         get() = entityService.capacity
 
+    /**
+     * Returns the world's systems.
+     */
+    val systems: Array<IntervalSystem>
+        get() = systemService.systems
+
     init {
         val worldCfg = WorldConfiguration().apply(cfg)
         componentService = ComponentService(worldCfg.componentFactory)
@@ -151,7 +165,8 @@ class World(
         // created inside the SystemService below.
         entityService = EntityService(worldCfg.entityCapacity, componentService)
         val injectables = worldCfg.injectables
-
+        // add the world as a used dependency in case any system or ComponentListener needs it
+        injectables[World::class.simpleName!!] = Injectable(this, true)
         // set a Fleks internal global reference to the current world that
         // gets created. This is used to correctly initialize the world
         // reference of any created system in the SystemService below.
@@ -178,6 +193,13 @@ class World(
      */
     inline fun entity(configuration: EntityCreateCfg.(Entity) -> Unit = {}): Entity {
         return entityService.create(configuration)
+    }
+
+    /**
+     * Updates an [entity] using the given [configuration] to add and remove components.
+     */
+    inline fun configureEntity(entity: Entity, configuration: EntityUpdateCfg.(Entity) -> Unit) {
+        entityService.configureEntity(entity, configuration)
     }
 
     /**
@@ -223,6 +245,78 @@ class World(
     inline fun <reified T : Any> mapper(): ComponentMapper<T> {
         val type = T::class.simpleName ?: throw FleksInjectableTypeHasNoName(T::class)
         return componentService.mapper(type) as ComponentMapper<T>
+    }
+
+    /**
+     * Creates a new [WorldFamily] for the given [allOf], [noneOf] and [anyOf] component configuration.
+     *
+     * This function internally either creates or reuses an already existing [family][Family].
+     * In case a new [family][Family] gets created it will be initialized with any already existing [entity][Entity]
+     * that matches its configuration.
+     * Therefore, this might have a performance impact on the first call if there are a lot of entities in the world.
+     *
+     * As a best practice families should be created as early as possible, ideally during world creation.
+     * Also, store the result of this function instead of calling this function multiple times with the same arguments.
+     *
+     * @throws [FleksFamilyException] if [allOf], [noneOf] and [anyOf] are null or empty.
+     */
+    fun family(
+        allOf: Array<KClass<*>>? = null,
+        noneOf: Array<KClass<*>>? = null,
+        anyOf: Array<KClass<*>>? = null
+    ): WorldFamily {
+        val allOfComps = allOf?.map {
+            componentService.mapper(it.simpleName ?: throw FleksCompInWorldFamilyHasNoName(it))
+        }
+        val noneOfComps = noneOf?.map {
+            componentService.mapper(it.simpleName ?: throw FleksCompInWorldFamilyHasNoName(it))
+        }
+        val anyOfComps = anyOf?.map {
+            componentService.mapper(it.simpleName ?: throw FleksCompInWorldFamilyHasNoName(it))
+        }
+
+        return WorldFamily(
+            familyOfMappers(allOfComps, noneOfComps, anyOfComps),
+            entityService
+        )
+    }
+
+    /**
+     * Creates or returns an already created [family][Family] for the given
+     * [allOf], [noneOf] and [anyOf] component configuration.
+     *
+     * Also, adds a newly created [family][Family] as [EntityListener] and
+     * initializes it by notifying it with any already existing [entity][Entity]
+     * that matches its configuration.
+     *
+     * @throws [FleksFamilyException] if [allOf], [noneOf] and [anyOf] are null or empty.
+     */
+    internal fun familyOfMappers(
+        allOf: List<ComponentMapper<*>>?,
+        noneOf: List<ComponentMapper<*>>?,
+        anyOf: List<ComponentMapper<*>>?,
+    ): Family {
+        if ((allOf == null || allOf.isEmpty())
+            && (noneOf == null || noneOf.isEmpty())
+            && (anyOf == null || anyOf.isEmpty())
+        ) {
+            throw FleksFamilyException(allOf, noneOf, anyOf)
+        }
+
+        val allBs = if (allOf == null) null else BitArray().apply { allOf.forEach { this.set(it.id) } }
+        val noneBs = if (noneOf == null) null else BitArray().apply { noneOf.forEach { this.set(it.id) } }
+        val anyBs = if (anyOf == null) null else BitArray().apply { anyOf.forEach { this.set(it.id) } }
+
+        var family = allFamilies.find { it.allOf == allBs && it.noneOf == noneBs && it.anyOf == anyBs }
+        if (family == null) {
+            family = Family(allBs, noneBs, anyBs).apply {
+                entityService.addEntityListener(this)
+                allFamilies.add(this)
+                // initialize a newly created family by notifying it for any already existing entity
+                entityService.forEach { this.onEntityCfgChanged(it, entityService.compMasks[it.id]) }
+            }
+        }
+        return family
     }
 
     /**

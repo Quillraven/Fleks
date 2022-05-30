@@ -26,6 +26,9 @@ class FleksInjectableAlreadyAddedException(type: String) :
 class FleksInjectableTypeHasNoName(type: KClass<*>) :
     FleksException("Injectable '$type' does not have simpleName in its class type.")
 
+class FleksCompInWorldFamilyHasNoName(type: KClass<*>) :
+    FleksException("Component '$type' in WorldFamily does not have simpleName in its class type.")
+
 class FleksSystemDependencyInjectException(injectType: String) :
     FleksException("Injection object of type '$injectType' cannot be found. Did you add all necessary injectables?")
 
@@ -37,3 +40,14 @@ class FleksNoSuchEntityComponentException(entity: Entity, component: String) :
 
 class FleksUnusedInjectablesException(unused: List<KClass<*>>) :
     FleksException("There are unused injectables of following types: ${unused.map { it.simpleName }}")
+
+class FleksFamilyException(
+    allOf: List<ComponentMapper<*>>?,
+    noneOf: List<ComponentMapper<*>>?,
+    anyOf: List<ComponentMapper<*>>?,
+) : FleksException(
+    """Family must have at least one of allOf, noneOf or anyOf.
+        |allOf: $allOf
+        |noneOf: $noneOf
+        |anyOf: $anyOf""".trimMargin()
+)
