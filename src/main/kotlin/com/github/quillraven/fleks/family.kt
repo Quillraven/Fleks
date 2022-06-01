@@ -3,6 +3,7 @@ package com.github.quillraven.fleks
 import com.github.quillraven.fleks.collection.BitArray
 import com.github.quillraven.fleks.collection.EntityComparator
 import com.github.quillraven.fleks.collection.IntBag
+import com.github.quillraven.fleks.collection.bag
 import kotlin.reflect.KClass
 
 /**
@@ -25,6 +26,22 @@ annotation class NoneOf(val components: Array<KClass<*>> = [])
  */
 @Target(AnnotationTarget.CLASS)
 annotation class AnyOf(val components: Array<KClass<*>> = [])
+
+/**
+ * Interface of a [family][Family] listener that gets notified when an
+ * [entity][Entity] gets added to, or removed from a family.
+ */
+interface FamilyListener {
+    /**
+     * Function that gets called when an [entity][Entity] gets added to a [family][Family].
+     */
+    fun onEntityAdded(entity: Entity) = Unit
+
+    /**
+     * Function that gets called when an [entity][Entity] gets removed from a [family][Family].
+     */
+    fun onEntityRemoved(entity: Entity) = Unit
+}
 
 /**
  * A family of [entities][Entity]. It stores [entities][Entity] that have a specific configuration of components.
@@ -75,6 +92,9 @@ data class Family(
     internal var isDirty = false
         private set
 
+    @PublishedApi
+    internal val listeners = bag<FamilyListener>()
+
     /**
      * Returns true if the specified [cmpMask] matches the family's component configuration.
      *
@@ -113,10 +133,10 @@ data class Family(
         updateActiveEntities()
         if (!entityService.delayRemoval) {
             entityService.delayRemoval = true
-            entitiesBag.forEach { action(Entity(it)) }
+            entitiesBag.forEach { this.action(Entity(it)) }
             entityService.cleanupDelays()
         } else {
-            entitiesBag.forEach { action(Entity(it)) }
+            entitiesBag.forEach { this.action(Entity(it)) }
         }
     }
 
@@ -147,10 +167,31 @@ data class Family(
             // new entity gets added
             isDirty = true
             entities.set(entity.id)
+            listeners.forEach { it.onEntityAdded(entity) }
         } else if (!entityInFamily && entities[entity.id]) {
             // existing entity gets removed
             isDirty = true
             entities.clear(entity.id)
+            listeners.forEach { it.onEntityRemoved(entity) }
         }
+    }
+
+    /**
+     * Adds the given [listener] to the list of [FamilyListener].
+     */
+    fun addFamilyListener(listener: FamilyListener) = listeners.add(listener)
+
+    /**
+     * Removes the given [listener] from the list of [FamilyListener].
+     */
+    fun removeFamilyListener(listener: FamilyListener) = listeners.removeValue(listener)
+
+    /**
+     * Returns true if an only if the given [listener] is part of the list of [FamilyListener].
+     */
+    operator fun contains(listener: FamilyListener) = listener in listeners
+
+    companion object {
+        internal lateinit var CURRENT_FAMILY: Family
     }
 }

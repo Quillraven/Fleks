@@ -211,4 +211,37 @@ internal class FamilyTest {
         assertEquals(2, numOuterIterations)
         assertEquals(4, numInnerIterations)
     }
+
+    @Test
+    fun `test FamilyListener`() {
+        val requiredCmps = BitArray().apply { set(1) }
+        val e = Entity(0)
+        val listener = object : FamilyListener {
+            var numAdd = 0
+            var numRemove = 0
+
+            override fun onEntityAdded(entity: Entity) {
+                ++numAdd
+            }
+
+            override fun onEntityRemoved(entity: Entity) {
+                ++numRemove
+            }
+        }
+        val family = Family(allOf = requiredCmps, entityService = testEntityService)
+
+        family.addFamilyListener(listener)
+        assertTrue { listener in family }
+
+        family.onEntityCfgChanged(e, requiredCmps)
+        assertEquals(1, listener.numAdd)
+        assertEquals(0, listener.numRemove)
+
+        family.onEntityCfgChanged(e, BitArray())
+        assertEquals(1, listener.numAdd)
+        assertEquals(1, listener.numRemove)
+
+        family.removeFamilyListener(listener)
+        assertFalse { listener in family }
+    }
 }

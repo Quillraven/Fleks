@@ -129,9 +129,8 @@ abstract class IteratingSystem(
 ) : IntervalSystem(interval, enabled) {
     /**
      * Returns the [family][Family] of this system.
-     * This reference gets updated by the [SystemService] when the system gets created via reflection.
      */
-    internal lateinit var family: Family
+    val family: Family = Family.CURRENT_FAMILY
 
     /**
      * Returns the [entityService][EntityService] of this system.
@@ -218,15 +217,26 @@ class SystemService(
         val cmpService = world.componentService
         systems = Array(systemTypes.size) { sysIdx ->
             val sysType = systemTypes[sysIdx]
-            val newSystem = newInstance(sysType, cmpService, injectables)
-
-            if (newSystem is IteratingSystem) {
-                // set family reference of newly created iterating system
-                @Suppress("UNCHECKED_CAST")
-                newSystem.family = familyOfSystem(sysType as KClass<out IteratingSystem>, world, cmpService)
+            val allOfAnn = sysType.annotation<AllOf>()
+            val noneOfAnn = sysType.annotation<NoneOf>()
+            val anyOfAnn = sysType.annotation<AnyOf>()
+            val hasFamilyAnnotations = allOfAnn != null || noneOfAnn != null || anyOfAnn != null
+            if (hasFamilyAnnotations) {
+                // create family for IteratingSystem that gets created below.
+                // This is needed because if the user wants to access the family in the system's constructor
+                // then it must be already set. Therefore, it must happen during creation and not afterwards.
+                // We do this like we do it for the world via its CURRENT_WORLD global.
+                Family.CURRENT_FAMILY = familyOfSystem(allOfAnn, noneOfAnn, anyOfAnn, world, cmpService)
             }
 
-            newSystem
+            val system = newInstance(sysType, cmpService, injectables)
+            if (system is IteratingSystem && !hasFamilyAnnotations) {
+                throw FleksSystemCreationException(
+                    sysType,
+                    "IteratingSystem must define at least one of AllOf, NoneOf or AnyOf"
+                )
+            }
+            system
         }
     }
 
@@ -248,39 +258,31 @@ class SystemService(
      * of the system have a component type that does not have a no argument constructor.
      */
     private fun familyOfSystem(
-        sysType: KClass<out IteratingSystem>,
+        allOfAnn: AllOf?,
+        noneOfAnn: NoneOf?,
+        anyOfAnn: AnyOf?,
         world: World,
         cmpService: ComponentService
     ): Family {
-        val allOfAnn = sysType.annotation<AllOf>()
         val allOfCmps = if (allOfAnn != null && allOfAnn.components.isNotEmpty()) {
             allOfAnn.components.map { cmpService.mapper(it) }
         } else {
             null
         }
 
-        val noneOfAnn = sysType.annotation<NoneOf>()
         val noneOfCmps = if (noneOfAnn != null && noneOfAnn.components.isNotEmpty()) {
             noneOfAnn.components.map { cmpService.mapper(it) }
         } else {
             null
         }
 
-        val anyOfAnn = sysType.annotation<AnyOf>()
         val anyOfCmps = if (anyOfAnn != null && anyOfAnn.components.isNotEmpty()) {
             anyOfAnn.components.map { cmpService.mapper(it) }
         } else {
             null
         }
 
-        try {
-            return world.familyOfMappers(allOfCmps, noneOfCmps, anyOfCmps)
-        } catch (e: FleksFamilyException) {
-            throw FleksSystemCreationException(
-                sysType,
-                "IteratingSystem must define at least one of AllOf, NoneOf or AnyOf"
-            )
-        }
+        return world.familyOfMappers(allOfCmps, noneOfCmps, anyOfCmps)
     }
 
     /**

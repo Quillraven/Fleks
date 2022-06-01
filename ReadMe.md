@@ -400,11 +400,16 @@ The world's `forEach` function allows you to iterate over all active entities:
 }
 ```
 
+### Family
+
 In case you need to iterate over entities with a specific component configuration
 that is not part of a system then this is possible via the `family` function
 of a `world`. 
 A `family` keeps track of entities with a specific config and allows sorting
-and iteration over these entities. The following example shows how to
+and iteration over these entities. `Family` is used internally
+by an `IteratingSystem`. You can access it via the `family` property.
+
+The following example shows how to
 get a `family` for entities with a MoveComponent but without a DeadComponent:
 
 ```kotlin
@@ -445,6 +450,37 @@ fun main() {
 }
 ```
 
+Families also support `FamilyListener` that allow you to react when an entity
+gets added to, or removed from a `family`. Here is an example:
+
+```kotlin
+fun main() {
+    val familyListener = object : FamilyListener {
+        override fun onEntityAdded(entity: Entity) {
+            // do something when an entity gets added to the family
+        }
+
+        override fun onEntityRemoved(entity: Entity) {
+            // do something when an entity gets removed of a family
+        }
+    }
+    val world = World {}
+    val family = world.family(
+        allOf = arrayOf(MoveComponent::class),
+        noneOf = arrayOf(DeadComponent::class),
+    )
+    family.addFamilyListener(familyListener)
+
+    // this will notify the listener via its onEntityAdded function
+    val entity = world.entity {
+        add<MoveComponent>()
+        add<DeadComponent>()
+    }
+
+    // this will notify the listener via its onEntityRemoved function
+    world.remove(entity)
+}
+```
 
 ### Entity and Components
 
