@@ -157,13 +157,10 @@ class World(
         val injectables = worldCfg.injectables
         // add the world as a used dependency in case any system or ComponentListener needs it
         injectables[World::class.qualifiedName!!] = Injectable(this, true)
-        // set a Fleks internal global reference to the current world that
-        // gets created. This is used to correctly initialize the world
-        // reference of any created system in the SystemService below.
-        CURRENT_WORLD = this
-        systemService = SystemService(this, worldCfg.systemTypes, injectables)
 
         // create and register ComponentListener
+        // it is important to do this BEFORE creating systems because if a system's init block
+        // is creating entities then ComponentListener already need to be registered to get notified
         worldCfg.cmpListenerTypes.forEach { listenerType ->
             val listener = newInstance(listenerType, componentService, injectables)
             val genInter = listener.javaClass.genericInterfaces.first {
@@ -173,6 +170,12 @@ class World(
             val mapper = componentService.mapper((cmpType as Class<*>).kotlin)
             mapper.addComponentListenerInternal(listener)
         }
+
+        // set a Fleks internal global reference to the current world that
+        // gets created. This is used to correctly initialize the world
+        // reference of any created system in the SystemService below.
+        CURRENT_WORLD = this
+        systemService = SystemService(this, worldCfg.systemTypes, injectables)
 
         // verify that there are no unused injectables
         val unusedInjectables = injectables.filterValues { !it.used }.map { it.value.injObj::class }

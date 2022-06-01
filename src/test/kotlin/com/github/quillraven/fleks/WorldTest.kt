@@ -79,8 +79,15 @@ private class WorldTestNamedDependencySystem(
 private class WorldTestComponentListener(
     val world: World
 ) : ComponentListener<WorldTestComponent> {
-    override fun onComponentAdded(entity: Entity, component: WorldTestComponent) = Unit
-    override fun onComponentRemoved(entity: Entity, component: WorldTestComponent) = Unit
+    var numAdd = 0
+    var numRemove = 0
+    override fun onComponentAdded(entity: Entity, component: WorldTestComponent) {
+        ++numAdd
+    }
+
+    override fun onComponentRemoved(entity: Entity, component: WorldTestComponent) {
+        ++numRemove
+    }
 }
 
 internal class WorldTest {
@@ -411,5 +418,18 @@ internal class WorldTest {
 
         assertThrows<FleksFamilyException> { w.family() }
         assertThrows<FleksFamilyException> { w.family(arrayOf(), arrayOf(), arrayOf()) }
+    }
+
+    @Test
+    fun `notify ComponentListener during system creation`() {
+        val w = World {
+            system<WorldTestInitSystem>()
+
+            componentListener<WorldTestComponentListener>()
+        }
+        val listener = w.mapper<WorldTestComponent>().listeners[0] as WorldTestComponentListener
+
+        assertEquals(1, listener.numAdd)
+        assertEquals(0, listener.numRemove)
     }
 }
