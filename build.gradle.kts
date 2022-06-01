@@ -1,5 +1,5 @@
 plugins {
-    kotlin("multiplatform") version "1.6.10"
+    kotlin("multiplatform") version "1.6.21"
     id("org.jetbrains.kotlinx.benchmark") version "0.4.2"
     id("org.jetbrains.dokka") version "1.6.10"
     `maven-publish`
@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "io.github.quillraven.fleks"
-version = "2.0-RC1"
+version = "1.0-KMP" // later: "2.0-RC1"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
 repositories {

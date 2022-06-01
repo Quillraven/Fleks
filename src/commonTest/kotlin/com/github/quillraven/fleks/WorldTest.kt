@@ -33,6 +33,16 @@ private class WorldTestIteratingSystem : IteratingSystem(
     override fun onTickEntity(entity: Entity) = Unit
 }
 
+private class WorldTestInitSystem : IteratingSystem(
+    allOfComponents = arrayOf(WorldTestComponent::class)
+) {
+    init {
+        world.entity { add<WorldTestComponent>() }
+    }
+
+    override fun onTickEntity(entity: Entity) = Unit
+}
+
 private class WorldTestNamedDependencySystem : IntervalSystem() {
     val injName: String = Inject.dependency("name")
     val level: String = Inject.dependency("level")
@@ -248,5 +258,22 @@ internal class WorldTest {
         w.forEach { actualEntities.add(it) }
 
         assertContentEquals(listOf(e1, e3), actualEntities)
+    }
+
+    @Test
+    fun createTwoWorldsWithSystems() {
+        val w1 = World {
+            system(::WorldTestInitSystem)
+            component(::WorldTestComponent)
+        }
+        val w2 = World {
+            system(::WorldTestInitSystem)
+            component(::WorldTestComponent)
+        }
+
+        assertEquals(w1, w1.system<WorldTestInitSystem>().world)
+        assertEquals(1, w1.numEntities)
+        assertEquals(w2, w2.system<WorldTestInitSystem>().world)
+        assertEquals(1, w2.numEntities)
     }
 }

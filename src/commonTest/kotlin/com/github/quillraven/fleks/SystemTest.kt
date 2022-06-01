@@ -36,26 +36,6 @@ private class SystemTestIntervalSystemFixed : IntervalSystem(
 
 private data class SystemTestComponent(var x: Float = 0f)
 
-
-private class SystemTestInitBlock : IntervalSystem() {
-    // this property assignment throws an exception and is tested below
-    // but the value is never read. It happens during system creation.
-    @Suppress("unused")
-    private val someValue: Float = world.deltaTime
-
-    override fun onTick() = Unit
-}
-
-private class SystemTestOnInitBlock : IntervalSystem() {
-    var someValue: Float = 42f
-
-    override fun onInit() {
-        someValue = world.deltaTime
-    }
-
-    override fun onTick() = Unit
-}
-
 private class SystemTestIteratingSystemMapper : IteratingSystem(
     allOfComponents = arrayOf(SystemTestComponent::class),
     interval = Fixed(0.25f)
@@ -192,8 +172,9 @@ internal class SystemTest {
     }
 
     @Test
-    fun systemWithIntervalEachFrameReturnsWorldDeltaTime() {
-        val system = SystemTestIntervalSystemEachFrame().apply { this.world = World {} }
+    fun systemWithIntervalEachFrameReturnsWorldsDeltaTime() {
+        World.CURRENT_WORLD = World { }
+        val system = SystemTestIntervalSystemEachFrame()
         system.world.update(42f)
 
         assertEquals(42f, system.deltaTime)
@@ -201,7 +182,8 @@ internal class SystemTest {
 
     @Test
     fun systemWithFixedIntervalOf025fGetsCalledFourTimesWhenDeltaTimeIs11f() {
-        val system = SystemTestIntervalSystemFixed().apply { this.world = World {} }
+        World.CURRENT_WORLD = World { }
+        val system = SystemTestIntervalSystemFixed()
         system.world.update(1.1f)
 
         system.onUpdate()
@@ -460,19 +442,5 @@ internal class SystemTest {
         service.dispose()
 
         assertEquals(1, service.system<SystemTestIntervalSystemEachFrame>().numDisposes)
-    }
-
-    @Test
-    fun initBlockOfSystemConstructorHasNoAccessToTheWorld() {
-        assertFailsWith<RuntimeException> { systemService(mutableMapOf(SystemTestInitBlock::class to ::SystemTestInitBlock)) }
-    }
-
-    @Test
-    fun onInitBlockIsCalledForAnyNewlyCreatedSystem() {
-        val expected = 0f
-
-        val service = systemService(mutableMapOf(SystemTestOnInitBlock::class to ::SystemTestOnInitBlock))
-
-        assertEquals(expected, service.system<SystemTestOnInitBlock>().someValue)
     }
 }

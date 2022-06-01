@@ -37,10 +37,8 @@ abstract class IntervalSystem(
 ) {
     /**
      * Returns the [world][World] to which this system belongs.
-     * This reference gets updated by the [SystemService] when the system gets created via reflection.
      */
-    lateinit var world: World
-        internal set
+    val world: World = World.CURRENT_WORLD
 
     private var accumulator: Float = 0.0f
 
@@ -53,12 +51,6 @@ abstract class IntervalSystem(
      */
     val deltaTime: Float
         get() = if (interval is Fixed) interval.step else world.deltaTime
-
-    /**
-     * Optional function for any initialization logic that requires access to the [world].
-     * This is necessary because the normal init block does not have an initialized [world] yet.
-     */
-    open fun onInit() = Unit
 
     /**
      * Updates the system according to its [interval]. This function gets called from [World.update] when
@@ -155,10 +147,9 @@ abstract class IteratingSystem(
 
     /**
      * Returns the [entityService][EntityService] of this system.
-     * This reference gets updated by the [SystemService] when the system gets created via the SystemFactory.
      */
     @PublishedApi
-    internal lateinit var entityService: EntityService
+    internal val entityService: EntityService = world.entityService
 
     /**
      * Flag that defines if sorting of [entities][Entity] will be performed the next time [onTick] is called.
@@ -266,17 +257,12 @@ class SystemService(
         val systemList = systemFactory.toList()
         systems = Array(systemFactory.size) { sysIdx ->
             val newSystem = systemList[sysIdx].second.invoke()
-
-            // Set world reference of newly created system
-            newSystem.world = world
-
             // Set family and entity service reference of newly created iterating system
             if (newSystem is IteratingSystem) {
                 newSystem.family = family(newSystem, entityService, compService, allFamilies)
-                newSystem.entityService = entityService
             }
 
-            newSystem.apply { onInit() }
+            newSystem
         }
     }
 

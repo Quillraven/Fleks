@@ -1,10 +1,10 @@
 # Fleks
 
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/Quillraven/Fleks/blob/master/LICENSE)
-[![Maven](https://img.shields.io/badge/Maven-1.0--KMP--RC1-success.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks/1.0-KMP-RC1/jar)
+[![Maven](https://img.shields.io/badge/Maven-1.0--KMP-success.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks/1.0-KMP/jar)
 
-[![Build KMP](https://img.shields.io/github/workflow/status/quillraven/fleks/Build/kmp?event=push&label=Build%20kmp)](https://github.com/Quillraven/fleks/actions)
-[![Kotlin](https://img.shields.io/badge/Kotlin-1.6.10-red.svg)](http://kotlinlang.org/)
+[![Build KMP](https://img.shields.io/github/workflow/status/quillraven/fleks/Build/next?event=push&label=Build%20next)](https://github.com/Quillraven/fleks/actions)
+[![Kotlin](https://img.shields.io/badge/Kotlin-1.6.21-red.svg)](http://kotlinlang.org/)
 
 A **f**ast, **l**ightweight, **e**ntity component **s**ystem library written in **K**otlin.
 
@@ -16,7 +16,7 @@ as an [**E**ntity **C**omponent **S**ystem](https://en.wikipedia.org/wiki/Entity
 the box with LibGDX and performance wise it was always good enough for me.
 
 When using [Kotlin](https://kotlinlang.org/) and [LibKTX](https://github.com/libktx/ktx) you even get nice extension
-functions for it but I never was fully happy with how it felt because:
+functions for it, but I was never fully happy with how it felt because:
 
 - Defining [ComponentMapper](https://github.com/libgdx/ashley/wiki/How-to-use-Ashley#retrieving-components-with-componentmapper)
   for every [Component](https://github.com/libgdx/ashley/wiki/How-to-use-Ashley#components) felt very redundant
@@ -41,17 +41,26 @@ If you need a lightweight and fast ECS in your Kotlin application then feel free
 If you are looking for a long time verified ECS that supports Java 
 then use [Artemis-odb](https://github.com/junkdog/artemis-odb) or [Ashley](https://github.com/libgdx/ashley).
 
-## Example game using Fleks
-
-[Dinoleon](https://github.com/Quillraven/Dinoleon) is a small game using Fleks that showcases all functionalities in action!
-
 ## Current Status
+
+Thanks to [jobe-m](https://github.com/jobe-m) Fleks also has a Kotlin Multiplatform version which will be the future for Fleks.
+However, since KMP is still in alpha and in my opinion the developer experience is not yet there where it should be,
+Fleks will come in two flavors and will also have two releases in parallel:
+- **JVM** which can be used for any backend that supports a JVM like native Java applications or Android
+- **KMP** which can be used for any platform and can also be used in a [KorGE](https://korge.org/) game
+
+You can find the KMP version [here](https://github.com/Quillraven/Fleks/tree/kmp).
+It has a slightly different API for the world's configuration due to limitations in reflection but after that
+everything is the same as in the JVM version. And as mentioned above, in the future those
+two flavors will be combined into a single one which is most likely the KMP version once I figured out
+how to support a similar nice user experience as in the JVM flavor ;)
 
 This branch contains a special Kotlin Multiplatform compatible version of Fleks. It has a slightly different API when compared with the master branch version.
 But still similar enough that it should not be much work to switch between the two versions.
 
-Release version 1.0-KMP-RC1 is available on maven central since XX-YYY-2022. Please feel free to contribute to the
+Release version 1.0-KMP is available on maven central since XX-XXX-2022. Please feel free to contribute to the
 Discussions or Issues. Help is always appreciated. 
+
 To use Fleks add it as a dependency to your project:
 
 #### Apache Maven
@@ -75,6 +84,10 @@ implementation 'io.github.quillraven.fleks:Fleks:1.0-KMP-RC1'
 ```kotlin
 implementation("io.github.quillraven.fleks:Fleks:1.0-KMP-RC1")
 ```
+
+## Example game using Fleks
+
+[Dinoleon](https://github.com/Quillraven/Dinoleon) is a small game using Fleks JVM that showcases all functionalities in action!
 
 ## Current API and usage
 
@@ -244,6 +257,24 @@ class AnimationSystem : IteratingSystem(
 }
 ```
 
+There is also a `getOrNull` version available in case a component is not mandatory
+for every entity that gets processed by a system. An example is:
+
+```Kotlin
+@AllOf([Position::class, Physic::class])
+@NoneOf([Dead::class])
+@AnyOf([Sprite::class, Animation::class])
+class AnimationSystem(
+    private val animations: ComponentMapper<Animation>
+) : IteratingSystem() {
+    override fun onTickEntity(entity: Entity) {
+        animations.getOrNull(entity)?.let { animation ->
+            // entity has animation component which can be modified inside this block
+        }
+    }
+}
+```
+
 If you need to modify the component configuration of an entity then this can be done via the `configureEntity` function
 of an `IteratingSystem`. The purpose of this function is performance reasons to trigger internal calculations
 of Fleks only once instead of each time a component gets added or removed. Inside `configureEntity` you get access to
@@ -282,24 +313,6 @@ Here is an example that gets the `LifeComponent` mapper of the snippet above:
 fun main() {
     val world = World {}
     val lives = world.mapper<Life>()
-}
-```
-
-Some systems might need an initialization code that requires the `world`. Unfortunately, it is not possible to
-get access to the world in a normal `init` block. The field is not initialized at that time. However, there is
-of course a solution. In case you need the world for your initialization logic you can use the `onInit` function of a system like this:
-
-```Kotlin
-private class PlayerSpawnSystem : IntervalSystem() {
-    override fun onInit() {
-        // spawn player when the system gets created
-        // Note: access to the world field works inside this method
-        world.entity {
-            // ...
-        }
-    }
-
-    // ...
 }
 ```
 

@@ -14,6 +14,7 @@ data class Injectable(val injObj: Any, var used: Boolean = false)
  * Additionally, you can define [ComponentListener] to define custom logic when a specific component is
  * added or removed from an [entity][Entity].
  */
+//@WorldCfgMarker
 class WorldConfiguration {
     /**
      * Initial maximum entity capacity.
@@ -145,13 +146,16 @@ class World(
     init {
         val worldCfg = WorldConfiguration().apply(cfg)
         componentService = ComponentService(worldCfg.componentFactory)
+        // It is important to create the EntityService before the SystemService
+        // since this reference is assigned to newly created systems that are
+        // created inside the SystemService below.
         entityService = EntityService(worldCfg.entityCapacity, componentService)
         val injectables = worldCfg.injectables
 
-        // Add world to inject object so that component listeners can get it form injectables, too
-        // Set "used" to true to make this injectable not mandatory
-        injectables["World"] = Injectable(this, true)
-
+        // set a Fleks internal global reference to the current world that
+        // gets created. This is used to correctly initialize the world
+        // reference of any created system in the SystemService below.
+        CURRENT_WORLD = this
         systemService = SystemService(this, worldCfg.systemFactory, injectables)
 
         // create and register ComponentListener
@@ -236,5 +240,9 @@ class World(
     fun dispose() {
         entityService.removeAll()
         systemService.dispose()
+    }
+
+    companion object {
+        internal lateinit var CURRENT_WORLD: World
     }
 }
