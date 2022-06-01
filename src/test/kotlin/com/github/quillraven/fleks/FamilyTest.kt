@@ -9,8 +9,13 @@ import org.junit.jupiter.api.TestFactory
 import org.junit.jupiter.api.assertAll
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 internal class FamilyTest {
+    private val testEntityService = EntityService(64, ComponentService())
+
+    private val emptyTestFamily = Family(entityService = testEntityService)
+
     private fun createCmpBitmask(cmpIdx: Int): BitArray? {
         return if (cmpIdx > 0) {
             BitArray().apply { set(cmpIdx) }
@@ -77,7 +82,7 @@ internal class FamilyTest {
                 val fAllOf = createCmpBitmask(it[2] as Int)
                 val fNoneOf = createCmpBitmask(it[3] as Int)
                 val fAnyOf = createCmpBitmask(it[4] as Int)
-                val family = Family(fAllOf, fNoneOf, fAnyOf)
+                val family = Family(fAllOf, fNoneOf, fAnyOf, testEntityService)
                 val expected = it[5] as Boolean
 
                 assertEquals(expected, eCmpMask in family)
@@ -87,7 +92,7 @@ internal class FamilyTest {
 
     @Test
     fun `update active entities`() {
-        val family = Family()
+        val family = emptyTestFamily
 
         family.onEntityCfgChanged(Entity(0), BitArray())
         family.updateActiveEntities()
@@ -101,7 +106,7 @@ internal class FamilyTest {
 
     @Test
     fun `call action for each entity`() {
-        val family = Family()
+        val family = emptyTestFamily
         family.onEntityCfgChanged(Entity(0), BitArray())
         family.updateActiveEntities()
         var processedEntity = -1
@@ -120,7 +125,7 @@ internal class FamilyTest {
 
     @Test
     fun `sort entities`() {
-        val family = Family()
+        val family = emptyTestFamily
         family.onEntityCfgChanged(Entity(0), BitArray())
         family.onEntityCfgChanged(Entity(2), BitArray())
         family.onEntityCfgChanged(Entity(1), BitArray())
@@ -147,7 +152,7 @@ internal class FamilyTest {
             Pair(true, true),
         ).map {
             dynamicTest("addEntityBefore=${it.first}, addEntity=${it.second}") {
-                val family = Family(BitArray().apply { set(1) }, null, null)
+                val family = Family(BitArray().apply { set(1) }, null, null, testEntityService)
                 val addEntityBeforeCall = it.first
                 val addEntityToFamily = it.second
                 val entity = Entity(1)
@@ -167,5 +172,43 @@ internal class FamilyTest {
                 }
             }
         }
+    }
+
+    @Test
+    fun `test nested iteration`() {
+        // delayRemoval and cleanup should only get called once for the first iteration
+        val f1 = Family(entityService = testEntityService)
+        val f2 = Family(entityService = testEntityService)
+        testEntityService.addEntityListener(f1)
+        testEntityService.addEntityListener(f2)
+        val e1 = testEntityService.create { }
+        testEntityService.create { }
+        var remove = true
+
+        var numOuterIterations = 0
+        var numInnerIterations = 0
+        f1.forEach {
+            assertTrue { this.entityService.delayRemoval }
+
+            f2.forEach {
+                assertTrue { this.entityService.delayRemoval }
+                if (remove) {
+                    remove = false
+                    entityService.remove(e1)
+                }
+                ++numInnerIterations
+            }
+            ++numOuterIterations
+
+            // check that inner iteration is not clearing the delayRemoval flag
+            assertTrue { this.entityService.delayRemoval }
+            // check that inner iteration is not cleaning up the delayed removals
+            assertEquals(0, this.entityService.removedEntities.length())
+        }
+
+        assertFalse { f1.entityService.delayRemoval }
+        assertEquals(1, f1.entityService.removedEntities.length())
+        assertEquals(2, numOuterIterations)
+        assertEquals(4, numInnerIterations)
     }
 }

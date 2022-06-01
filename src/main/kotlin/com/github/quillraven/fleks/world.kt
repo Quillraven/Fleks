@@ -239,7 +239,7 @@ class World(
     inline fun <reified T : Any> mapper(): ComponentMapper<T> = componentService.mapper(T::class)
 
     /**
-     * Creates a new [WorldFamily] for the given [allOf], [noneOf] and [anyOf] component configuration.
+     * Creates a new [Family] for the given [allOf], [noneOf] and [anyOf] component configuration.
      *
      * This function internally either creates or reuses an already existing [family][Family].
      * In case a new [family][Family] gets created it will be initialized with any already existing [entity][Entity]
@@ -255,7 +255,7 @@ class World(
         allOf: Array<KClass<*>>? = null,
         noneOf: Array<KClass<*>>? = null,
         anyOf: Array<KClass<*>>? = null,
-    ): WorldFamily {
+    ): Family {
         val allOfCmps = if (allOf != null && allOf.isNotEmpty()) {
             allOf.map { componentService.mapper(it) }
         } else {
@@ -274,10 +274,7 @@ class World(
             null
         }
 
-        return WorldFamily(
-            familyOfMappers(allOfCmps, noneOfCmps, anyOfCmps),
-            entityService
-        )
+        return familyOfMappers(allOfCmps, noneOfCmps, anyOfCmps)
     }
 
     /**
@@ -308,7 +305,7 @@ class World(
 
         var family = allFamilies.find { it.allOf == allBs && it.noneOf == noneBs && it.anyOf == anyBs }
         if (family == null) {
-            family = Family(allBs, noneBs, anyBs).apply {
+            family = Family(allBs, noneBs, anyBs, entityService).apply {
                 entityService.addEntityListener(this)
                 allFamilies.add(this)
                 // initialize a newly created family by notifying it for any already existing entity

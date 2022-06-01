@@ -44,7 +44,9 @@ annotation class AnyOf(val components: Array<KClass<*>> = [])
 data class Family(
     internal val allOf: BitArray? = null,
     internal val noneOf: BitArray? = null,
-    internal val anyOf: BitArray? = null
+    internal val anyOf: BitArray? = null,
+    @PublishedApi
+    internal val entityService: EntityService,
 ) : EntityListener {
     /**
      * Return the [entities] in form of an [IntBag] for better iteration performance.
@@ -69,7 +71,8 @@ data class Family(
      *
      * Refer to [IteratingSystem.onTick] for an example implementation.
      */
-    var isDirty = false
+    @PublishedApi
+    internal var isDirty = false
         private set
 
     /**
@@ -84,25 +87,51 @@ data class Family(
     }
 
     /**
-     * Updates the [entitiesBag] and clears the [isDirty] flag.
-     * This should be called when [isDirty] is true.
+     * Updates the [entitiesBag] and clears the [isDirty] flag if needed.
      */
-    fun updateActiveEntities() {
-        isDirty = false
-        entities.toIntBag(entitiesBag)
+    @PublishedApi
+    internal fun updateActiveEntities() {
+        if (isDirty) {
+            isDirty = false
+            entities.toIntBag(entitiesBag)
+        }
     }
 
     /**
-     * Iterates over the [entities][Entity] of this family and runs the given [action].
+     * Updates this family if needed and runs the given [action] for all [entities][Entity].
+     *
+     * **Important note**: There is a potential risk when iterating over entities and one of those entities
+     * gets removed. Removing the entity immediately and cleaning up its components could
+     * cause problems because if you access a component which is mandatory for the family, you will get
+     * a FleksNoSuchComponentException. To avoid that you could check if an entity really has the component
+     * before accessing it but that is redundant in context of a family.
+     *
+     * To avoid these kinds of issues, entity removals are delayed until the end of the iteration. This also means
+     * that a removed entity of this family will still be part of the [action] for the current iteration.
      */
-    inline fun forEach(action: (Entity) -> Unit) {
-        entitiesBag.forEach { action(Entity(it)) }
+    inline fun forEach(action: Family.(Entity) -> Unit) {
+        updateActiveEntities()
+        if (!entityService.delayRemoval) {
+            entityService.delayRemoval = true
+            entitiesBag.forEach { action(Entity(it)) }
+            entityService.cleanupDelays()
+        } else {
+            entitiesBag.forEach { action(Entity(it)) }
+        }
+    }
+
+    /**
+     * Updates an [entity] using the given [configuration] to add and remove components.
+     */
+    inline fun configureEntity(entity: Entity, configuration: EntityUpdateCfg.(Entity) -> Unit) {
+        entityService.configureEntity(entity, configuration)
     }
 
     /**
      * Sorts the [entities][Entity] of this family by the given [comparator].
      */
     fun sort(comparator: EntityComparator) {
+        updateActiveEntities()
         entitiesBag.sort(comparator)
     }
 
@@ -123,38 +152,5 @@ data class Family(
             isDirty = true
             entities.clear(entity.id)
         }
-    }
-}
-
-/**
- * A [family][Family] of [entities][Entity] created without an [IteratingSystem].
- * It stores [entities][Entity] that have a specific configuration of components.
- */
-class WorldFamily(
-    internal val family: Family,
-    private val entityService: EntityService,
-) {
-    /**
-     * Sorts the [entities][Entity] of this family by the given [comparator].
-     */
-    fun sort(comparator: EntityComparator) {
-        if (family.isDirty) {
-            family.updateActiveEntities()
-        }
-
-        family.sort(comparator)
-    }
-
-    /**
-     * Performs the given [action] on each [entity][Entity] of the [family].
-     */
-    fun forEach(action: (Entity) -> Unit) {
-        if (family.isDirty) {
-            family.updateActiveEntities()
-        }
-
-        entityService.delayRemoval = true
-        family.forEach { action(it) }
-        entityService.cleanupDelays()
     }
 }

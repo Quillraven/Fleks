@@ -353,7 +353,7 @@ internal class WorldTest {
     }
 
     @Test
-    fun `get WorldFamily after world creation`() {
+    fun `get Family after world creation`() {
         // WorldTestInitSystem creates an entity in its init block
         // -> family must be dirty and has a size of 1
         val w = World {
@@ -363,13 +363,13 @@ internal class WorldTest {
         val wFamily = w.family(allOf = arrayOf(WorldTestComponent::class))
 
         assertAll(
-            { assertTrue(wFamily.family.isDirty) },
-            { assertEquals(1, wFamily.family.numEntities) }
+            { assertTrue(wFamily.isDirty) },
+            { assertEquals(1, wFamily.numEntities) }
         )
     }
 
     @Test
-    fun `get WorldFamily within system's constructor`() {
+    fun `get Family within system's constructor`() {
         // WorldTestInitSystemExtraFamily creates an entity in its init block and
         // also a family with a different configuration that the system itself
         // -> system family is empty and extra family contains 1 entity
@@ -379,13 +379,13 @@ internal class WorldTest {
         val s = w.system<WorldTestInitSystemExtraFamily>()
 
         assertAll(
-            { assertEquals(1, s.extraFamily.family.numEntities) },
+            { assertEquals(1, s.extraFamily.numEntities) },
             { assertEquals(0, s.family.numEntities) }
         )
     }
 
     @Test
-    fun `iterate over WorldFamily`() {
+    fun `iterate over Family`() {
         val w = World {}
         val e1 = w.entity { add<WorldTestComponent>() }
         val e2 = w.entity { add<WorldTestComponent>() }
@@ -398,7 +398,7 @@ internal class WorldTest {
     }
 
     @Test
-    fun `sorted iteration over WorldFamily`() {
+    fun `sorted iteration over Family`() {
         val w = World {}
         val e1 = w.entity { add<WorldTestComponent> { x = 15f } }
         val e2 = w.entity { add<WorldTestComponent> { x = 10f } }
@@ -410,6 +410,24 @@ internal class WorldTest {
         f.forEach { actualEntities.add(it) }
 
         assertEquals(arrayListOf(e2, e1), actualEntities)
+    }
+
+    @Test
+    fun `configure entity during Family iteration`() {
+        // family excludes entities of Component2 which gets added during iteration
+        // -> family must be empty after iteration
+        val w = World {}
+        w.entity { add<WorldTestComponent>() }
+        val f = w.family(allOf = arrayOf(WorldTestComponent::class), noneOf = arrayOf(WorldTestComponent2::class))
+        val mapper = w.mapper<WorldTestComponent2>()
+
+        f.forEach { entity ->
+            this.configureEntity(entity) {
+                mapper.add(it)
+            }
+        }
+
+        assertEquals(0, f.numEntities)
     }
 
     @Test

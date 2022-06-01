@@ -158,28 +158,13 @@ abstract class IteratingSystem(
     /**
      * Updates the [family] if needed and calls [onTickEntity] for each [entity][Entity] of the [family].
      * If [doSort] is true then [entities][Entity] are sorted using the [comparator] before calling [onTickEntity].
-     *
-     * **Important note**: There is a potential risk when iterating over entities and one of those entities
-     * gets removed. Removing the entity immediately and cleaning up its components could
-     * cause problems because if you access a component which is mandatory for the family, you will get
-     * a FleksNoSuchComponentException. To avoid that you could check if an entity really has the component
-     * before accessing it but that is redundant in context of a family.
-     *
-     * To avoid these kinds of issues, entity removals are delayed until the end of the iteration. This also means
-     * that a removed entity of this family will still be part of the [onTickEntity] for the current iteration.
      */
     override fun onTick() {
-        if (family.isDirty) {
-            family.updateActiveEntities()
-        }
         if (doSort) {
             doSort = sortingType == Automatic
             family.sort(comparator)
         }
-
-        entityService.delayRemoval = true
         family.forEach { onTickEntity(it) }
-        entityService.cleanupDelays()
     }
 
     /**
@@ -194,13 +179,7 @@ abstract class IteratingSystem(
      * @param alpha a value between 0 (inclusive) and 1 (exclusive) that describes the progress between two ticks.
      */
     override fun onAlpha(alpha: Float) {
-        if (family.isDirty) {
-            family.updateActiveEntities()
-        }
-
-        entityService.delayRemoval = true
         family.forEach { onAlphaEntity(it, alpha) }
-        entityService.cleanupDelays()
     }
 
     /**

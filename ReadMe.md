@@ -437,7 +437,10 @@ fun main() {
     // 1) e3
     // 2) e1
     family.forEach { entity ->
-        // do something with the entity
+        // family also supports the configureEntity function
+        configureEntity(entity) {
+            // update entity components
+        }
     }
 }
 ```
