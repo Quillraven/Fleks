@@ -10,6 +10,9 @@ class FleksSystemAlreadyAddedException(system: KClass<*>) :
 class FleksSystemCreationException(system: KClass<*>, details: String) :
     FleksException("Cannot create ${system.simpleName}. Did you add all necessary injectables?\nDetails: $details")
 
+class FleksFamilyListenerCreationException(listener: KClass<*>, details: String) :
+    FleksException("Cannot create ${listener.simpleName}.\nDetails: $details")
+
 class FleksNoSuchSystemException(system: KClass<*>) :
     FleksException("There is no system of type ${system.simpleName} in the world")
 
@@ -27,6 +30,9 @@ class FleksNoSuchComponentException(entity: Entity, component: String) :
 
 class FleksComponentListenerAlreadyAddedException(listener: KClass<out ComponentListener<*>>) :
     FleksException("ComponentListener ${listener.simpleName} is already part of the ${WorldConfiguration::class.simpleName}")
+
+class FleksFamilyListenerAlreadyAddedException(listener: KClass<out FamilyListener>) :
+    FleksException("FamilyListener ${listener.simpleName} is already part of the ${WorldConfiguration::class.simpleName}")
 
 class FleksUnusedInjectablesException(unused: List<KClass<*>>) :
     FleksException("There are unused injectables of following types: ${unused.map { it.simpleName }}")

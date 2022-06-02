@@ -225,8 +225,9 @@ class SystemService(
                 // create family for IteratingSystem that gets created below.
                 // This is needed because if the user wants to access the family in the system's constructor
                 // then it must be already set. Therefore, it must happen during creation and not afterwards.
-                // We do this like we do it for the world via its CURRENT_WORLD global.
-                Family.CURRENT_FAMILY = familyOfSystem(allOfAnn, noneOfAnn, anyOfAnn, world, cmpService)
+                // We do this like we do it for the world and its CURRENT_WORLD global
+                // but this time using a CURRENT_FAMILY global.
+                Family.CURRENT_FAMILY = world.familyOfAnnotations(allOfAnn, noneOfAnn, anyOfAnn)
             }
 
             val system = newInstance(sysType, cmpService, injectables)
@@ -238,51 +239,6 @@ class SystemService(
             }
             system
         }
-    }
-
-    /**
-     * Returns [Annotation] of the specific type if the class has that annotation. Otherwise, returns null.
-     */
-    private inline fun <reified T : Annotation> KClass<*>.annotation(): T? {
-        return this.java.getAnnotation(T::class.java)
-    }
-
-    /**
-     * Creates or returns an already created [family][Family] for the given [IteratingSystem]
-     * by analyzing the system's [AllOf], [AnyOf] and [NoneOf] annotations.
-     *
-     * @throws [FleksSystemCreationException] if the [IteratingSystem] does not contain at least one
-     * [AllOf], [AnyOf] or [NoneOf] annotation.
-     *
-     * @throws [FleksMissingNoArgsComponentConstructorException] if the [AllOf], [NoneOf] or [AnyOf] annotations
-     * of the system have a component type that does not have a no argument constructor.
-     */
-    private fun familyOfSystem(
-        allOfAnn: AllOf?,
-        noneOfAnn: NoneOf?,
-        anyOfAnn: AnyOf?,
-        world: World,
-        cmpService: ComponentService
-    ): Family {
-        val allOfCmps = if (allOfAnn != null && allOfAnn.components.isNotEmpty()) {
-            allOfAnn.components.map { cmpService.mapper(it) }
-        } else {
-            null
-        }
-
-        val noneOfCmps = if (noneOfAnn != null && noneOfAnn.components.isNotEmpty()) {
-            noneOfAnn.components.map { cmpService.mapper(it) }
-        } else {
-            null
-        }
-
-        val anyOfCmps = if (anyOfAnn != null && anyOfAnn.components.isNotEmpty()) {
-            anyOfAnn.components.map { cmpService.mapper(it) }
-        } else {
-            null
-        }
-
-        return world.familyOfMappers(allOfCmps, noneOfCmps, anyOfCmps)
     }
 
     /**

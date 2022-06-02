@@ -400,11 +400,71 @@ The world's `forEach` function allows you to iterate over all active entities:
 }
 ```
 
+### Entity and Components
+
+We now know how to create a world and add systems to it, but we don't know how to add entities to our world. This can be
+done via the `entity` function of the world. Let's create an entity with a `PositionComponent` and `SpriteComponent`:
+
+```Kotlin
+data class Position(var x: Float = 0f, var y: Float = 0f)
+
+data class Sprite(var texturePath: String = "")
+
+fun main() {
+    val world = World {}
+
+    val entity: Entity = world.entity {
+        add<Position> { x = 5f }
+        add<Sprite>()
+    }
+    
+    // if needed, you can already access the new entity within the entity{} block
+    val entity2 = world.entity { e -> 
+        // e is the same as entity2
+        // this can be useful in some cases where you want to set the entity as
+        // custom userData on certain third-party library objects directly
+    }
+}
+```
+
+There might be situations where you need to execute a specific code when a component gets added or removed from an entity.
+This can be done via `ComponentListener` in Fleks. They are created in a similar way like systems meaning that they are created
+by Fleks using dependency injection. The `world` of a `ComponentListener`
+is automatically available as a dependency like any `ComponentMapper`.
+
+Here is an example of a listener that reacts on add/remove of a `Box2dComponent` and destroys the [body](https://github.com/libgdx/libgdx/wiki/Box2d#objectsbodies)
+when the component gets removed from an entity:
+
+```Kotlin
+data class Box2dComponent{
+    lateinit var body: Body
+}
+
+class Box2dComponentListener : ComponentListener<Box2dComponent> {
+    override fun onComponentAdded(entity: Entity, component: Box2dComponent) {
+        component.body = // body creation code omitted
+        component.body.userData = entity
+    }
+    
+    override fun onComponentRemoved(entity: Entity, component: Box2dComponent) {
+        component.body.world.destroyBody(body)
+        component.body.userData = null
+    }
+}
+
+fun main() {
+    val world = World {
+        // register the listener to the world
+        componentListener<Box2dComponentListener>()
+    }
+}
+```
+
 ### Family
 
 In case you need to iterate over entities with a specific component configuration
 that is not part of a system then this is possible via the `family` function
-of a `world`. 
+of a `world`.
 A `family` keeps track of entities with a specific config and allows sorting
 and iteration over these entities. `Family` is used internally
 by an `IteratingSystem`. You can access it via the `family` property.
@@ -482,62 +542,24 @@ fun main() {
 }
 ```
 
-### Entity and Components
+In case you need a `FamilyListener` from the beginning to also get notified when
+entities are created within a system's constructor then this is possible in a similar
+way you can create `ComponentListener`. Just define it in the world's configuration.
+In this case the `FamilyListener` must have at least one of the `AllOf`, `AnyOf` or `NoneOf`
+annotations. Such listeners follow the dependency injection logic. Here is an example:
 
-We now know how to create a world and add systems to it, but we don't know how to add entities to our world. This can be
-done via the `entity` function of the world. Let's create an entity with a `PositionComponent` and `SpriteComponent`:
-
-```Kotlin
-data class Position(var x: Float = 0f, var y: Float = 0f)
-
-data class Sprite(var texturePath: String = "")
-
-fun main() {
-    val world = World {}
-
-    val entity: Entity = world.entity {
-        add<Position> { x = 5f }
-        add<Sprite>()
-    }
-    
-    // if needed, you can already access the new entity within the entity{} block
-    val entity2 = world.entity { e -> 
-        // e is the same as entity2
-        // this can be useful in some cases where you want to set the entity as
-        // custom userData on certain third-party library objects directly
-    }
-}
-```
-
-There might be situations where you need to execute a specific code when a component gets added or removed from an entity.
-This can be done via `ComponentListener` in Fleks. They are created in a similar way like systems meaning that they are created
-by Fleks using dependency injection. The `world` of a `ComponentListener`
-is automatically available as a dependency like any `ComponentMapper`.
-
-Here is an example of a listener that reacts on add/remove of a `Box2dComponent` and destroys the [body](https://github.com/libgdx/libgdx/wiki/Box2d#objectsbodies)
-when the component gets removed from an entity:
-
-```Kotlin
-data class Box2dComponent{
-    lateinit var body: Body
-}
-
-class Box2dComponentListener : ComponentListener<Box2dComponent> {
-    override fun onComponentAdded(entity: Entity, component: Box2dComponent) {
-        component.body = // body creation code omitted
-        component.body.userData = entity
-    }
-    
-    override fun onComponentRemoved(entity: Entity, component: Box2dComponent) {
-        component.body.world.destroyBody(body)
-        component.body.userData = null
-    }
+```kotlin
+@AllOf([MoveComponent::class])
+@NoneOf([DeadComponent::class])
+private class MyFamilyListener(
+    val world: World
+) : FamilyListener {
+    // ...
 }
 
 fun main() {
     val world = World {
-        // register the listener to the world
-        componentListener<Box2dComponentListener>()
+        familyListener<MyFamilyListener>()
     }
 }
 ```

@@ -45,6 +45,9 @@ class WorldConfiguration {
     @PublishedApi
     internal val cmpListenerTypes = mutableListOf<KClass<out ComponentListener<out Any>>>()
 
+    @PublishedApi
+    internal val famListenerType = mutableListOf<KClass<out FamilyListener>>()
+
     /**
      * Adds the specified [IntervalSystem] to the [world][World].
      * The order in which systems are added is the order in which they will be executed when calling [World.update].
@@ -96,6 +99,19 @@ class WorldConfiguration {
         }
         cmpListenerTypes.add(listenerType)
     }
+
+    /**
+     * Adds the specified [FamilyListener] to the [world][World].
+     *
+     * @throws [FleksFamilyListenerAlreadyAddedException] if the listener was already added before.
+     */
+    inline fun <reified T : FamilyListener> familyListener() {
+        val listenerType = T::class
+        if (listenerType in famListenerType) {
+            throw FleksFamilyListenerAlreadyAddedException(listenerType)
+        }
+        famListenerType.add(listenerType)
+    }
 }
 
 /**
@@ -128,7 +144,7 @@ class World(
      * an [IteratingSystem] or via the world's [family] function to
      * avoid creating duplicates.
      */
-    private val allFamilies = mutableListOf<Family>()
+    internal val allFamilies = mutableListOf<Family>()
 
     /**
      * Returns the amount of active entities.
@@ -150,13 +166,15 @@ class World(
 
     init {
         val worldCfg = WorldConfiguration().apply(cfg)
+
+        val injectables = worldCfg.injectables
+        // add the world as a used dependency in case any system or ComponentListener needs it
+        injectables[World::class.qualifiedName!!] = Injectable(this, true)
+
         // It is important to create the EntityService before the SystemService
         // since this reference is assigned to newly created systems that are
         // created inside the SystemService below.
         entityService = EntityService(worldCfg.entityCapacity, componentService)
-        val injectables = worldCfg.injectables
-        // add the world as a used dependency in case any system or ComponentListener needs it
-        injectables[World::class.qualifiedName!!] = Injectable(this, true)
 
         // create and register ComponentListener
         // it is important to do this BEFORE creating systems because if a system's init block
@@ -169,6 +187,24 @@ class World(
             val cmpType = (genInter as ParameterizedType).actualTypeArguments[0]
             val mapper = componentService.mapper((cmpType as Class<*>).kotlin)
             mapper.addComponentListenerInternal(listener)
+        }
+
+        // create and register FamilyListener
+        // like ComponentListener this must happen before systems are created
+        worldCfg.famListenerType.forEach { listenerType ->
+            val allOfAnn = listenerType.annotation<AllOf>()
+            val noneOfAnn = listenerType.annotation<NoneOf>()
+            val anyOfAnn = listenerType.annotation<AnyOf>()
+            val family = try {
+                familyOfAnnotations(allOfAnn, noneOfAnn, anyOfAnn)
+            } catch (e: FleksFamilyException) {
+                throw FleksFamilyListenerCreationException(
+                    listenerType,
+                    "FamilyListener that are created by a world must define at least one of AllOf, NoneOf or AnyOf"
+                )
+            }
+            val listener = newInstance(listenerType, componentService, injectables)
+            family.addFamilyListener(listener)
         }
 
         // set a Fleks internal global reference to the current world that
@@ -250,6 +286,9 @@ class World(
      * Also, store the result of this function instead of calling this function multiple times with the same arguments.
      *
      * @throws [FleksFamilyException] if [allOf], [noneOf] and [anyOf] are null or empty.
+     *
+     * @throws [FleksMissingNoArgsComponentConstructorException] if the [allOf], [noneOf] or [anyOf]
+     * have a component type that does not have a no argument constructor.
      */
     fun family(
         allOf: Array<KClass<*>>? = null,
@@ -287,7 +326,7 @@ class World(
      *
      * @throws [FleksFamilyException] if [allOf], [noneOf] and [anyOf] are null or empty.
      */
-    internal fun familyOfMappers(
+    private fun familyOfMappers(
         allOf: List<ComponentMapper<*>>?,
         noneOf: List<ComponentMapper<*>>?,
         anyOf: List<ComponentMapper<*>>?,
@@ -313,6 +352,41 @@ class World(
             }
         }
         return family
+    }
+
+    /**
+     * Creates or returns an already created [family][Family] for the given
+     * [allOf][AllOf], [anyOf][AnyOf] and [noneOf][NoneOf] annotations.
+     *
+     * @throws [FleksFamilyException] if the components of [allOf], [noneOf] and [anyOf] are null or empty.
+     *
+     * @throws [FleksMissingNoArgsComponentConstructorException] if the [AllOf], [NoneOf] or [AnyOf] annotations
+     * have a component type that does not have a no argument constructor.
+     */
+    internal fun familyOfAnnotations(
+        allOf: AllOf?,
+        noneOf: NoneOf?,
+        anyOf: AnyOf?,
+    ): Family {
+        val allOfCmps = if (allOf != null && allOf.components.isNotEmpty()) {
+            allOf.components.map { componentService.mapper(it) }
+        } else {
+            null
+        }
+
+        val noneOfCmps = if (noneOf != null && noneOf.components.isNotEmpty()) {
+            noneOf.components.map { componentService.mapper(it) }
+        } else {
+            null
+        }
+
+        val anyOfCmps = if (anyOf != null && anyOf.components.isNotEmpty()) {
+            anyOf.components.map { componentService.mapper(it) }
+        } else {
+            null
+        }
+
+        return familyOfMappers(allOfCmps, noneOfCmps, anyOfCmps)
     }
 
     /**

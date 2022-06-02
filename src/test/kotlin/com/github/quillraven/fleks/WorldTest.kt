@@ -90,6 +90,24 @@ private class WorldTestComponentListener(
     }
 }
 
+@AllOf([WorldTestComponent::class])
+private class WorldTestFamilyListener(
+    val world: World
+) : FamilyListener {
+    var numAdd = 0
+    var numRemove = 0
+
+    override fun onEntityAdded(entity: Entity) {
+        ++numAdd
+    }
+
+    override fun onEntityRemoved(entity: Entity) {
+        ++numRemove
+    }
+}
+
+private class WorldTestFamilyListenerMissingAnnotations : FamilyListener
+
 internal class WorldTest {
     @Test
     fun `create empty world for 32 entities`() {
@@ -255,29 +273,6 @@ internal class WorldTest {
     }
 
     @Test
-    fun `create world with ComponentListener`() {
-        val w = World {
-            componentListener<WorldTestComponentListener>()
-        }
-        val actualListeners = w.componentService.mapper<WorldTestComponent>().listeners
-
-        assertAll(
-            { assertEquals(1, actualListeners.size) },
-            { assertEquals(w, (actualListeners[0] as WorldTestComponentListener).world) }
-        )
-    }
-
-    @Test
-    fun `cannot add same ComponentListener twice`() {
-        assertThrows<FleksComponentListenerAlreadyAddedException> {
-            World {
-                componentListener<WorldTestComponentListener>()
-                componentListener<WorldTestComponentListener>()
-            }
-        }
-    }
-
-    @Test
     fun `get mapper`() {
         val w = World {}
 
@@ -439,6 +434,29 @@ internal class WorldTest {
     }
 
     @Test
+    fun `create world with ComponentListener`() {
+        val w = World {
+            componentListener<WorldTestComponentListener>()
+        }
+        val actualListeners = w.componentService.mapper<WorldTestComponent>().listeners
+
+        assertAll(
+            { assertEquals(1, actualListeners.size) },
+            { assertEquals(w, (actualListeners[0] as WorldTestComponentListener).world) }
+        )
+    }
+
+    @Test
+    fun `cannot add same ComponentListener twice`() {
+        assertThrows<FleksComponentListenerAlreadyAddedException> {
+            World {
+                componentListener<WorldTestComponentListener>()
+                componentListener<WorldTestComponentListener>()
+            }
+        }
+    }
+
+    @Test
     fun `notify ComponentListener during system creation`() {
         val w = World {
             system<WorldTestInitSystem>()
@@ -449,5 +467,54 @@ internal class WorldTest {
 
         assertEquals(1, listener.numAdd)
         assertEquals(0, listener.numRemove)
+    }
+
+    @Test
+    fun `create world with FamilyListener`() {
+        val w = World {
+            familyListener<WorldTestFamilyListener>()
+        }
+        val actualListeners = w.family(allOf = arrayOf(WorldTestComponent::class)).listeners
+
+        assertAll(
+            { assertEquals(1, actualListeners.size) },
+            { assertEquals(w, (actualListeners[0] as WorldTestFamilyListener).world) }
+        )
+    }
+
+    @Test
+    fun `cannot add same FamilyListener twice`() {
+        assertThrows<FleksFamilyListenerAlreadyAddedException> {
+            World {
+                familyListener<WorldTestFamilyListener>()
+                familyListener<WorldTestFamilyListener>()
+            }
+        }
+    }
+
+    @Test
+    fun `cannot create FamilyListener without annotations`() {
+        assertThrows<FleksFamilyListenerCreationException> {
+            World {
+                familyListener<WorldTestFamilyListenerMissingAnnotations>()
+            }
+        }
+    }
+
+    @Test
+    fun `notify FamilyListener during system creation`() {
+        val w = World {
+            system<WorldTestInitSystem>()
+
+            familyListener<WorldTestFamilyListener>()
+        }
+        val listener = w.family(allOf = arrayOf(WorldTestComponent::class)).listeners[0] as WorldTestFamilyListener
+
+        assertAll(
+            { assertEquals(1, listener.numAdd) },
+            { assertEquals(0, listener.numRemove) },
+            // verify that listener and system are not creating the same family twice
+            { assertEquals(1, w.allFamilies.size) }
+        )
     }
 }
