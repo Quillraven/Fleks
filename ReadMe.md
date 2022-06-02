@@ -1,7 +1,7 @@
 # Fleks
 
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/Quillraven/Fleks/blob/master/LICENSE)
-[![Maven](https://img.shields.io/badge/Maven-1.2--JVM-success.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks/1.2-JVM/jar)
+[![Maven](https://img.shields.io/badge/Maven-1.3--JVM-success.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks/1.3-JVM/jar)
 
 [![Build Master](https://img.shields.io/github/workflow/status/quillraven/fleks/Build/master?event=push&label=Build%20master)](https://github.com/Quillraven/fleks/actions)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.6.21-red.svg)](http://kotlinlang.org/)
@@ -63,20 +63,20 @@ To use Fleks add it as a dependency to your project:
 <dependency>
   <groupId>io.github.quillraven.fleks</groupId>
   <artifactId>Fleks</artifactId>
-  <version>1.2-JVM</version>
+  <version>1.3-JVM</version>
 </dependency>
 ```
 
 #### Gradle (Groovy)
 
 ```kotlin
-implementation 'io.github.quillraven.fleks:Fleks:1.2-JVM'
+implementation 'io.github.quillraven.fleks:Fleks:1.3-JVM'
 ```
 
 #### Gradle (Kotlin)
 
 ```kotlin
-implementation("io.github.quillraven.fleks:Fleks:1.2-JVM")
+implementation("io.github.quillraven.fleks:Fleks:1.3-JVM")
 ```
 
 ## Example game using Fleks
@@ -400,49 +400,6 @@ The world's `forEach` function allows you to iterate over all active entities:
 }
 ```
 
-In case you need to iterate over entities with a specific component configuration
-that is not part of a system then this is possible via the `family` function
-of a `world`. 
-A `family` keeps track of entities with a specific config and allows sorting
-and iteration over these entities. The following example shows how to
-get a `family` for entities with a MoveComponent but without a DeadComponent:
-
-```kotlin
-fun main() {
-    val world = World {}
-    val e1 = w.entity { 
-        add<MoveComponent> { speed = 70f } 
-    }
-    val e2 = w.entity { 
-        add<MoveComponent> { speed = 50f }
-        add<DeadComponent>()
-    }
-    val e3 = w.entity { 
-        add<MoveComponent> { speed = 30f } 
-    }
-
-    // get family for entities with a MoveComponent
-    // and without a DeadComponent
-    val family = world.family(
-        allOf = arrayOf(MoveComponent::class),
-        noneOf = arrayOf(DeadComponent::class),
-    )
-
-    // you can sort entities of a family
-    val moves = world.mapper<MoveComponent>()
-    family.sort(compareEntity { entity1, entity2 -> moves[entity1].speed.compareTo(moves[entity2].speed) })
-    
-    // And you can iterate over entities of a family.
-    // In this example it will iterate in following order:
-    // 1) e3
-    // 2) e1
-    family.forEach { entity ->
-        // do something with the entity
-    }
-}
-```
-
-
 ### Entity and Components
 
 We now know how to create a world and add systems to it, but we don't know how to add entities to our world. This can be
@@ -499,6 +456,110 @@ fun main() {
     val world = World {
         // register the listener to the world
         componentListener<Box2dComponentListener>()
+    }
+}
+```
+
+### Family
+
+In case you need to iterate over entities with a specific component configuration
+that is not part of a system then this is possible via the `family` function
+of a `world`.
+A `family` keeps track of entities with a specific config and allows sorting
+and iteration over these entities. `Family` is used internally
+by an `IteratingSystem`. You can access it via the `family` property.
+
+The following example shows how to
+get a `family` for entities with a MoveComponent but without a DeadComponent:
+
+```kotlin
+fun main() {
+    val world = World {}
+    val e1 = w.entity { 
+        add<MoveComponent> { speed = 70f } 
+    }
+    val e2 = w.entity { 
+        add<MoveComponent> { speed = 50f }
+        add<DeadComponent>()
+    }
+    val e3 = w.entity { 
+        add<MoveComponent> { speed = 30f } 
+    }
+
+    // get family for entities with a MoveComponent
+    // and without a DeadComponent
+    val family = world.family(
+        allOf = arrayOf(MoveComponent::class),
+        noneOf = arrayOf(DeadComponent::class),
+    )
+
+    // you can sort entities of a family
+    val moves = world.mapper<MoveComponent>()
+    family.sort(compareEntity { entity1, entity2 -> moves[entity1].speed.compareTo(moves[entity2].speed) })
+    
+    // And you can iterate over entities of a family.
+    // In this example it will iterate in following order:
+    // 1) e3
+    // 2) e1
+    family.forEach { entity ->
+        // family also supports the configureEntity function
+        configureEntity(entity) {
+            // update entity components
+        }
+    }
+}
+```
+
+Families also support `FamilyListener` that allow you to react when an entity
+gets added to, or removed from a `family`. Here is an example:
+
+```kotlin
+fun main() {
+    val familyListener = object : FamilyListener {
+        override fun onEntityAdded(entity: Entity) {
+            // do something when an entity gets added to the family
+        }
+
+        override fun onEntityRemoved(entity: Entity) {
+            // do something when an entity gets removed of a family
+        }
+    }
+    val world = World {}
+    val family = world.family(
+        allOf = arrayOf(MoveComponent::class),
+        noneOf = arrayOf(DeadComponent::class),
+    )
+    family.addFamilyListener(familyListener)
+
+    // this will notify the listener via its onEntityAdded function
+    val entity = world.entity {
+        add<MoveComponent>()
+        add<DeadComponent>()
+    }
+
+    // this will notify the listener via its onEntityRemoved function
+    world.remove(entity)
+}
+```
+
+In case you need a `FamilyListener` from the beginning to also get notified when
+entities are created within a system's constructor then this is possible in a similar
+way you can create `ComponentListener`. Just define it in the world's configuration.
+In this case the `FamilyListener` must have at least one of the `AllOf`, `AnyOf` or `NoneOf`
+annotations. Such listeners follow the dependency injection logic. Here is an example:
+
+```kotlin
+@AllOf([MoveComponent::class])
+@NoneOf([DeadComponent::class])
+private class MyFamilyListener(
+    val world: World
+) : FamilyListener {
+    // ...
+}
+
+fun main() {
+    val world = World {
+        familyListener<MyFamilyListener>()
     }
 }
 ```

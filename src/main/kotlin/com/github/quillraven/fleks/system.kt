@@ -129,9 +129,8 @@ abstract class IteratingSystem(
 ) : IntervalSystem(interval, enabled) {
     /**
      * Returns the [family][Family] of this system.
-     * This reference gets updated by the [SystemService] when the system gets created via reflection.
      */
-    internal lateinit var family: Family
+    val family: Family = Family.CURRENT_FAMILY
 
     /**
      * Returns the [entityService][EntityService] of this system.
@@ -158,28 +157,13 @@ abstract class IteratingSystem(
     /**
      * Updates the [family] if needed and calls [onTickEntity] for each [entity][Entity] of the [family].
      * If [doSort] is true then [entities][Entity] are sorted using the [comparator] before calling [onTickEntity].
-     *
-     * **Important note**: There is a potential risk when iterating over entities and one of those entities
-     * gets removed. Removing the entity immediately and cleaning up its components could
-     * cause problems because if you access a component which is mandatory for the family, you will get
-     * a FleksNoSuchComponentException. To avoid that you could check if an entity really has the component
-     * before accessing it but that is redundant in context of a family.
-     *
-     * To avoid these kinds of issues, entity removals are delayed until the end of the iteration. This also means
-     * that a removed entity of this family will still be part of the [onTickEntity] for the current iteration.
      */
     override fun onTick() {
-        if (family.isDirty) {
-            family.updateActiveEntities()
-        }
         if (doSort) {
             doSort = sortingType == Automatic
             family.sort(comparator)
         }
-
-        entityService.delayRemoval = true
         family.forEach { onTickEntity(it) }
-        entityService.cleanupDelays()
     }
 
     /**
@@ -194,13 +178,7 @@ abstract class IteratingSystem(
      * @param alpha a value between 0 (inclusive) and 1 (exclusive) that describes the progress between two ticks.
      */
     override fun onAlpha(alpha: Float) {
-        if (family.isDirty) {
-            family.updateActiveEntities()
-        }
-
-        entityService.delayRemoval = true
         family.forEach { onAlphaEntity(it, alpha) }
-        entityService.cleanupDelays()
     }
 
     /**
@@ -239,68 +217,27 @@ class SystemService(
         val cmpService = world.componentService
         systems = Array(systemTypes.size) { sysIdx ->
             val sysType = systemTypes[sysIdx]
-            val newSystem = newInstance(sysType, cmpService, injectables)
-
-            if (newSystem is IteratingSystem) {
-                // set family reference of newly created iterating system
-                @Suppress("UNCHECKED_CAST")
-                newSystem.family = familyOfSystem(sysType as KClass<out IteratingSystem>, world, cmpService)
+            val allOfAnn = sysType.annotation<AllOf>()
+            val noneOfAnn = sysType.annotation<NoneOf>()
+            val anyOfAnn = sysType.annotation<AnyOf>()
+            val hasFamilyAnnotations = allOfAnn != null || noneOfAnn != null || anyOfAnn != null
+            if (hasFamilyAnnotations) {
+                // create family for IteratingSystem that gets created below.
+                // This is needed because if the user wants to access the family in the system's constructor
+                // then it must be already set. Therefore, it must happen during creation and not afterwards.
+                // We do this like we do it for the world and its CURRENT_WORLD global
+                // but this time using a CURRENT_FAMILY global.
+                Family.CURRENT_FAMILY = world.familyOfAnnotations(allOfAnn, noneOfAnn, anyOfAnn)
             }
 
-            newSystem
-        }
-    }
-
-    /**
-     * Returns [Annotation] of the specific type if the class has that annotation. Otherwise, returns null.
-     */
-    private inline fun <reified T : Annotation> KClass<*>.annotation(): T? {
-        return this.java.getAnnotation(T::class.java)
-    }
-
-    /**
-     * Creates or returns an already created [family][Family] for the given [IteratingSystem]
-     * by analyzing the system's [AllOf], [AnyOf] and [NoneOf] annotations.
-     *
-     * @throws [FleksSystemCreationException] if the [IteratingSystem] does not contain at least one
-     * [AllOf], [AnyOf] or [NoneOf] annotation.
-     *
-     * @throws [FleksMissingNoArgsComponentConstructorException] if the [AllOf], [NoneOf] or [AnyOf] annotations
-     * of the system have a component type that does not have a no argument constructor.
-     */
-    private fun familyOfSystem(
-        sysType: KClass<out IteratingSystem>,
-        world: World,
-        cmpService: ComponentService
-    ): Family {
-        val allOfAnn = sysType.annotation<AllOf>()
-        val allOfCmps = if (allOfAnn != null && allOfAnn.components.isNotEmpty()) {
-            allOfAnn.components.map { cmpService.mapper(it) }
-        } else {
-            null
-        }
-
-        val noneOfAnn = sysType.annotation<NoneOf>()
-        val noneOfCmps = if (noneOfAnn != null && noneOfAnn.components.isNotEmpty()) {
-            noneOfAnn.components.map { cmpService.mapper(it) }
-        } else {
-            null
-        }
-
-        val anyOfAnn = sysType.annotation<AnyOf>()
-        val anyOfCmps = if (anyOfAnn != null && anyOfAnn.components.isNotEmpty()) {
-            anyOfAnn.components.map { cmpService.mapper(it) }
-        } else {
-            null
-        }
-
-        try {
-            return world.familyOfMappers(allOfCmps, noneOfCmps, anyOfCmps)
-        } catch (e: FleksFamilyException) {
-            throw FleksSystemCreationException(
-                sysType,
-                "IteratingSystem must define at least one of AllOf, NoneOf or AnyOf"
-            )
+            val system = newInstance(sysType, cmpService, injectables)
+            if (system is IteratingSystem && !hasFamilyAnnotations) {
+                throw FleksSystemCreationException(
+                    sysType,
+                    "IteratingSystem must define at least one of AllOf, NoneOf or AnyOf"
+                )
+            }
+            system
         }
     }
 

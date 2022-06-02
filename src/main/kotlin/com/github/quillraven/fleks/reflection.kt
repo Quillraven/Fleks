@@ -75,3 +75,10 @@ internal fun systemArgs(
 
     return args
 }
+
+/**
+ * Returns [Annotation] of the specific type if the class has that annotation. Otherwise, returns null.
+ */
+inline fun <reified T : Annotation> KClass<*>.annotation(): T? {
+    return this.java.getAnnotation(T::class.java)
+}

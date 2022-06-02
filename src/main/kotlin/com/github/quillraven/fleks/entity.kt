@@ -163,6 +163,7 @@ class EntityService(
      * In such cases entities will not be removed immediately.
      * Refer to [IteratingSystem.onTick] for more details.
      */
+    @PublishedApi
     internal var delayRemoval = false
 
     /**

@@ -3,6 +3,7 @@ package com.github.quillraven.fleks
 import com.github.quillraven.fleks.collection.BitArray
 import com.github.quillraven.fleks.collection.EntityComparator
 import com.github.quillraven.fleks.collection.IntBag
+import com.github.quillraven.fleks.collection.bag
 import kotlin.reflect.KClass
 
 /**
@@ -27,6 +28,22 @@ annotation class NoneOf(val components: Array<KClass<*>> = [])
 annotation class AnyOf(val components: Array<KClass<*>> = [])
 
 /**
+ * Interface of a [family][Family] listener that gets notified when an
+ * [entity][Entity] gets added to, or removed from a family.
+ */
+interface FamilyListener {
+    /**
+     * Function that gets called when an [entity][Entity] gets added to a [family][Family].
+     */
+    fun onEntityAdded(entity: Entity) = Unit
+
+    /**
+     * Function that gets called when an [entity][Entity] gets removed from a [family][Family].
+     */
+    fun onEntityRemoved(entity: Entity) = Unit
+}
+
+/**
  * A family of [entities][Entity]. It stores [entities][Entity] that have a specific configuration of components.
  * A configuration is defined via the three annotations: [AllOf], [NoneOf] and [AnyOf].
  * Each component is assigned to a unique index. That index is set in the [allOf], [noneOf] or [anyOf][] [BitArray].
@@ -44,7 +61,9 @@ annotation class AnyOf(val components: Array<KClass<*>> = [])
 data class Family(
     internal val allOf: BitArray? = null,
     internal val noneOf: BitArray? = null,
-    internal val anyOf: BitArray? = null
+    internal val anyOf: BitArray? = null,
+    @PublishedApi
+    internal val entityService: EntityService,
 ) : EntityListener {
     /**
      * Return the [entities] in form of an [IntBag] for better iteration performance.
@@ -69,8 +88,12 @@ data class Family(
      *
      * Refer to [IteratingSystem.onTick] for an example implementation.
      */
-    var isDirty = false
+    @PublishedApi
+    internal var isDirty = false
         private set
+
+    @PublishedApi
+    internal val listeners = bag<FamilyListener>()
 
     /**
      * Returns true if the specified [cmpMask] matches the family's component configuration.
@@ -84,25 +107,51 @@ data class Family(
     }
 
     /**
-     * Updates the [entitiesBag] and clears the [isDirty] flag.
-     * This should be called when [isDirty] is true.
+     * Updates the [entitiesBag] and clears the [isDirty] flag if needed.
      */
-    fun updateActiveEntities() {
-        isDirty = false
-        entities.toIntBag(entitiesBag)
+    @PublishedApi
+    internal fun updateActiveEntities() {
+        if (isDirty) {
+            isDirty = false
+            entities.toIntBag(entitiesBag)
+        }
     }
 
     /**
-     * Iterates over the [entities][Entity] of this family and runs the given [action].
+     * Updates this family if needed and runs the given [action] for all [entities][Entity].
+     *
+     * **Important note**: There is a potential risk when iterating over entities and one of those entities
+     * gets removed. Removing the entity immediately and cleaning up its components could
+     * cause problems because if you access a component which is mandatory for the family, you will get
+     * a FleksNoSuchComponentException. To avoid that you could check if an entity really has the component
+     * before accessing it but that is redundant in context of a family.
+     *
+     * To avoid these kinds of issues, entity removals are delayed until the end of the iteration. This also means
+     * that a removed entity of this family will still be part of the [action] for the current iteration.
      */
-    inline fun forEach(action: (Entity) -> Unit) {
-        entitiesBag.forEach { action(Entity(it)) }
+    inline fun forEach(action: Family.(Entity) -> Unit) {
+        updateActiveEntities()
+        if (!entityService.delayRemoval) {
+            entityService.delayRemoval = true
+            entitiesBag.forEach { this.action(Entity(it)) }
+            entityService.cleanupDelays()
+        } else {
+            entitiesBag.forEach { this.action(Entity(it)) }
+        }
+    }
+
+    /**
+     * Updates an [entity] using the given [configuration] to add and remove components.
+     */
+    inline fun configureEntity(entity: Entity, configuration: EntityUpdateCfg.(Entity) -> Unit) {
+        entityService.configureEntity(entity, configuration)
     }
 
     /**
      * Sorts the [entities][Entity] of this family by the given [comparator].
      */
     fun sort(comparator: EntityComparator) {
+        updateActiveEntities()
         entitiesBag.sort(comparator)
     }
 
@@ -118,43 +167,31 @@ data class Family(
             // new entity gets added
             isDirty = true
             entities.set(entity.id)
+            listeners.forEach { it.onEntityAdded(entity) }
         } else if (!entityInFamily && entities[entity.id]) {
             // existing entity gets removed
             isDirty = true
             entities.clear(entity.id)
+            listeners.forEach { it.onEntityRemoved(entity) }
         }
-    }
-}
-
-/**
- * A [family][Family] of [entities][Entity] created without an [IteratingSystem].
- * It stores [entities][Entity] that have a specific configuration of components.
- */
-class WorldFamily(
-    internal val family: Family,
-    private val entityService: EntityService,
-) {
-    /**
-     * Sorts the [entities][Entity] of this family by the given [comparator].
-     */
-    fun sort(comparator: EntityComparator) {
-        if (family.isDirty) {
-            family.updateActiveEntities()
-        }
-
-        family.sort(comparator)
     }
 
     /**
-     * Performs the given [action] on each [entity][Entity] of the [family].
+     * Adds the given [listener] to the list of [FamilyListener].
      */
-    fun forEach(action: (Entity) -> Unit) {
-        if (family.isDirty) {
-            family.updateActiveEntities()
-        }
+    fun addFamilyListener(listener: FamilyListener) = listeners.add(listener)
 
-        entityService.delayRemoval = true
-        family.forEach { action(it) }
-        entityService.cleanupDelays()
+    /**
+     * Removes the given [listener] from the list of [FamilyListener].
+     */
+    fun removeFamilyListener(listener: FamilyListener) = listeners.removeValue(listener)
+
+    /**
+     * Returns true if an only if the given [listener] is part of the list of [FamilyListener].
+     */
+    operator fun contains(listener: FamilyListener) = listener in listeners
+
+    companion object {
+        internal lateinit var CURRENT_FAMILY: Family
     }
 }
