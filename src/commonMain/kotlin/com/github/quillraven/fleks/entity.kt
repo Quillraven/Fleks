@@ -91,7 +91,7 @@ class EntityUpdateCfg {
      * Removes a component of the given type from the [entity].
      * Notifies any registered [ComponentListener].
      *
-     * @throws [IndexOutOfBoundsException] if the id of the [entity] exceeds the mapper's capacity.
+     * @throws [ArrayIndexOutOfBoundsException] if the id of the [entity] exceeds the mapper's capacity.
      */
     inline fun <reified T : Any> ComponentMapper<T>.remove(entity: Entity) {
         compMask.clear(this.id)

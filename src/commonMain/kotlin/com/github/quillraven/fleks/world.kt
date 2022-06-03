@@ -23,13 +23,13 @@ class WorldConfiguration {
     var entityCapacity = 512
 
     @PublishedApi
-    internal val systemFactory = mutableMapOf<KClass<*>, () -> IntervalSystem>()
+    internal val systemFactory = mutableMapOf<KClass<*>, (injections: Injections) -> IntervalSystem>()
 
     @PublishedApi
     internal val injectables = mutableMapOf<String, Injectable>()
 
     @PublishedApi
-    internal val compListenerFactory = mutableMapOf<String, () -> ComponentListener<*>>()
+    internal val compListenerFactory = mutableMapOf<String, (injections: Injections) -> ComponentListener<*>>()
 
     @PublishedApi
     internal val componentFactory = mutableMapOf<String, () -> Any>()
@@ -41,7 +41,7 @@ class WorldConfiguration {
      * @param factory A function which creates an object of type [T].
      * @throws [FleksSystemAlreadyAddedException] if the system was already added before.
      */
-    inline fun <reified T : IntervalSystem> system(noinline factory: () -> T) {
+    inline fun <reified T : IntervalSystem> system(noinline factory: (injections: Injections) -> T) {
         val systemType = T::class
         if (systemType in systemFactory) {
             throw FleksSystemAlreadyAddedException(systemType)
@@ -83,7 +83,7 @@ class WorldConfiguration {
     }
 
     /**
-     * Adds the specified component and its [ComponentListener] to the [world][World]. If a component listener
+     * Adds the specified [Component] and its [ComponentListener] to the [world][World]. If a component listener
      * is not needed than it can be omitted.
      *
      * @param compFactory the constructor method for creating the component.
@@ -91,7 +91,7 @@ class WorldConfiguration {
      * @throws [FleksComponentAlreadyAddedException] if the component was already added before.
      * @throws [FleksInjectableTypeHasNoName] if the dependency type has no T::class.simpleName.
      */
-    inline fun <reified T : Any> component(noinline compFactory: () -> T, noinline listenerFactory: (() -> ComponentListener<T>)? = null) {
+    inline fun <reified T : Any> component(noinline compFactory: () -> T, noinline listenerFactory: ((injections: Injections) -> ComponentListener<T>)? = null) {
         val compType = T::class.simpleName ?: throw FleksInjectableTypeHasNoName(T::class)
 
         if (compType in componentFactory) {
@@ -152,12 +152,14 @@ class World(
         // Set "used" to true to make this injectable not mandatory
         injectables["World"] = Injectable(this, true)
 
-        systemService = SystemService(this, worldCfg.systemFactory, injectables)
+        val injections = Injections(injectables, componentService.mappers)
+
+        systemService = SystemService(this, worldCfg.systemFactory, injections)
 
         // create and register ComponentListener
         worldCfg.compListenerFactory.forEach {
             val compType = it.key
-            val listener = it.value.invoke()
+            val listener = it.value.invoke(injections)
             val mapper = componentService.mapper(compType)
             mapper.addComponentListenerInternal(listener)
         }
@@ -174,6 +176,13 @@ class World(
      */
     inline fun entity(configuration: EntityCreateCfg.(Entity) -> Unit = {}): Entity {
         return entityService.create(configuration)
+    }
+
+    /**
+     * Updates an [entity] using the given [configuration] to add and remove components.
+     */
+    inline fun configureEntity(entity: Entity, configuration: EntityUpdateCfg.(Entity) -> Unit) {
+        entityService.configureEntity(entity, configuration)
     }
 
     /**
@@ -211,7 +220,7 @@ class World(
     /**
      * Returns a [ComponentMapper] for the given type. If the mapper does not exist then it will be created.
      *
-     * @throws [FleksNoSuchComponentException] if the component of the given type does not exist in the
+     * @throws [FleksNoSuchComponentException] if the component of the given [type] does not exist in the
      * world configuration.
      * @throws [FleksInjectableTypeHasNoName] if the dependency type has no T::class.simpleName.
      */

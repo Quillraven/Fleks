@@ -15,10 +15,9 @@ internal class FamilyTest {
         }
     }
 
-
     @Test
-    fun testContains() {
-        val testCases = listOf(
+    fun testFamily() {
+        listOf(
             arrayOf(
                 "empty family contains entity without components",
                 BitArray(), // entity component mask
@@ -67,9 +66,7 @@ internal class FamilyTest {
                 0, 0, 1,                     // family allOf, noneOf, anyOf indices
                 true                         // expected
             ),
-        )
-
-        testCases.forEach {
+        ).map {
             val eCmpMask = it[1] as BitArray
             val fAllOf = createCmpBitmask(it[2] as Int)
             val fNoneOf = createCmpBitmask(it[3] as Int)
@@ -77,7 +74,7 @@ internal class FamilyTest {
             val family = Family(fAllOf, fNoneOf, fAnyOf)
             val expected = it[5] as Boolean
 
-            assertEquals(expected, eCmpMask in family)
+            assertEquals(expected, eCmpMask in family, "FAILED: testFamily: " + it[0] + " - ")
         }
     }
 
@@ -119,7 +116,7 @@ internal class FamilyTest {
         family.updateActiveEntities()
 
         // sort descending by entity id
-        family.sort(compareEntity { e1, e2 -> e2.id.compareTo(e1.id) })
+        family.sort(compareEntity(Injections()) { e1, e2 -> e2.id.compareTo(e1.id) })
 
         assertEquals(2, family.entitiesBag[0])
         assertEquals(1, family.entitiesBag[1])
@@ -128,16 +125,14 @@ internal class FamilyTest {
 
     @Test
     fun testOnEntityCfgChange() {
-        val testCases = listOf(
+        listOf(
             // first = add entity to family before calling onChange
             // second = make entity part of family
             Pair(false, false),
             Pair(false, true),
             Pair(true, false),
             Pair(true, true),
-        )
-
-        testCases.forEach {
+        ).map {
             val family = Family(BitArray().apply { set(1) }, null, null)
             val addEntityBeforeCall = it.first
             val addEntityToFamily = it.second
@@ -150,11 +145,11 @@ internal class FamilyTest {
             if (addEntityToFamily) {
                 family.onEntityCfgChanged(entity, BitArray().apply { set(1) })
 
-                assertEquals(!addEntityBeforeCall, family.isDirty)
+                assertEquals(!addEntityBeforeCall, family.isDirty, "FAILED: testOnEntityCfgChanged: addEntityBefore=${it.first}, addEntity=${it.second} - ")
             } else {
                 family.onEntityCfgChanged(entity, BitArray())
 
-                assertEquals(addEntityBeforeCall, family.isDirty)
+                assertEquals(addEntityBeforeCall, family.isDirty, "FAILED: testOnEntityCfgChanged: addEntityBefore=${it.first}, addEntity=${it.second} - ")
             }
         }
     }

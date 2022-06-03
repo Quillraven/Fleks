@@ -1,33 +1,37 @@
 package com.github.quillraven.fleks
 
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
 
-internal class ComponentTest {
+private data class ComponentTestComponent(var x: Int = 0)
 
-    private data class ComponentTestComponent(var x: Int = 0)
+private class ComponentTestComponentListener(override val injections: Injections) : ComponentListener<ComponentTestComponent> {
+    var numAddCalls = 0
+    var numRemoveCalls = 0
+    lateinit var cmpCalled: ComponentTestComponent
+    var entityCalled = Entity(-1)
+    var lastCall = ""
 
-    private class ComponentTestComponentListener : ComponentListener<ComponentTestComponent> {
-        var numAddCalls = 0
-        var numRemoveCalls = 0
-        lateinit var cmpCalled: ComponentTestComponent
-        var entityCalled = Entity(-1)
-        var lastCall = ""
-
-        override fun onComponentAdded(entity: Entity, component: ComponentTestComponent) {
-            numAddCalls++
-            cmpCalled = component
-            entityCalled = entity
-            lastCall = "add"
-        }
-
-        override fun onComponentRemoved(entity: Entity, component: ComponentTestComponent) {
-            numRemoveCalls++
-            cmpCalled = component
-            entityCalled = entity
-            lastCall = "remove"
-        }
+    override fun onComponentAdded(entity: Entity, component: ComponentTestComponent) {
+        numAddCalls++
+        cmpCalled = component
+        entityCalled = entity
+        lastCall = "add"
     }
 
+    override fun onComponentRemoved(entity: Entity, component: ComponentTestComponent) {
+        numRemoveCalls++
+        cmpCalled = component
+        entityCalled = entity
+        lastCall = "remove"
+    }
+}
+
+internal class ComponentTest {
     private val componentFactory = mutableMapOf<String, () -> Any>()
 
     private inline fun <reified T : Any> initComponentFactory(noinline compFactory: () -> T) {
@@ -102,6 +106,15 @@ internal class ComponentTest {
     }
 
     @Test
+    fun cannotRemoveNonExistingEntityFromMapperWithInsufficientCapacity() {
+        val cmpService = ComponentService(componentFactory)
+        val mapper = cmpService.mapper<ComponentTestComponent>()
+        val entity = Entity(10_000)
+
+        assertFailsWith<IndexOutOfBoundsException> { mapper.removeInternal(entity) }
+    }
+
+    @Test
     fun getComponentOfExistingEntity() {
         val cmpService = ComponentService(componentFactory)
         val mapper = cmpService.mapper<ComponentTestComponent>()
@@ -154,7 +167,7 @@ internal class ComponentTest {
     @Test
     fun addComponentListener() {
         val cmpService = ComponentService(componentFactory)
-        val listener = ComponentTestComponentListener()
+        val listener = ComponentTestComponentListener(Injections())
         val mapper = cmpService.mapper<ComponentTestComponent>()
 
         mapper.addComponentListenerInternal(listener)
@@ -165,7 +178,7 @@ internal class ComponentTest {
     @Test
     fun removeComponentListener() {
         val cmpService = ComponentService(componentFactory)
-        val listener = ComponentTestComponentListener()
+        val listener = ComponentTestComponentListener(Injections())
         val mapper = cmpService.mapper<ComponentTestComponent>()
         mapper.addComponentListenerInternal(listener)
 
@@ -178,7 +191,7 @@ internal class ComponentTest {
     fun addComponentWithComponentListener() {
         val cmpService = ComponentService(componentFactory)
         val mapper = cmpService.mapper<ComponentTestComponent>()
-        val listener = ComponentTestComponentListener()
+        val listener = ComponentTestComponentListener(Injections())
         mapper.addComponentListener(listener)
         val expectedEntity = Entity(1)
 
@@ -196,7 +209,7 @@ internal class ComponentTest {
         val mapper = cmpService.mapper<ComponentTestComponent>()
         val expectedEntity = Entity(1)
         mapper.addInternal(expectedEntity)
-        val listener = ComponentTestComponentListener()
+        val listener = ComponentTestComponentListener(Injections())
         mapper.addComponentListener(listener)
 
         val expectedCmp = mapper.addInternal(expectedEntity)

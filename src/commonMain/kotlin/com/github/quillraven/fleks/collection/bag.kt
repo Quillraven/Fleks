@@ -1,6 +1,7 @@
 package com.github.quillraven.fleks.collection
 
 import com.github.quillraven.fleks.Entity
+import com.github.quillraven.fleks.Injections
 import kotlin.math.max
 import kotlin.math.min
 
@@ -139,11 +140,13 @@ class IntBag(
  * Sorting of int[] logic taken from: https://github.com/karussell/fastutil/blob/master/src/it/unimi/dsi/fastutil/ints/IntArrays.java
  */
 interface EntityComparator {
+    val injections: Injections
     fun compare(entityA: Entity, entityB: Entity): Int
 }
 
-fun compareEntity(compareFun: (Entity, Entity) -> Int): EntityComparator {
+fun compareEntity(injections: Injections, compareFun: (Entity, Entity) -> Int): EntityComparator {
     return object : EntityComparator {
+        override val injections: Injections = injections
         override fun compare(entityA: Entity, entityB: Entity): Int {
             return compareFun(entityA, entityB)
         }

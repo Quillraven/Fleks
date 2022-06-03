@@ -1,10 +1,7 @@
 package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.BitArray
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 private class EntityTestListener : EntityListener {
     var numCalls = 0
@@ -144,7 +141,7 @@ internal class EntityTest {
     }
 
     @Test
-    fun removeEntityWithComponentImmediatelyWithCustomListener() {
+    fun removeEntityWithAComponentImmediatelyWithCustomListener() {
         val cmpService = ComponentService(componentFactory)
         val entityService = EntityService(32, cmpService)
         val listener = EntityTestListener()

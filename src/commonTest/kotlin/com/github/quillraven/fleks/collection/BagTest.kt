@@ -1,6 +1,11 @@
 package com.github.quillraven.fleks.collection
 
-import kotlin.test.*
+import com.github.quillraven.fleks.Injections
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class GenericBagTest {
     @Test
@@ -142,6 +147,13 @@ class IntBagTest {
     }
 
     @Test
+    fun addValueUnsafeWithInsufficientCapacity() {
+        val bag = IntBag(0)
+
+        assertFailsWith<IndexOutOfBoundsException> { bag.unsafeAdd(42) }
+    }
+
+    @Test
     fun addValueToBagWithInsufficientCapacity() {
         val bag = IntBag(0)
 
@@ -150,6 +162,13 @@ class IntBagTest {
         assertEquals(1, bag.size)
         assertEquals(42, bag[0])
         assertEquals(1, bag.capacity)
+    }
+
+    @Test
+    fun cannotGetValueOfOutOfBoundsIndex() {
+        val bag = IntBag(2)
+
+        assertFailsWith<IndexOutOfBoundsException> { bag[2] }
     }
 
     @Test
@@ -183,7 +202,6 @@ class IntBagTest {
             valuesCalled.add(it)
         }
 
-
         assertEquals(2, numCalls)
         assertEquals(listOf(42, 43), valuesCalled)
     }
@@ -193,7 +211,7 @@ class IntBagTest {
         val bag = IntBag()
         repeat(6) { bag.add(6 - it) }
 
-        bag.sort(compareEntity { e1, e2 -> e1.id.compareTo(e2.id) })
+        bag.sort(compareEntity(Injections.EMPTY) { e1, e2 -> e1.id.compareTo(e2.id) })
 
         repeat(6) {
             assertEquals(it + 1, bag[it])
@@ -205,7 +223,7 @@ class IntBagTest {
         val bag = IntBag()
         repeat(8) { bag.add(8 - it) }
 
-        bag.sort(compareEntity { e1, e2 -> e1.id.compareTo(e2.id) })
+        bag.sort(compareEntity(Injections.EMPTY) { e1, e2 -> e1.id.compareTo(e2.id) })
 
         repeat(8) {
             assertEquals(it + 1, bag[it])
@@ -217,7 +235,7 @@ class IntBagTest {
         val bag = IntBag()
         repeat(51) { bag.add(51 - it) }
 
-        bag.sort(compareEntity { e1, e2 -> e1.id.compareTo(e2.id) })
+        bag.sort(compareEntity(Injections.EMPTY) { e1, e2 -> e1.id.compareTo(e2.id) })
 
         repeat(51) {
             assertEquals(it + 1, bag[it])

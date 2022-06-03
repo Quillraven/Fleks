@@ -9,6 +9,7 @@ import kotlin.math.max
  * gets added or removed from an [entity][Entity].
  */
 interface ComponentListener<T> {
+    val injections: Injections
     fun onComponentAdded(entity: Entity, component: T)
     fun onComponentRemoved(entity: Entity, component: T)
 }
@@ -78,7 +79,7 @@ class ComponentMapper<T>(
      * Removes a component of the specific type from the given [entity].
      * Notifies any registered [ComponentListener].
      *
-     * @throws [IndexOutOfBoundsException] if the id of the [entity] exceeds the components' capacity.
+     * @throws [ArrayIndexOutOfBoundsException] if the id of the [entity] exceeds the components' capacity.
      */
     @PublishedApi
     internal fun removeInternal(entity: Entity) {
@@ -172,7 +173,7 @@ class ComponentService(
     /**
      * Returns a [ComponentMapper] for the specific type.
      *
-     * @throws [FleksNoSuchComponentException] if the component of the given type does not exist in the
+     * @throws [FleksNoSuchComponentException] if the component of the given [type] does not exist in the
      * world configuration.
      */
     @Suppress("UNCHECKED_CAST")

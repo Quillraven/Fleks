@@ -1,10 +1,17 @@
 package com.github.quillraven.fleks
 
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 private data class WorldTestComponent(var x: Float = 0f)
 
-private class WorldTestIntervalSystem : IntervalSystem() {
+private class WorldTestIntervalSystem(
+    injections: Injections
+) : IntervalSystem(injections) {
     var numCalls = 0
     var disposed = false
 
@@ -17,13 +24,16 @@ private class WorldTestIntervalSystem : IntervalSystem() {
     }
 }
 
-private class WorldTestIteratingSystem : IteratingSystem(
+private class WorldTestIteratingSystem(
+    injections: Injections
+) : IteratingSystem(
+    injections,
     allOfComponents = arrayOf(WorldTestComponent::class)
 ) {
     var numCalls = 0
 
-    val testInject: String = Inject.dependency()
-    val mapper: ComponentMapper<WorldTestComponent> = Inject.componentMapper()
+    val testInject: String = injections.dependency()
+    val mapper: ComponentMapper<WorldTestComponent> = injections.componentMapper()
 
     override fun onTick() {
         ++numCalls
@@ -33,16 +43,17 @@ private class WorldTestIteratingSystem : IteratingSystem(
     override fun onTickEntity(entity: Entity) = Unit
 }
 
-private class WorldTestNamedDependencySystem : IntervalSystem() {
-    val injName: String = Inject.dependency("name")
-    val level: String = Inject.dependency("level")
+private class WorldTestNamedDependencySystem(injections: Injections) : IntervalSystem(injections) {
+    val _name: String = injections.dependency("name")
+    val level: String = injections.dependency("level")
 
-    val name: String = injName
+    val name: String = _name
 
     override fun onTick() = Unit
 }
 
-private class WorldTestComponentListener : ComponentListener<WorldTestComponent> {
+private class WorldTestComponentListener(override val injections: Injections) :
+    ComponentListener<WorldTestComponent> {
     override fun onComponentAdded(entity: Entity, component: WorldTestComponent) = Unit
     override fun onComponentRemoved(entity: Entity, component: WorldTestComponent) = Unit
 }
