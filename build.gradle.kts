@@ -1,13 +1,13 @@
 plugins {
-    kotlin("multiplatform") version "1.6.10"
+    kotlin("multiplatform") version "1.6.21"
     id("org.jetbrains.kotlinx.benchmark") version "0.4.2"
-    id("org.jetbrains.dokka") version "1.6.10"
+    id("org.jetbrains.dokka") version "1.6.21"
     `maven-publish`
     signing
 }
 
 group = "io.github.quillraven.fleks"
-version = "2.0-RC1"
+version = "1.3-KMP-SNAPSHOT"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
 repositories {
@@ -139,4 +139,10 @@ publishing {
             sign(kotlinMultiplatform)
         }
     }
+}
+
+// only sign if version is not a SNAPSHOT release.
+// this makes it easier to publish to mavenLocal and test the packed version.
+tasks.withType<Sign>().configureEach {
+    onlyIf { !project.version.toString().endsWith("SNAPSHOT") }
 }
