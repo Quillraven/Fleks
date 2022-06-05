@@ -123,6 +123,40 @@ internal class ComponentTest {
     }
 
     @Test
+    fun getComponentOfNonExistingEntityWithSufficientCapacity() {
+        val cmpService = ComponentService(componentFactory)
+        val mapper = cmpService.mapper<ComponentTestComponent>()
+        val entity = Entity(0)
+
+        val cmp = mapper.getOrNull(entity)
+
+        assertNull(cmp)
+    }
+
+    @Test
+    fun getComponentOfNonExistingEntityWithoutSufficientCapacity() {
+        val cmpService = ComponentService(componentFactory)
+        val mapper = cmpService.mapper<ComponentTestComponent>()
+        val entity = Entity(2048)
+
+        val cmp = mapper.getOrNull(entity)
+
+        assertNull(cmp)
+    }
+
+    @Test
+    fun getComponentOfExistingEntityViaGetOrNull() {
+        val cmpService = ComponentService(componentFactory)
+        val mapper = cmpService.mapper<ComponentTestComponent>()
+        val entity = Entity(0)
+        mapper.addInternal(entity) { x = 2 }
+
+        val cmp = mapper.getOrNull(entity)
+
+        assertEquals(2, cmp?.x)
+    }
+
+    @Test
     fun createNewMapper() {
         val cmpService = ComponentService(componentFactory)
 
