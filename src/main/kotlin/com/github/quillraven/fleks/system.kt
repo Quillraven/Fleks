@@ -1,6 +1,7 @@
 package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.EntityComparator
+import java.lang.reflect.InvocationTargetException
 import kotlin.reflect.KClass
 
 /**
@@ -130,7 +131,7 @@ abstract class IteratingSystem(
     /**
      * Returns the [family][Family] of this system.
      */
-    val family: Family = Family.CURRENT_FAMILY
+    val family: Family
 
     /**
      * Returns the [entityService][EntityService] of this system.
@@ -146,6 +147,12 @@ abstract class IteratingSystem(
      * Otherwise, it must be set programmatically to perform sorting. The flag gets cleared after sorting.
      */
     var doSort = sortingType == Automatic && comparator != EMPTY_COMPARATOR
+
+    init {
+        with(this::class) {
+            family = world.familyOfAnnotations(annotation(), annotation(), annotation())
+        }
+    }
 
     /**
      * Updates an [entity] using the given [configuration] to add and remove components.
@@ -217,27 +224,17 @@ class SystemService(
         val cmpService = world.componentService
         systems = Array(systemTypes.size) { sysIdx ->
             val sysType = systemTypes[sysIdx]
-            val allOfAnn = sysType.annotation<AllOf>()
-            val noneOfAnn = sysType.annotation<NoneOf>()
-            val anyOfAnn = sysType.annotation<AnyOf>()
-            val hasFamilyAnnotations = allOfAnn != null || noneOfAnn != null || anyOfAnn != null
-            if (hasFamilyAnnotations) {
-                // create family for IteratingSystem that gets created below.
-                // This is needed because if the user wants to access the family in the system's constructor
-                // then it must be already set. Therefore, it must happen during creation and not afterwards.
-                // We do this like we do it for the world and its CURRENT_WORLD global
-                // but this time using a CURRENT_FAMILY global.
-                Family.CURRENT_FAMILY = world.familyOfAnnotations(allOfAnn, noneOfAnn, anyOfAnn)
+            try {
+                newInstance(sysType, cmpService, injectables)
+            } catch (e: InvocationTargetException) {
+                if (e.targetException is FleksFamilyException) {
+                    throw FleksSystemCreationException(
+                        sysType,
+                        "IteratingSystem must define at least one of AllOf, NoneOf or AnyOf"
+                    )
+                }
+                throw e
             }
-
-            val system = newInstance(sysType, cmpService, injectables)
-            if (system is IteratingSystem && !hasFamilyAnnotations) {
-                throw FleksSystemCreationException(
-                    sysType,
-                    "IteratingSystem must define at least one of AllOf, NoneOf or AnyOf"
-                )
-            }
-            system
         }
     }
 

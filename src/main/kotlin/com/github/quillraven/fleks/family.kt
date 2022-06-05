@@ -190,8 +190,4 @@ data class Family(
      * Returns true if an only if the given [listener] is part of the list of [FamilyListener].
      */
     operator fun contains(listener: FamilyListener) = listener in listeners
-
-    companion object {
-        internal lateinit var CURRENT_FAMILY: Family
-    }
 }
