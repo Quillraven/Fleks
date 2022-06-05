@@ -1,5 +1,6 @@
 package com.github.quillraven.fleks
 
+import kotlin.native.concurrent.ThreadLocal
 import kotlin.reflect.KClass
 
 /**
@@ -168,6 +169,10 @@ class World(
             mapper.addComponentListenerInternal(listener)
         }
 
+        // set a Fleks internal global reference to the current world that
+        // gets created. This is used to correctly initialize the world
+        // reference of any created system in the SystemService below.
+        CURRENT_WORLD = this
         systemService = SystemService(this, worldCfg.systemFactory)
 
         // verify that there are no unused injectables
@@ -251,8 +256,11 @@ class World(
         systemService.dispose()
     }
 
+
+    @ThreadLocal
     companion object {
         private val EMPTY_INJECTIONS: Map<String, Injectable> = emptyMap()
         private val EMPTY_MAPPERS: Map<String, ComponentMapper<*>> = emptyMap()
+        internal lateinit var CURRENT_WORLD: World
     }
 }

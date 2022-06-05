@@ -36,26 +36,6 @@ private class SystemTestIntervalSystemFixed : IntervalSystem(
 
 private data class SystemTestComponent(var x: Float = 0f)
 
-
-private class SystemTestInitBlock : IntervalSystem() {
-    // this property assignment throws an exception and is tested below
-    // but the value is never read. It happens during system creation.
-    @Suppress("unused")
-    private val someValue: Float = world.deltaTime
-
-    override fun onTick() = Unit
-}
-
-private class SystemTestOnInitBlock : IntervalSystem() {
-    var someValue: Float = 42f
-
-    override fun onInit() {
-        someValue = world.deltaTime
-    }
-
-    override fun onTick() = Unit
-}
-
 private class SystemTestIteratingSystemMapper : IteratingSystem(
     allOfComponents = arrayOf(SystemTestComponent::class),
     interval = Fixed(0.25f)
@@ -79,6 +59,20 @@ private class SystemTestIteratingSystemMapper : IteratingSystem(
     override fun onAlphaEntity(entity: Entity, alpha: Float) {
         lastAlpha = alpha
         ++numAlphaCalls
+    }
+}
+
+private class SystemTestEntityCreation : IteratingSystem(
+    anyOfComponents = arrayOf(SystemTestComponent::class)
+) {
+    var numTicks = 0
+
+    init {
+        world.entity { add<SystemTestComponent>() }
+    }
+
+    override fun onTickEntity(entity: Entity) {
+        ++numTicks
     }
 }
 
@@ -186,6 +180,7 @@ internal class SystemTest {
 
     @Test
     fun systemWithIntervalEachFrameGetsCalledEveryTime() {
+        World.CURRENT_WORLD = World { }
         val system = SystemTestIntervalSystemEachFrame()
 
         system.onUpdate()
@@ -196,7 +191,8 @@ internal class SystemTest {
 
     @Test
     fun systemWithIntervalEachFrameReturnsWorldDeltaTime() {
-        val system = SystemTestIntervalSystemEachFrame().apply { this.world = World {} }
+        World.CURRENT_WORLD = World { }
+        val system = SystemTestIntervalSystemEachFrame()
         system.world.update(42f)
 
         assertEquals(42f, system.deltaTime)
@@ -204,7 +200,8 @@ internal class SystemTest {
 
     @Test
     fun systemWithFixedIntervalOf025fGetsCalledFourTimesWhenDeltaTimeIs11f() {
-        val system = SystemTestIntervalSystemFixed().apply { this.world = World {} }
+        World.CURRENT_WORLD = World { }
+        val system = SystemTestIntervalSystemFixed()
         system.world.update(1.1f)
 
         system.onUpdate()
@@ -466,16 +463,18 @@ internal class SystemTest {
     }
 
     @Test
-    fun initBlockOfSystemConstructorHasNoAccessToTheWorld() {
-        assertFailsWith<RuntimeException> { systemService(mutableMapOf(SystemTestInitBlock::class to ::SystemTestInitBlock)) }
-    }
+    fun createEntityDuringSystemInit() {
+        // this test verifies that entities that are created in a system's init block
+        // are correctly added to families
+        val world = World {
+            component(::SystemTestComponent)
+        }
 
-    @Test
-    fun onInitBlockIsCalledForAnyNewlyCreatedSystem() {
-        val expected = 0f
+        val service =
+            systemService(mutableMapOf(SystemTestEntityCreation::class to ::SystemTestEntityCreation), world = world)
+        service.update()
 
-        val service = systemService(mutableMapOf(SystemTestOnInitBlock::class to ::SystemTestOnInitBlock))
-
-        assertEquals(expected, service.system<SystemTestOnInitBlock>().someValue)
+        val system = service.system<SystemTestEntityCreation>()
+        assertEquals(1, system.numTicks)
     }
 }
