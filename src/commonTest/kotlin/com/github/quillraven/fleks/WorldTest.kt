@@ -249,4 +249,27 @@ internal class WorldTest {
 
         assertContentEquals(listOf(e1, e3), actualEntities)
     }
+
+    @Test
+    fun createTwoWorldsWithDifferentDependencies() {
+        val w1 = World {
+            system(::WorldTestNamedDependencySystem)
+
+            inject("name", "name1")
+            inject("level", "level1")
+        }
+        val w2 = World {
+            system(::WorldTestNamedDependencySystem)
+
+            inject("name", "name2")
+            inject("level", "level2")
+        }
+        val s1 = w1.system<WorldTestNamedDependencySystem>()
+        val s2 = w2.system<WorldTestNamedDependencySystem>()
+
+        assertEquals("name1", s1.injName)
+        assertEquals("level1", s1.level)
+        assertEquals("name2", s2.injName)
+        assertEquals("level2", s2.level)
+    }
 }

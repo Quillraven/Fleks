@@ -91,7 +91,10 @@ class WorldConfiguration {
      * @throws [FleksComponentAlreadyAddedException] if the component was already added before.
      * @throws [FleksInjectableTypeHasNoName] if the dependency type has no T::class.simpleName.
      */
-    inline fun <reified T : Any> component(noinline compFactory: () -> T, noinline listenerFactory: (() -> ComponentListener<T>)? = null) {
+    inline fun <reified T : Any> component(
+        noinline compFactory: () -> T,
+        noinline listenerFactory: (() -> ComponentListener<T>)? = null
+    ) {
         val compType = T::class.simpleName ?: throw FleksInjectableTypeHasNoName(T::class)
 
         if (compType in componentFactory) {
@@ -152,9 +155,12 @@ class World(
         // Set "used" to true to make this injectable not mandatory
         injectables["World"] = Injectable(this, true)
 
-        systemService = SystemService(this, worldCfg.systemFactory, injectables)
+        Inject.injectObjects = injectables
+        Inject.mapperObjects = componentService.mappers
 
         // create and register ComponentListener
+        // it is important to do this BEFORE creating systems because if a system's init block
+        // is creating entities then ComponentListener already need to be registered to get notified
         worldCfg.compListenerFactory.forEach {
             val compType = it.key
             val listener = it.value.invoke()
@@ -162,11 +168,18 @@ class World(
             mapper.addComponentListenerInternal(listener)
         }
 
+        systemService = SystemService(this, worldCfg.systemFactory)
+
         // verify that there are no unused injectables
         val unusedInjectables = injectables.filterValues { !it.used }.map { it.value.injObj::class }
         if (unusedInjectables.isNotEmpty()) {
             throw FleksUnusedInjectablesException(unusedInjectables)
         }
+
+        // clear dependencies at the end because they are no longer necessary,
+        // and we don't want to keep a reference to them
+        Inject.injectObjects = EMPTY_INJECTIONS
+        Inject.mapperObjects = EMPTY_MAPPERS
     }
 
     /**
@@ -236,5 +249,10 @@ class World(
     fun dispose() {
         entityService.removeAll()
         systemService.dispose()
+    }
+
+    companion object {
+        private val EMPTY_INJECTIONS: Map<String, Injectable> = emptyMap()
+        private val EMPTY_MAPPERS: Map<String, ComponentMapper<*>> = emptyMap()
     }
 }

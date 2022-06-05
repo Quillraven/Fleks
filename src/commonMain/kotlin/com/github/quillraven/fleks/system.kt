@@ -245,12 +245,10 @@ abstract class IteratingSystem(
  *
  * @param world the [world][World] the service belongs to.
  * @param systemFactory the factory methods to create the [systems][IntervalSystem].
- * @param injectables the required dependencies to create the [systems][IntervalSystem].
  */
 class SystemService(
     world: World,
     systemFactory: MutableMap<KClass<*>, () -> IntervalSystem>,
-    injectables: MutableMap<String, Injectable>
 ) {
     @PublishedApi
     internal val systems: Array<IntervalSystem>
@@ -258,8 +256,6 @@ class SystemService(
     init {
         // Configure injector before instantiating systems
         val compService = world.componentService
-        Inject.injectObjects = injectables
-        Inject.mapperObjects = compService.mappers
         // Create systems
         val entityService = world.entityService
         val allFamilies = mutableListOf<Family>()
@@ -298,13 +294,16 @@ class SystemService(
     ): Family {
         val allOfComps = system.allOfComponents?.map {
             val type = it.simpleName ?: throw FleksInjectableTypeHasNoName(it)
-            compService.mapper(type) }
+            compService.mapper(type)
+        }
         val noneOfComps = system.noneOfComponents?.map {
             val type = it.simpleName ?: throw FleksInjectableTypeHasNoName(it)
-            compService.mapper(type) }
+            compService.mapper(type)
+        }
         val anyOfComps = system.anyOfComponents?.map {
             val type = it.simpleName ?: throw FleksInjectableTypeHasNoName(it)
-            compService.mapper(type) }
+            compService.mapper(type)
+        }
 
         if ((allOfComps == null || allOfComps.isEmpty())
             && (noneOfComps == null || noneOfComps.isEmpty())
@@ -373,6 +372,7 @@ class SystemService(
 object Inject {
     @PublishedApi
     internal lateinit var injectObjects: Map<String, Injectable>
+
     @PublishedApi
     internal lateinit var mapperObjects: Map<String, ComponentMapper<*>>
 

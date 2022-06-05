@@ -175,11 +175,14 @@ internal class SystemTest {
         systemFactory: MutableMap<KClass<*>, () -> IntervalSystem> = mutableMapOf(),
         injectables: MutableMap<String, Injectable> = mutableMapOf(),
         world: World = World {}
-    ) = SystemService(
-        world,
-        systemFactory,
-        injectables
-    )
+    ): SystemService {
+        Inject.injectObjects = injectables
+        Inject.mapperObjects = world.componentService.mappers
+        return SystemService(
+            world,
+            systemFactory,
+        )
+    }
 
     @Test
     fun systemWithIntervalEachFrameGetsCalledEveryTime() {
