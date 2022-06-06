@@ -168,14 +168,13 @@ internal class SystemTest {
     private fun systemService(
         systemFactory: MutableMap<KClass<*>, () -> IntervalSystem> = mutableMapOf(),
         injectables: MutableMap<String, Injectable> = mutableMapOf(),
-        world: World = World {}
+        world: World = World {
+            component(::SystemTestComponent)
+        }
     ): SystemService {
         Inject.injectObjects = injectables
         Inject.mapperObjects = world.componentService.mappers
-        return SystemService(
-            world,
-            systemFactory,
-        )
+        return SystemService(systemFactory)
     }
 
     @Test

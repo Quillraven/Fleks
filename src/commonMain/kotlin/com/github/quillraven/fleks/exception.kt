@@ -10,8 +10,14 @@ class FleksSystemAlreadyAddedException(system: KClass<*>) :
 class FleksComponentAlreadyAddedException(comp: String) :
     FleksException("Component '$comp' is already part of the '${WorldConfiguration::class.simpleName}'.")
 
-class FleksSystemCreationException(system: IteratingSystem) :
-    FleksException("Cannot create system '$system'. IteratingSystem must define at least one of AllOf, NoneOf or AnyOf properties.")
+class FleksFamilyListenerAlreadyAddedException(listener: KClass<out FamilyListener>) :
+    FleksException("FamilyListener ${listener.simpleName} is already part of the ${WorldConfiguration::class.simpleName}")
+
+class FleksSystemCreationException(system: KClass<*>, details: String) :
+    FleksException("Cannot create system '${system.simpleName}'.\nDetails: $details")
+
+class FleksFamilyListenerCreationException(listener: KClass<*>, details: String) :
+    FleksException("Cannot create FamilyListener ${listener.simpleName}.\nDetails: $details")
 
 class FleksNoSuchSystemException(system: KClass<*>) :
     FleksException("There is no system of type '${system.simpleName}' in the world.")
@@ -20,8 +26,10 @@ class FleksNoSuchComponentException(component: String) :
     FleksException("There is no component of type '$component' in the ComponentMapper. Did you add the component to the '${WorldConfiguration::class.simpleName}'?")
 
 class FleksInjectableAlreadyAddedException(type: String) :
-    FleksException("Injectable with type name '$type' is already part of the '${WorldConfiguration::class.simpleName}'. Please add a unique 'type' string as parameter " +
-        "to inject() function in world configuration and to Inject.dependency() in your systems or component listeners.")
+    FleksException(
+        "Injectable with type name '$type' is already part of the '${WorldConfiguration::class.simpleName}'. Please add a unique 'type' string as parameter " +
+            "to inject() function in world configuration and to Inject.dependency() in your systems or component listeners."
+    )
 
 class FleksInjectableTypeHasNoName(type: KClass<*>) :
     FleksException("Injectable '$type' does not have simpleName in its class type.")
@@ -37,3 +45,14 @@ class FleksNoSuchEntityComponentException(entity: Entity, component: String) :
 
 class FleksUnusedInjectablesException(unused: List<KClass<*>>) :
     FleksException("There are unused injectables of following types: ${unused.map { it.simpleName }}")
+
+class FleksFamilyException(
+    allOf: List<ComponentMapper<*>>?,
+    noneOf: List<ComponentMapper<*>>?,
+    anyOf: List<ComponentMapper<*>>?,
+) : FleksException(
+    """Family must have at least one of allOf, noneOf or anyOf.
+        |allOf: $allOf
+        |noneOf: $noneOf
+        |anyOf: $anyOf""".trimMargin()
+)
