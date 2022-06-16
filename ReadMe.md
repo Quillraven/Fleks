@@ -108,9 +108,11 @@ to configure it accordingly:
 - Use `entityCapacity` to set the expected maximum amount of entities. The default value is 512. The reason for this
   setting is to initialize internal collections and arrays with a proper size for your game to avoid a lot
   of `Array.copy` calls in the background which are slow.
-- Use `system` to add a system to your world. The order of `system` calls defines the order in which they are called
-  when calling `world.update`
-- Use `component` to register components and its component listeners (if needed and available, see below) to your world.
+- Use `systems` to add a system to your world. The order of calls defines the order in which they are called
+  when calling `world.update`.
+- Use `components` to register components and its component listeners (if needed and available, see below) to your world.
+- Use `families` to register family listener to your world
+- Use `injectables` to register injectables for your systems, ComponentListener and FamilyListener.
 
 Here is an example that creates a world for 1000 entities with a Move- and PhysicSystem:
 
@@ -118,12 +120,16 @@ Here is an example that creates a world for 1000 entities with a Move- and Physi
 val world = World {
     entityCapacity = 1000
 
-    system(::MoveSystem)
-    system(::PhysicSystem)
-
-    component(::Position)
-    component(::Physic)
-    component(::Box2dComponent, ::Box2dComponentListener)
+    systems {
+        add(::MoveSystem)
+        add(::PhysicSystem)
+    }
+    
+    components {
+        add(::Position)
+        add(::Physic)
+        add(::Box2dComponent, ::Box2dComponentListener)
+    }
 }
 ```
 
@@ -163,21 +169,25 @@ class DayNightSystem : IntervalSystem() {
 ```
 
 The `DayNightSystem` requires an `EventManager` which we need to inject. To achieve that we can define it when creating
-our world by using the `inject` function:
+our world by using the `injectables` DSL:
 
 ```Kotlin
 val eventManager = EventManager()
 val world = World {
     entityCapacity = 1000
 
-    system(::DayNightSystem)
+    systems {
+        add(::DayNightSystem)
+    }
 
-    inject(eventManager)
+    injectables {
+        add(eventManager)
+    }
 }
 ```
 
 There might be cases where you need multiple dependencies of the same type. In Fleks this can be solved by
-specifying a unique type name as parameter in inject() function in world configuration  and in
+specifying a unique type name as parameter in the injectables DSL of a world configuration and in
 Inject.dependency() in your system or component listener. Here is an example of a system that takes
 two String parameters. They are registered by name `HighscoreKey` and `LevelKey`:
 
@@ -192,11 +202,15 @@ private class NamedDependenciesSystem : IntervalSystem() {
 
 fun main() {
     val world = World {
-        system<NamedDependenciesSystem>()
-
-        // inject String dependencies from above via their type names
-        inject("HighscoreKey", "hs-key")
-        inject("LevelKey", "Level001")
+        systems {
+            add(::NamedDependenciesSystem)
+        }
+        
+        injectables {
+            // inject String dependencies from above via their type names
+            add("HighscoreKey", "hs-key")
+            add("LevelKey", "Level001")
+        }
     }
 }
 ```
@@ -398,7 +412,9 @@ class DebugSystem : IntervalSystem() {
 
 fun main() {
     val world = World {
-        system(::DebugSystem)
+        systems {
+            add(::DebugSystem)
+        }
     }
 
     // following call disposes the DebugSystem
@@ -478,8 +494,10 @@ class Box2dComponentListener : ComponentListener<Box2dComponent> {
 
 fun main() {
     val world = World {
-        // register component together with its listener to the world
-        component(::Box2dComponent, ::Box2dComponentListener)
+        components {
+            // register component together with its listener to the world
+            add(::Box2dComponent, ::Box2dComponentListener)
+        }
     }
 }
 ```
@@ -569,8 +587,8 @@ fun main() {
 In case you need a `FamilyListener` from the beginning to also get notified when
 entities are created within a system's constructor then this is possible in a similar
 way you can create `ComponentListener`. Just define it in the world's configuration.
-In this case the `FamilyListener` must have at least one of the `AllOf`, `AnyOf` or `NoneOf`
-annotations. Such listeners follow the dependency injection logic. Here is an example:
+In this case the `FamilyListener` must have at least one of the `allOfComponents`, `anyOfComponents` or `noneOfComponents` specified.
+Such listeners follow the dependency injection logic. Here is an example:
 
 ```kotlin
 private class MyFamilyListener(
@@ -584,7 +602,9 @@ private class MyFamilyListener(
 
 fun main() {
     val world = World {
-        familyListener<MyFamilyListener>()
+        families {
+            add(::MyFamilyListener)
+        }
     }
 }
 ```

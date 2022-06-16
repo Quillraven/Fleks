@@ -10,74 +10,19 @@ import kotlin.reflect.KClass
  */
 data class Injectable(val injObj: Any, var used: Boolean = false)
 
+@DslMarker
+annotation class ComponentCfgMarker
+
 /**
- * A configuration for an entity [world][World] to define the initial maximum entity capacity,
- * the systems of the [world][World] and the systems' dependencies to be injected.
- * Additionally, you can define [ComponentListener] to define custom logic when a specific component is
- * added or removed from an [entity][Entity].
+ * A DSL class to configure components and [ComponentListener] of a [WorldConfiguration].
  */
-class WorldConfiguration {
-    /**
-     * Initial maximum entity capacity.
-     * Will be used internally when a [world][World] is created to set the initial
-     * size of some collections and to avoid slow resizing calls.
-     */
-    var entityCapacity = 512
-
-    @PublishedApi
-    internal val systemFactory = mutableMapOf<KClass<*>, () -> IntervalSystem>()
-
-    @PublishedApi
-    internal val injectables = mutableMapOf<String, Injectable>()
-
+@ComponentCfgMarker
+class ComponentConfiguration {
     @PublishedApi
     internal val compListenerFactory = mutableMapOf<String, () -> ComponentListener<*>>()
 
     @PublishedApi
     internal val componentFactory = mutableMapOf<String, () -> Any>()
-
-    @PublishedApi
-    internal val famListenerFactory = mutableMapOf<KClass<out FamilyListener>, () -> FamilyListener>()
-
-    /**
-     * Adds the specified [IntervalSystem] to the [world][World].
-     * The order in which systems are added is the order in which they will be executed when calling [World.update].
-     *
-     * @param factory A function which creates an object of type [T].
-     * @throws [FleksSystemAlreadyAddedException] if the system was already added before.
-     */
-    inline fun <reified T : IntervalSystem> system(noinline factory: () -> T) {
-        val systemType = T::class
-        if (systemType in systemFactory) {
-            throw FleksSystemAlreadyAddedException(systemType)
-        }
-        systemFactory[systemType] = factory
-    }
-
-    /**
-     * Adds the specified [dependency] under the given [name] which can then be injected to any [IntervalSystem], [ComponentListener] or [FamilyListener].
-     *
-     * @throws [FleksInjectableAlreadyAddedException] if the dependency was already added before.
-     */
-    fun <T : Any> inject(name: String, dependency: T) {
-        if (name in injectables) {
-            throw FleksInjectableAlreadyAddedException(name)
-        }
-
-        injectables[name] = Injectable(dependency)
-    }
-
-    /**
-     * Adds the specified dependency which can then be injected to any [IntervalSystem], [ComponentListener] or [FamilyListener].
-     * Refer to [inject]: the name is the simpleName of the class of the [dependency].
-     *
-     * @throws [FleksInjectableAlreadyAddedException] if the dependency was already added before.
-     * @throws [FleksInjectableTypeHasNoName] if the simpleName of the [dependency] is null.
-     */
-    inline fun <reified T : Any> inject(dependency: T) {
-        val key = T::class.simpleName ?: throw FleksInjectableTypeHasNoName(T::class)
-        inject(key, dependency)
-    }
 
     /**
      * Adds the specified component and its [ComponentListener] to the [world][World]. If a component listener
@@ -88,7 +33,7 @@ class WorldConfiguration {
      * @throws [FleksComponentAlreadyAddedException] if the component was already added before.
      * @throws [FleksInjectableTypeHasNoName] if the dependency type has no T::class.simpleName.
      */
-    inline fun <reified T : Any> component(
+    inline fun <reified T : Any> add(
         noinline compFactory: () -> T,
         noinline listenerFactory: (() -> ComponentListener<T>)? = null
     ) {
@@ -103,6 +48,82 @@ class WorldConfiguration {
             compListenerFactory[compType] = listenerFactory
         }
     }
+}
+
+@DslMarker
+annotation class SystemCfgMarker
+
+/**
+ * A DSL class to configure [IntervalSystem] of a [WorldConfiguration].
+ */
+@SystemCfgMarker
+class SystemConfiguration {
+    @PublishedApi
+    internal val systemFactory = mutableMapOf<KClass<*>, () -> IntervalSystem>()
+
+    /**
+     * Adds the specified [IntervalSystem] to the [world][World].
+     * The order in which systems are added is the order in which they will be executed when calling [World.update].
+     *
+     * @param factory A function which creates an object of type [T].
+     * @throws [FleksSystemAlreadyAddedException] if the system was already added before.
+     */
+    inline fun <reified T : IntervalSystem> add(noinline factory: () -> T) {
+        val systemType = T::class
+        if (systemType in systemFactory) {
+            throw FleksSystemAlreadyAddedException(systemType)
+        }
+        systemFactory[systemType] = factory
+    }
+}
+
+@DslMarker
+annotation class InjectableCfgMarker
+
+/**
+ * A DSL class to configure [Injectable] of a [WorldConfiguration].
+ */
+@InjectableCfgMarker
+class InjectableConfiguration {
+    @PublishedApi
+    internal val injectables = mutableMapOf<String, Injectable>()
+
+    /**
+     * Adds the specified [dependency] under the given [name] which can then be injected to any [IntervalSystem], [ComponentListener] or [FamilyListener].
+     *
+     * @throws [FleksInjectableAlreadyAddedException] if the dependency was already added before.
+     */
+    fun <T : Any> add(name: String, dependency: T) {
+        if (name in injectables) {
+            throw FleksInjectableAlreadyAddedException(name)
+        }
+
+        injectables[name] = Injectable(dependency)
+    }
+
+    /**
+     * Adds the specified dependency which can then be injected to any [IntervalSystem], [ComponentListener] or [FamilyListener].
+     * Refer to [add]: the name is the simpleName of the class of the [dependency].
+     *
+     * @throws [FleksInjectableAlreadyAddedException] if the dependency was already added before.
+     * @throws [FleksInjectableTypeHasNoName] if the simpleName of the [dependency] is null.
+     */
+    inline fun <reified T : Any> add(dependency: T) {
+        val key = T::class.simpleName ?: throw FleksInjectableTypeHasNoName(T::class)
+        add(key, dependency)
+    }
+}
+
+@DslMarker
+annotation class FamilyCfgMarker
+
+/**
+ * A DSL class to configure [FamilyListener] of a [WorldConfiguration].
+ */
+@FamilyCfgMarker
+class FamilyConfiguration {
+    @PublishedApi
+    internal val famListenerFactory = mutableMapOf<KClass<out FamilyListener>, () -> FamilyListener>()
 
     /**
      * Adds the specified [FamilyListener] to the [world][World].
@@ -110,7 +131,7 @@ class WorldConfiguration {
      * @param listenerFactory the constructor method for creating the FamilyListener.
      * @throws [FleksFamilyListenerAlreadyAddedException] if the listener was already added before.
      */
-    inline fun <reified T : FamilyListener> familyListener(
+    inline fun <reified T : FamilyListener> add(
         noinline listenerFactory: (() -> T)
     ) {
         val listenerType = T::class
@@ -119,6 +140,41 @@ class WorldConfiguration {
         }
         famListenerFactory[listenerType] = listenerFactory
     }
+}
+
+@DslMarker
+annotation class WorldCfgMarker
+
+/**
+ * A configuration for an entity [world][World] to define the initial maximum entity capacity,
+ * the systems of the [world][World] and the systems' dependencies to be injected.
+ * Additionally, you can define [ComponentListener] to define custom logic when a specific component is
+ * added or removed from an [entity][Entity].
+ */
+@WorldCfgMarker
+class WorldConfiguration {
+    /**
+     * Initial maximum entity capacity.
+     * Will be used internally when a [world][World] is created to set the initial
+     * size of some collections and to avoid slow resizing calls.
+     */
+    var entityCapacity = 512
+
+    internal val compCfg = ComponentConfiguration()
+
+    internal val systemCfg = SystemConfiguration()
+
+    internal val injectableCfg = InjectableConfiguration()
+
+    internal val familyCfg = FamilyConfiguration()
+
+    fun components(cfg: ComponentConfiguration.() -> Unit) = compCfg.run(cfg)
+
+    fun systems(cfg: SystemConfiguration.() -> Unit) = systemCfg.run(cfg)
+
+    fun injectables(cfg: InjectableConfiguration.() -> Unit) = injectableCfg.run(cfg)
+
+    fun families(cfg: FamilyConfiguration.() -> Unit) = familyCfg.run(cfg)
 }
 
 /**
@@ -173,9 +229,9 @@ class World(
 
     init {
         val worldCfg = WorldConfiguration().apply(cfg)
-        componentService = ComponentService(worldCfg.componentFactory)
+        componentService = ComponentService(worldCfg.compCfg.componentFactory)
         entityService = EntityService(worldCfg.entityCapacity, componentService)
-        val injectables = worldCfg.injectables
+        val injectables = worldCfg.injectableCfg.injectables
         // add the world as a used dependency in case any system or ComponentListener needs it
         injectables["World"] = Injectable(this, true)
 
@@ -191,7 +247,7 @@ class World(
         // create and register ComponentListener
         // it is important to do this BEFORE creating systems because if a system's init block
         // is creating entities then ComponentListener already need to be registered to get notified
-        worldCfg.compListenerFactory.forEach {
+        worldCfg.compCfg.compListenerFactory.forEach {
             val compType = it.key
             val listener = it.value.invoke()
             val mapper = componentService.mapper(compType)
@@ -200,7 +256,7 @@ class World(
 
         // create and register FamilyListener
         // like ComponentListener this must happen before systems are created
-        worldCfg.famListenerFactory.forEach {
+        worldCfg.familyCfg.famListenerFactory.forEach {
             val (listenerType, factory) = it
             try {
                 val listener = factory.invoke()
@@ -217,7 +273,7 @@ class World(
         }
 
         // create systems
-        systemService = SystemService(worldCfg.systemFactory)
+        systemService = SystemService(worldCfg.systemCfg.systemFactory)
 
         // verify that there are no unused injectables
         val unusedInjectables = injectables.filterValues { !it.used }.map { it.value.injObj::class }

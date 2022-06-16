@@ -115,14 +115,22 @@ internal class WorldTest {
 
     @Test
     fun createEmptyWorldWith1NoArgsIntervalSystem() {
-        val w = World { system(::WorldTestIntervalSystem) }
+        val w = World {
+            systems {
+                add(::WorldTestIntervalSystem)
+            }
+        }
 
         assertNotNull(w.system<WorldTestIntervalSystem>())
     }
 
     @Test
     fun getWorldSystems() {
-        val w = World { system(::WorldTestIntervalSystem) }
+        val w = World {
+            systems {
+                add(::WorldTestIntervalSystem)
+            }
+        }
 
         assertEquals(w.systemService.systems, w.systems)
     }
@@ -130,10 +138,18 @@ internal class WorldTest {
     @Test
     fun createEmptyWorldWith1InjectableArgsIteratingSystem() {
         val w = World {
-            system(::WorldTestIteratingSystem)
-            component(::WorldTestComponent)
+            injectables {
+                add("42")
+            }
 
-            inject("42")
+            systems {
+                add(::WorldTestIteratingSystem)
+            }
+
+            components {
+                add(::WorldTestComponent)
+            }
+
         }
 
         assertNotNull(w.system<WorldTestIteratingSystem>())
@@ -145,11 +161,18 @@ internal class WorldTest {
         val expectedName = "myName"
         val expectedLevel = "myLevel"
         val w = World {
-            system(::WorldTestNamedDependencySystem)
-            component(::WorldTestComponent)
+            injectables {
+                add("name", expectedName)
+                add("level", "myLevel")
+            }
 
-            inject("name", expectedName)
-            inject("level", "myLevel")
+            systems {
+                add(::WorldTestNamedDependencySystem)
+            }
+
+            components {
+                add(::WorldTestComponent)
+            }
         }
 
         assertNotNull(w.system<WorldTestNamedDependencySystem>())
@@ -161,8 +184,10 @@ internal class WorldTest {
     fun cannotAddTheSameSystemTwice() {
         assertFailsWith<FleksSystemAlreadyAddedException> {
             World {
-                system(::WorldTestIntervalSystem)
-                system(::WorldTestIntervalSystem)
+                systems {
+                    add(::WorldTestIntervalSystem)
+                    add(::WorldTestIntervalSystem)
+                }
             }
         }
     }
@@ -178,8 +203,13 @@ internal class WorldTest {
     fun cannotCreateSystemWhenInjectablesAreMissing() {
         assertFailsWith<FleksSystemDependencyInjectException> {
             World {
-                component(::WorldTestComponent)
-                system(::WorldTestIteratingSystem)
+                components {
+                    add(::WorldTestComponent)
+                }
+
+                systems {
+                    add(::WorldTestIteratingSystem)
+                }
             }
         }
     }
@@ -188,8 +218,10 @@ internal class WorldTest {
     fun cannotInjectTheSameTypeTwice() {
         assertFailsWith<FleksInjectableAlreadyAddedException> {
             World {
-                inject("42")
-                inject("42")
+                injectables {
+                    add("42")
+                    add("42")
+                }
             }
         }
     }
@@ -197,9 +229,17 @@ internal class WorldTest {
     @Test
     fun createNewEntity() {
         val w = World {
-            system(::WorldTestIteratingSystem)
-            component(::WorldTestComponent)
-            inject("42")
+            systems {
+                add(::WorldTestIteratingSystem)
+            }
+
+            components {
+                add(::WorldTestComponent)
+            }
+
+            injectables {
+                add("42")
+            }
         }
 
         val e = w.entity {
@@ -224,11 +264,18 @@ internal class WorldTest {
     @Test
     fun updateWorldWithDeltaTimeOf1() {
         val w = World {
-            system(::WorldTestIntervalSystem)
-            system(::WorldTestIteratingSystem)
-            component(::WorldTestComponent)
+            systems {
+                add(::WorldTestIntervalSystem)
+                add(::WorldTestIteratingSystem)
+            }
 
-            inject("42")
+            components {
+                add(::WorldTestComponent)
+            }
+
+            injectables {
+                add("42")
+            }
         }
         w.system<WorldTestIteratingSystem>().enabled = false
 
@@ -253,7 +300,9 @@ internal class WorldTest {
     @Test
     fun disposeWorld() {
         val w = World {
-            system(::WorldTestIntervalSystem)
+            systems {
+                add(::WorldTestIntervalSystem)
+            }
         }
         w.entity()
         w.entity()
@@ -267,7 +316,9 @@ internal class WorldTest {
     @Test
     fun getMapper() {
         val w = World {
-            component(::WorldTestComponent)
+            components {
+                add(::WorldTestComponent)
+            }
         }
 
         val mapper = w.mapper<WorldTestComponent>()
@@ -279,7 +330,9 @@ internal class WorldTest {
     fun throwExceptionWhenThereAreUnusedInjectables() {
         assertFailsWith<FleksUnusedInjectablesException> {
             World {
-                inject("42")
+                injectables {
+                    add("42")
+                }
             }
         }
     }
@@ -301,16 +354,26 @@ internal class WorldTest {
     @Test
     fun createTwoWorldsWithDifferentDependencies() {
         val w1 = World {
-            system(::WorldTestNamedDependencySystem)
+            systems {
+                add(::WorldTestNamedDependencySystem)
+            }
 
-            inject("name", "name1")
-            inject("level", "level1")
+            injectables {
+                add("name", "name1")
+                add("level", "level1")
+            }
+
         }
         val w2 = World {
-            system(::WorldTestNamedDependencySystem)
+            systems {
+                add(::WorldTestNamedDependencySystem)
+            }
 
-            inject("name", "name2")
-            inject("level", "level2")
+            injectables {
+                add("name", "name2")
+                add("level", "level2")
+            }
+
         }
         val s1 = w1.system<WorldTestNamedDependencySystem>()
         val s2 = w2.system<WorldTestNamedDependencySystem>()
@@ -324,9 +387,17 @@ internal class WorldTest {
     @Test
     fun configureEntityAfterCreation() {
         val w = World {
-            inject("test")
-            component(::WorldTestComponent)
-            system(::WorldTestIteratingSystem)
+            injectables {
+                add("test")
+            }
+
+            components {
+                add(::WorldTestComponent)
+            }
+
+            systems {
+                add(::WorldTestIteratingSystem)
+            }
         }
         val e = w.entity()
         val mapper: ComponentMapper<WorldTestComponent> = w.mapper()
@@ -342,8 +413,13 @@ internal class WorldTest {
         // WorldTestInitSystem creates an entity in its init block
         // -> family must be dirty and has a size of 1
         val w = World {
-            component(::WorldTestComponent)
-            system(::WorldTestInitSystem)
+            components {
+                add(::WorldTestComponent)
+            }
+
+            systems {
+                add(::WorldTestInitSystem)
+            }
         }
 
         val wFamily = w.family(allOf = arrayOf(WorldTestComponent::class))
@@ -358,9 +434,14 @@ internal class WorldTest {
         // also a family with a different configuration that the system itself
         // -> system family is empty and extra family contains 1 entity
         val w = World {
-            component(::WorldTestComponent)
-            component(::WorldTestComponent2)
-            system(::WorldTestInitSystemExtraFamily)
+            components {
+                add(::WorldTestComponent2)
+                add(::WorldTestComponent)
+            }
+
+            systems {
+                add(::WorldTestInitSystemExtraFamily)
+            }
         }
         val s = w.system<WorldTestInitSystemExtraFamily>()
 
@@ -371,7 +452,9 @@ internal class WorldTest {
     @Test
     fun iterateOverFamily() {
         val w = World {
-            component(::WorldTestComponent)
+            components {
+                add(::WorldTestComponent)
+            }
         }
         val e1 = w.entity { add<WorldTestComponent>() }
         val e2 = w.entity { add<WorldTestComponent>() }
@@ -386,7 +469,9 @@ internal class WorldTest {
     @Test
     fun sortedIterationOverFamily() {
         val w = World {
-            component(::WorldTestComponent)
+            components {
+                add(::WorldTestComponent)
+            }
         }
         val e1 = w.entity { add<WorldTestComponent> { x = 15f } }
         val e2 = w.entity { add<WorldTestComponent> { x = 10f } }
@@ -411,7 +496,9 @@ internal class WorldTest {
     @Test
     fun createWorldWithComponentListener() {
         val w = World {
-            component(::WorldTestComponent, ::WorldTestComponentListener)
+            components {
+                add(::WorldTestComponent, ::WorldTestComponentListener)
+            }
         }
         val actualListeners = w.componentService.mapper<WorldTestComponent>().listeners
 
@@ -423,8 +510,10 @@ internal class WorldTest {
     fun cannotAddSameComponentTwice() {
         assertFailsWith<FleksComponentAlreadyAddedException> {
             World {
-                component(::WorldTestComponent)
-                component(::WorldTestComponent)
+                components {
+                    add(::WorldTestComponent)
+                    add(::WorldTestComponent)
+                }
             }
         }
     }
@@ -432,9 +521,13 @@ internal class WorldTest {
     @Test
     fun notifyComponentListenerDuringSystemCreation() {
         val w = World {
-            system(::WorldTestInitSystem)
+            systems {
+                add(::WorldTestInitSystem)
+            }
 
-            component(::WorldTestComponent, ::WorldTestComponentListener)
+            components {
+                add(::WorldTestComponent, ::WorldTestComponentListener)
+            }
         }
         val listener = w.mapper<WorldTestComponent>().listeners[0] as WorldTestComponentListener
 
@@ -445,8 +538,13 @@ internal class WorldTest {
     @Test
     fun createWorldWithFamilyListener() {
         val w = World {
-            component(::WorldTestComponent)
-            familyListener(::WorldTestFamilyListener)
+            components {
+                add(::WorldTestComponent)
+            }
+
+            families {
+                add(::WorldTestFamilyListener)
+            }
         }
         val actualListeners = w.family(allOf = arrayOf(WorldTestComponent::class)).listeners
 
@@ -458,8 +556,10 @@ internal class WorldTest {
     fun cannotAddSameFamilyListenerTwice() {
         assertFailsWith<FleksFamilyListenerAlreadyAddedException> {
             World {
-                familyListener(::WorldTestFamilyListener)
-                familyListener(::WorldTestFamilyListener)
+                families {
+                    add(::WorldTestFamilyListener)
+                    add(::WorldTestFamilyListener)
+                }
             }
         }
     }
@@ -468,7 +568,9 @@ internal class WorldTest {
     fun cannotCreateFamilyListenerWithoutComponentConfiguration() {
         assertFailsWith<FleksFamilyListenerCreationException> {
             World {
-                familyListener(::WorldTestFamilyListenerMissingCfg)
+                families {
+                    add(::WorldTestFamilyListenerMissingCfg)
+                }
             }
         }
     }
@@ -476,9 +578,17 @@ internal class WorldTest {
     @Test
     fun notifyFamilyListenerDuringSystemCreation() {
         val w = World {
-            component(::WorldTestComponent)
-            system(::WorldTestInitSystem)
-            familyListener(::WorldTestFamilyListener)
+            components {
+                add(::WorldTestComponent)
+            }
+
+            systems {
+                add(::WorldTestInitSystem)
+            }
+
+            families {
+                add(::WorldTestFamilyListener)
+            }
         }
         val listener = w.family(allOf = arrayOf(WorldTestComponent::class)).listeners[0] as WorldTestFamilyListener
 

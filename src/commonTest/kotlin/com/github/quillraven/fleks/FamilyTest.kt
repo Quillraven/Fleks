@@ -210,7 +210,9 @@ internal class FamilyTest {
         class DummyComponent
 
         World.CURRENT_WORLD = World {
-            component(::DummyComponent)
+            components {
+                add(::DummyComponent)
+            }
         }
 
         val requiredCmps = BitArray().apply { set(1) }

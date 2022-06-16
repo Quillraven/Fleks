@@ -169,7 +169,9 @@ internal class SystemTest {
         systemFactory: MutableMap<KClass<*>, () -> IntervalSystem> = mutableMapOf(),
         injectables: MutableMap<String, Injectable> = mutableMapOf(),
         world: World = World {
-            component(::SystemTestComponent)
+            components {
+                add(::SystemTestComponent)
+            }
         }
     ): SystemService {
         Inject.injectObjects = injectables
@@ -219,7 +221,9 @@ internal class SystemTest {
     @Test
     fun createIntervalSystemWithNoArgs() {
         val expectedWorld = World {
-            component(::SystemTestComponent)
+            components {
+                add(::SystemTestComponent)
+            }
         }
 
         val service = systemService(
@@ -235,7 +239,9 @@ internal class SystemTest {
     @Test
     fun createIteratingSystemWithComponentMapperArg() {
         val expectedWorld = World {
-            component(::SystemTestComponent)
+            components {
+                add(::SystemTestComponent)
+            }
         }
 
         val service = systemService(
@@ -252,7 +258,9 @@ internal class SystemTest {
     @Test
     fun createIteratingSystemWithAnInjectableArg() {
         val expectedWorld = World {
-            component(::SystemTestComponent)
+            components {
+                add(::SystemTestComponent)
+            }
         }
 
         val service = systemService(
@@ -270,7 +278,9 @@ internal class SystemTest {
     @Test
     fun createIteratingSystemWithQualifiedArgs() {
         val expectedWorld = World {
-            component(::SystemTestComponent)
+            components {
+                add(::SystemTestComponent)
+            }
         }
 
         val service = systemService(
@@ -300,7 +310,9 @@ internal class SystemTest {
     @Test
     fun iteratingSystemCallsOnTickAndOnAlphaForEachEntityOfTheSystem() {
         val world = World {
-            component(::SystemTestComponent)
+            components {
+                add(::SystemTestComponent)
+            }
         }
         val service = systemService(
             mutableMapOf(SystemTestIteratingSystemMapper::class to ::SystemTestIteratingSystemMapper),
@@ -321,7 +333,9 @@ internal class SystemTest {
     @Test
     fun configureEntityDuringIteration() {
         val world = World {
-            component(::SystemTestComponent)
+            components {
+                add(::SystemTestComponent)
+            }
         }
         val service = systemService(
             mutableMapOf(SystemTestIteratingSystemMapper::class to ::SystemTestIteratingSystemMapper),
@@ -340,7 +354,9 @@ internal class SystemTest {
     @Test
     fun sortEntitiesAutomatically() {
         val world = World {
-            component(::SystemTestComponent)
+            components {
+                add(::SystemTestComponent)
+            }
         }
         val service = systemService(
             mutableMapOf(SystemTestIteratingSystemSortAutomatic::class to ::SystemTestIteratingSystemSortAutomatic),
@@ -358,7 +374,9 @@ internal class SystemTest {
     @Test
     fun sortEntitiesProgrammatically() {
         val world = World {
-            component(::SystemTestComponent)
+            components {
+                add(::SystemTestComponent)
+            }
         }
         val service = systemService(
             mutableMapOf(SystemTestIteratingSystemSortManual::class to ::SystemTestIteratingSystemSortManual),
@@ -379,7 +397,9 @@ internal class SystemTest {
     @Test
     fun cannotGetNonExistingSystem() {
         val world = World {
-            component(::SystemTestComponent)
+            components {
+                add(::SystemTestComponent)
+            }
         }
         val service = systemService(
             mutableMapOf(SystemTestIteratingSystemSortAutomatic::class to ::SystemTestIteratingSystemSortAutomatic),
@@ -406,7 +426,9 @@ internal class SystemTest {
     @Test
     fun removingAnEntityDuringUpdateIsDelayed() {
         val world = World {
-            component(::SystemTestComponent)
+            components {
+                add(::SystemTestComponent)
+            }
         }
         val service = systemService(
             mutableMapOf(SystemTestIteratingSystemSortAutomatic::class to ::SystemTestIteratingSystemSortAutomatic),
@@ -429,7 +451,9 @@ internal class SystemTest {
     @Test
     fun removingAnEntityDuringAlphaIsDelayed() {
         val world = World {
-            component(::SystemTestComponent)
+            components {
+                add(::SystemTestComponent)
+            }
         }
         val service = systemService(
             mutableMapOf(SystemTestFixedSystemRemoval::class to ::SystemTestFixedSystemRemoval),
@@ -466,7 +490,9 @@ internal class SystemTest {
         // this test verifies that entities that are created in a system's init block
         // are correctly added to families
         val world = World {
-            component(::SystemTestComponent)
+            components {
+                add(::SystemTestComponent)
+            }
         }
 
         val service =
