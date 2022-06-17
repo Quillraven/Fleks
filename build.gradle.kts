@@ -82,6 +82,22 @@ benchmark {
     }
 }
 
+val dokkaOutputDir = "$buildDir/dokka"
+
+tasks.getByName<org.jetbrains.dokka.gradle.DokkaTask>("dokkaHtml") {
+    outputDirectory.set(file(dokkaOutputDir))
+}
+
+val deleteDokkaOutputDir by tasks.register<Delete>("deleteDokkaOutputDirectory") {
+    delete(dokkaOutputDir)
+}
+
+val javadocJar = tasks.register<Jar>("javadocJar") {
+    dependsOn(deleteDokkaOutputDir, tasks.dokkaHtml)
+    archiveClassifier.set("javadoc")
+    from(dokkaOutputDir)
+}
+
 publishing {
     repositories {
         maven {
@@ -103,10 +119,10 @@ publishing {
             version = project.version.toString()
             groupId = project.group.toString()
             artifactId = "Fleks"
+            artifact(javadocJar)
 
             pom {
                 name.set("Fleks")
-                packaging = "jar"
                 description.set("A lightweight entity component system written in Kotlin.")
                 url.set("https://github.com/Quillraven/Fleks")
 
