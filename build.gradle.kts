@@ -1,3 +1,5 @@
+@file:Suppress("UNUSED_VARIABLE")
+
 plugins {
     kotlin("multiplatform") version "1.6.21"
     id("org.jetbrains.kotlinx.benchmark") version "0.4.2"
@@ -82,20 +84,9 @@ benchmark {
     }
 }
 
-val dokkaOutputDir = "$buildDir/dokka"
-
-tasks.getByName<org.jetbrains.dokka.gradle.DokkaTask>("dokkaHtml") {
-    outputDirectory.set(file(dokkaOutputDir))
-}
-
-val deleteDokkaOutputDir by tasks.register<Delete>("deleteDokkaOutputDirectory") {
-    delete(dokkaOutputDir)
-}
-
-val javadocJar = tasks.register<Jar>("javadocJar") {
-    dependsOn(deleteDokkaOutputDir, tasks.dokkaHtml)
+val javadocJar by tasks.registering(Jar::class) {
     archiveClassifier.set("javadoc")
-    from(dokkaOutputDir)
+    from(tasks.dokkaHtml)
 }
 
 publishing {
