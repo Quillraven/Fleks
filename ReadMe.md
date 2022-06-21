@@ -124,7 +124,7 @@ or [Viewport](https://github.com/libgdx/libgdx/wiki/Spritebatch%2C-Textureregion
 uses [dependency injection](https://de.wikipedia.org/wiki/Dependency_Injection) for that to make it easier to adjust
 arguments of your systems later on without touching the code of the caller side.
 
-First, let's have a look on how to create a simple **IteratingSystem** that gets called every time `world.update` is
+First, let's have a look on how to create a simple **IntervalSystem** that gets called every time `world.update` is
 called. It is a made up example of a Day-Night-Cycle system which switches between day and night every second and
 dispatches a game event via an `EventManager`.
 
