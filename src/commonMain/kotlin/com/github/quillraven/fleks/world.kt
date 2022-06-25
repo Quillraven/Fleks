@@ -178,13 +178,40 @@ class WorldConfiguration {
 }
 
 /**
+ * Creates a new [world][World] with the given [cfg][WorldConfiguration].
+ *
+ * @param cfg the [configuration][WorldConfiguration] of the world containing the initial maximum entity capacity,
+ * the [systems][IntervalSystem], injectables, components, [ComponentListener] and [FamilyListener].
+ */
+fun world(cfg: WorldConfiguration.() -> Unit): World {
+    val worldCfg = WorldConfiguration().apply(cfg)
+    return World(
+        worldCfg.entityCapacity,
+        worldCfg.injectableCfg.injectables,
+        worldCfg.compCfg.componentFactory,
+        worldCfg.compCfg.compListenerFactory,
+        worldCfg.familyCfg.famListenerFactory,
+        worldCfg.systemCfg.systemFactory
+    )
+}
+
+/**
  * A world to handle [entities][Entity] and [systems][IntervalSystem].
  *
- * @param cfg the [configuration][WorldConfiguration] of the world containing the initial maximum entity capacity
- * and the [systems][IntervalSystem] to be processed.
+ * @param entityCapacity the initial maximum capacity of entities.
+ * @param injectables the injectables for any [system][IntervalSystem], [ComponentListener] or [FamilyListener].
+ * @param componentFactory the factories to create components.
+ * @param compListenerFactory the factories to create [ComponentListener].
+ * @param famListenerFactory the factories to create [FamilyListener].
+ * @param systemFactory the factories to create [systems][IntervalSystem].
  */
-class World(
-    cfg: WorldConfiguration.() -> Unit
+class World internal constructor(
+    entityCapacity: Int,
+    injectables: MutableMap<String, Injectable>,
+    componentFactory: MutableMap<String, () -> Any>,
+    compListenerFactory: MutableMap<String, () -> ComponentListener<*>>,
+    famListenerFactory: MutableMap<KClass<out FamilyListener>, () -> FamilyListener>,
+    systemFactory: MutableMap<KClass<*>, () -> IntervalSystem>
 ) {
     /**
      * Returns the time that is passed to [update][World.update].
@@ -228,10 +255,8 @@ class World(
         get() = systemService.systems
 
     init {
-        val worldCfg = WorldConfiguration().apply(cfg)
-        componentService = ComponentService(worldCfg.compCfg.componentFactory)
-        entityService = EntityService(worldCfg.entityCapacity, componentService)
-        val injectables = worldCfg.injectableCfg.injectables
+        componentService = ComponentService(componentFactory)
+        entityService = EntityService(entityCapacity, componentService)
         // add the world as a used dependency in case any system or ComponentListener needs it
         injectables["World"] = Injectable(this, true)
 
@@ -247,7 +272,7 @@ class World(
         // create and register ComponentListener
         // it is important to do this BEFORE creating systems because if a system's init block
         // is creating entities then ComponentListener already need to be registered to get notified
-        worldCfg.compCfg.compListenerFactory.forEach {
+        compListenerFactory.forEach {
             val compType = it.key
             val listener = it.value.invoke()
             val mapper = componentService.mapper(compType)
@@ -256,7 +281,7 @@ class World(
 
         // create and register FamilyListener
         // like ComponentListener this must happen before systems are created
-        worldCfg.familyCfg.famListenerFactory.forEach {
+        famListenerFactory.forEach {
             val (listenerType, factory) = it
             try {
                 val listener = factory.invoke()
@@ -273,7 +298,7 @@ class World(
         }
 
         // create systems
-        systemService = SystemService(worldCfg.systemCfg.systemFactory)
+        systemService = SystemService(systemFactory)
 
         // verify that there are no unused injectables
         val unusedInjectables = injectables.filterValues { !it.used }.map { it.value.injObj::class }
@@ -364,7 +389,7 @@ class World(
         noneOf: Array<KClass<*>>? = null,
         anyOf: Array<KClass<*>>? = null,
     ): Family {
-        val allOfCmps = if (allOf != null && allOf.isNotEmpty()) {
+        val allOfCmps = if (!allOf.isNullOrEmpty()) {
             allOf.map {
                 val type = it.simpleName ?: throw FleksInjectableTypeHasNoName(it)
                 componentService.mapper(type)
@@ -373,7 +398,7 @@ class World(
             null
         }
 
-        val noneOfCmps = if (noneOf != null && noneOf.isNotEmpty()) {
+        val noneOfCmps = if (!noneOf.isNullOrEmpty()) {
             noneOf.map {
                 val type = it.simpleName ?: throw FleksInjectableTypeHasNoName(it)
                 componentService.mapper(type)
@@ -382,7 +407,7 @@ class World(
             null
         }
 
-        val anyOfCmps = if (anyOf != null && anyOf.isNotEmpty()) {
+        val anyOfCmps = if (!anyOf.isNullOrEmpty()) {
             anyOf.map {
                 val type = it.simpleName ?: throw FleksInjectableTypeHasNoName(it)
                 componentService.mapper(type)
@@ -409,10 +434,7 @@ class World(
         noneOf: List<ComponentMapper<*>>?,
         anyOf: List<ComponentMapper<*>>?,
     ): Family {
-        if ((allOf == null || allOf.isEmpty())
-            && (noneOf == null || noneOf.isEmpty())
-            && (anyOf == null || anyOf.isEmpty())
-        ) {
+        if (allOf.isNullOrEmpty() && noneOf.isNullOrEmpty() && anyOf.isNullOrEmpty()) {
             throw FleksFamilyException(allOf, noneOf, anyOf)
         }
 

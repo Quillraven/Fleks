@@ -209,7 +209,7 @@ internal class FamilyTest {
         // --> fake it in this test via DummyComponent
         class DummyComponent
 
-        World.CURRENT_WORLD = World {
+        World.CURRENT_WORLD = world {
             components {
                 add(::DummyComponent)
             }

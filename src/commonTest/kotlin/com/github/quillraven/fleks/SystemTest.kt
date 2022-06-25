@@ -168,7 +168,7 @@ internal class SystemTest {
     private fun systemService(
         systemFactory: MutableMap<KClass<*>, () -> IntervalSystem> = mutableMapOf(),
         injectables: MutableMap<String, Injectable> = mutableMapOf(),
-        world: World = World {
+        world: World = world {
             components {
                 add(::SystemTestComponent)
             }
@@ -181,7 +181,7 @@ internal class SystemTest {
 
     @Test
     fun systemWithIntervalEachFrameGetsCalledEveryTime() {
-        World.CURRENT_WORLD = World { }
+        World.CURRENT_WORLD = world { }
         val system = SystemTestIntervalSystemEachFrame()
 
         system.onUpdate()
@@ -192,7 +192,7 @@ internal class SystemTest {
 
     @Test
     fun systemWithIntervalEachFrameReturnsWorldDeltaTime() {
-        World.CURRENT_WORLD = World { }
+        World.CURRENT_WORLD = world { }
         val system = SystemTestIntervalSystemEachFrame()
         system.world.update(42f)
 
@@ -201,7 +201,7 @@ internal class SystemTest {
 
     @Test
     fun systemWithFixedIntervalOf025fGetsCalledFourTimesWhenDeltaTimeIs11f() {
-        World.CURRENT_WORLD = World { }
+        World.CURRENT_WORLD = world { }
         val system = SystemTestIntervalSystemFixed()
         system.world.update(1.1f)
 
@@ -220,7 +220,7 @@ internal class SystemTest {
 
     @Test
     fun createIntervalSystemWithNoArgs() {
-        val expectedWorld = World {
+        val expectedWorld = world {
             components {
                 add(::SystemTestComponent)
             }
@@ -238,7 +238,7 @@ internal class SystemTest {
 
     @Test
     fun createIteratingSystemWithComponentMapperArg() {
-        val expectedWorld = World {
+        val expectedWorld = world {
             components {
                 add(::SystemTestComponent)
             }
@@ -257,7 +257,7 @@ internal class SystemTest {
 
     @Test
     fun createIteratingSystemWithAnInjectableArg() {
-        val expectedWorld = World {
+        val expectedWorld = world {
             components {
                 add(::SystemTestComponent)
             }
@@ -277,7 +277,7 @@ internal class SystemTest {
 
     @Test
     fun createIteratingSystemWithQualifiedArgs() {
-        val expectedWorld = World {
+        val expectedWorld = world {
             components {
                 add(::SystemTestComponent)
             }
@@ -309,7 +309,7 @@ internal class SystemTest {
 
     @Test
     fun iteratingSystemCallsOnTickAndOnAlphaForEachEntityOfTheSystem() {
-        val world = World {
+        val world = world {
             components {
                 add(::SystemTestComponent)
             }
@@ -332,7 +332,7 @@ internal class SystemTest {
 
     @Test
     fun configureEntityDuringIteration() {
-        val world = World {
+        val world = world {
             components {
                 add(::SystemTestComponent)
             }
@@ -353,7 +353,7 @@ internal class SystemTest {
 
     @Test
     fun sortEntitiesAutomatically() {
-        val world = World {
+        val world = world {
             components {
                 add(::SystemTestComponent)
             }
@@ -373,7 +373,7 @@ internal class SystemTest {
 
     @Test
     fun sortEntitiesProgrammatically() {
-        val world = World {
+        val world = world {
             components {
                 add(::SystemTestComponent)
             }
@@ -396,7 +396,7 @@ internal class SystemTest {
 
     @Test
     fun cannotGetNonExistingSystem() {
-        val world = World {
+        val world = world {
             components {
                 add(::SystemTestComponent)
             }
@@ -425,7 +425,7 @@ internal class SystemTest {
 
     @Test
     fun removingAnEntityDuringUpdateIsDelayed() {
-        val world = World {
+        val world = world {
             components {
                 add(::SystemTestComponent)
             }
@@ -450,7 +450,7 @@ internal class SystemTest {
 
     @Test
     fun removingAnEntityDuringAlphaIsDelayed() {
-        val world = World {
+        val world = world {
             components {
                 add(::SystemTestComponent)
             }
@@ -489,7 +489,7 @@ internal class SystemTest {
     fun createEntityDuringSystemInit() {
         // this test verifies that entities that are created in a system's init block
         // are correctly added to families
-        val world = World {
+        val world = world {
             components {
                 add(::SystemTestComponent)
             }

@@ -140,7 +140,6 @@ abstract class IteratingSystem(
 ) : IntervalSystem(interval, enabled) {
     /**
      * Returns the [family][Family] of this system.
-     * This reference gets updated by the [SystemService] when the system gets created via the SystemFactory.
      */
     val family: Family = world.family(allOfComponents, noneOfComponents, anyOfComponents)
 

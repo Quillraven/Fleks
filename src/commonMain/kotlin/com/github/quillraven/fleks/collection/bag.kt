@@ -180,6 +180,7 @@ private fun IntArray.med3(idxA: Int, idxB: Int, idxC: Int, comparator: EntityCom
                 else -> idxA
             }
         }
+
         bc > 0 -> idxB
         ac > 0 -> idxC
         else -> idxA

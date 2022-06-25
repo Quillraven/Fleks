@@ -107,7 +107,7 @@ private class WorldTestFamilyListenerMissingCfg : FamilyListener()
 internal class WorldTest {
     @Test
     fun createEmptyWorldFor32Entities() {
-        val w = World { entityCapacity = 32 }
+        val w = world { entityCapacity = 32 }
 
         assertEquals(0, w.numEntities)
         assertEquals(32, w.capacity)
@@ -115,7 +115,7 @@ internal class WorldTest {
 
     @Test
     fun createEmptyWorldWith1NoArgsIntervalSystem() {
-        val w = World {
+        val w = world {
             systems {
                 add(::WorldTestIntervalSystem)
             }
@@ -126,7 +126,7 @@ internal class WorldTest {
 
     @Test
     fun getWorldSystems() {
-        val w = World {
+        val w = world {
             systems {
                 add(::WorldTestIntervalSystem)
             }
@@ -137,7 +137,7 @@ internal class WorldTest {
 
     @Test
     fun createEmptyWorldWith1InjectableArgsIteratingSystem() {
-        val w = World {
+        val w = world {
             injectables {
                 add("42")
             }
@@ -160,7 +160,7 @@ internal class WorldTest {
     fun createEmptyWorldWith2NamedInjectablesSystem() {
         val expectedName = "myName"
         val expectedLevel = "myLevel"
-        val w = World {
+        val w = world {
             injectables {
                 add("name", expectedName)
                 add("level", "myLevel")
@@ -183,7 +183,7 @@ internal class WorldTest {
     @Test
     fun cannotAddTheSameSystemTwice() {
         assertFailsWith<FleksSystemAlreadyAddedException> {
-            World {
+            world {
                 systems {
                     add(::WorldTestIntervalSystem)
                     add(::WorldTestIntervalSystem)
@@ -194,7 +194,7 @@ internal class WorldTest {
 
     @Test
     fun cannotAccessSystemThatWasNotAdded() {
-        val w = World {}
+        val w = world {}
 
         assertFailsWith<FleksNoSuchSystemException> { w.system<WorldTestIntervalSystem>() }
     }
@@ -202,7 +202,7 @@ internal class WorldTest {
     @Test
     fun cannotCreateSystemWhenInjectablesAreMissing() {
         assertFailsWith<FleksSystemDependencyInjectException> {
-            World {
+            world {
                 components {
                     add(::WorldTestComponent)
                 }
@@ -217,7 +217,7 @@ internal class WorldTest {
     @Test
     fun cannotInjectTheSameTypeTwice() {
         assertFailsWith<FleksInjectableAlreadyAddedException> {
-            World {
+            world {
                 injectables {
                     add("42")
                     add("42")
@@ -228,7 +228,7 @@ internal class WorldTest {
 
     @Test
     fun createNewEntity() {
-        val w = World {
+        val w = world {
             systems {
                 add(::WorldTestIteratingSystem)
             }
@@ -253,7 +253,7 @@ internal class WorldTest {
 
     @Test
     fun removeExistingEntity() {
-        val w = World {}
+        val w = world {}
         val e = w.entity()
 
         w.remove(e)
@@ -263,7 +263,7 @@ internal class WorldTest {
 
     @Test
     fun updateWorldWithDeltaTimeOf1() {
-        val w = World {
+        val w = world {
             systems {
                 add(::WorldTestIntervalSystem)
                 add(::WorldTestIteratingSystem)
@@ -288,7 +288,7 @@ internal class WorldTest {
 
     @Test
     fun removeAllEntities() {
-        val w = World {}
+        val w = world {}
         w.entity()
         w.entity()
 
@@ -299,7 +299,7 @@ internal class WorldTest {
 
     @Test
     fun disposeWorld() {
-        val w = World {
+        val w = world {
             systems {
                 add(::WorldTestIntervalSystem)
             }
@@ -315,7 +315,7 @@ internal class WorldTest {
 
     @Test
     fun getMapper() {
-        val w = World {
+        val w = world {
             components {
                 add(::WorldTestComponent)
             }
@@ -329,7 +329,7 @@ internal class WorldTest {
     @Test
     fun throwExceptionWhenThereAreUnusedInjectables() {
         assertFailsWith<FleksUnusedInjectablesException> {
-            World {
+            world {
                 injectables {
                     add("42")
                 }
@@ -339,7 +339,7 @@ internal class WorldTest {
 
     @Test
     fun iterateOverAllActiveEntities() {
-        val w = World {}
+        val w = world {}
         val e1 = w.entity()
         val e2 = w.entity()
         val e3 = w.entity()
@@ -353,7 +353,7 @@ internal class WorldTest {
 
     @Test
     fun createTwoWorldsWithDifferentDependencies() {
-        val w1 = World {
+        val w1 = world {
             systems {
                 add(::WorldTestNamedDependencySystem)
             }
@@ -364,7 +364,7 @@ internal class WorldTest {
             }
 
         }
-        val w2 = World {
+        val w2 = world {
             systems {
                 add(::WorldTestNamedDependencySystem)
             }
@@ -386,7 +386,7 @@ internal class WorldTest {
 
     @Test
     fun configureEntityAfterCreation() {
-        val w = World {
+        val w = world {
             injectables {
                 add("test")
             }
@@ -412,7 +412,7 @@ internal class WorldTest {
     fun getFamilyAfterWorldCreation() {
         // WorldTestInitSystem creates an entity in its init block
         // -> family must be dirty and has a size of 1
-        val w = World {
+        val w = world {
             components {
                 add(::WorldTestComponent)
             }
@@ -433,7 +433,7 @@ internal class WorldTest {
         // WorldTestInitSystemExtraFamily creates an entity in its init block and
         // also a family with a different configuration that the system itself
         // -> system family is empty and extra family contains 1 entity
-        val w = World {
+        val w = world {
             components {
                 add(::WorldTestComponent2)
                 add(::WorldTestComponent)
@@ -451,7 +451,7 @@ internal class WorldTest {
 
     @Test
     fun iterateOverFamily() {
-        val w = World {
+        val w = world {
             components {
                 add(::WorldTestComponent)
             }
@@ -468,7 +468,7 @@ internal class WorldTest {
 
     @Test
     fun sortedIterationOverFamily() {
-        val w = World {
+        val w = world {
             components {
                 add(::WorldTestComponent)
             }
@@ -487,7 +487,7 @@ internal class WorldTest {
 
     @Test
     fun cannotCreateFamilyWithoutAnyConfiguration() {
-        val w = World {}
+        val w = world {}
 
         assertFailsWith<FleksFamilyException> { w.family() }
         assertFailsWith<FleksFamilyException> { w.family(arrayOf(), arrayOf(), arrayOf()) }
@@ -495,7 +495,7 @@ internal class WorldTest {
 
     @Test
     fun createWorldWithComponentListener() {
-        val w = World {
+        val w = world {
             components {
                 add(::WorldTestComponent, ::WorldTestComponentListener)
             }
@@ -509,7 +509,7 @@ internal class WorldTest {
     @Test
     fun cannotAddSameComponentTwice() {
         assertFailsWith<FleksComponentAlreadyAddedException> {
-            World {
+            world {
                 components {
                     add(::WorldTestComponent)
                     add(::WorldTestComponent)
@@ -520,7 +520,7 @@ internal class WorldTest {
 
     @Test
     fun notifyComponentListenerDuringSystemCreation() {
-        val w = World {
+        val w = world {
             systems {
                 add(::WorldTestInitSystem)
             }
@@ -537,7 +537,7 @@ internal class WorldTest {
 
     @Test
     fun createWorldWithFamilyListener() {
-        val w = World {
+        val w = world {
             components {
                 add(::WorldTestComponent)
             }
@@ -555,7 +555,7 @@ internal class WorldTest {
     @Test
     fun cannotAddSameFamilyListenerTwice() {
         assertFailsWith<FleksFamilyListenerAlreadyAddedException> {
-            World {
+            world {
                 families {
                     add(::WorldTestFamilyListener)
                     add(::WorldTestFamilyListener)
@@ -567,7 +567,7 @@ internal class WorldTest {
     @Test
     fun cannotCreateFamilyListenerWithoutComponentConfiguration() {
         assertFailsWith<FleksFamilyListenerCreationException> {
-            World {
+            world {
                 families {
                     add(::WorldTestFamilyListenerMissingCfg)
                 }
@@ -577,7 +577,7 @@ internal class WorldTest {
 
     @Test
     fun notifyFamilyListenerDuringSystemCreation() {
-        val w = World {
+        val w = world {
             components {
                 add(::WorldTestComponent)
             }
