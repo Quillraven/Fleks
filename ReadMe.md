@@ -99,10 +99,10 @@ need to update your systems.
 To create a world simply call:
 
 ```Kotlin
-val world = World {}
+val w = world {}
 ```
 
-A world without any **system** doesn't make sense and that's why there is a lambda argument for the world's constructor
+A world without any **system** doesn't make sense and that's why there is a lambda argument
 to configure it accordingly:
 
 - Use `entityCapacity` to set the expected maximum amount of entities. The default value is 512. The reason for this
@@ -117,7 +117,7 @@ to configure it accordingly:
 Here is an example that creates a world for 1000 entities with a Move- and PhysicSystem:
 
 ```Kotlin
-val world = World {
+val w = world {
     entityCapacity = 1000
 
     systems {
@@ -173,7 +173,7 @@ our world by using the `injectables` DSL:
 
 ```Kotlin
 val eventManager = EventManager()
-val world = World {
+val world = world {
     entityCapacity = 1000
 
     systems {
@@ -201,7 +201,7 @@ private class NamedDependenciesSystem : IntervalSystem() {
 }
 
 fun main() {
-    val world = World {
+    val world = world {
         systems {
             add(::NamedDependenciesSystem)
         }
@@ -327,7 +327,7 @@ Here is an example that gets the `LifeComponent` mapper of the snippet above:
 
 ```Kotlin
 fun main() {
-    val world = World {}
+    val world = world {}
     val lives = world.mapper<Life>()
 }
 ```
@@ -411,7 +411,7 @@ class DebugSystem : IntervalSystem() {
 }
 
 fun main() {
-    val world = World {
+    val world = world {
         systems {
             add(::DebugSystem)
         }
@@ -428,7 +428,7 @@ The world's `forEach` function allows you to iterate over all active entities:
 
 ```Kotlin
  fun main() {
-    val world = World {}
+    val world = world {}
     val e1 = world.entity()
     val e2 = world.entity()
     val e3 = world.entity()
@@ -451,7 +451,7 @@ data class Position(var x: Float = 0f, var y: Float = 0f)
 data class Sprite(var texturePath: String = "")
 
 fun main() {
-    val world = World {}
+    val world = world {}
 
     val entity: Entity = world.entity {
         add<Position> { x = 5f }
@@ -493,7 +493,7 @@ class Box2dComponentListener : ComponentListener<Box2dComponent> {
 }
 
 fun main() {
-    val world = World {
+    val world = world {
         components {
             // register component together with its listener to the world
             add(::Box2dComponent, ::Box2dComponentListener)
@@ -516,7 +516,7 @@ get a `family` for entities with a MoveComponent but without a DeadComponent:
 
 ```kotlin
 fun main() {
-    val world = World {}
+    val world = world {}
     val e1 = w.entity { 
         add<MoveComponent> { speed = 70f } 
     }
@@ -566,7 +566,7 @@ fun main() {
             // do something when an entity gets removed of a family
         }
     }
-    val world = World {}
+    val world = world {}
     val family = world.family(
         allOf = arrayOf(MoveComponent::class),
         noneOf = arrayOf(DeadComponent::class),
@@ -601,7 +601,7 @@ private class MyFamilyListener(
 }
 
 fun main() {
-    val world = World {
+    val world = world {
         families {
             add(::MyFamilyListener)
         }
