@@ -19,10 +19,10 @@ annotation class ComponentCfgMarker
 @ComponentCfgMarker
 class ComponentConfiguration {
     @PublishedApi
-    internal val compListenerFactory = mutableMapOf<String, () -> ComponentListener<*>>()
+    internal val compListenerFactory = mutableMapOf<KClass<*>, () -> ComponentListener<*>>()
 
     @PublishedApi
-    internal val componentFactory = mutableMapOf<String, () -> Any>()
+    internal val componentFactory = mutableMapOf<KClass<*>, () -> Any>()
 
     /**
      * Adds the specified component and its [ComponentListener] to the [world][World]. If a component listener
@@ -31,13 +31,12 @@ class ComponentConfiguration {
      * @param compFactory the constructor method for creating the component.
      * @param listenerFactory the constructor method for creating the component listener.
      * @throws [FleksComponentAlreadyAddedException] if the component was already added before.
-     * @throws [FleksInjectableTypeHasNoName] if the dependency type has no T::class.simpleName.
      */
     inline fun <reified T : Any> add(
         noinline compFactory: () -> T,
         noinline listenerFactory: (() -> ComponentListener<T>)? = null
     ) {
-        val compType = T::class.simpleName ?: throw FleksInjectableTypeHasNoName(T::class)
+        val compType = T::class
 
         if (compType in componentFactory) {
             throw FleksComponentAlreadyAddedException(compType)
@@ -208,8 +207,8 @@ fun world(cfg: WorldConfiguration.() -> Unit): World {
 class World internal constructor(
     entityCapacity: Int,
     injectables: MutableMap<String, Injectable>,
-    componentFactory: MutableMap<String, () -> Any>,
-    compListenerFactory: MutableMap<String, () -> ComponentListener<*>>,
+    componentFactory: MutableMap<KClass<*>, () -> Any>,
+    compListenerFactory: MutableMap<KClass<*>, () -> ComponentListener<*>>,
     famListenerFactory: MutableMap<KClass<out FamilyListener>, () -> FamilyListener>,
     systemFactory: MutableMap<KClass<*>, () -> IntervalSystem>
 ) {
@@ -363,13 +362,8 @@ class World internal constructor(
      *
      * @throws [FleksNoSuchComponentException] if the component of the given type does not exist in the
      * world configuration.
-     * @throws [FleksInjectableTypeHasNoName] if the dependency type has no T::class.simpleName.
      */
-    @Suppress("UNCHECKED_CAST")
-    inline fun <reified T : Any> mapper(): ComponentMapper<T> {
-        val type = T::class.simpleName ?: throw FleksInjectableTypeHasNoName(T::class)
-        return componentService.mapper(type) as ComponentMapper<T>
-    }
+    inline fun <reified T : Any> mapper() = componentService.mapper<T>()
 
     /**
      * Creates a new [Family] for the given [allOf], [noneOf] and [anyOf] component configuration.
@@ -390,28 +384,19 @@ class World internal constructor(
         anyOf: Array<KClass<*>>? = null,
     ): Family {
         val allOfCmps = if (!allOf.isNullOrEmpty()) {
-            allOf.map {
-                val type = it.simpleName ?: throw FleksInjectableTypeHasNoName(it)
-                componentService.mapper(type)
-            }
+            allOf.map { componentService.mapper(it) }
         } else {
             null
         }
 
         val noneOfCmps = if (!noneOf.isNullOrEmpty()) {
-            noneOf.map {
-                val type = it.simpleName ?: throw FleksInjectableTypeHasNoName(it)
-                componentService.mapper(type)
-            }
+            noneOf.map { componentService.mapper(it) }
         } else {
             null
         }
 
         val anyOfCmps = if (!anyOf.isNullOrEmpty()) {
-            anyOf.map {
-                val type = it.simpleName ?: throw FleksInjectableTypeHasNoName(it)
-                componentService.mapper(type)
-            }
+            anyOf.map { componentService.mapper(it) }
         } else {
             null
         }
@@ -475,7 +460,7 @@ class World internal constructor(
     @ThreadLocal
     companion object {
         private val EMPTY_INJECTIONS: Map<String, Injectable> = emptyMap()
-        private val EMPTY_MAPPERS: Map<String, ComponentMapper<*>> = emptyMap()
+        private val EMPTY_MAPPERS: Map<KClass<*>, ComponentMapper<*>> = emptyMap()
         internal lateinit var CURRENT_WORLD: World
     }
 }

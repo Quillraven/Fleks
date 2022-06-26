@@ -7,8 +7,8 @@ abstract class FleksException(message: String) : RuntimeException(message)
 class FleksSystemAlreadyAddedException(system: KClass<*>) :
     FleksException("System '${system.simpleName}' is already part of the '${WorldConfiguration::class.simpleName}'.")
 
-class FleksComponentAlreadyAddedException(comp: String) :
-    FleksException("Component '$comp' is already part of the '${WorldConfiguration::class.simpleName}'.")
+class FleksComponentAlreadyAddedException(comp: KClass<*>) :
+    FleksException("Component '${comp.simpleName}' is already part of the '${WorldConfiguration::class.simpleName}'.")
 
 class FleksFamilyListenerAlreadyAddedException(listener: KClass<out FamilyListener>) :
     FleksException("FamilyListener ${listener.simpleName} is already part of the ${WorldConfiguration::class.simpleName}")
@@ -37,8 +37,8 @@ class FleksInjectableTypeHasNoName(type: KClass<*>) :
 class FleksSystemDependencyInjectException(injectType: String) :
     FleksException("Injection object of type '$injectType' cannot be found. Did you add all necessary injectables?")
 
-class FleksSystemComponentInjectException(injectType: String) :
-    FleksException("Component mapper for type '$injectType' cannot be found. Did you add that component to the world configuration?")
+class FleksSystemComponentInjectException(injectType: KClass<*>) :
+    FleksException("Component mapper for type '${injectType.simpleName}' cannot be found. Did you add that component to the world configuration?")
 
 class FleksNoSuchEntityComponentException(entity: Entity, component: String) :
     FleksException("Entity '$entity' has no component of type '$component'.")

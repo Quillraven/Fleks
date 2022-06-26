@@ -288,7 +288,7 @@ object Inject {
     internal lateinit var injectObjects: Map<String, Injectable>
 
     @PublishedApi
-    internal lateinit var mapperObjects: Map<String, ComponentMapper<*>>
+    internal lateinit var mapperObjects: Map<KClass<*>, ComponentMapper<*>>
 
     inline fun <reified T : Any> dependency(): T {
         val injectType = T::class.simpleName ?: throw FleksInjectableTypeHasNoName(T::class)
@@ -307,9 +307,8 @@ object Inject {
 
     @Suppress("UNCHECKED_CAST")
     inline fun <reified T : Any> componentMapper(): ComponentMapper<T> {
-        val injectType = T::class.simpleName ?: throw FleksInjectableTypeHasNoName(T::class)
-        return if (injectType in mapperObjects) {
-            mapperObjects[injectType]!! as ComponentMapper<T>
-        } else throw FleksSystemComponentInjectException(injectType)
+        val type = T::class
+        val mapper = mapperObjects[type] ?: FleksSystemComponentInjectException(type)
+        return mapper as ComponentMapper<T>
     }
 }

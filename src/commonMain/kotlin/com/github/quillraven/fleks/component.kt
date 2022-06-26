@@ -3,6 +3,7 @@ package com.github.quillraven.fleks
 import com.github.quillraven.fleks.collection.Bag
 import com.github.quillraven.fleks.collection.bag
 import kotlin.math.max
+import kotlin.reflect.KClass
 
 /**
  * Interface of a component listener that gets notified when a component of a specific type
@@ -147,14 +148,14 @@ class ComponentMapper<T>(
  * It creates a [ComponentMapper] for every unique component type and assigns a unique id for each mapper.
  */
 class ComponentService(
-    componentFactory: Map<String, () -> Any>
+    componentFactory: Map<KClass<*>, () -> Any>
 ) {
     /**
      * Returns map of [ComponentMapper] that stores mappers by its component type.
      * It is used by the [SystemService] during system creation and by the [EntityService] for entity creation.
      */
     @PublishedApi
-    internal val mappers: Map<String, ComponentMapper<*>>
+    internal val mappers: Map<KClass<*>, ComponentMapper<*>>
 
     /**
      * Returns [Bag] of [ComponentMapper]. The id of the mapper is the index of the bag.
@@ -177,8 +178,9 @@ class ComponentService(
      * @throws [FleksNoSuchComponentException] if the component of the given [type] does not exist in the
      * world configuration.
      */
-    fun mapper(type: String): ComponentMapper<*> {
-        return mappers[type] ?: throw FleksNoSuchComponentException(type)
+    @Suppress("UNCHECKED_CAST")
+    fun <T : Any> mapper(type: KClass<T>): ComponentMapper<T> {
+        return mappers[type] as ComponentMapper<T>
     }
 
     /**
@@ -189,8 +191,7 @@ class ComponentService(
      */
     @Suppress("UNCHECKED_CAST")
     inline fun <reified T : Any> mapper(): ComponentMapper<T> {
-        val type = T::class.simpleName ?: throw FleksInjectableTypeHasNoName(T::class)
-        return mapper(type) as ComponentMapper<T>
+        return mappers[T::class] as ComponentMapper<T>
     }
 
     /**

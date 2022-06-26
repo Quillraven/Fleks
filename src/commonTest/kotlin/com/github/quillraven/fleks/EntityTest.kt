@@ -1,6 +1,7 @@
 package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.BitArray
+import kotlin.reflect.KClass
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -21,10 +22,10 @@ private class EntityTestListener : EntityListener {
 private data class EntityTestComponent(var x: Float = 0f)
 
 internal class EntityTest {
-    private val componentFactory = mutableMapOf<String, () -> Any>()
+    private val componentFactory = mutableMapOf<KClass<*>, () -> Any>()
 
     private inline fun <reified T : Any> initComponentFactory(noinline compFactory: () -> T) {
-        val compType = T::class.simpleName ?: throw FleksInjectableTypeHasNoName(T::class)
+        val compType = T::class
 
         if (compType in componentFactory) {
             throw FleksComponentAlreadyAddedException(compType)
