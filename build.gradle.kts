@@ -146,6 +146,13 @@ publishing {
             sign(kotlinMultiplatform)
         }
     }
+
+    // copy javadoc.jar into JVM target for mavenCentral
+    publications.findByName(kotlin.jvm().name)?.let { publication ->
+        if (publication is MavenPublication) {
+            publication.artifact(javadocJar)
+        }
+    }
 }
 
 // only sign if version is not a SNAPSHOT release.
