@@ -107,50 +107,57 @@ publishing {
 
     publications {
         val kotlinMultiplatform by getting(MavenPublication::class) {
+            // we need to keep this block up here because
+            // otherwise the different target folders like js/jvm/native are not created
             version = project.version.toString()
             groupId = project.group.toString()
             artifactId = "Fleks"
-            artifact(javadocJar)
+        }
+    }
 
-            pom {
-                name.set("Fleks")
-                description.set("A lightweight entity component system written in Kotlin.")
-                url.set("https://github.com/Quillraven/Fleks")
+    publications.forEach {
+        if (it !is MavenPublication) {
+            return@forEach
+        }
 
-                scm {
-                    connection.set("scm:git:git@github.com:quillraven/fleks.git")
-                    developerConnection.set("scm:git:git@github.com:quillraven/fleks.git")
-                    url.set("https://github.com/quillraven/fleks/")
+        // We need to add the javadocJar to every publication
+        // because otherwise maven is complaining.
+        // It is not sufficient to only have it in the "root" folder.
+        it.artifact(javadocJar)
+
+        // pom information needs to be specified per publication
+        // because otherwise maven will complain again that
+        // information like license, developer or url are missing.
+        it.pom {
+            name.set("Fleks")
+            description.set("A lightweight entity component system written in Kotlin.")
+            url.set("https://github.com/Quillraven/Fleks")
+
+            scm {
+                connection.set("scm:git:git@github.com:quillraven/fleks.git")
+                developerConnection.set("scm:git:git@github.com:quillraven/fleks.git")
+                url.set("https://github.com/quillraven/fleks/")
+            }
+
+            licenses {
+                license {
+                    name.set("MIT License")
+                    url.set("https://opensource.org/licenses/MIT")
                 }
+            }
 
-
-                licenses {
-                    license {
-                        name.set("MIT License")
-                        url.set("https://opensource.org/licenses/MIT")
-                    }
-                }
-
-                developers {
-                    developer {
-                        id.set("Quillraven")
-                        name.set("Simon Klausner")
-                        email.set("quillraven@gmail.com")
-                    }
+            developers {
+                developer {
+                    id.set("Quillraven")
+                    name.set("Simon Klausner")
+                    email.set("quillraven@gmail.com")
                 }
             }
         }
 
         signing {
             useInMemoryPgpKeys(System.getenv("SIGNING_KEY"), System.getenv("SIGNING_PASSWORD"))
-            sign(kotlinMultiplatform)
-        }
-    }
-
-    // copy javadoc.jar into JVM target for mavenCentral
-    publications.findByName(kotlin.jvm().name)?.let { publication ->
-        if (publication is MavenPublication) {
-            publication.artifact(javadocJar)
+            sign(it)
         }
     }
 }
