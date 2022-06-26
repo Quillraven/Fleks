@@ -87,7 +87,6 @@ open class FleksStateSimple {
 
             systems {
                 add(::FleksSystemSimple)
-
             }
 
             components {
@@ -131,7 +130,7 @@ open class FleksStateComplex {
     }
 }
 
-@Fork(1)
+@Fork(value = WARMUPS)
 @Warmup(iterations = WARMUPS)
 @Measurement(iterations = ITERATIONS, time = TIME, timeUnit = TimeUnit.SECONDS)
 open class FleksBenchmark {
