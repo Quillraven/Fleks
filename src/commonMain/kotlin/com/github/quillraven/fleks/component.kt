@@ -155,7 +155,7 @@ class ComponentService(
      * It is used by the [SystemService] during system creation and by the [EntityService] for entity creation.
      */
     @PublishedApi
-    internal val mappers: Map<KClass<*>, ComponentMapper<*>>
+    internal val mappers = HashMap<KClass<*>, ComponentMapper<*>>()
 
     /**
      * Returns [Bag] of [ComponentMapper]. The id of the mapper is the index of the bag.
@@ -165,10 +165,10 @@ class ComponentService(
 
     init {
         // Create component mappers with help of constructor functions from component factory
-        mappers = componentFactory.mapValues {
-            val compMapper = ComponentMapper(id = mappersBag.size, factory = it.value)
+        componentFactory.forEach { (type, factory) ->
+            val compMapper = ComponentMapper(id = mappersBag.size, factory = factory)
             mappersBag.add(compMapper)
-            compMapper
+            mappers[type] = compMapper
         }
     }
 
