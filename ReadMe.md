@@ -1,10 +1,10 @@
 # Fleks
 
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/Quillraven/Fleks/blob/master/LICENSE)
-[![Maven](https://img.shields.io/badge/Maven-1.0--KMP--RC1-success.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks/1.0-KMP-RC1/jar)
+[![Maven](https://img.shields.io/badge/Maven-1.4--KMP--RC1-success.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks/1.4-KMP-RC1/jar)
 
 [![Build KMP](https://img.shields.io/github/workflow/status/quillraven/fleks/Build/kmp?event=push&label=Build%20kmp)](https://github.com/Quillraven/fleks/actions)
-[![Kotlin](https://img.shields.io/badge/Kotlin-1.6.10-red.svg)](http://kotlinlang.org/)
+[![Kotlin](https://img.shields.io/badge/Kotlin-1.6.21-red.svg)](http://kotlinlang.org/)
 
 A **f**ast, **l**ightweight, **e**ntity component **s**ystem library written in **K**otlin.
 
@@ -16,7 +16,7 @@ as an [**E**ntity **C**omponent **S**ystem](https://en.wikipedia.org/wiki/Entity
 the box with LibGDX and performance wise it was always good enough for me.
 
 When using [Kotlin](https://kotlinlang.org/) and [LibKTX](https://github.com/libktx/ktx) you even get nice extension
-functions for it but I never was fully happy with how it felt because:
+functions for it, but I was never fully happy with how it felt because:
 
 - Defining [ComponentMapper](https://github.com/libgdx/ashley/wiki/How-to-use-Ashley#retrieving-components-with-componentmapper)
   for every [Component](https://github.com/libgdx/ashley/wiki/How-to-use-Ashley#components) felt very redundant
@@ -41,40 +41,53 @@ If you need a lightweight and fast ECS in your Kotlin application then feel free
 If you are looking for a long time verified ECS that supports Java 
 then use [Artemis-odb](https://github.com/junkdog/artemis-odb) or [Ashley](https://github.com/libgdx/ashley).
 
-## Example game using Fleks
-
-[Dinoleon](https://github.com/Quillraven/Dinoleon) is a small game using Fleks that showcases all functionalities in action!
-
 ## Current Status
 
-This branch contains a special Kotlin Multiplatform compatible version of Fleks. It has a slightly different API when compared with the master branch version.
-But still similar enough that it should not be much work to switch between the two versions.
+Thanks to [jobe-m](https://github.com/jobe-m) Fleks also has a Kotlin Multiplatform version which will be the future for Fleks.
+However, since KMP is still in alpha and in my opinion the developer experience is not yet there where it should be,
+Fleks will come in two flavors and will also have two releases in parallel:
+- **JVM** which can be used for any backend that supports a JVM like native Java applications or Android
+- **KMP** which can be used for any platform and can also be used in a [KorGE](https://korge.org/) game
 
-Release version 1.0-KMP-RC1 is available on maven central since XX-YYY-2022. Please feel free to contribute to the
-Discussions or Issues. Help is always appreciated. 
+You can find the JVM version [here](https://github.com/Quillraven/Fleks/tree/master).
+This is the KMP version which has a slightly different API for the world's configuration due to limitations in reflection but after that
+everything is the same as in the JVM version. And as mentioned above, in the future those
+two flavors will be combined into a single one which is most likely the KMP version once I figured out
+how to support a similar nice user experience as in the JVM flavor ;)
+
 To use Fleks add it as a dependency to your project:
 
 #### Apache Maven
 
-```xml
+```kotlin
 <dependency>
   <groupId>io.github.quillraven.fleks</groupId>
   <artifactId>Fleks</artifactId>
-  <version>1.0-KMP-RC1</version>
+  <version>1.4-KMP-RC1</version>
 </dependency>
 ```
 
 #### Gradle (Groovy)
 
 ```kotlin
-implementation 'io.github.quillraven.fleks:Fleks:1.0-KMP-RC1'
+implementation 'io.github.quillraven.fleks:Fleks:1.4-KMP-RC1'
 ```
 
 #### Gradle (Kotlin)
 
 ```kotlin
-implementation("io.github.quillraven.fleks:Fleks:1.0-KMP-RC1")
+implementation("io.github.quillraven.fleks:Fleks:1.4-KMP-RC1")
 ```
+
+#### KorGE
+
+```kotlin
+dependencyMulti("io.github.quillraven.fleks:Fleks:1.4-KMP-RC1", registerPlugin = false)
+```
+
+## Example game using Fleks
+
+[Dinoleon](https://github.com/Quillraven/Dinoleon) is a small game using Fleks JVM that showcases all functionalities in action!
 
 ## Current API and usage
 
@@ -86,31 +99,37 @@ need to update your systems.
 To create a world simply call:
 
 ```Kotlin
-val world = World {}
+val w = world {}
 ```
 
-A world without any **system** doesn't make sense and that's why there is a lambda argument for the world's constructor
+A world without any **system** doesn't make sense and that's why there is a lambda argument
 to configure it accordingly:
 
 - Use `entityCapacity` to set the expected maximum amount of entities. The default value is 512. The reason for this
   setting is to initialize internal collections and arrays with a proper size for your game to avoid a lot
   of `Array.copy` calls in the background which are slow.
-- Use `system` to add a system to your world. The order of `system` calls defines the order in which they are called
-  when calling `world.update`
-- Use `component` to register components and its component listeners (if needed and available, see below) to your world.
+- Use `systems` to add a system to your world. The order of calls defines the order in which they are called
+  when calling `world.update`.
+- Use `components` to register components and its component listeners (if needed and available, see below) to your world.
+- Use `families` to register family listener to your world
+- Use `injectables` to register injectables for your systems, ComponentListener and FamilyListener.
 
 Here is an example that creates a world for 1000 entities with a Move- and PhysicSystem:
 
 ```Kotlin
-val world = World {
+val w = world {
     entityCapacity = 1000
 
-    system(::MoveSystem)
-    system(::PhysicSystem)
-
-    component(::Position)
-    component(::Physic)
-    component(::Box2dComponent, ::Box2dComponentListener)
+    systems {
+        add(::MoveSystem)
+        add(::PhysicSystem)
+    }
+    
+    components {
+        add(::Position)
+        add(::Physic)
+        add(::Box2dComponent, ::Box2dComponentListener)
+    }
 }
 ```
 
@@ -122,7 +141,7 @@ or [Viewport](https://github.com/libgdx/libgdx/wiki/Spritebatch%2C-Textureregion
 uses [dependency injection](https://de.wikipedia.org/wiki/Dependency_Injection) for that to make it easier to adjust
 arguments of your systems later on without touching the code of the caller side.
 
-First, let's have a look on how to create a simple **IteratingSystem** that gets called every time `world.update` is
+First, let's have a look on how to create a simple **IntervalSystem** that gets called every time `world.update` is
 called. It is a made up example of a Day-Night-Cycle system which switches between day and night every second and
 dispatches a game event via an `EventManager`.
 
@@ -150,21 +169,25 @@ class DayNightSystem : IntervalSystem() {
 ```
 
 The `DayNightSystem` requires an `EventManager` which we need to inject. To achieve that we can define it when creating
-our world by using the `inject` function:
+our world by using the `injectables` DSL:
 
 ```Kotlin
 val eventManager = EventManager()
-val world = World {
+val world = world {
     entityCapacity = 1000
 
-    system(::DayNightSystem)
+    systems {
+        add(::DayNightSystem)
+    }
 
-    inject(eventManager)
+    injectables {
+        add(eventManager)
+    }
 }
 ```
 
 There might be cases where you need multiple dependencies of the same type. In Fleks this can be solved by
-specifying a unique type name as parameter in inject() function in world configuration  and in
+specifying a unique type name as parameter in the injectables DSL of a world configuration and in
 Inject.dependency() in your system or component listener. Here is an example of a system that takes
 two String parameters. They are registered by name `HighscoreKey` and `LevelKey`:
 
@@ -178,12 +201,16 @@ private class NamedDependenciesSystem : IntervalSystem() {
 }
 
 fun main() {
-    val world = World {
-        system<NamedDependenciesSystem>()
-
-        // inject String dependencies from above via their type names
-        inject("HighscoreKey", "hs-key")
-        inject("LevelKey", "Level001")
+    val world = world {
+        systems {
+            add(::NamedDependenciesSystem)
+        }
+        
+        injectables {
+            // inject String dependencies from above via their type names
+            add("HighscoreKey", "hs-key")
+            add("LevelKey", "Level001")
+        }
     }
 }
 ```
@@ -204,18 +231,18 @@ There are two systems in Fleks:
 `IteratingSystem` extends `IntervalSystem` but in addition it requires you to specify the relevant components of
 entities which the system will iterate over. There are three class properties to define this component configuration:
 
-- `AllOf`: entity must have all the components specified
-- `NoneOf`: entity must not have any component specified
-- `AnyOf`: entity must have at least one of the components specified
+- `allOfComponents`: entity must have all the components specified
+- `noneOfComponents`: entity must not have any component specified
+- `anyOfComponents`: entity must have at least one of the components specified
 
 Let's create an `IteratingSystem` that iterates over all entities with a `PositionComponent`, `PhysicComponent`
 and at least a `SpriteComponent` or `AnimationComponent` but without a `DeadComponent`:
 
 ```Kotlin
 class AnimationSystem : IteratingSystem(
-    allOf = AllOf(arrayOf(Position::class, Physic::class)),
-    noneOf = AllOf(arrayOf(Dead::class)),
-    anyOf = AllOf(arrayOf(Sprite::class, Animation::class))
+    allOfComponents = arrayOf(Position::class, Physic::class),
+    noneOfComponents = arrayOf(Dead::class),
+    anyOfComponents = arrayOf(Sprite::class, Animation::class)
 ) {
     override fun onTickEntity(entity: Entity) {
         // update entities in here
@@ -231,15 +258,35 @@ Let's see how we can access the `PositionComponent` of an entity in the system a
 
 ```Kotlin
 class AnimationSystem : IteratingSystem(
-    allOf = AllOf(arrayOf(Position::class, Physic::class)),
-    noneOf = AllOf(arrayOf(Dead::class)),
-    anyOf = AllOf(arrayOf(Sprite::class, Animation::class))
+    allOfComponents = arrayOf(Position::class, Physic::class),
+    noneOfComponents = arrayOf(Dead::class),
+    anyOfComponents = arrayOf(Sprite::class, Animation::class)
 ) {
 
     private val positions: ComponentMapper<Position> = Inject.componentMapper()
 
     override fun onTickEntity(entity: Entity) {
         val entityPosition: Position = positions[entity]
+    }
+}
+```
+
+There is also a `getOrNull` version available in case a component is not mandatory
+for every entity that gets processed by a system. An example is:
+
+```Kotlin
+class AnimationSystem : IteratingSystem(
+    allOfComponents = arrayOf(Position::class, Physic::class),
+    noneOfComponents = arrayOf(Dead::class),
+    anyOfComponents = arrayOf(Sprite::class, Animation::class)
+) {
+    
+    private val animations: ComponentMapper<Animation> = Inject.componentMapper()
+    
+    override fun onTickEntity(entity: Entity) {
+        animations.getOrNull(entity)?.let { animation ->
+            // entity has animation component which can be modified inside this block
+        }
     }
 }
 ```
@@ -257,8 +304,8 @@ hitpoints are <= 0:
 
 ```Kotlin
 class DeathSystem : IteratingSystem(
-    allOf = AllOf(arrayOf(Life::class)),
-    noneOf = NoneOf(arrayOf(Dead::class))
+    allOfComponents = arrayOf(Life::class),
+    noneOfComponents = arrayOf(Dead::class)
 ) {
 
     private val lives: ComponentMapper<Life> = Inject.componentMapper()
@@ -280,26 +327,8 @@ Here is an example that gets the `LifeComponent` mapper of the snippet above:
 
 ```Kotlin
 fun main() {
-    val world = World {}
+    val world = world {}
     val lives = world.mapper<Life>()
-}
-```
-
-Some systems might need an initialization code that requires the `world`. Unfortunately, it is not possible to
-get access to the world in a normal `init` block. The field is not initialized at that time. However, there is
-of course a solution. In case you need the world for your initialization logic you can use the `onInit` function of a system like this:
-
-```Kotlin
-private class PlayerSpawnSystem : IntervalSystem() {
-    override fun onInit() {
-        // spawn player when the system gets created
-        // Note: access to the world field works inside this method
-        world.entity {
-            // ...
-        }
-    }
-
-    // ...
 }
 ```
 
@@ -312,7 +341,7 @@ Here is an example of a `RenderSystem` that sorts entities by their y-coordinate
 
 ```Kotlin
 class RenderSystem : IteratingSystem(
-    allOf = AllOf(arrayOf(Position::class, Render::class)),
+    allOfComponents = arrayOf(Position::class, Render::class),
     comparator = compareEntity { entA, entB -> positions[entA].y.compareTo(positions[entB].y) }
 ) {
 
@@ -333,7 +362,7 @@ This is how the example above could be written with a `Manual` `SortingType`:
 
 ```Kotlin
 class RenderSystem : IteratingSystem(
-    allOf = AllOf(arrayOf(Position::class, Render::class)),
+    allOfComponents = arrayOf(Position::class, Render::class),
     comparator = compareEntity { entA, entB -> positions[entA].y.compareTo(positions[entB].y) },
     sortingType = Manual
 ) {
@@ -382,8 +411,10 @@ class DebugSystem : IntervalSystem() {
 }
 
 fun main() {
-    val world = World {
-        system(::DebugSystem)
+    val world = world {
+        systems {
+            add(::DebugSystem)
+        }
     }
 
     // following call disposes the DebugSystem
@@ -397,13 +428,13 @@ The world's `forEach` function allows you to iterate over all active entities:
 
 ```Kotlin
  fun main() {
-    val world = World {}
+    val world = world {}
     val e1 = world.entity()
     val e2 = world.entity()
     val e3 = world.entity()
     world.remove(e2)
 
-    // this will iterate over entities e1 and e3
+    // this will iterate over entities e1..e3
     world.forEach { entity ->
         // do something with the entity
     }
@@ -420,7 +451,7 @@ data class Position(var x: Float = 0f, var y: Float = 0f)
 data class Sprite(var texturePath: String = "")
 
 fun main() {
-    val world = World {}
+    val world = world {}
 
     val entity: Entity = world.entity {
         add<Position> { x = 5f }
@@ -438,7 +469,8 @@ fun main() {
 
 There might be situations where you need to execute a specific code when a component gets added or removed from an entity.
 This can be done via `ComponentListener` in Fleks. They are created in a similar way like systems meaning that they are created
-by Fleks using dependency injection.
+by Fleks using dependency injection. The `world` of a `ComponentListener`
+is automatically available as a dependency like any `ComponentMapper`.
 
 Here is an example of a listener that reacts on add/remove of a `Box2dComponent` and destroys the [body](https://github.com/libgdx/libgdx/wiki/Box2d#objectsbodies)
 when the component gets removed from an entity:
@@ -461,9 +493,118 @@ class Box2dComponentListener : ComponentListener<Box2dComponent> {
 }
 
 fun main() {
-    val world = World {
-        // register component together with its listener to the world
-        component(::Box2dComponent, ::Box2dComponentListener)
+    val world = world {
+        components {
+            // register component together with its listener to the world
+            add(::Box2dComponent, ::Box2dComponentListener)
+        }
+    }
+}
+```
+
+### Family
+
+In case you need to iterate over entities with a specific component configuration
+that is not part of a system then this is possible via the `family` function
+of a `world`.
+A `family` keeps track of entities with a specific config and allows sorting
+and iteration over these entities. `Family` is used internally
+by an `IteratingSystem`. You can access it via the `family` property.
+
+The following example shows how to
+get a `family` for entities with a MoveComponent but without a DeadComponent:
+
+```kotlin
+fun main() {
+    val world = world {}
+    val e1 = w.entity { 
+        add<MoveComponent> { speed = 70f } 
+    }
+    val e2 = w.entity { 
+        add<MoveComponent> { speed = 50f }
+        add<DeadComponent>()
+    }
+    val e3 = w.entity { 
+        add<MoveComponent> { speed = 30f } 
+    }
+
+    // get family for entities with a MoveComponent
+    // and without a DeadComponent
+    val family = world.family(
+        allOf = arrayOf(MoveComponent::class),
+        noneOf = arrayOf(DeadComponent::class),
+    )
+
+    // you can sort entities of a family
+    val moves = world.mapper<MoveComponent>()
+    family.sort(compareEntity { entity1, entity2 -> moves[entity1].speed.compareTo(moves[entity2].speed) })
+    
+    // And you can iterate over entities of a family.
+    // In this example it will iterate in following order:
+    // 1) e3
+    // 2) e1
+    family.forEach { entity ->
+        // family also supports the configureEntity function
+        configureEntity(entity) {
+            // update entity components
+        }
+    }
+}
+```
+
+Families also support `FamilyListener` that allow you to react when an entity
+gets added to, or removed from a `family`. Here is an example:
+
+```kotlin
+fun main() {
+    val familyListener = object : FamilyListener {
+        override fun onEntityAdded(entity: Entity) {
+            // do something when an entity gets added to the family
+        }
+
+        override fun onEntityRemoved(entity: Entity) {
+            // do something when an entity gets removed of a family
+        }
+    }
+    val world = world {}
+    val family = world.family(
+        allOf = arrayOf(MoveComponent::class),
+        noneOf = arrayOf(DeadComponent::class),
+    )
+    family.addFamilyListener(familyListener)
+
+    // this will notify the listener via its onEntityAdded function
+    val entity = world.entity {
+        add<MoveComponent>()
+        add<DeadComponent>()
+    }
+
+    // this will notify the listener via its onEntityRemoved function
+    world.remove(entity)
+}
+```
+
+In case you need a `FamilyListener` from the beginning to also get notified when
+entities are created within a system's constructor then this is possible in a similar
+way you can create `ComponentListener`. Just define it in the world's configuration.
+In this case the `FamilyListener` must have at least one of the `allOfComponents`, `anyOfComponents` or `noneOfComponents` specified.
+Such listeners follow the dependency injection logic. Here is an example:
+
+```kotlin
+private class MyFamilyListener(
+    val world: World
+) : FamilyListener(
+    allOfComponents = arrayOf(MoveComponent::class),
+    noneOfComponents = arrayOf(DeadComponent::class)
+) {
+    // ...
+}
+
+fun main() {
+    val world = world {
+        families {
+            add(::MyFamilyListener)
+        }
     }
 }
 ```
