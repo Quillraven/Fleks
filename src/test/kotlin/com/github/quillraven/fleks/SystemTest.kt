@@ -171,7 +171,7 @@ internal class SystemTest {
     private fun systemService(
         systemTypes: List<KClass<out IntervalSystem>>,
         injectables: Map<String, Injectable> = emptyMap(),
-        world: World = World { }
+        world: World = world { }
     ) = SystemService(
         world,
         systemTypes,
@@ -190,7 +190,7 @@ internal class SystemTest {
 
     @Test
     fun `system with interval EachFrame returns world's delta time`() {
-        World.CURRENT_WORLD = World { }
+        World.CURRENT_WORLD = world { }
         val system = SystemTestIntervalSystemEachFrame()
         system.world.update(42f)
 
@@ -199,7 +199,7 @@ internal class SystemTest {
 
     @Test
     fun `system with fixed interval of 0,25f gets called four times when delta time is 1,1f`() {
-        World.CURRENT_WORLD = World { }
+        World.CURRENT_WORLD = world { }
         val system = SystemTestIntervalSystemFixed()
         system.world.update(1.1f)
 
@@ -220,7 +220,7 @@ internal class SystemTest {
 
     @Test
     fun `create IntervalSystem with no-args`() {
-        val expectedWorld = World {}
+        val expectedWorld = world {}
 
         val service = systemService(listOf(SystemTestIntervalSystemEachFrame::class), world = expectedWorld)
 
@@ -233,7 +233,7 @@ internal class SystemTest {
 
     @Test
     fun `create IteratingSystem with a ComponentMapper arg`() {
-        val expectedWorld = World {}
+        val expectedWorld = world {}
 
         val service = systemService(listOf(SystemTestIteratingSystemMapper::class), world = expectedWorld)
 
@@ -247,7 +247,7 @@ internal class SystemTest {
 
     @Test
     fun `create IteratingSystem with an injectable arg`() {
-        val expectedWorld = World {}
+        val expectedWorld = world {}
 
         val service = systemService(
             listOf(SystemTestIteratingSystemInjectable::class),
@@ -265,7 +265,7 @@ internal class SystemTest {
 
     @Test
     fun `create IteratingSystem with qualified args`() {
-        val expectedWorld = World {}
+        val expectedWorld = world {}
 
         val service = systemService(
             listOf(SystemTestIteratingSystemQualifiedInjectable::class),
@@ -299,7 +299,7 @@ internal class SystemTest {
 
     @Test
     fun `IteratingSystem calls onTick and onAlpha for each entity of the system`() {
-        val world = World {}
+        val world = world {}
         val service = systemService(listOf(SystemTestIteratingSystemMapper::class), world = world)
         world.entity { add<SystemTestComponent>() }
         world.entity { add<SystemTestComponent>() }
@@ -317,7 +317,7 @@ internal class SystemTest {
 
     @Test
     fun `configure entity during iteration`() {
-        val world = World {}
+        val world = world {}
         val service = systemService(listOf(SystemTestIteratingSystemMapper::class), world = world)
         world.update(0.3f)
         val entity = world.entity { add<SystemTestComponent>() }
@@ -331,7 +331,7 @@ internal class SystemTest {
 
     @Test
     fun `sort entities automatically`() {
-        val world = World {}
+        val world = world {}
         val service = systemService(listOf(SystemTestIteratingSystemSortAutomatic::class), world = world)
         world.entity { add<SystemTestComponent> { x = 15f } }
         world.entity { add<SystemTestComponent> { x = 10f } }
@@ -344,7 +344,7 @@ internal class SystemTest {
 
     @Test
     fun `sort entities programmatically`() {
-        val world = World {}
+        val world = world {}
         val service = systemService(listOf(SystemTestIteratingSystemSortManual::class), world = world)
         world.entity { add<SystemTestComponent> { x = 15f } }
         world.entity { add<SystemTestComponent> { x = 10f } }
@@ -382,7 +382,7 @@ internal class SystemTest {
 
     @Test
     fun `removing an entity during update is delayed`() {
-        val world = World {}
+        val world = world {}
         val service = systemService(listOf(SystemTestIteratingSystemSortAutomatic::class), world = world)
         world.entity { add<SystemTestComponent> { x = 15f } }
         val entityToRemove = world.entity { add<SystemTestComponent> { x = 10f } }
@@ -400,7 +400,7 @@ internal class SystemTest {
 
     @Test
     fun `removing an entity during alpha is delayed`() {
-        val world = World {}
+        val world = world {}
         val service = systemService(listOf(SystemTestFixedSystemRemoval::class), world = world)
         // set delta time to 1f for the fixed interval
         world.update(1f)
@@ -431,7 +431,7 @@ internal class SystemTest {
     fun `create entity during system init`() {
         // this test verifies that entities that are created in a system's init block
         // are correctly added to families
-        val world = World {}
+        val world = world {}
 
         val service = systemService(listOf(SystemTestEntityCreation::class), world = world)
         service.update()
