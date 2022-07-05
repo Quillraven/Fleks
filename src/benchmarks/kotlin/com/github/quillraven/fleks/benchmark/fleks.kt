@@ -60,7 +60,7 @@ open class FleksStateAddRemove {
 
     @Setup(value = Level.Iteration)
     fun setup() {
-        world = World {
+        world = world {
             entityCapacity = NUM_ENTITIES
         }
     }
@@ -72,9 +72,11 @@ open class FleksStateSimple {
 
     @Setup(value = Level.Iteration)
     fun setup() {
-        world = World {
+        world = world {
             entityCapacity = NUM_ENTITIES
-            system<FleksSystemSimple>()
+            systems {
+                add<FleksSystemSimple>()
+            }
         }
 
         repeat(NUM_ENTITIES) {
@@ -89,10 +91,12 @@ open class FleksStateComplex {
 
     @Setup(value = Level.Iteration)
     fun setup() {
-        world = World {
+        world = world {
             entityCapacity = NUM_ENTITIES
-            system<FleksSystemComplex1>()
-            system<FleksSystemComplex2>()
+            systems {
+                add<FleksSystemComplex1>()
+                add<FleksSystemComplex2>()
+            }
         }
 
         repeat(NUM_ENTITIES) {
