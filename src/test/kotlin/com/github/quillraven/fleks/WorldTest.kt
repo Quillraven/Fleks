@@ -5,9 +5,7 @@ import org.junit.jupiter.api.Assertions.assertAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import kotlin.test.assertContentEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 private data class WorldTestComponent(var x: Float = 0f)
 
@@ -587,5 +585,45 @@ internal class WorldTest {
             // verify that listener and system are not creating the same family twice
             { assertEquals(1, w.allFamilies.size) }
         )
+    }
+
+    @Test
+    fun `test family first and empty functions`() {
+        val w = world { }
+
+        val f = w.family(allOf = arrayOf(WorldTestComponent::class))
+        assertTrue(f.isEmpty)
+        assertFalse(f.isNotEmpty)
+        assertThrows<NoSuchElementException> { f.first() }
+        assertNull(f.firstOrNull())
+
+        val e = w.entity { add<WorldTestComponent>() }
+        assertFalse(f.isEmpty)
+        assertTrue(f.isNotEmpty)
+        assertEquals(e, f.first())
+        assertEquals(e, f.firstOrNull())
+    }
+
+    @Test
+    fun `test family 'first' during iteration`() {
+        val w = world { }
+        val f = w.family(allOf = arrayOf(WorldTestComponent::class))
+        w.entity { add<WorldTestComponent>() }
+
+        val iteratedEntities = mutableListOf<Entity>()
+        f.forEach {
+            if (iteratedEntities.isEmpty()) {
+                // add second entity to family which should not be considered during this iteration
+                w.entity { add<WorldTestComponent>() }
+            }
+            // make a call to 'first' which updates the family's entity bag internally.
+            // This must NOT affect the current forEach iteration.
+            f.first()
+            iteratedEntities.add(it)
+        }
+
+        // verify that only a single iteration happened
+        assertContentEquals(listOf(Entity(0)), iteratedEntities)
+        assertEquals(2, f.numEntities)
     }
 }

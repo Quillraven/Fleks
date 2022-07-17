@@ -21,6 +21,19 @@ class BitArray(
     val capacity: Int
         get() = bits.size * 64
 
+    val isNotEmpty: Boolean
+        get() {
+            for (word in bits.size - 1 downTo 0) {
+                if (bits[word] != 0L) {
+                    return true
+                }
+            }
+            return false
+        }
+
+    val isEmpty: Boolean
+        get() = !isNotEmpty
+
     operator fun get(idx: Int): Boolean {
         val word = idx / 64
         return if (word >= bits.size) {
@@ -99,6 +112,24 @@ class BitArray(
             }
         }
         return 0
+    }
+
+    /**
+     * Returns number of bits that are set in the [BitArray].
+     */
+    fun numBits(): Int {
+        var sum = 0
+        for (word in bits.size - 1 downTo 0) {
+            val bitsAtWord = bits[word]
+            if (bitsAtWord != 0L) {
+                for (bit in 63 downTo 0) {
+                    if ((bitsAtWord and (1L shl (bit % 64))) != 0L) {
+                        sum++
+                    }
+                }
+            }
+        }
+        return sum
     }
 
     inline fun forEachSetBit(action: (Int) -> Unit) {

@@ -86,8 +86,27 @@ class IntBag(
     val capacity: Int
         get() = values.size
 
+    private val isEmpty: Boolean
+        get() = size == 0
+
     val isNotEmpty: Boolean
         get() = size > 0
+
+    val first: Int
+        get() {
+            if (isEmpty) {
+                throw NoSuchElementException("Bag is empty!")
+            }
+            return values[0]
+        }
+
+    val firstOrNull: Int?
+        get() {
+            if (isEmpty) {
+                return null
+            }
+            return values[0]
+        }
 
     fun add(value: Int) {
         if (size == values.size) {

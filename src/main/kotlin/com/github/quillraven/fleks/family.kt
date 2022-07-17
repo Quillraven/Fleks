@@ -78,9 +78,23 @@ data class Family(
 
     /**
      * Returns the number of [entities][Entity] that belong to this family.
+     * This can be an expensive call if the amount of entities is very high because it
+     * iterates through the entire underlying [BitArray].
      */
     val numEntities: Int
-        get() = entities.length()
+        get() = entities.numBits()
+
+    /**
+     * Returns true if and only if this [Family] does not contain any entity.
+     */
+    val isEmpty: Boolean
+        get() = entities.isEmpty
+
+    /**
+     * Returns true if and only if this [Family] contains at least one entity.
+     */
+    val isNotEmpty: Boolean
+        get() = entities.isNotEmpty
 
     /**
      * Flag to indicate if there are changes in the [entities]. If it is true then the [entitiesBag] should get
@@ -138,6 +152,24 @@ data class Family(
         } else {
             entitiesBag.forEach { this.action(Entity(it)) }
         }
+    }
+
+    /**
+     * Returns the first [Entity] of this [Family].
+     * @throws [NoSuchElementException] if the family has no entities.
+     */
+    fun first(): Entity {
+        updateActiveEntities()
+        return Entity(entitiesBag.first)
+    }
+
+    /**
+     * Returns the first [Entity] of this [Family] or null if the family has no entities.
+     */
+    fun firstOrNull(): Entity? {
+        updateActiveEntities()
+        val id = entitiesBag.firstOrNull ?: return null
+        return Entity(id)
     }
 
     /**
