@@ -605,25 +605,33 @@ internal class WorldTest {
     }
 
     @Test
-    fun `test family 'first' during iteration`() {
+    fun `test family 'first' during iteration with modifications`() {
         val w = world { }
         val f = w.family(allOf = arrayOf(WorldTestComponent::class))
-        w.entity { add<WorldTestComponent>() }
+        // create entity with id 0 that is not part of family because 0 is the default value for IntBag
+        // and could potentially lead to a false verification in this test case
+        w.entity { }
+        val e1 = w.entity { add<WorldTestComponent>() }
+        val e2 = w.entity { add<WorldTestComponent>() }
+        val e3 = w.entity { add<WorldTestComponent>() }
+        val expectedEntities = listOf(e3, e2, e1)
 
-        val iteratedEntities = mutableListOf<Entity>()
-        f.forEach {
-            if (iteratedEntities.isEmpty()) {
-                // add second entity to family which should not be considered during this iteration
+        val actualEntities = mutableListOf<Entity>()
+        f.forEach { entity ->
+            if (actualEntities.isEmpty()) {
+                // remove second entity on first iteration
+                // this will not flag the family as 'dirty' because removal is delayed
+                w.remove(e2)
+                // that's why we add an entity to flag the family
                 w.entity { add<WorldTestComponent>() }
             }
-            // make a call to 'first' which updates the family's entity bag internally.
-            // This must NOT affect the current forEach iteration.
+            // a call to 'first' updates the entities bag of a family internally
+            // but should not mess up current iteration
             f.first()
-            iteratedEntities.add(it)
+            actualEntities.add(entity)
         }
 
-        // verify that only a single iteration happened
-        assertContentEquals(listOf(Entity(0)), iteratedEntities)
-        assertEquals(2, f.numEntities)
+        assertContentEquals(expectedEntities, actualEntities)
+        assertEquals(3, f.numEntities)
     }
 }

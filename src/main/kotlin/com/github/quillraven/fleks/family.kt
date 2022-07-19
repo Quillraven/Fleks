@@ -155,19 +155,27 @@ data class Family(
     }
 
     /**
-     * Returns the first [Entity] of this [Family].
+     * Updates this family if needed and returns its first [Entity].
      * @throws [NoSuchElementException] if the family has no entities.
      */
     fun first(): Entity {
-        updateActiveEntities()
+        if (!entityService.delayRemoval) {
+            // no iteration in process -> update entities if necessary
+            updateActiveEntities()
+        }
+
         return Entity(entitiesBag.first)
     }
 
     /**
-     * Returns the first [Entity] of this [Family] or null if the family has no entities.
+     * Updates this family if needed and returns its first [Entity] or null if the family has no entities.
      */
     fun firstOrNull(): Entity? {
-        updateActiveEntities()
+        if (!entityService.delayRemoval) {
+            // no iteration in process -> update entities if necessary
+            updateActiveEntities()
+        }
+
         val id = entitiesBag.firstOrNull ?: return null
         return Entity(id)
     }
