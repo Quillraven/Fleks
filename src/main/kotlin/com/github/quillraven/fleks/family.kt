@@ -159,7 +159,7 @@ data class Family(
      * @throws [NoSuchElementException] if the family has no entities.
      */
     fun first(): Entity {
-        if (!entityService.delayRemoval) {
+        if (!entityService.delayRemoval || entitiesBag.isEmpty) {
             // no iteration in process -> update entities if necessary
             updateActiveEntities()
         }
@@ -171,7 +171,7 @@ data class Family(
      * Updates this family if needed and returns its first [Entity] or null if the family has no entities.
      */
     fun firstOrNull(): Entity? {
-        if (!entityService.delayRemoval) {
+        if (!entityService.delayRemoval || entitiesBag.isEmpty) {
             // no iteration in process -> update entities if necessary
             updateActiveEntities()
         }

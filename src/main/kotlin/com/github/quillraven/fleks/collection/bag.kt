@@ -86,7 +86,7 @@ class IntBag(
     val capacity: Int
         get() = values.size
 
-    private val isEmpty: Boolean
+    val isEmpty: Boolean
         get() = size == 0
 
     val isNotEmpty: Boolean
