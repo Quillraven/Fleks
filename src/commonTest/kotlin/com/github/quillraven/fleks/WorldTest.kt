@@ -597,4 +597,60 @@ internal class WorldTest {
         // verify that listener and system are not creating the same family twice
         assertEquals(1, w.allFamilies.size)
     }
+
+    @Test
+    fun testFamilyFirstAndEmptyFunctions() {
+        val w = world {
+            components {
+                add(::WorldTestComponent)
+            }
+        }
+
+        val f = w.family(allOf = arrayOf(WorldTestComponent::class))
+        assertTrue(f.isEmpty)
+        assertFalse(f.isNotEmpty)
+        assertFailsWith<NoSuchElementException> { f.first() }
+        assertNull(f.firstOrNull())
+
+        val e = w.entity { add<WorldTestComponent>() }
+        assertFalse(f.isEmpty)
+        assertTrue(f.isNotEmpty)
+        assertEquals(e, f.first())
+        assertEquals(e, f.firstOrNull())
+    }
+
+    @Test
+    fun testFamilyFirstDuringIterationWithModifications() {
+        val w = world {
+            components {
+                add(::WorldTestComponent)
+            }
+        }
+        val f = w.family(allOf = arrayOf(WorldTestComponent::class))
+        // create entity with id 0 that is not part of family because 0 is the default value for IntBag
+        // and could potentially lead to a false verification in this test case
+        w.entity { }
+        val e1 = w.entity { add<WorldTestComponent>() }
+        val e2 = w.entity { add<WorldTestComponent>() }
+        val e3 = w.entity { add<WorldTestComponent>() }
+        val expectedEntities = listOf(e3, e2, e1)
+
+        val actualEntities = mutableListOf<Entity>()
+        f.forEach { entity ->
+            if (actualEntities.isEmpty()) {
+                // remove second entity on first iteration
+                // this will not flag the family as 'dirty' because removal is delayed
+                w.remove(e2)
+                // that's why we add an entity to flag the family
+                w.entity { add<WorldTestComponent>() }
+            }
+            // a call to 'first' updates the entities bag of a family internally
+            // but should not mess up current iteration
+            f.first()
+            actualEntities.add(entity)
+        }
+
+        assertContentEquals(expectedEntities, actualEntities)
+        assertEquals(3, f.numEntities)
+    }
 }

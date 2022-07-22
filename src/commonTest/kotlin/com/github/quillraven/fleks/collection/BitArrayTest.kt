@@ -145,4 +145,25 @@ internal class BitArrayTest {
         assertEquals(3, numCalls)
         assertEquals(listOf(117, 5, 3), bitsCalled)
     }
+
+    @Test
+    fun testNumBits() {
+        val bits = BitArray()
+
+        bits.set(4)
+
+        assertEquals(1, bits.numBits())
+        assertEquals(5, bits.length())
+    }
+
+    @Test
+    fun testIsEmpty() {
+        val bits = BitArray()
+        assertTrue(bits.isEmpty)
+        assertFalse(bits.isNotEmpty)
+
+        bits.set(0)
+        assertFalse(bits.isEmpty)
+        assertTrue(bits.isNotEmpty)
+    }
 }
