@@ -4,7 +4,7 @@
 [![Maven](https://img.shields.io/badge/Maven-1.4.1--JVM-success.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks/1.4.1-JVM/jar)
 
 [![Build Master](https://img.shields.io/github/workflow/status/quillraven/fleks/Build/master?event=push&label=Build%20master)](https://github.com/Quillraven/fleks/actions)
-[![Kotlin](https://img.shields.io/badge/Kotlin-1.6.21-red.svg)](http://kotlinlang.org/)
+[![Kotlin](https://img.shields.io/badge/Kotlin-1.7.10-red.svg)](http://kotlinlang.org/)
 
 A **f**ast, **l**ightweight, **e**ntity component **s**ystem library written in **K**otlin.
 
