@@ -2,7 +2,7 @@
 
 plugins {
     kotlin("multiplatform") version "1.7.10"
-    id("org.jetbrains.kotlinx.benchmark") version "0.4.2"
+    id("org.jetbrains.kotlinx.benchmark") version "0.4.4"
     id("org.jetbrains.dokka") version "1.7.10"
     `maven-publish`
     signing
@@ -66,7 +66,7 @@ kotlin {
         val jvmBenchmarks by getting {
             dependsOn(commonMain)
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:0.4.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:0.4.4")
                 implementation("com.badlogicgames.ashley:ashley:1.7.4")
                 implementation("net.onedaybeard.artemis:artemis-odb:2.3.0")
             }
