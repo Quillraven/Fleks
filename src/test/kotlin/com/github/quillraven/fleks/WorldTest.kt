@@ -626,4 +626,21 @@ internal class WorldTest {
         assertContentEquals(listOf(Entity(0)), iteratedEntities)
         assertEquals(2, f.numEntities)
     }
+
+    @Test
+    fun `test entity removal with noneOf family`() {
+        // entity that gets removed has no components and is therefore
+        // part of any family that only has a noneOf configuration.
+        // However, such entities still need to be removed of those families.
+        val w = world { }
+        val family = w.family(noneOf = arrayOf(WorldTestComponent::class))
+        val e = w.entity { }
+
+        family.updateActiveEntities()
+        assertTrue(e.id in family.entitiesBag)
+
+        w.remove(e)
+        family.updateActiveEntities()
+        assertFalse(e.id in family.entitiesBag)
+    }
 }
