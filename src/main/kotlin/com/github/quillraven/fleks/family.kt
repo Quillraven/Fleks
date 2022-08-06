@@ -219,7 +219,7 @@ data class Family(
     fun removeFamilyListener(listener: FamilyListener) = listeners.removeValue(listener)
 
     /**
-     * Returns true if an only if the given [listener] is part of the list of [FamilyListener].
+     * Returns true if and only if the given [listener] is part of the list of [FamilyListener].
      */
     operator fun contains(listener: FamilyListener) = listener in listeners
 }
