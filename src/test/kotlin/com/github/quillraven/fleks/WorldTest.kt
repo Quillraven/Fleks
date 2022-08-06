@@ -643,4 +643,33 @@ internal class WorldTest {
         family.updateActiveEntities()
         assertFalse(e.id in family.entitiesBag)
     }
+
+    @Test
+    fun `test toMap`() {
+        val w = world { }
+        lateinit var cmp1: Any
+        val e1 = w.entity { cmp1 = add<WorldTestComponent>() }
+        val e2 = w.entity { }
+        lateinit var cmp31: Any
+        lateinit var cmp32: Any
+        val e3 = w.entity {
+            cmp31 = add<WorldTestComponent>()
+            cmp32 = add<WorldTestComponent2>()
+        }
+        val expected = mapOf(
+            e1 to listOf(cmp1),
+            e2 to emptyList(),
+            e3 to listOf(cmp31, cmp32)
+        )
+
+        val actual = w.toMap()
+
+        assertEquals(expected.size, actual.size)
+        expected.forEach { (entity, expectedCmps) ->
+            val actualCmps = actual[entity]
+            assertNotNull(actualCmps)
+            assertEquals(expectedCmps.size, actualCmps.size)
+            assertTrue(expectedCmps.containsAll(actualCmps) && actualCmps.containsAll(expectedCmps))
+        }
+    }
 }

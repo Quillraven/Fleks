@@ -454,6 +454,27 @@ class World internal constructor(
     }
 
     /**
+     * Returns a map that contains all [entities][Entity] and their components of this world.
+     * The keys of the map are the entities.
+     * The values are a list of components that a specific entity has. If the entity
+     * does not have any components then the value is an empty list.
+     */
+    fun toMap(): Map<Entity, List<Any>> {
+        val result = mutableMapOf<Entity, List<Any>>()
+
+        entityService.forEach { entity ->
+            val components = mutableListOf<Any>()
+            val cmpMask = entityService.cmpMasks[entity.id]
+            cmpMask.forEachSetBit { cmpId ->
+                components += componentService.mapper(cmpId)[entity] as Any
+            }
+            result[entity] = components
+        }
+
+        return result
+    }
+
+    /**
      * Updates all [enabled][IntervalSystem.enabled] [systems][IntervalSystem] of the world
      * using the given [deltaTime].
      */
