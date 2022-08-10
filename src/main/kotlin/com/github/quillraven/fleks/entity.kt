@@ -276,6 +276,13 @@ class EntityService(
     }
 
     /**
+     * Returns true if and only if the [entity] not removed and is part of the [EntityService].
+     */
+    operator fun contains(entity: Entity): Boolean {
+        return entity.id in 0 until nextId && !removedEntities[entity.id]
+    }
+
+    /**
      * Clears the [delayRemoval] flag and removes [entities][Entity] which are part of the [delayedEntities].
      */
     fun cleanupDelays() {

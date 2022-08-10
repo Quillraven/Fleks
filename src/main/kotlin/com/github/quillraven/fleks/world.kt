@@ -459,8 +459,8 @@ class World internal constructor(
      * The values are a list of components that a specific entity has. If the entity
      * does not have any components then the value is an empty list.
      */
-    fun toMap(): Map<Entity, List<Any>> {
-        val result = mutableMapOf<Entity, List<Any>>()
+    fun snapshot(): Map<Entity, List<Any>> {
+        val entityCmps = mutableMapOf<Entity, List<Any>>()
 
         entityService.forEach { entity ->
             val components = mutableListOf<Any>()
@@ -468,10 +468,26 @@ class World internal constructor(
             cmpMask.forEachSetBit { cmpId ->
                 components += componentService.mapper(cmpId)[entity] as Any
             }
-            result[entity] = components
+            entityCmps[entity] = components
         }
 
-        return result
+        return entityCmps
+    }
+
+    /**
+     * Returns a list that contains all components of the given [entity] of this world.
+     * If the entity does not have any components then an empty list is returned.
+     */
+    fun snapshotOf(entity: Entity): List<Any> {
+        val cmps = mutableListOf<Any>()
+
+        if (entity in entityService) {
+            entityService.cmpMasks[entity.id].forEachSetBit { cmpId ->
+                cmps += componentService.mapper(cmpId)[entity] as Any
+            }
+        }
+
+        return cmps
     }
 
     /**

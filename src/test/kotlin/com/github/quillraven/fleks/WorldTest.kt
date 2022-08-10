@@ -645,7 +645,7 @@ internal class WorldTest {
     }
 
     @Test
-    fun `test toMap`() {
+    fun `test snapshot`() {
         val w = world { }
         lateinit var cmp1: Any
         val e1 = w.entity { cmp1 = add<WorldTestComponent>() }
@@ -662,7 +662,7 @@ internal class WorldTest {
             e3 to listOf(cmp31, cmp32)
         )
 
-        val actual = w.toMap()
+        val actual = w.snapshot()
 
         assertEquals(expected.size, actual.size)
         expected.forEach { (entity, expectedCmps) ->
@@ -671,5 +671,19 @@ internal class WorldTest {
             assertEquals(expectedCmps.size, actualCmps.size)
             assertTrue(expectedCmps.containsAll(actualCmps) && actualCmps.containsAll(expectedCmps))
         }
+    }
+
+    @Test
+    fun `test snapshotOf`() {
+        val w = world { }
+        lateinit var cmp1: WorldTestComponent
+        val e1 = w.entity { cmp1 = add() }
+        val e2 = w.entity { }
+        val expected1 = listOf<Any>(cmp1)
+        val expected2 = emptyList<Any>()
+
+        assertEquals(expected1, w.snapshotOf(e1))
+        assertEquals(expected2, w.snapshotOf(e2))
+        assertEquals(expected2, w.snapshotOf(Entity(42)))
     }
 }
