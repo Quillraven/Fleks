@@ -209,6 +209,19 @@ data class Family(
     }
 
     /**
+     * Removes the [entity] of the family and sets the [isDirty] flag if and only
+     * if the [entity] is already in the family.
+     */
+    override fun onEntityRemoved(entity: Entity) {
+        if (entities[entity.id]) {
+            // existing entity gets removed
+            isDirty = true
+            entities.clear(entity.id)
+            listeners.forEach { it.onEntityRemoved(entity) }
+        }
+    }
+
+    /**
      * Adds the given [listener] to the list of [FamilyListener].
      */
     fun addFamilyListener(listener: FamilyListener) = listeners.add(listener)
@@ -219,7 +232,7 @@ data class Family(
     fun removeFamilyListener(listener: FamilyListener) = listeners.removeValue(listener)
 
     /**
-     * Returns true if an only if the given [listener] is part of the list of [FamilyListener].
+     * Returns true if and only if the given [listener] is part of the list of [FamilyListener].
      */
     operator fun contains(listener: FamilyListener) = listener in listeners
 }

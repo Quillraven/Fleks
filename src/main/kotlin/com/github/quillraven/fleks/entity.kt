@@ -25,6 +25,13 @@ interface EntityListener {
      * unique id. Refer to [ComponentMapper] for more details.
      */
     fun onEntityCfgChanged(entity: Entity, cmpMask: BitArray) = Unit
+
+    /**
+     * Function that gets called when an [entity][Entity] gets removed.
+     *
+     * @param entity the [entity][Entity] that gets removed.
+     */
+    fun onEntityRemoved(entity: Entity) = Unit
 }
 
 @DslMarker
@@ -236,7 +243,7 @@ class EntityService(
                 cmpService.mapper(cmpId).removeInternal(entity)
             }
             cmpMask.clearAll()
-            listeners.forEach { it.onEntityCfgChanged(entity, cmpMask) }
+            listeners.forEach { it.onEntityRemoved(entity) }
         }
     }
 
