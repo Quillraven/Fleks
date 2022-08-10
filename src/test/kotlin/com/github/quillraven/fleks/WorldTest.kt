@@ -710,6 +710,20 @@ internal class WorldTest {
     }
 
     @Test
+    fun `test load snapshot with one entity`() {
+        val w = world { }
+        val entity = Entity(0)
+        val cmps = listOf(WorldTestComponent())
+        val snapshot = mapOf(entity to cmps)
+
+        w.loadSnapshot(snapshot)
+        val actual = w.snapshotOf(entity)
+
+        assertEquals(1, w.numEntities)
+        assertEquals(actual, cmps)
+    }
+
+    @Test
     fun `test load snapshot with three entities`() {
         val w = world {
             injectables {
