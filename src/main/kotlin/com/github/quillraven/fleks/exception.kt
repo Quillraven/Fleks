@@ -50,3 +50,5 @@ class FleksFamilyException(
         |noneOf: $noneOf
         |anyOf: $anyOf""".trimMargin()
 )
+
+class FleksSnapshotException(reason: String) : FleksException("Cannot load snapshot: $reason!")

@@ -220,6 +220,32 @@ class EntityService(
     }
 
     /**
+     * Updates an [entity] with the given [components].
+     * Notifies any registered [EntityListener].
+     * This function is only used by [World.loadSnapshot].
+     */
+    internal fun configureEntity(entity: Entity, components: List<Any>) {
+        val cmpMask = cmpMasks[entity.id]
+        components.forEach { cmp ->
+            val mapper = cmpService.mapper(cmp::class)
+            mapper.addInternal(entity, cmp)
+            cmpMask.set(mapper.id)
+        }
+        listeners.forEach { it.onEntityCfgChanged(entity, cmpMask) }
+    }
+
+    /**
+     * Recycles the given [entity] by adding it to the [recycledEntities]
+     * and also resetting its component mask with an empty [BitArray].
+     * This function is only used by [World.loadSnapshot].
+     */
+    internal fun recycle(entity: Entity) {
+        recycledEntities.add(entity)
+        removedEntities.set(entity.id)
+        cmpMasks[entity.id] = BitArray(64)
+    }
+
+    /**
      * Removes the given [entity] and adds it to the [recycledEntities] for future use.
      *
      * If [delayRemoval] is set then the [entity] is not removed immediately and instead will be cleaned up
@@ -249,16 +275,25 @@ class EntityService(
 
     /**
      * Removes all [entities][Entity] and adds them to the [recycledEntities] for future use.
+     * If [clearRecycled] is true then the recycled entities are cleared and the ids for newly
+     * created entities start at 0 again.
      *
      * Refer to [remove] for more details.
      */
-    fun removeAll() {
+    fun removeAll(clearRecycled: Boolean = false) {
         for (id in 0 until nextId) {
             val entity = Entity(id)
             if (removedEntities[entity.id]) {
                 continue
             }
             remove(entity)
+        }
+
+        if (clearRecycled) {
+            nextId = 0
+            recycledEntities.clear()
+            removedEntities.clearAll()
+            cmpMasks.clear()
         }
     }
 
