@@ -54,6 +54,11 @@ class Bag<T>(
         return false
     }
 
+    fun clear() {
+        values.fill(null)
+        size = 0
+    }
+
     operator fun contains(value: T): Boolean {
         for (i in 0 until size) {
             if (values[i] == value) {
@@ -199,6 +204,7 @@ private fun IntArray.med3(idxA: Int, idxB: Int, idxC: Int, comparator: EntityCom
                 else -> idxA
             }
         }
+
         bc > 0 -> idxB
         ac > 0 -> idxC
         else -> idxA

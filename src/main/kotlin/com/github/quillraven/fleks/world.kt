@@ -312,9 +312,11 @@ class World internal constructor(
     /**
      * Removes all [entities][Entity] from the world. The entities will be recycled and reused for
      * future calls to [World.entity].
+     * If [clearRecycled] is true then the recycled entities are cleared and the ids for newly
+     * created entities start at 0 again.
      */
-    fun removeAll() {
-        entityService.removeAll()
+    fun removeAll(clearRecycled: Boolean = false) {
+        entityService.removeAll(clearRecycled)
     }
 
     /**
@@ -451,6 +453,84 @@ class World internal constructor(
         }
 
         return familyOfMappers(allOfCmps, noneOfCmps, anyOfCmps)
+    }
+
+    /**
+     * Returns a map that contains all [entities][Entity] and their components of this world.
+     * The keys of the map are the entities.
+     * The values are a list of components that a specific entity has. If the entity
+     * does not have any components then the value is an empty list.
+     */
+    fun snapshot(): Map<Entity, List<Any>> {
+        val entityCmps = mutableMapOf<Entity, List<Any>>()
+
+        entityService.forEach { entity ->
+            val components = mutableListOf<Any>()
+            val cmpMask = entityService.cmpMasks[entity.id]
+            cmpMask.forEachSetBit { cmpId ->
+                components += componentService.mapper(cmpId)[entity] as Any
+            }
+            entityCmps[entity] = components
+        }
+
+        return entityCmps
+    }
+
+    /**
+     * Returns a list that contains all components of the given [entity] of this world.
+     * If the entity does not have any components then an empty list is returned.
+     */
+    fun snapshotOf(entity: Entity): List<Any> {
+        val cmps = mutableListOf<Any>()
+
+        if (entity in entityService) {
+            entityService.cmpMasks[entity.id].forEachSetBit { cmpId ->
+                cmps += componentService.mapper(cmpId)[entity] as Any
+            }
+        }
+
+        return cmps
+    }
+
+    /**
+     * Loads the given [snapshot] of the world. This will first clear any existing
+     * entity of the world. After that it will load all provided entities and components.
+     * This will also notify [ComponentListener] and [FamilyListener].
+     *
+     * @throws FleksSnapshotException if a family iteration is currently in process.
+     *
+     * @throws FleksMissingNoArgsComponentConstructorException if any of the components is missing
+     * a no argument constructor.
+     */
+    fun loadSnapshot(snapshot: Map<Entity, List<Any>>) {
+        if (entityService.delayRemoval) {
+            throw FleksSnapshotException("Snapshots cannot be loaded while a family iteration is in process")
+        }
+
+        // remove any existing entity and clean up recycled ids
+        removeAll(true)
+        if (snapshot.isEmpty()) {
+            // snapshot is empty -> nothing to load
+            return
+        }
+
+        // Set next entity id to the maximum provided id + 1.
+        // All ids before that will be either created or added to the recycled
+        // ids to guarantee that the provided snapshot entity ids match the newly created ones.
+        with(entityService) {
+            val maxId = snapshot.keys.maxOf { it.id }
+            this.nextId = maxId + 1
+            repeat(maxId + 1) {
+                val entity = Entity(it)
+                this.recycle(entity)
+                val components = snapshot[entity]
+                if (components != null) {
+                    // components for entity are provided -> create it
+                    // note that the id for the entity will be the recycled id from above
+                    this.configureEntity(this.create { }, components)
+                }
+            }
+        }
     }
 
     /**
