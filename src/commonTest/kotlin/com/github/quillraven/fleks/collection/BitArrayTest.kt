@@ -166,4 +166,27 @@ internal class BitArrayTest {
         assertFalse(bits.isEmpty)
         assertTrue(bits.isNotEmpty)
     }
+
+    @Test
+    fun testToString() {
+        val bits0 = BitArray()
+        val bits1 = BitArray().apply { set(0) }
+        val bits2 = BitArray().apply { set(3) }
+        val bits3 = BitArray().apply { set(100) }
+        val bits4 = BitArray().apply {
+            set(3)
+            set(100)
+        }
+        val expected0 = "0"
+        val expected1 = "1"
+        val expected2 = "0001"
+        val expected3 = "0".repeat(100) + "1"
+        val expected4 = "0".repeat(3) + "1" + "0".repeat(96) + "1"
+
+        assertEquals(expected0, bits0.toString())
+        assertEquals(expected1, bits1.toString())
+        assertEquals(expected2, bits2.toString())
+        assertEquals(expected3, bits3.toString())
+        assertEquals(expected4, bits4.toString())
+    }
 }

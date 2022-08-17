@@ -216,6 +216,32 @@ class EntityService(
     }
 
     /**
+     * Updates an [entity] with the given [components].
+     * Notifies any registered [EntityListener].
+     * This function is only used by [World.loadSnapshot].
+     */
+    internal fun configureEntity(entity: Entity, components: List<Any>) {
+        val compMask = compMasks[entity.id]
+        components.forEach { cmp ->
+            val mapper = compService.mapper(cmp::class)
+            mapper.addInternal(entity, cmp)
+            compMask.set(mapper.id)
+        }
+        listeners.forEach { it.onEntityCfgChanged(entity, compMask) }
+    }
+
+    /**
+     * Recycles the given [entity] by adding it to the [recycledEntities]
+     * and also resetting its component mask with an empty [BitArray].
+     * This function is only used by [World.loadSnapshot].
+     */
+    internal fun recycle(entity: Entity) {
+        recycledEntities.add(entity)
+        removedEntities.set(entity.id)
+        compMasks[entity.id] = BitArray(64)
+    }
+
+    /**
      * Removes the given [entity] and adds it to the [recycledEntities] for future use.
      *
      * If [delayRemoval] is set then the [entity] is not removed immediately and instead will be cleaned up
@@ -245,10 +271,12 @@ class EntityService(
 
     /**
      * Removes all [entities][Entity] and adds them to the [recycledEntities] for future use.
+     * If [clearRecycled] is true then the recycled entities are cleared and the ids for newly
+     * created entities start at 0 again.
      *
      * Refer to [remove] for more details.
      */
-    fun removeAll() {
+    fun removeAll(clearRecycled: Boolean = false) {
         for (id in 0 until nextId) {
             val entity = Entity(id)
             if (removedEntities[entity.id]) {
@@ -256,6 +284,20 @@ class EntityService(
             }
             remove(entity)
         }
+
+        if (clearRecycled) {
+            nextId = 0
+            recycledEntities.clear()
+            removedEntities.clearAll()
+            compMasks.clear()
+        }
+    }
+
+    /**
+     * Returns true if and only if the [entity] is not removed and is part of the [EntityService].
+     */
+    operator fun contains(entity: Entity): Boolean {
+        return entity.id in 0 until nextId && !removedEntities[entity.id]
     }
 
     /**

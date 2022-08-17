@@ -674,4 +674,160 @@ internal class WorldTest {
         family.updateActiveEntities()
         assertFalse(e.id in family.entitiesBag)
     }
+
+    @Test
+    fun testSnapshot() {
+        val w = world {
+            components {
+                add(::WorldTestComponent)
+                add(::WorldTestComponent2)
+            }
+        }
+        lateinit var comp1: Any
+        val e1 = w.entity { comp1 = add<WorldTestComponent>() }
+        val e2 = w.entity { }
+        lateinit var comp31: Any
+        lateinit var comp32: Any
+        val e3 = w.entity {
+            comp31 = add<WorldTestComponent>()
+            comp32 = add<WorldTestComponent2>()
+        }
+        val expected = mapOf(
+            e1 to listOf(comp1),
+            e2 to emptyList(),
+            e3 to listOf(comp31, comp32)
+        )
+
+        val actual = w.snapshot()
+
+        assertEquals(expected.size, actual.size)
+        expected.forEach { (entity, expectedComps) ->
+            val actualComps = actual[entity]
+            assertNotNull(actualComps)
+            assertEquals(expectedComps.size, actualComps.size)
+            assertTrue(expectedComps.containsAll(actualComps) && actualComps.containsAll(expectedComps))
+        }
+    }
+
+    @Test
+    fun testSnapshotOf() {
+        val w = world {
+            components {
+                add(::WorldTestComponent)
+            }
+        }
+        lateinit var comp1: WorldTestComponent
+        val e1 = w.entity { comp1 = add() }
+        val e2 = w.entity { }
+        val expected1 = listOf<Any>(comp1)
+        val expected2 = emptyList<Any>()
+
+        assertEquals(expected1, w.snapshotOf(e1))
+        assertEquals(expected2, w.snapshotOf(e2))
+        assertEquals(expected2, w.snapshotOf(Entity(42)))
+    }
+
+    @Test
+    fun testLoadEmptySnapshot() {
+        val w = world { }
+        // loading snapshot will remove any existing entity
+        w.entity { }
+
+        w.loadSnapshot(emptyMap())
+
+        assertEquals(0, w.numEntities)
+    }
+
+    @Test
+    fun testLoadSnapshotWhileFamilyIterationInProcess() {
+        val w = world {
+            components {
+                add(::WorldTestComponent)
+            }
+        }
+        val f = w.family(allOf = arrayOf(WorldTestComponent::class))
+        w.entity { add<WorldTestComponent>() }
+
+        f.forEach {
+            assertFailsWith<FleksSnapshotException> { w.loadSnapshot(emptyMap()) }
+        }
+    }
+
+    @Test
+    fun testLoadSnapshotWithOneEntity() {
+        val w = world {
+            components {
+                add(::WorldTestComponent)
+            }
+        }
+        val entity = Entity(0)
+        val comps = listOf(WorldTestComponent())
+        val snapshot = mapOf(entity to comps)
+
+        w.loadSnapshot(snapshot)
+        val actual = w.snapshotOf(entity)
+
+        assertEquals(1, w.numEntities)
+        assertEquals(actual, comps)
+    }
+
+    @Test
+    fun testLoadSnapshotWithThreeEntities() {
+        val w = world {
+            injectables {
+                add("42")
+            }
+
+            components {
+                add(::WorldTestComponent, ::WorldTestComponentListener)
+                add(::WorldTestComponent2)
+            }
+
+            systems {
+                add(::WorldTestIteratingSystem)
+            }
+        }
+        val compListener = w.componentService.mapper<WorldTestComponent>().listeners[0] as WorldTestComponentListener
+        val snapshot = mapOf(
+            Entity(3) to listOf(WorldTestComponent(), WorldTestComponent2()),
+            Entity(5) to listOf(WorldTestComponent()),
+            Entity(7) to listOf()
+        )
+
+        w.loadSnapshot(snapshot)
+        val actual = w.snapshot()
+        w.update(1f)
+
+        // 3 entities should be loaded
+        assertEquals(3, w.numEntities)
+        // actual snapshot after loading the test snapshot is loaded should match
+        assertEquals(snapshot.size, actual.size)
+        snapshot.forEach { (entity, expectedComps) ->
+            val actualComps = actual[entity]
+            assertNotNull(actualComps)
+            assertEquals(expectedComps.size, actualComps.size)
+            assertTrue(expectedComps.containsAll(actualComps) && actualComps.containsAll(expectedComps))
+        }
+        // 2 out of 3 loaded entities should be part of the IteratingSystem family
+        assertEquals(2, w.system<WorldTestIteratingSystem>().numCallsEntity)
+        // 2 out of 3 loaded entities should notify the WorldTestComponentListener
+        assertEquals(2, compListener.numAdd)
+        assertEquals(0, compListener.numRemove)
+        assertEquals(3, actual.size)
+    }
+
+    @Test
+    fun testCreateEntityAfterSnapshotLoaded() {
+        val w = world { }
+        val snapshot = mapOf(
+            Entity(1) to listOf<Any>()
+        )
+
+        w.loadSnapshot(snapshot)
+
+        // first created entity should be recycled Entity 0
+        assertEquals(Entity(0), w.entity())
+        // next created entity should be new Entity 2
+        assertEquals(Entity(2), w.entity())
+    }
 }
