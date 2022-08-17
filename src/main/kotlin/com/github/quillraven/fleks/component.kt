@@ -14,8 +14,6 @@ open class ComponentType<C>(val id: Int = nextId++) {
 
 interface Component<C> {
     fun type(): ComponentType<C>
-
-    fun onRemove(entity: Entity) = Unit
 }
 
 /**
