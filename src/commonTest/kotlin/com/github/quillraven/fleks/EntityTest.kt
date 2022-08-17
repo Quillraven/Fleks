@@ -17,6 +17,11 @@ private class EntityTestListener : EntityListener {
         entityReceived = entity
         cmpMaskReceived = compMask
     }
+
+    override fun onEntityRemoved(entity: Entity) {
+        ++numCalls
+        entityReceived = entity
+    }
 }
 
 private data class EntityTestComponent(var x: Float = 0f)
@@ -157,7 +162,6 @@ internal class EntityTest {
 
         assertEquals(1, listener.numCalls)
         assertEquals(expectedEntity, listener.entityReceived)
-        assertFalse(listener.cmpMaskReceived[0])
         assertFalse(expectedEntity in mapper)
     }
 
