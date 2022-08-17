@@ -6,6 +6,18 @@ import java.lang.reflect.Constructor
 import kotlin.math.max
 import kotlin.reflect.KClass
 
+open class ComponentType<C>(val id: Int = nextId++) {
+    companion object {
+        private var nextId = 0
+    }
+}
+
+interface Component<C> {
+    fun type(): ComponentType<C>
+
+    fun onRemove(entity: Entity) = Unit
+}
+
 /**
  * Interface of a component listener that gets notified when a component of a specific type
  * gets added or removed from an [entity][Entity].
@@ -65,6 +77,7 @@ class ComponentMapper<T>(
      * Adds the [component] to the given [entity]. This function is only
      * used by [World.loadSnapshot].
      */
+    @PublishedApi
     @Suppress("UNCHECKED_CAST")
     internal fun addInternal(entity: Entity, component: Any) {
         components[entity.id] = component as T

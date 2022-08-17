@@ -195,6 +195,10 @@ abstract class IteratingSystem(
      */
     open fun onAlphaEntity(entity: Entity, alpha: Float) = Unit
 
+    inline operator fun <reified C> Entity.get(type: ComponentType<C>): C {
+        return world.componentService.mapper(type.id)[this] as C
+    }
+
     companion object {
         private val EMPTY_COMPARATOR = object : EntityComparator {
             override fun compare(entityA: Entity, entityB: Entity): Int = 0

@@ -64,6 +64,12 @@ class EntityCreateCfg(
         cmpMask.set(mapper.id)
         return mapper.addInternal(entity, configuration)
     }
+
+    inline operator fun <reified C> Entity.plusAssign(component: Component<C>) {
+        val mapper = cmpService.mapper(component.type().id)
+        cmpMask.set(mapper.id)
+        return mapper.addInternal(this, component)
+    }
 }
 
 /**
