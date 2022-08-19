@@ -62,6 +62,16 @@ class ComponentMapper<T>(
     }
 
     /**
+     * Adds the [component] to the given [entity]. This function is only
+     * used by [World.loadSnapshot].
+     */
+    @Suppress("UNCHECKED_CAST")
+    internal fun addInternal(entity: Entity, component: Any) {
+        components[entity.id] = component as T
+        listeners.forEach { it.onComponentAdded(entity, component) }
+    }
+
+    /**
      * Creates a new component if the [entity] does not have it yet. Otherwise, updates the existing component.
      * Applies the [configuration] in both cases and returns the component.
      * Notifies any registered [ComponentListener] if a new component is created.

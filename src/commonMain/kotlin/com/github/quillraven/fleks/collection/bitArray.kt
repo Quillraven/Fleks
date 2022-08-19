@@ -183,4 +183,22 @@ class BitArray(
 
         return if (bits.size == otherBits.size) true else length() == other.length()
     }
+
+    override fun toString(): String {
+        return buildString {
+            for (bitsAtWord in bits) {
+                if (bitsAtWord != 0L) {
+                    for (bit in 0 until 64) {
+                        if ((bitsAtWord and (1L shl (bit % 64))) != 0L) {
+                            append("1")
+                        } else {
+                            append("0")
+                        }
+                    }
+                } else {
+                    repeat(64) { append("0") }
+                }
+            }
+        }.trimEnd('0').ifBlank { "0" }
+    }
 }

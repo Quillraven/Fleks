@@ -54,6 +54,11 @@ class Bag<T>(
         return false
     }
 
+    fun clear() {
+        values.fill(null)
+        size = 0
+    }
+
     operator fun contains(value: T): Boolean {
         for (i in 0 until size) {
             if (values[i] == value) {
