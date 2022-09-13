@@ -33,13 +33,17 @@ interface ComponentListener<T> {
  *
  * Refer to [ComponentService] for more details.
  */
-class ComponentMapper<T>(
+class ComponentMapper<T : Any>(
+    private val world: World,
     private val name: String,
     @PublishedApi
     internal var components: Bag<T>
 ) {
     @PublishedApi
-    internal val listeners = bag<ComponentListener<T>>(2)
+    internal var addHook: ((World, Entity, T) -> Unit)? = null
+
+    @PublishedApi
+    internal var removeHook: ((World, Entity, T) -> Unit)? = null
 
     // TODO to be removed
     var id = 0
@@ -61,16 +65,16 @@ class ComponentMapper<T>(
     @Suppress("UNCHECKED_CAST")
     internal fun addInternal(entity: Entity, component: Any) {
         components[entity.id] = component as T
-        listeners.forEach { it.onComponentAdded(entity, component) }
+        addHook?.invoke(world, entity, component)
     }
 
     fun add(entity: Entity, component: T) {
         components.getOrNull(entity.id)?.let { existingCmp ->
-            listeners.forEach { it.onComponentRemoved(entity, existingCmp) }
+            removeHook?.invoke(world, entity, existingCmp)
         }
 
         components[entity.id] = component
-        listeners.forEach { it.onComponentAdded(entity, component) }
+        addHook?.invoke(world, entity, component)
     }
 
     /**
@@ -95,7 +99,11 @@ class ComponentMapper<T>(
      */
     @PublishedApi
     internal fun removeInternal(entity: Entity) {
-        TODO("to be removed")
+        components.getOrNull(entity.id)?.let { existingComp ->
+            removeHook?.invoke(world, entity, existingComp)
+        }
+        components.clearIndex(entity.id)
+
     }
 
     /**
@@ -113,7 +121,7 @@ class ComponentMapper<T>(
     fun getOrNull(entity: Entity): T? {
         if (components.size > entity.id) {
             // entity potentially has this component. However, return value can still be null
-            return components[entity.id]
+            return components.getOrNull(entity.id)
         }
         // entity is not part of mapper
         return null
@@ -122,30 +130,8 @@ class ComponentMapper<T>(
     /**
      * Returns true if and only if the given [entity] has a component of the specific type.
      */
-    operator fun contains(entity: Entity): Boolean = components.size > entity.id && components[entity.id] != null
-
-    /**
-     * Adds the given [listener] to the list of [ComponentListener].
-     */
-    fun addComponentListener(listener: ComponentListener<T>) = listeners.add(listener)
-
-    /**
-     * Adds the given [listener] to the list of [ComponentListener]. This function is only used internally
-     * to add listeners through the [WorldConfiguration].
-     */
-    @Suppress("UNCHECKED_CAST")
-    internal fun addComponentListenerInternal(listener: ComponentListener<*>) =
-        addComponentListener(listener as ComponentListener<T>)
-
-    /**
-     * Removes the given [listener] from the list of [ComponentListener].
-     */
-    fun removeComponentListener(listener: ComponentListener<T>) = listeners.removeValue(listener)
-
-    /**
-     * Returns true if and only if the given [listener] is part of the list of [ComponentListener].
-     */
-    operator fun contains(listener: ComponentListener<T>) = listener in listeners
+    operator fun contains(entity: Entity): Boolean =
+        components.size > entity.id && components.getOrNull(entity.id) != null
 
     override fun toString(): String {
         return "ComponentMapper($name)"
@@ -156,7 +142,10 @@ class ComponentMapper<T>(
  * A service class that is responsible for managing [ComponentMapper] instances.
  * It creates a [ComponentMapper] for every unique component type and assigns a unique id for each mapper.
  */
-class ComponentService {
+class ComponentService(
+    @PublishedApi
+    internal val world: World,
+) {
     /**
      * Returns [Bag] of [ComponentMapper]. The id of the mapper is the index of the bag.
      * It is used by the [EntityService] to fasten up the cleanup process of delayed entity removals.
@@ -166,21 +155,19 @@ class ComponentService {
 
     fun wildcardMapper(compType: ComponentType<*>): ComponentMapper<*> {
         if (!mappersBag.hasValueAtIndex(compType.id)) {
-            // This function is called by wildcard component types (=ComponentType<*>).
-            // We cannot use the simpleName because it returns "Companion".
-            // And I don't like the qualifiedName.
-            // Therefore, we do some string manipulation to get the same result as the reified version.
-            // Received format is "package.ComponentName.Companion". We strip of package and Companion.
-            val name = compType::class.qualifiedName?.substringBeforeLast(".")?.substringAfterLast(".")
-            mappersBag[compType.id] = ComponentMapper(name ?: "anonymous", bag<Any>(64) as Bag<*>)
+            // We cannot use simpleName here because it returns "Companion".
+            // Therefore, we do some string manipulation to get the name of the component correctly.
+            // Format of toString() is package.Component$Companion
+            val name = compType::class.toString().substringAfterLast(".").substringBefore("$")
+            mappersBag[compType.id] = ComponentMapper(world, name, bag(64))
         }
         return mappersBag[compType.id]
     }
 
     @Suppress("UNCHECKED_CAST")
-    inline fun <reified T> mapper(compType: ComponentType<T>): ComponentMapper<T> {
+    inline fun <reified T : Any> mapper(compType: ComponentType<T>): ComponentMapper<T> {
         if (!mappersBag.hasValueAtIndex(compType.id)) {
-            mappersBag[compType.id] = ComponentMapper(T::class.simpleName ?: "anonymous", bag<T>(64))
+            mappersBag[compType.id] = ComponentMapper(world, T::class.simpleName ?: "anonymous", bag<T>(64))
         }
         return mappersBag[compType.id] as ComponentMapper<T>
     }

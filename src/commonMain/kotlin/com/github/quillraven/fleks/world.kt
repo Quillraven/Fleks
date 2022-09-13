@@ -19,33 +19,20 @@ annotation class ComponentCfgMarker
 @ComponentCfgMarker
 class ComponentConfiguration {
     @PublishedApi
-    internal val compListenerFactory = mutableMapOf<KClass<*>, () -> ComponentListener<*>>()
+    internal val addHooks = mutableMapOf<ComponentType<*>, (World, Entity, Any) -> Unit>()
 
     @PublishedApi
-    internal val componentFactory = mutableMapOf<KClass<*>, () -> Any>()
+    internal val removeHooks = mutableMapOf<ComponentType<*>, (World, Entity, Any) -> Unit>()
 
-    /**
-     * Adds the specified component and its [ComponentListener] to the [world][World]. If a component listener
-     * is not needed than it can be omitted.
-     *
-     * @param compFactory the constructor method for creating the component.
-     * @param listenerFactory the constructor method for creating the component listener.
-     * @throws [FleksComponentAlreadyAddedException] if the component was already added before.
-     */
-    inline fun <reified T : Any> add(
-        noinline compFactory: () -> T,
-        noinline listenerFactory: (() -> ComponentListener<T>)? = null
-    ) {
-        val compType = T::class
 
-        if (compType in componentFactory) {
-            throw FleksComponentAlreadyAddedException(compType)
-        }
-        componentFactory[compType] = compFactory
-        if (listenerFactory != null) {
-            // No need to check compType again in compListenerFactory - it is already guarded with check in componentFactory
-            compListenerFactory[compType] = listenerFactory
-        }
+    @Suppress("UNCHECKED_CAST")
+    inline fun <reified T> onAdd(componentType: ComponentType<T>, noinline action: (World, Entity, T) -> Unit) {
+        addHooks[componentType] = action as (World, Entity, Any) -> Unit
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    inline fun <reified T> onRemove(componentType: ComponentType<T>, noinline action: (World, Entity, T) -> Unit) {
+        removeHooks[componentType] = action as (World, Entity, Any) -> Unit
     }
 }
 
@@ -187,10 +174,10 @@ fun world(cfg: WorldConfiguration.() -> Unit): World {
     return World(
         worldCfg.entityCapacity,
         worldCfg.injectableCfg.injectables,
-        worldCfg.compCfg.componentFactory,
-        worldCfg.compCfg.compListenerFactory,
+        worldCfg.compCfg.addHooks,
+        worldCfg.compCfg.removeHooks,
         worldCfg.familyCfg.famListenerFactory,
-        worldCfg.systemCfg.systemFactory
+        worldCfg.systemCfg.systemFactory,
     )
 }
 
@@ -207,10 +194,10 @@ fun world(cfg: WorldConfiguration.() -> Unit): World {
 class World internal constructor(
     entityCapacity: Int,
     injectables: MutableMap<String, Injectable>,
-    componentFactory: MutableMap<KClass<*>, () -> Any>,
-    compListenerFactory: MutableMap<KClass<*>, () -> ComponentListener<*>>,
+    componentOnAddHooks: Map<ComponentType<*>, (World, Entity, Any) -> Unit>,
+    componentOnRemoveHooks: Map<ComponentType<*>, (World, Entity, Any) -> Unit>,
     famListenerFactory: MutableMap<KClass<out FamilyListener>, () -> FamilyListener>,
-    systemFactory: MutableMap<KClass<*>, () -> IntervalSystem>
+    systemFactory: MutableMap<KClass<*>, () -> IntervalSystem>,
 ) {
     /**
      * Returns the time that is passed to [update][World.update].
@@ -254,7 +241,7 @@ class World internal constructor(
         get() = systemService.systems
 
     init {
-        componentService = ComponentService()
+        componentService = ComponentService(this)
         entityService = EntityService(entityCapacity, componentService)
         // add the world as a used dependency in case any system or ComponentListener needs it
         injectables["World"] = Injectable(this, true)
@@ -269,15 +256,13 @@ class World internal constructor(
         // TODO
         // Inject.mapperObjects = componentService.mappers
 
-        // create and register ComponentListener
-        // it is important to do this BEFORE creating systems because if a system's init block
-        // is creating entities then ComponentListener already need to be registered to get notified
-        compListenerFactory.forEach {
-            val compType = it.key
-            val listener = it.value.invoke()
-            // TODO
-            //val mapper = componentService.mapper(compType)
-            //mapper.addComponentListenerInternal(listener)
+        componentOnAddHooks.forEach { (compType, hook) ->
+            val mapper = componentService.wildcardMapper(compType)
+            mapper.addHook = hook
+        }
+        componentOnRemoveHooks.forEach { (compType, hook) ->
+            val mapper = componentService.wildcardMapper(compType)
+            mapper.removeHook = hook
         }
 
         // create and register FamilyListener
@@ -320,7 +305,7 @@ class World internal constructor(
         return entityService.create(configuration)
     }
 
-    inline operator fun <reified T> get(entity: Entity, componentType: ComponentType<T>): T {
+    inline operator fun <reified T : Any> get(entity: Entity, componentType: ComponentType<T>): T {
         return componentService.mapper(componentType)[entity]
     }
 
@@ -329,6 +314,10 @@ class World internal constructor(
      */
     inline fun configureEntity(entity: Entity, configuration: EntityUpdateCfg.(Entity) -> Unit) {
         entityService.configureEntity(entity, configuration)
+    }
+
+    inline fun configure(entity: Entity, configuration: EntityUpdateCfg.(Entity) -> Unit) {
+        entityService.configure(entity, configuration)
     }
 
     /**
@@ -373,6 +362,10 @@ class World internal constructor(
      */
     inline fun <reified T : Any> mapper() {
         TODO("to be removed")
+    }
+
+    inline fun <reified T : Any> hasComponent(entity: Entity, type: ComponentType<T>): Boolean {
+        return entity in componentService.mapper(type)
     }
 
     fun familyOfDefinition(definition: FamilyDefinition): Family {

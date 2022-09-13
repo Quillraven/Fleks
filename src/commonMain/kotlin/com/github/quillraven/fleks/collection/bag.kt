@@ -60,6 +60,12 @@ class Bag<T>(
         return false
     }
 
+    fun clearIndex(index: Int) {
+        if (index < size) {
+            values[index] = null
+        }
+    }
+
     fun clear() {
         values.fill(null)
         size = 0

@@ -160,7 +160,7 @@ abstract class IteratingSystem(
 
     abstract fun familyDefinition(): FamilyDefinition
 
-    inline operator fun <reified T> Entity.get(type: ComponentType<T>): T {
+    inline operator fun <reified T : Any> Entity.get(type: ComponentType<T>): T {
         return compService.mapper(type)[this]
     }
 

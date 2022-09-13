@@ -77,7 +77,10 @@ class EntityCreateCfg(
  * existing entities is changed. This usually happens within [IteratingSystem] classes.
  */
 @EntityCfgMarker
-class EntityUpdateCfg {
+class EntityUpdateCfg(
+    @PublishedApi
+    internal val compService: ComponentService
+) {
     @PublishedApi
     internal lateinit var compMask: BitArray
 
@@ -112,6 +115,33 @@ class EntityUpdateCfg {
     inline fun <reified T : Any> ComponentMapper<T>.remove(entity: Entity) {
         compMask.clear(this.id)
         this.removeInternal(entity)
+    }
+
+    inline operator fun <reified T : Component<T>> Entity.plusAssign(component: T) {
+        val compType: ComponentType<T> = component.type()
+        compMask.set(compType.id)
+        val mapper: ComponentMapper<T> = compService.mapper(compType)
+        mapper.add(this, component)
+    }
+
+    inline operator fun Entity.minusAssign(componentType: ComponentType<*>) {
+        compMask.clear(componentType.id)
+        compService.wildcardMapper(componentType).removeInternal(this)
+    }
+
+    inline fun <reified T : Component<T>> Entity.addOrUpdate(
+        componentType: ComponentType<T>,
+        add: () -> T,
+        update: (T) -> Unit,
+    ) {
+        compMask.set(componentType.id)
+        val mapper: ComponentMapper<T> = compService.mapper(componentType)
+        val existingComp = mapper.getOrNull(this)
+        if (existingComp == null) {
+            mapper.add(this, add())
+        } else {
+            existingComp.also(update)
+        }
     }
 }
 
@@ -165,7 +195,7 @@ class EntityService(
     internal val createCfg = EntityCreateCfg(compService)
 
     @PublishedApi
-    internal val updateCfg = EntityUpdateCfg()
+    internal val updateCfg = EntityUpdateCfg(compService)
 
     @PublishedApi
     internal val listeners = bag<EntityListener>()
@@ -216,6 +246,15 @@ class EntityService(
      * Notifies any registered [EntityListener].
      */
     inline fun configureEntity(entity: Entity, configuration: EntityUpdateCfg.(Entity) -> Unit) {
+        val compMask = compMasks[entity.id]
+        updateCfg.run {
+            this.compMask = compMask
+            configuration(entity)
+        }
+        listeners.forEach { it.onEntityCfgChanged(entity, compMask) }
+    }
+
+    inline fun configure(entity: Entity, configuration: EntityUpdateCfg.(Entity) -> Unit) {
         val compMask = compMasks[entity.id]
         updateCfg.run {
             this.compMask = compMask
