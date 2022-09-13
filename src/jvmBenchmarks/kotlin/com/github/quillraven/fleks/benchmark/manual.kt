@@ -55,9 +55,8 @@ private fun compareArtemisFleksSimple() {
 
     // verify benchmark
     assert(fleksState.world.numEntities == NUM_ENTITIES)
-    val positions = fleksState.world.mapper<FleksPosition>()
     fleksState.world.forEach { entity ->
-        assert(positions[entity].x == WORLD_UPDATES.toFloat())
+        assert(fleksState.world[entity, FleksPosition].x == WORLD_UPDATES.toFloat())
     }
 
     repeat(3) {

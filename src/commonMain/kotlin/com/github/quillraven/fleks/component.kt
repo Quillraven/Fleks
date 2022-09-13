@@ -164,6 +164,10 @@ class ComponentService(
         return mappersBag[compType.id]
     }
 
+    fun mapperById(id: Int): ComponentMapper<*> {
+        return mappersBag[id]
+    }
+
     @Suppress("UNCHECKED_CAST")
     inline fun <reified T : Any> mapper(compType: ComponentType<T>): ComponentMapper<T> {
         if (!mappersBag.hasValueAtIndex(compType.id)) {

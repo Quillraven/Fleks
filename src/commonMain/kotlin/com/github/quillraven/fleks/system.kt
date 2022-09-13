@@ -171,6 +171,10 @@ abstract class IteratingSystem(
         entityService.configureEntity(entity, configuration)
     }
 
+    inline fun Entity.configure(configuration: EntityUpdateCfg.(Entity) -> Unit) {
+        entityService.configure(this, configuration)
+    }
+
     /**
      * Updates the [family] if needed and calls [onTickEntity] for each [entity][Entity] of the [family].
      * If [doSort] is true then [entities][Entity] are sorted using the [comparator] before calling [onTickEntity].

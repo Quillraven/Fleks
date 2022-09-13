@@ -311,8 +311,7 @@ class EntityService(
             val compMask = compMasks[entity.id]
             recycledEntities.add(entity)
             compMask.forEachSetBit { compId ->
-                TODO()
-                // compService.mapper(compId).removeInternal(entity)
+                compService.mapperById(compId).removeInternal(entity)
             }
             compMask.clearAll()
             listeners.forEach { it.onEntityRemoved(entity) }
