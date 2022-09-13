@@ -2,6 +2,7 @@ package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.Sprite.Companion.SpriteBackground
 import com.github.quillraven.fleks.Sprite.Companion.SpriteForeground
+import com.github.quillraven.fleks.World.Companion.inject
 import kotlin.test.*
 
 private data class Position(
@@ -45,10 +46,21 @@ private class PositionSystem : IteratingSystem() {
     }
 }
 
+private class SpriteSystem(
+    val cstrInjectable: String = inject()
+) : IteratingSystem() {
+    val propInjectable: String = world.inject("qualifiedString")
+
+    override fun familyDefinition() = familyDefinition {
+        anyOf(SpriteBackground, SpriteForeground)
+    }
+
+    override fun onTickEntity(entity: Entity) = Unit
+}
+
 // TODO
 // 1) FamilyListener
-// 2) injectables via "by inject" ? --> test via system (constructor and normal property)
-// 3) snapshot
+// 2) snapshot
 
 class Fleks2TDD {
     private val emptyWorld = world { }
@@ -61,7 +73,7 @@ class Fleks2TDD {
             it += expectedComp
         }
 
-        val actualComp: Position = emptyWorld[entity, Position]
+        val actualComp: Position = emptyWorld[Position][entity]
         assertEquals(expectedComp, actualComp)
     }
 
@@ -75,8 +87,8 @@ class Fleks2TDD {
             it += expectedComp2
         }
 
-        assertEquals(expectedComp1, emptyWorld[entity, SpriteBackground])
-        assertEquals(expectedComp2, emptyWorld[entity, SpriteForeground])
+        assertEquals(expectedComp1, emptyWorld[SpriteBackground][entity])
+        assertEquals(expectedComp2, emptyWorld[SpriteForeground][entity])
     }
 
     @Test
@@ -84,7 +96,7 @@ class Fleks2TDD {
         val entity = emptyWorld.entity()
 
         assertFailsWith<FleksNoSuchEntityComponentException> {
-            emptyWorld[entity, Position]
+            emptyWorld[Position][entity]
         }
     }
 
@@ -97,8 +109,8 @@ class Fleks2TDD {
             it += Sprite(true, "")
         }
 
-        assertFalse(emptyWorld.hasComponent(entity, Position))
-        assertTrue(emptyWorld.hasComponent(entity, SpriteBackground))
+        assertFalse(entity in emptyWorld[Position])
+        assertTrue(entity in emptyWorld[SpriteBackground])
     }
 
     @Test
@@ -123,15 +135,15 @@ class Fleks2TDD {
             )
         }
 
-        assertEquals(Position(2f, 2f), emptyWorld[posEntity, Position])
-        assertEquals(Position(1f, 1f), emptyWorld[emptyEntity, Position])
+        assertEquals(Position(2f, 2f), emptyWorld[Position][posEntity])
+        assertEquals(Position(1f, 1f), emptyWorld[Position][emptyEntity])
     }
 
     @Test
     fun updatePositionSystem() {
         val world = world {
             systems {
-                add(::PositionSystem)
+                add(PositionSystem())
             }
         }
         val entity = world.entity {
@@ -140,15 +152,14 @@ class Fleks2TDD {
 
         world.update(1f)
 
-        assertEquals(1f, world[entity, Position].x)
+        assertEquals(1f, world[Position][entity].x)
     }
-
-    private lateinit var testWorld: World
 
     @Test
     fun testComponentHooks() {
         val addComponent = Position(0f, 0f)
         val removeComponent = Position(0f, 0f)
+        lateinit var testWorld: World
         testWorld = world {
             components {
                 onAdd(Position) { world, entity, component ->
@@ -175,5 +186,26 @@ class Fleks2TDD {
 
         assertEquals(1f, addComponent.x)
         assertEquals(2f, removeComponent.x)
+    }
+
+    @Test
+    fun testSystemCreationWithInjectables() {
+        val expectedCstrStr = "42"
+        val expectedPropStr = "1337"
+        val world = world(64) {
+            injectables {
+                add(expectedCstrStr)
+                add("qualifiedString", expectedPropStr)
+            }
+
+            systems {
+                add(SpriteSystem())
+            }
+        }
+
+        val system = world.system<SpriteSystem>()
+
+        assertEquals(expectedCstrStr, system.cstrInjectable)
+        assertEquals(expectedPropStr, system.propInjectable)
     }
 }

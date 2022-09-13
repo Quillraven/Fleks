@@ -1,5 +1,6 @@
 package com.github.quillraven.fleks
 
+import com.github.quillraven.fleks.World.Companion.CURRENT_WORLD
 import com.github.quillraven.fleks.collection.BitArray
 import kotlin.native.concurrent.ThreadLocal
 import kotlin.reflect.KClass
@@ -17,22 +18,23 @@ annotation class ComponentCfgMarker
  * A DSL class to configure components and [ComponentListener] of a [WorldConfiguration].
  */
 @ComponentCfgMarker
-class ComponentConfiguration {
+class ComponentConfiguration(
     @PublishedApi
-    internal val addHooks = mutableMapOf<ComponentType<*>, (World, Entity, Any) -> Unit>()
-
-    @PublishedApi
-    internal val removeHooks = mutableMapOf<ComponentType<*>, (World, Entity, Any) -> Unit>()
-
-
-    @Suppress("UNCHECKED_CAST")
-    inline fun <reified T> onAdd(componentType: ComponentType<T>, noinline action: (World, Entity, T) -> Unit) {
-        addHooks[componentType] = action as (World, Entity, Any) -> Unit
+    internal val world: World
+) {
+    inline fun <reified T : Any> onAdd(
+        componentType: ComponentType<T>,
+        noinline action: (World, Entity, T) -> Unit
+    ) {
+        world[componentType].addHook = action
     }
 
     @Suppress("UNCHECKED_CAST")
-    inline fun <reified T> onRemove(componentType: ComponentType<T>, noinline action: (World, Entity, T) -> Unit) {
-        removeHooks[componentType] = action as (World, Entity, Any) -> Unit
+    inline fun <reified T : Any> onRemove(
+        componentType: ComponentType<T>,
+        noinline action: (World, Entity, T) -> Unit
+    ) {
+        world[componentType].removeHook = action
     }
 }
 
@@ -43,23 +45,12 @@ annotation class SystemCfgMarker
  * A DSL class to configure [IntervalSystem] of a [WorldConfiguration].
  */
 @SystemCfgMarker
-class SystemConfiguration {
-    @PublishedApi
-    internal val systemFactory = mutableMapOf<KClass<*>, () -> IntervalSystem>()
-
-    /**
-     * Adds the specified [IntervalSystem] to the [world][World].
-     * The order in which systems are added is the order in which they will be executed when calling [World.update].
-     *
-     * @param factory A function which creates an object of type [T].
-     * @throws [FleksSystemAlreadyAddedException] if the system was already added before.
-     */
-    inline fun <reified T : IntervalSystem> add(noinline factory: () -> T) {
-        val systemType = T::class
-        if (systemType in systemFactory) {
-            throw FleksSystemAlreadyAddedException(systemType)
+class SystemConfiguration(private val world: World) {
+    fun add(system: IntervalSystem) {
+        if (system in world.systems) {
+            throw FleksSystemAlreadyAddedException(system::class)
         }
-        systemFactory[systemType] = factory
+        world.systemService.systems += system
     }
 }
 
@@ -70,21 +61,18 @@ annotation class InjectableCfgMarker
  * A DSL class to configure [Injectable] of a [WorldConfiguration].
  */
 @InjectableCfgMarker
-class InjectableConfiguration {
-    @PublishedApi
-    internal val injectables = mutableMapOf<String, Injectable>()
-
+class InjectableConfiguration(private val world: World) {
     /**
      * Adds the specified [dependency] under the given [name] which can then be injected to any [IntervalSystem], [ComponentListener] or [FamilyListener].
      *
      * @throws [FleksInjectableAlreadyAddedException] if the dependency was already added before.
      */
     fun <T : Any> add(name: String, dependency: T) {
-        if (name in injectables) {
+        if (name in world.injectables) {
             throw FleksInjectableAlreadyAddedException(name)
         }
 
-        injectables[name] = Injectable(dependency)
+        world.injectables[name] = Injectable(dependency)
     }
 
     /**
@@ -138,7 +126,8 @@ annotation class WorldCfgMarker
  * added or removed from an [entity][Entity].
  */
 @WorldCfgMarker
-class WorldConfiguration {
+class WorldConfiguration(internal val world: World) {
+
     /**
      * Initial maximum entity capacity.
      * Will be used internally when a [world][World] is created to set the initial
@@ -146,11 +135,11 @@ class WorldConfiguration {
      */
     var entityCapacity = 512
 
-    internal val compCfg = ComponentConfiguration()
+    internal val compCfg = ComponentConfiguration(world)
 
-    internal val systemCfg = SystemConfiguration()
+    internal val systemCfg = SystemConfiguration(world)
 
-    internal val injectableCfg = InjectableConfiguration()
+    internal val injectableCfg = InjectableConfiguration(world)
 
     internal val familyCfg = FamilyConfiguration()
 
@@ -163,22 +152,16 @@ class WorldConfiguration {
     fun families(cfg: FamilyConfiguration.() -> Unit) = familyCfg.run(cfg)
 }
 
-/**
- * Creates a new [world][World] with the given [cfg][WorldConfiguration].
- *
- * @param cfg the [configuration][WorldConfiguration] of the world containing the initial maximum entity capacity,
- * the [systems][IntervalSystem], injectables, components, [ComponentListener] and [FamilyListener].
- */
-fun world(cfg: WorldConfiguration.() -> Unit): World {
-    val worldCfg = WorldConfiguration().apply(cfg)
-    return World(
-        worldCfg.entityCapacity,
-        worldCfg.injectableCfg.injectables,
-        worldCfg.compCfg.addHooks,
-        worldCfg.compCfg.removeHooks,
-        worldCfg.familyCfg.famListenerFactory,
-        worldCfg.systemCfg.systemFactory,
-    )
+fun world(entityCapacity: Int = 512, cfg: WorldConfiguration.() -> Unit): World {
+    CURRENT_WORLD = World(entityCapacity)
+    WorldConfiguration(CURRENT_WORLD).run(cfg)
+
+    // verify that there are no unused injectables
+    val unusedInjectables = CURRENT_WORLD.injectables.filterValues { !it.used }.map { it.value.injObj::class }
+    if (unusedInjectables.isNotEmpty()) {
+        throw FleksUnusedInjectablesException(unusedInjectables)
+    }
+    return CURRENT_WORLD
 }
 
 /**
@@ -193,12 +176,10 @@ fun world(cfg: WorldConfiguration.() -> Unit): World {
  */
 class World internal constructor(
     entityCapacity: Int,
-    injectables: MutableMap<String, Injectable>,
-    componentOnAddHooks: Map<ComponentType<*>, (World, Entity, Any) -> Unit>,
-    componentOnRemoveHooks: Map<ComponentType<*>, (World, Entity, Any) -> Unit>,
-    famListenerFactory: MutableMap<KClass<out FamilyListener>, () -> FamilyListener>,
-    systemFactory: MutableMap<KClass<*>, () -> IntervalSystem>,
 ) {
+    @PublishedApi
+    internal val injectables = mutableMapOf<String, Injectable>()
+
     /**
      * Returns the time that is passed to [update][World.update].
      * It represents the time in seconds between two frames.
@@ -207,13 +188,13 @@ class World internal constructor(
         private set
 
     @PublishedApi
-    internal val systemService: SystemService
+    internal val systemService = SystemService()
 
     @PublishedApi
-    internal val componentService: ComponentService
+    internal val componentService = ComponentService(this)
 
     @PublishedApi
-    internal val entityService: EntityService
+    internal val entityService = EntityService(entityCapacity, componentService)
 
     /**
      * List of all [families][Family] of the world that are created either via
@@ -237,37 +218,13 @@ class World internal constructor(
     /**
      * Returns the world's systems.
      */
-    val systems: Array<IntervalSystem>
+    val systems: List<IntervalSystem>
         get() = systemService.systems
 
     init {
-        componentService = ComponentService(this)
-        entityService = EntityService(entityCapacity, componentService)
-        // add the world as a used dependency in case any system or ComponentListener needs it
-        injectables["World"] = Injectable(this, true)
-
-        // set a Fleks internal global reference to the current world that
-        // gets created. This is used to correctly initialize the world
-        // reference of any created system and to correctly register
-        // any created FamilyListener below.
-        CURRENT_WORLD = this
-
-        Inject.injectObjects = injectables
-        // TODO
-        // Inject.mapperObjects = componentService.mappers
-
-        componentOnAddHooks.forEach { (compType, hook) ->
-            val mapper = componentService.wildcardMapper(compType)
-            mapper.addHook = hook
-        }
-        componentOnRemoveHooks.forEach { (compType, hook) ->
-            val mapper = componentService.wildcardMapper(compType)
-            mapper.removeHook = hook
-        }
-
         // create and register FamilyListener
         // like ComponentListener this must happen before systems are created
-        famListenerFactory.forEach {
+        /*famListenerFactory.forEach {
             val (listenerType, factory) = it
             try {
                 val listener = factory.invoke()
@@ -281,21 +238,13 @@ class World internal constructor(
                 }
                 throw e
             }
-        }
+        }*/
+    }
 
-        // create systems
-        systemService = SystemService(systemFactory)
-
-        // verify that there are no unused injectables
-        val unusedInjectables = injectables.filterValues { !it.used }.map { it.value.injObj::class }
-        if (unusedInjectables.isNotEmpty()) {
-            throw FleksUnusedInjectablesException(unusedInjectables)
-        }
-
-        // clear dependencies at the end because they are no longer necessary,
-        // and we don't want to keep a reference to them
-        Inject.injectObjects = EMPTY_INJECTIONS
-        Inject.mapperObjects = EMPTY_MAPPERS
+    inline fun <reified T> inject(name: String = T::class.simpleName ?: "anonymous"): T {
+        val injectable = injectables[name] ?: throw FleksNoSuchInjectable(name)
+        injectable.used = true
+        return injectable.injObj as T
     }
 
     /**
@@ -303,10 +252,6 @@ class World internal constructor(
      */
     inline fun entity(configuration: EntityCreateCfg.(Entity) -> Unit = {}): Entity {
         return entityService.create(configuration)
-    }
-
-    inline operator fun <reified T : Any> get(entity: Entity, componentType: ComponentType<T>): T {
-        return componentService.mapper(componentType)[entity]
     }
 
     /**
@@ -364,8 +309,8 @@ class World internal constructor(
         TODO("to be removed")
     }
 
-    inline fun <reified T : Any> hasComponent(entity: Entity, type: ComponentType<T>): Boolean {
-        return entity in componentService.mapper(type)
+    inline operator fun <reified T : Any> get(componentType: ComponentType<T>): ComponentMapper<T> {
+        return componentService.mapper(componentType)
     }
 
     fun familyOfDefinition(definition: FamilyDefinition): Family {
@@ -517,8 +462,11 @@ class World internal constructor(
 
     @ThreadLocal
     companion object {
-        private val EMPTY_INJECTIONS: Map<String, Injectable> = emptyMap()
-        private val EMPTY_MAPPERS: Map<KClass<*>, ComponentMapper<*>> = emptyMap()
+        @PublishedApi
         internal lateinit var CURRENT_WORLD: World
+
+        inline fun <reified T> inject(name: String = T::class.simpleName ?: "anonymous"): T {
+            return CURRENT_WORLD.inject(name)
+        }
     }
 }

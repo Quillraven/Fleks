@@ -58,3 +58,5 @@ class FleksFamilyException(
 )
 
 class FleksSnapshotException(reason: String) : FleksException("Cannot load snapshot: $reason!")
+
+class FleksNoSuchInjectable(name: String) : FleksException("There is no injectable with name $name registered!")

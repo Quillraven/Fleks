@@ -1,8 +1,6 @@
 package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.EntityComparator
-import kotlin.native.concurrent.ThreadLocal
-import kotlin.reflect.KClass
 
 /**
  * An interval for an [IntervalSystem]. There are two kind of intervals:
@@ -224,30 +222,9 @@ abstract class IteratingSystem(
  *
  * @param systemFactory the factory methods to create the [systems][IntervalSystem].
  */
-class SystemService(
-    systemFactory: MutableMap<KClass<*>, () -> IntervalSystem>,
-) {
+class SystemService {
     @PublishedApi
-    internal val systems: Array<IntervalSystem>
-
-    init {
-        // Create systems
-        val systemList = systemFactory.toList()
-        systems = Array(systemFactory.size) { sysIdx ->
-            val (sysType, factory) = systemList[sysIdx]
-            try {
-                factory.invoke()
-            } catch (e: Exception) {
-                if (e is FleksFamilyException) {
-                    throw FleksSystemCreationException(
-                        sysType,
-                        "IteratingSystem must define at least one of AllOf, NoneOf or AnyOf"
-                    )
-                }
-                throw e
-            }
-        }
-    }
+    internal val systems = mutableListOf<IntervalSystem>()
 
     /**
      * Returns the specified [system][IntervalSystem].
@@ -280,45 +257,5 @@ class SystemService(
      */
     fun dispose() {
         systems.forEach { it.onDispose() }
-    }
-}
-
-/**
- * An [injector][Inject] which is used to inject objects from outside the [IntervalSystem].
- *
- * @throws [FleksSystemDependencyInjectException] if the Injector does not contain an entry
- * for the given type in its internal map.
- * @throws [FleksSystemComponentInjectException] if the Injector does not contain a component mapper
- * for the given type in its internal map.
- * @throws [FleksInjectableTypeHasNoName] if the dependency type has no T::class.simpleName.
- */
-@ThreadLocal
-object Inject {
-    @PublishedApi
-    internal lateinit var injectObjects: Map<String, Injectable>
-
-    @PublishedApi
-    internal lateinit var mapperObjects: Map<KClass<*>, ComponentMapper<*>>
-
-    inline fun <reified T : Any> dependency(): T {
-        val injectType = T::class.simpleName ?: throw FleksInjectableTypeHasNoName(T::class)
-        return if (injectType in injectObjects) {
-            injectObjects[injectType]!!.used = true
-            injectObjects[injectType]!!.injObj as T
-        } else throw FleksSystemDependencyInjectException(injectType)
-    }
-
-    inline fun <reified T : Any> dependency(type: String): T {
-        return if (type in injectObjects) {
-            injectObjects[type]!!.used = true
-            injectObjects[type]!!.injObj as T
-        } else throw FleksSystemDependencyInjectException(type)
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    inline fun <reified T : Any> componentMapper(): ComponentMapper<T> {
-        val type = T::class
-        val mapper = mapperObjects[type] ?: FleksSystemComponentInjectException(type)
-        return mapper as ComponentMapper<T>
     }
 }
