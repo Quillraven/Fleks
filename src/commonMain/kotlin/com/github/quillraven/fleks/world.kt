@@ -1,6 +1,7 @@
 package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.World.Companion.CURRENT_WORLD
+import com.github.quillraven.fleks.collection.Bag
 import com.github.quillraven.fleks.collection.BitArray
 import kotlin.native.concurrent.ThreadLocal
 
@@ -48,7 +49,7 @@ class SystemConfiguration(private val world: World) {
         if (system in world.systems) {
             throw FleksSystemAlreadyAddedException(system::class)
         }
-        world.systemService.systems += system
+        world.systemService.systems.add(system)
     }
 }
 
@@ -123,14 +124,6 @@ annotation class WorldCfgMarker
  */
 @WorldCfgMarker
 class WorldConfiguration(internal val world: World) {
-
-    /**
-     * Initial maximum entity capacity.
-     * Will be used internally when a [world][World] is created to set the initial
-     * size of some collections and to avoid slow resizing calls.
-     */
-    var entityCapacity = 512
-
     internal val compCfg = ComponentConfiguration(world)
 
     internal val systemCfg = SystemConfiguration(world)
@@ -214,28 +207,8 @@ class World internal constructor(
     /**
      * Returns the world's systems.
      */
-    val systems: List<IntervalSystem>
+    val systems: Bag<IntervalSystem>
         get() = systemService.systems
-
-    init {
-        // create and register FamilyListener
-        // like ComponentListener this must happen before systems are created
-        /*famListenerFactory.forEach {
-            val (listenerType, factory) = it
-            try {
-                val listener = factory.invoke()
-                FamilyListener.CURRENT_FAMILY.addFamilyListener(listener)
-            } catch (e: Exception) {
-                if (e is FleksFamilyException) {
-                    throw FleksFamilyListenerCreationException(
-                        listenerType,
-                        "FamilyListener must define at least one of AllOf, NoneOf or AnyOf"
-                    )
-                }
-                throw e
-            }
-        }*/
-    }
 
     inline fun <reified T> inject(name: String = T::class.simpleName ?: "anonymous"): T {
         val injectable = injectables[name] ?: throw FleksNoSuchInjectable(name)

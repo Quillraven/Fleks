@@ -42,8 +42,7 @@ class ComponentMapper<T : Any>(
      */
     @Suppress("UNCHECKED_CAST")
     internal fun addInternal(entity: Entity, component: Any) {
-        components[entity.id] = component as T
-        addHook?.invoke(world, entity, component)
+        add(entity, component as T)
     }
 
     fun add(entity: Entity, component: T) {
@@ -118,7 +117,7 @@ class ComponentService(
     internal val mappersBag = bag<ComponentMapper<*>>()
 
     fun wildcardMapper(compType: ComponentType<*>): ComponentMapper<*> {
-        if (!mappersBag.hasValueAtIndex(compType.id)) {
+        if (mappersBag.hasNoValueAtIndex(compType.id)) {
             // We cannot use simpleName here because it returns "Companion".
             // Therefore, we do some string manipulation to get the name of the component correctly.
             // Format of toString() is package.Component$Companion
@@ -135,7 +134,7 @@ class ComponentService(
 
     @Suppress("UNCHECKED_CAST")
     inline fun <reified T : Any> mapper(compType: ComponentType<T>): ComponentMapper<T> {
-        if (!mappersBag.hasValueAtIndex(compType.id)) {
+        if (mappersBag.hasNoValueAtIndex(compType.id)) {
             mappersBag[compType.id] = ComponentMapper(world, T::class.simpleName ?: "anonymous", bag<T>(64))
         }
         return mappersBag[compType.id] as ComponentMapper<T>

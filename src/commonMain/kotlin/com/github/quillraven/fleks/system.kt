@@ -1,6 +1,7 @@
 package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.EntityComparator
+import com.github.quillraven.fleks.collection.bag
 
 /**
  * An interval for an [IntervalSystem]. There are two kind of intervals:
@@ -220,7 +221,7 @@ abstract class IteratingSystem(
  */
 class SystemService {
     @PublishedApi
-    internal val systems = mutableListOf<IntervalSystem>()
+    internal val systems = bag<IntervalSystem>()
 
     /**
      * Returns the specified [system][IntervalSystem].

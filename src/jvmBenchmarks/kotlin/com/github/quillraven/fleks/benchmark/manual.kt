@@ -6,6 +6,7 @@ fun main() {
     compareArtemisFleksAddRemove()
     compareArtemisFleksSimple()
     compareArtemisFleksComplex()
+//     profileComplex()
 }
 
 private fun compareArtemisFleksAddRemove() {
@@ -56,7 +57,7 @@ private fun compareArtemisFleksSimple() {
     // verify benchmark
     assert(fleksState.world.numEntities == NUM_ENTITIES)
     fleksState.world.forEach { entity ->
-        assert(fleksState.world[entity, FleksPosition].x == WORLD_UPDATES.toFloat())
+        assert(fleksState.world[FleksPosition][entity].x == WORLD_UPDATES.toFloat())
     }
 
     repeat(3) {
@@ -101,4 +102,10 @@ private fun compareArtemisFleksComplex() {
           Fleks:   max(${fleksTimes.maxOrNull()})    min(${fleksTimes.minOrNull()})  avg(${fleksTimes.average()})
       """.trimIndent()
     )
+}
+
+fun profileComplex() {
+    val fleksState = FleksStateComplex().apply { setup() }
+    val fleksBm = FleksBenchmark()
+    fleksBm.complex(fleksState)
 }

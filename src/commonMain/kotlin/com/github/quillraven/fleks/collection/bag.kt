@@ -45,8 +45,8 @@ class Bag<T>(
 
     fun getOrNull(index: Int): T? = if (index >= size) null else values[index]
 
-    fun hasValueAtIndex(index: Int): Boolean {
-        return index < size && values[index] != null
+    fun hasNoValueAtIndex(index: Int): Boolean {
+        return index >= size || values[index] == null
     }
 
     fun removeValue(value: T): Boolean {
