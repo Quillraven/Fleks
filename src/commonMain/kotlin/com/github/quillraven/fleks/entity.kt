@@ -50,19 +50,6 @@ class EntityCreateCfg(
     @PublishedApi
     internal lateinit var compMask: BitArray
 
-    /**
-     * Adds and returns a component of the given type to the [entity] and
-     * applies the [configuration] to the component.
-     * Notifies any registered [ComponentListener].
-     */
-    inline fun <reified T : Any> add(configuration: T.() -> Unit = {}): T {
-        TODO()
-
-        /*        val mapper = compService.mapper<T>()
-                compMask.set(mapper.id)
-                return mapper.addInternal(entity, configuration)*/
-    }
-
     inline operator fun <reified T : Component<T>> Entity.plusAssign(component: T) {
         val compType: ComponentType<T> = component.type()
         compMask.set(compType.id)
@@ -83,39 +70,6 @@ class EntityUpdateCfg(
 ) {
     @PublishedApi
     internal lateinit var compMask: BitArray
-
-    /**
-     * Adds and returns a component of the given type to the [entity] and applies the [configuration] to that component.
-     * If the [entity] already has a component of the given type then no new component is created and instead
-     * the existing one will be updated.
-     * Notifies any registered [ComponentListener].
-     */
-    inline fun <reified T : Any> ComponentMapper<T>.add(entity: Entity, configuration: T.() -> Unit = {}): T {
-        compMask.set(this.id)
-        return this.addInternal(entity, configuration)
-    }
-
-    /**
-     * Adds a new component of the given type to the [entity] if it does not have it yet.
-     * Otherwise, updates the already existing component.
-     * Applies the [configuration] in both cases and returns the component.
-     * Notifies any registered [ComponentListener] if a new component is created.
-     */
-    inline fun <reified T : Any> ComponentMapper<T>.addOrUpdate(entity: Entity, configuration: T.() -> Unit = {}): T {
-        compMask.set(this.id)
-        return this.addOrUpdateInternal(entity, configuration)
-    }
-
-    /**
-     * Removes a component of the given type from the [entity].
-     * Notifies any registered [ComponentListener].
-     *
-     * @throws [IndexOutOfBoundsException] if the id of the [entity] exceeds the mapper's capacity.
-     */
-    inline fun <reified T : Any> ComponentMapper<T>.remove(entity: Entity) {
-        compMask.clear(this.id)
-        this.removeInternal(entity)
-    }
 
     inline operator fun <reified T : Component<T>> Entity.plusAssign(component: T) {
         val compType: ComponentType<T> = component.type()
@@ -245,15 +199,6 @@ class EntityService(
      * Updates an [entity] with the given [configuration].
      * Notifies any registered [EntityListener].
      */
-    inline fun configureEntity(entity: Entity, configuration: EntityUpdateCfg.(Entity) -> Unit) {
-        val compMask = compMasks[entity.id]
-        updateCfg.run {
-            this.compMask = compMask
-            configuration(entity)
-        }
-        listeners.forEach { it.onEntityCfgChanged(entity, compMask) }
-    }
-
     inline fun configure(entity: Entity, configuration: EntityUpdateCfg.(Entity) -> Unit) {
         val compMask = compMasks[entity.id]
         updateCfg.run {
@@ -268,15 +213,14 @@ class EntityService(
      * Notifies any registered [EntityListener].
      * This function is only used by [World.loadSnapshot].
      */
-    internal fun configureEntity(entity: Entity, components: List<Any>) {
-        TODO()
-        /*val compMask = compMasks[entity.id]
+    internal fun configure(entity: Entity, components: List<Component<*>>) {
+        val compMask = compMasks[entity.id]
         components.forEach { cmp ->
-            val mapper = compService.mapper(cmp::class)
+            val mapper = compService.wildcardMapper(cmp.type())
             mapper.addInternal(entity, cmp)
-            compMask.set(mapper.id)
+            compMask.set(cmp.type().id)
         }
-        listeners.forEach { it.onEntityCfgChanged(entity, compMask) }*/
+        listeners.forEach { it.onEntityCfgChanged(entity, compMask) }
     }
 
     /**
@@ -311,7 +255,7 @@ class EntityService(
             val compMask = compMasks[entity.id]
             recycledEntities.add(entity)
             compMask.forEachSetBit { compId ->
-                compService.mapperById(compId).removeInternal(entity)
+                compService.mapperByIndex(compId).removeInternal(entity)
             }
             compMask.clearAll()
             listeners.forEach { it.onEntityRemoved(entity) }

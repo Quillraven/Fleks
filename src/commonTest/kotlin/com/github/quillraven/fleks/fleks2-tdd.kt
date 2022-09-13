@@ -58,9 +58,6 @@ private class SpriteSystem(
     override fun onTickEntity(entity: Entity) = Unit
 }
 
-// TODO
-// 2) snapshot
-
 class Fleks2TDD {
     private val emptyWorld = world { }
 

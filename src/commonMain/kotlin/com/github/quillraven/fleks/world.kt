@@ -253,10 +253,6 @@ class World internal constructor(
     /**
      * Updates an [entity] using the given [configuration] to add and remove components.
      */
-    inline fun configureEntity(entity: Entity, configuration: EntityUpdateCfg.(Entity) -> Unit) {
-        entityService.configureEntity(entity, configuration)
-    }
-
     inline fun configure(entity: Entity, configuration: EntityUpdateCfg.(Entity) -> Unit) {
         entityService.configure(entity, configuration)
     }
@@ -295,56 +291,18 @@ class World internal constructor(
         return systemService.system()
     }
 
-    /**
-     * Returns a [ComponentMapper] for the given type. If the mapper does not exist then it will be created.
-     *
-     * @throws [FleksNoSuchComponentException] if the component of the given type does not exist in the
-     * world configuration.
-     */
-    inline fun <reified T : Any> mapper() {
-        TODO("to be removed")
-    }
-
     inline operator fun <reified T : Any> get(componentType: ComponentType<T>): ComponentMapper<T> {
         return componentService.mapper(componentType)
     }
 
     fun familyOfDefinition(definition: FamilyDefinition): Family {
-        val allOfMappers = definition.allOfComponents?.map {
-            componentService.wildcardMapper(it)
-        }
-        val noneOfMappers = definition.noneOfComponents?.map {
-            componentService.wildcardMapper(it)
-        }
-        val anyOfMappers = definition.anyOfComponents?.map {
-            componentService.wildcardMapper(it)
-        }
+        val allOf = definition.allOfComponents
+        val noneOf = definition.noneOfComponents
+        val anyOf = definition.anyOfComponents
 
-        return familyOfMappers(allOfMappers, noneOfMappers, anyOfMappers)
-    }
-
-    /**
-     * Creates or returns an already created [family][Family] for the given
-     * [allOf], [noneOf] and [anyOf] component configuration.
-     *
-     * Also, adds a newly created [family][Family] as [EntityListener] and
-     * initializes it by notifying it with any already existing [entity][Entity]
-     * that matches its configuration.
-     *
-     * @throws [FleksFamilyException] if [allOf], [noneOf] and [anyOf] are null or empty.
-     */
-    private fun familyOfMappers(
-        allOf: List<ComponentMapper<*>>?,
-        noneOf: List<ComponentMapper<*>>?,
-        anyOf: List<ComponentMapper<*>>?,
-    ): Family {
-        if (allOf.isNullOrEmpty() && noneOf.isNullOrEmpty() && anyOf.isNullOrEmpty()) {
-            throw FleksFamilyException(allOf, noneOf, anyOf)
-        }
-
-        val allBs = if (allOf == null) null else BitArray().apply { allOf.forEach { this.set(it.id) } }
-        val noneBs = if (noneOf == null) null else BitArray().apply { noneOf.forEach { this.set(it.id) } }
-        val anyBs = if (anyOf == null) null else BitArray().apply { anyOf.forEach { this.set(it.id) } }
+        val allBs = if (allOf.isNullOrEmpty()) null else BitArray().apply { allOf.forEach { this.set(it.id) } }
+        val noneBs = if (noneOf.isNullOrEmpty()) null else BitArray().apply { noneOf.forEach { this.set(it.id) } }
+        val anyBs = if (anyOf.isNullOrEmpty()) null else BitArray().apply { anyOf.forEach { this.set(it.id) } }
 
         var family = allFamilies.find { it.allOf == allBs && it.noneOf == noneBs && it.anyOf == anyBs }
         if (family == null) {
@@ -364,15 +322,14 @@ class World internal constructor(
      * The values are a list of components that a specific entity has. If the entity
      * does not have any components then the value is an empty list.
      */
-    fun snapshot(): Map<Entity, List<Any>> {
-        val entityComps = mutableMapOf<Entity, List<Any>>()
+    fun snapshot(): Map<Entity, List<Component<*>>> {
+        val entityComps = mutableMapOf<Entity, List<Component<*>>>()
 
         entityService.forEach { entity ->
-            val components = mutableListOf<Any>()
+            val components = mutableListOf<Component<*>>()
             val compMask = entityService.compMasks[entity.id]
             compMask.forEachSetBit { cmpId ->
-                // TODO
-                // components += componentService.mapper(cmpId)[entity] as Any
+                components += componentService.mapperByIndex(cmpId)[entity] as Component<*>
             }
             entityComps[entity] = components
         }
@@ -384,13 +341,12 @@ class World internal constructor(
      * Returns a list that contains all components of the given [entity] of this world.
      * If the entity does not have any components then an empty list is returned.
      */
-    fun snapshotOf(entity: Entity): List<Any> {
-        val comps = mutableListOf<Any>()
+    fun snapshotOf(entity: Entity): List<Component<*>> {
+        val comps = mutableListOf<Component<*>>()
 
         if (entity in entityService) {
             entityService.compMasks[entity.id].forEachSetBit { cmpId ->
-                // TODO
-                // comps += componentService.mapper(cmpId)[entity] as Any
+                comps += componentService.mapperByIndex(cmpId)[entity] as Component<*>
             }
         }
 
@@ -407,7 +363,7 @@ class World internal constructor(
      * @throws [FleksNoSuchComponentException] if any of the components does not exist in the
      * world configuration.
      */
-    fun loadSnapshot(snapshot: Map<Entity, List<Any>>) {
+    fun loadSnapshot(snapshot: Map<Entity, List<Component<*>>>) {
         if (entityService.delayRemoval) {
             throw FleksSnapshotException("Snapshots cannot be loaded while a family iteration is in process")
         }
@@ -432,7 +388,7 @@ class World internal constructor(
                 if (components != null) {
                     // components for entity are provided -> create it
                     // note that the id for the entity will be the recycled id from above
-                    this.configureEntity(this.create { }, components)
+                    this.configure(this.create { }, components)
                 }
             }
         }

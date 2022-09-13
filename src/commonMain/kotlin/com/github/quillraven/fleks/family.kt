@@ -3,8 +3,6 @@ package com.github.quillraven.fleks
 import com.github.quillraven.fleks.collection.BitArray
 import com.github.quillraven.fleks.collection.EntityComparator
 import com.github.quillraven.fleks.collection.IntBag
-import kotlin.native.concurrent.ThreadLocal
-import kotlin.reflect.KClass
 
 @DslMarker
 annotation class FamilyDefinitionMarker
@@ -31,41 +29,6 @@ class FamilyDefinition {
 fun familyDefinition(cfg: FamilyDefinition.() -> Unit): FamilyDefinition {
     return FamilyDefinition().apply(cfg)
 }
-
-/**
- * Abstract class of a [family][Family] listener that gets notified when an
- * [entity][Entity] gets added to, or removed from a family.
- *
- * @param allOfComponents is specifying the family to which this system belongs.
- * @param noneOfComponents is specifying the family to which this system belongs.
- * @param anyOfComponents is specifying the family to which this system belongs.
- */
-abstract class FamilyListener(
-    allOfComponents: Array<KClass<*>>? = null,
-    noneOfComponents: Array<KClass<*>>? = null,
-    anyOfComponents: Array<KClass<*>>? = null,
-) {
-    init {
-        // TODO
-        //CURRENT_FAMILY = World.CURRENT_WORLD.family(allOfComponents, noneOfComponents, anyOfComponents)
-    }
-
-    /**
-     * Function that gets called when an [entity][Entity] gets added to a [family][Family].
-     */
-    open fun onEntityAdded(entity: Entity) = Unit
-
-    /**
-     * Function that gets called when an [entity][Entity] gets removed from a [family][Family].
-     */
-    open fun onEntityRemoved(entity: Entity) = Unit
-
-    @ThreadLocal
-    companion object {
-        internal lateinit var CURRENT_FAMILY: Family
-    }
-}
-
 
 /**
  * A family of [entities][Entity]. It stores [entities][Entity] that have a specific configuration of components.
@@ -212,9 +175,10 @@ data class Family(
     /**
      * Updates an [entity] using the given [configuration] to add and remove components.
      */
-    inline fun configureEntity(entity: Entity, configuration: EntityUpdateCfg.(Entity) -> Unit) {
-        entityService.configureEntity(entity, configuration)
+    inline fun Entity.configure(configuration: EntityUpdateCfg.(Entity) -> Unit) {
+        entityService.configure(this, configuration)
     }
+
 
     /**
      * Sorts the [entities][Entity] of this family by the given [comparator].

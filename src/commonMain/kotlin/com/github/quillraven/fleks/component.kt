@@ -18,15 +18,6 @@ interface Component<T> {
 }
 
 /**
- * Interface of a component listener that gets notified when a component of a specific type
- * gets added or removed from an [entity][Entity].
- */
-interface ComponentListener<T> {
-    fun onComponentAdded(entity: Entity, component: T)
-    fun onComponentRemoved(entity: Entity, component: T)
-}
-
-/**
  * A class that is responsible to store components of a specific type for all [entities][Entity] in a [world][World].
  * Each component is assigned a unique [id] for fast access and to avoid lookups via a class which is slow.
  * Hint: A component at index [id] in the [components] array belongs to [Entity] with the same [id].
@@ -45,19 +36,6 @@ class ComponentMapper<T : Any>(
     @PublishedApi
     internal var removeHook: ((World, Entity, T) -> Unit)? = null
 
-    // TODO to be removed
-    var id = 0
-
-    /**
-     * Creates and returns a new component of the specific type for the given [entity] and applies the [configuration].
-     * If the [entity] already has a component of that type then no new instance will be created.
-     * Notifies any registered [ComponentListener].
-     */
-    @PublishedApi
-    internal inline fun addInternal(entity: Entity, configuration: T.() -> Unit = {}): T {
-        TODO("to be removed")
-    }
-
     /**
      * Adds the [component] to the given [entity]. This function is only
      * used by [World.loadSnapshot].
@@ -75,20 +53,6 @@ class ComponentMapper<T : Any>(
 
         components[entity.id] = component
         addHook?.invoke(world, entity, component)
-    }
-
-    /**
-     * Creates a new component if the [entity] does not have it yet. Otherwise, updates the existing component.
-     * Applies the [configuration] in both cases and returns the component.
-     * Notifies any registered [ComponentListener] if a new component is created.
-     */
-    @PublishedApi
-    internal inline fun addOrUpdateInternal(entity: Entity, configuration: T.() -> Unit = {}): T {
-        return if (entity in this) {
-            this[entity].apply(configuration)
-        } else {
-            addInternal(entity, configuration)
-        }
     }
 
     /**
@@ -164,8 +128,9 @@ class ComponentService(
         return mappersBag[compType.id]
     }
 
-    fun mapperById(id: Int): ComponentMapper<*> {
-        return mappersBag[id]
+    // index = id of ComponentType
+    fun mapperByIndex(index: Int): ComponentMapper<*> {
+        return mappersBag[index]
     }
 
     @Suppress("UNCHECKED_CAST")

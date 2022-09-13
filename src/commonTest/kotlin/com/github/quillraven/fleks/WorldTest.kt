@@ -1,11 +1,19 @@
 package com.github.quillraven.fleks
 
-/*import com.github.quillraven.fleks.collection.compareEntity
+import com.github.quillraven.fleks.World.Companion.inject
 import kotlin.test.*
 
-private data class WorldTestComponent(var x: Float = 0f)
+private data class WorldTestComponent(var x: Float = 0f) : Component<WorldTestComponent> {
+    override fun type(): ComponentType<WorldTestComponent> = WorldTestComponent
 
-private class WorldTestComponent2
+    companion object : ComponentType<WorldTestComponent>()
+}
+
+private class WorldTestComponent2 : Component<WorldTestComponent2> {
+    override fun type(): ComponentType<WorldTestComponent2> = WorldTestComponent2
+
+    companion object : ComponentType<WorldTestComponent2>()
+}
 
 private class WorldTestIntervalSystem : IntervalSystem() {
     var numCalls = 0
@@ -20,14 +28,15 @@ private class WorldTestIntervalSystem : IntervalSystem() {
     }
 }
 
-private class WorldTestIteratingSystem : IteratingSystem(
-    allOfComponents = arrayOf(WorldTestComponent::class)
-) {
+private class WorldTestIteratingSystem : IteratingSystem() {
     var numCalls = 0
     var numCallsEntity = 0
 
-    val testInject: String = Inject.dependency()
-    val mapper: ComponentMapper<WorldTestComponent> = Inject.componentMapper()
+    val testInject: String = inject()
+
+    override fun familyDefinition() = familyDefinition {
+        allOf(WorldTestComponent)
+    }
 
     override fun onTick() {
         ++numCalls
@@ -39,41 +48,43 @@ private class WorldTestIteratingSystem : IteratingSystem(
     }
 }
 
-private class WorldTestInitSystem : IteratingSystem(
-    allOfComponents = arrayOf(WorldTestComponent::class)
-) {
+private class WorldTestInitSystem : IteratingSystem() {
     init {
-        world.entity { add<WorldTestComponent>() }
+        world.entity { it += WorldTestComponent() }
     }
+
+    override fun familyDefinition() = familyDefinition { allOf(WorldTestComponent) }
 
     override fun onTickEntity(entity: Entity) = Unit
 }
 
-private class WorldTestInitSystemExtraFamily : IteratingSystem(
-    allOfComponents = arrayOf(WorldTestComponent::class)
-) {
-    val extraFamily = world.family(
-        anyOf = arrayOf(WorldTestComponent2::class),
-        noneOf = arrayOf(WorldTestComponent::class)
+private class WorldTestInitSystemExtraFamily : IteratingSystem() {
+    val extraFamily = world.familyOfDefinition(
+        familyDefinition {
+            anyOf(WorldTestComponent2)
+            noneOf(WorldTestComponent)
+        }
     )
 
     init {
-        world.entity { add<WorldTestComponent2>() }
+        world.entity { it += WorldTestComponent2() }
     }
+
+    override fun familyDefinition() = familyDefinition { allOf(WorldTestComponent) }
 
     override fun onTickEntity(entity: Entity) = Unit
 }
 
 private class WorldTestNamedDependencySystem : IntervalSystem() {
-    val injName: String = Inject.dependency("name")
-    val level: String = Inject.dependency("level")
+    val injName: String = inject("name")
+    val level: String = world.inject("level")
 
     val name: String = injName
 
     override fun onTick() = Unit
 }
 
-private class WorldTestComponentListener : ComponentListener<WorldTestComponent> {
+/*private class WorldTestComponentListener : ComponentListener<WorldTestComponent> {
     val world: World = Inject.dependency()
     var numAdd = 0
     var numRemove = 0
@@ -102,10 +113,10 @@ private class WorldTestFamilyListener : FamilyListener(
     }
 }
 
-private class WorldTestFamilyListenerMissingCfg : FamilyListener()
+private class WorldTestFamilyListenerMissingCfg : FamilyListener()*/
 
 internal class WorldTest {
-    @Test
+    /*@Test
     fun createEmptyWorldFor32Entities() {
         val w = world { entityCapacity = 32 }
 
@@ -673,24 +684,19 @@ internal class WorldTest {
         w.remove(e)
         family.updateActiveEntities()
         assertFalse(e.id in family.entitiesBag)
-    }
+    }*/
 
     @Test
     fun testSnapshot() {
-        val w = world {
-            components {
-                add(::WorldTestComponent)
-                add(::WorldTestComponent2)
-            }
-        }
-        lateinit var comp1: Any
-        val e1 = w.entity { comp1 = add<WorldTestComponent>() }
+        val w = world { }
+        val comp1 = WorldTestComponent()
+        val e1 = w.entity { it += comp1 }
         val e2 = w.entity { }
-        lateinit var comp31: Any
-        lateinit var comp32: Any
+        val comp31 = WorldTestComponent()
+        val comp32 = WorldTestComponent2()
         val e3 = w.entity {
-            comp31 = add<WorldTestComponent>()
-            comp32 = add<WorldTestComponent2>()
+            it += comp31
+            it += comp32
         }
         val expected = mapOf(
             e1 to listOf(comp1),
@@ -711,13 +717,9 @@ internal class WorldTest {
 
     @Test
     fun testSnapshotOf() {
-        val w = world {
-            components {
-                add(::WorldTestComponent)
-            }
-        }
-        lateinit var comp1: WorldTestComponent
-        val e1 = w.entity { comp1 = add() }
+        val w = world { }
+        val comp1 = WorldTestComponent()
+        val e1 = w.entity { it += comp1 }
         val e2 = w.entity { }
         val expected1 = listOf<Any>(comp1)
         val expected2 = emptyList<Any>()
@@ -740,13 +742,9 @@ internal class WorldTest {
 
     @Test
     fun testLoadSnapshotWhileFamilyIterationInProcess() {
-        val w = world {
-            components {
-                add(::WorldTestComponent)
-            }
-        }
-        val f = w.family(allOf = arrayOf(WorldTestComponent::class))
-        w.entity { add<WorldTestComponent>() }
+        val w = world { }
+        val f = w.familyOfDefinition(familyDefinition { allOf(WorldTestComponent) })
+        w.entity { it += WorldTestComponent() }
 
         f.forEach {
             assertFailsWith<FleksSnapshotException> { w.loadSnapshot(emptyMap()) }
@@ -755,11 +753,7 @@ internal class WorldTest {
 
     @Test
     fun testLoadSnapshotWithOneEntity() {
-        val w = world {
-            components {
-                add(::WorldTestComponent)
-            }
-        }
+        val w = world { }
         val entity = Entity(0)
         val comps = listOf(WorldTestComponent())
         val snapshot = mapOf(entity to comps)
@@ -773,21 +767,22 @@ internal class WorldTest {
 
     @Test
     fun testLoadSnapshotWithThreeEntities() {
+        var numAddCalls = 0
+        var numRemoveCalls = 0
         val w = world {
             injectables {
                 add("42")
             }
 
             components {
-                add(::WorldTestComponent, ::WorldTestComponentListener)
-                add(::WorldTestComponent2)
+                onAdd(WorldTestComponent) { _, _, _ -> ++numAddCalls }
+                onRemove(WorldTestComponent) { _, _, _ -> ++numRemoveCalls }
             }
 
             systems {
-                add(::WorldTestIteratingSystem)
+                add(WorldTestIteratingSystem())
             }
         }
-        val compListener = w.componentService.mapper<WorldTestComponent>().listeners[0] as WorldTestComponentListener
         val snapshot = mapOf(
             Entity(3) to listOf(WorldTestComponent(), WorldTestComponent2()),
             Entity(5) to listOf(WorldTestComponent()),
@@ -811,8 +806,8 @@ internal class WorldTest {
         // 2 out of 3 loaded entities should be part of the IteratingSystem family
         assertEquals(2, w.system<WorldTestIteratingSystem>().numCallsEntity)
         // 2 out of 3 loaded entities should notify the WorldTestComponentListener
-        assertEquals(2, compListener.numAdd)
-        assertEquals(0, compListener.numRemove)
+        assertEquals(2, numAddCalls)
+        assertEquals(0, numRemoveCalls)
         assertEquals(3, actual.size)
     }
 
@@ -820,7 +815,7 @@ internal class WorldTest {
     fun testCreateEntityAfterSnapshotLoaded() {
         val w = world { }
         val snapshot = mapOf(
-            Entity(1) to listOf<Any>()
+            Entity(1) to listOf<Component<*>>()
         )
 
         w.loadSnapshot(snapshot)
@@ -831,4 +826,3 @@ internal class WorldTest {
         assertEquals(Entity(2), w.entity())
     }
 }
-*/
