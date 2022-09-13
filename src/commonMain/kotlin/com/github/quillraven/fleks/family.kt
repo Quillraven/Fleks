@@ -3,7 +3,6 @@ package com.github.quillraven.fleks
 import com.github.quillraven.fleks.collection.BitArray
 import com.github.quillraven.fleks.collection.EntityComparator
 import com.github.quillraven.fleks.collection.IntBag
-import com.github.quillraven.fleks.collection.bag
 import kotlin.native.concurrent.ThreadLocal
 import kotlin.reflect.KClass
 
@@ -88,8 +87,16 @@ data class Family(
     internal val noneOf: BitArray? = null,
     internal val anyOf: BitArray? = null,
     @PublishedApi
-    internal val entityService: EntityService,
+    internal val world: World,
+    @PublishedApi
+    internal val entityService: EntityService = world.entityService,
 ) : EntityListener {
+    @PublishedApi
+    internal var addHook: ((World, Entity) -> Unit)? = null
+
+    @PublishedApi
+    internal var removeHook: ((World, Entity) -> Unit)? = null
+
     /**
      * Return the [entities] in form of an [IntBag] for better iteration performance.
      */
@@ -130,9 +137,6 @@ data class Family(
     @PublishedApi
     internal var isDirty = false
         private set
-
-    @PublishedApi
-    internal val listeners = bag<FamilyListener>()
 
     /**
      * Returns true if the specified [compMask] matches the family's component configuration.
@@ -232,12 +236,12 @@ data class Family(
             // new entity gets added
             isDirty = true
             entities.set(entity.id)
-            listeners.forEach { it.onEntityAdded(entity) }
+            addHook?.invoke(world, entity)
         } else if (!entityInFamily && entities[entity.id]) {
             // existing entity gets removed
             isDirty = true
             entities.clear(entity.id)
-            listeners.forEach { it.onEntityRemoved(entity) }
+            removeHook?.invoke(world, entity)
         }
     }
 
@@ -250,22 +254,7 @@ data class Family(
             // existing entity gets removed
             isDirty = true
             entities.clear(entity.id)
-            listeners.forEach { it.onEntityRemoved(entity) }
+            removeHook?.invoke(world, entity)
         }
     }
-
-    /**
-     * Adds the given [listener] to the list of [FamilyListener].
-     */
-    fun addFamilyListener(listener: FamilyListener) = listeners.add(listener)
-
-    /**
-     * Removes the given [listener] from the list of [FamilyListener].
-     */
-    fun removeFamilyListener(listener: FamilyListener) = listeners.removeValue(listener)
-
-    /**
-     * Returns true if and only if the given [listener] is part of the list of [FamilyListener].
-     */
-    operator fun contains(listener: FamilyListener) = listener in listeners
 }

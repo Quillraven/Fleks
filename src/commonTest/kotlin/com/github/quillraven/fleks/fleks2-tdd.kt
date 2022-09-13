@@ -59,7 +59,6 @@ private class SpriteSystem(
 }
 
 // TODO
-// 1) FamilyListener
 // 2) snapshot
 
 class Fleks2TDD {
@@ -186,6 +185,40 @@ class Fleks2TDD {
 
         assertEquals(1f, addComponent.x)
         assertEquals(2f, removeComponent.x)
+    }
+
+    @Test
+    fun testFamilyHooks() {
+        val testFamilyDef = familyDefinition { allOf(Position) }
+        var numAddCalls = 0
+        var numRemoveCalls = 0
+        lateinit var testWorld: World
+        testWorld = world {
+            families {
+                onAdd(testFamilyDef) { world, entity ->
+                    ++numAddCalls
+                    assertEquals(testWorld, world)
+                    assertTrue { entity.id in 0..1 }
+                }
+
+                onRemove(testFamilyDef) { world, entity ->
+                    ++numRemoveCalls
+                    assertEquals(testWorld, world)
+                    assertEquals(Entity(1), entity)
+                }
+            }
+        }
+
+        // entity that triggers onAdd hook
+        testWorld.entity { it += Position(0f, 0f) }
+        // entity that triggers onRemove hook
+        val removeEntity = testWorld.entity { it += Position(0f, 0f) }
+        testWorld.configure(removeEntity) { it -= Position }
+        // trigger family update to call the hooks
+        testWorld.familyOfDefinition(testFamilyDef).updateActiveEntities()
+
+        assertEquals(2, numAddCalls)
+        assertEquals(1, numRemoveCalls)
     }
 
     @Test

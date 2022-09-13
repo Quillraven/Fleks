@@ -3,7 +3,6 @@ package com.github.quillraven.fleks
 import com.github.quillraven.fleks.World.Companion.CURRENT_WORLD
 import com.github.quillraven.fleks.collection.BitArray
 import kotlin.native.concurrent.ThreadLocal
-import kotlin.reflect.KClass
 
 /**
  * Wrapper class for injectables of the [WorldConfiguration].
@@ -29,7 +28,6 @@ class ComponentConfiguration(
         world[componentType].addHook = action
     }
 
-    @Suppress("UNCHECKED_CAST")
     inline fun <reified T : Any> onRemove(
         componentType: ComponentType<T>,
         noinline action: (World, Entity, T) -> Unit
@@ -95,24 +93,22 @@ annotation class FamilyCfgMarker
  * A DSL class to configure [FamilyListener] of a [WorldConfiguration].
  */
 @FamilyCfgMarker
-class FamilyConfiguration {
+class FamilyConfiguration(
     @PublishedApi
-    internal val famListenerFactory = mutableMapOf<KClass<out FamilyListener>, () -> FamilyListener>()
-
-    /**
-     * Adds the specified [FamilyListener] to the [world][World].
-     *
-     * @param listenerFactory the constructor method for creating the FamilyListener.
-     * @throws [FleksFamilyListenerAlreadyAddedException] if the listener was already added before.
-     */
-    inline fun <reified T : FamilyListener> add(
-        noinline listenerFactory: (() -> T)
+    internal val world: World
+) {
+    inline fun onAdd(
+        familyDefinition: FamilyDefinition,
+        noinline action: (World, Entity) -> Unit
     ) {
-        val listenerType = T::class
-        if (listenerType in famListenerFactory) {
-            throw FleksFamilyListenerAlreadyAddedException(listenerType)
-        }
-        famListenerFactory[listenerType] = listenerFactory
+        world.familyOfDefinition(familyDefinition).addHook = action
+    }
+
+    inline fun onRemove(
+        familyDefinition: FamilyDefinition,
+        noinline action: (World, Entity) -> Unit
+    ) {
+        world.familyOfDefinition(familyDefinition).removeHook = action
     }
 }
 
@@ -141,7 +137,7 @@ class WorldConfiguration(internal val world: World) {
 
     internal val injectableCfg = InjectableConfiguration(world)
 
-    internal val familyCfg = FamilyConfiguration()
+    internal val familyCfg = FamilyConfiguration(world)
 
     fun components(cfg: ComponentConfiguration.() -> Unit) = compCfg.run(cfg)
 
@@ -352,7 +348,7 @@ class World internal constructor(
 
         var family = allFamilies.find { it.allOf == allBs && it.noneOf == noneBs && it.anyOf == anyBs }
         if (family == null) {
-            family = Family(allBs, noneBs, anyBs, entityService).apply {
+            family = Family(allBs, noneBs, anyBs, this).apply {
                 entityService.addEntityListener(this)
                 allFamilies.add(this)
                 // initialize a newly created family by notifying it for any already existing entity
