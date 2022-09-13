@@ -69,7 +69,7 @@ data class Family(
     /**
      * Returns the [entities][Entity] that belong to this family.
      */
-    private val entities = BitArray(1)
+    private val entities = BitArray(world.capacity)
 
     /**
      * Returns the number of [entities][Entity] that belong to this family.

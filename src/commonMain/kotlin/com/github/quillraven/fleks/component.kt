@@ -2,6 +2,7 @@ package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.Bag
 import com.github.quillraven.fleks.collection.bag
+import kotlin.math.max
 import kotlin.native.concurrent.ThreadLocal
 
 abstract class ComponentType<T> {
@@ -28,7 +29,7 @@ class ComponentMapper<T : Any>(
     private val world: World,
     private val name: String,
     @PublishedApi
-    internal var components: Bag<T>
+    internal var components: Array<T?>
 ) {
     @PublishedApi
     internal var addHook: ((World, Entity, T) -> Unit)? = null
@@ -46,7 +47,11 @@ class ComponentMapper<T : Any>(
     }
 
     fun add(entity: Entity, component: T) {
-        components.getOrNull(entity.id)?.let { existingCmp ->
+        if (entity.id >= components.size) {
+            components = components.copyOf(max(components.size * 2, entity.id + 1))
+        }
+
+        components[entity.id]?.let { existingCmp ->
             removeHook?.invoke(world, entity, existingCmp)
         }
 
@@ -62,11 +67,10 @@ class ComponentMapper<T : Any>(
      */
     @PublishedApi
     internal fun removeInternal(entity: Entity) {
-        components.getOrNull(entity.id)?.let { existingComp ->
+        components[entity.id]?.let { existingComp ->
             removeHook?.invoke(world, entity, existingComp)
         }
-        components.clearIndex(entity.id)
-
+        components[entity.id] = null
     }
 
     /**
@@ -75,7 +79,7 @@ class ComponentMapper<T : Any>(
      * @throws [FleksNoSuchEntityComponentException] if the [entity] does not have such a component.
      */
     operator fun get(entity: Entity): T {
-        return components.getOrNull(entity.id) ?: throw FleksNoSuchEntityComponentException(entity, name)
+        return components[entity.id] ?: throw FleksNoSuchEntityComponentException(entity, name)
     }
 
     /**
@@ -84,7 +88,7 @@ class ComponentMapper<T : Any>(
     fun getOrNull(entity: Entity): T? {
         if (components.size > entity.id) {
             // entity potentially has this component. However, return value can still be null
-            return components.getOrNull(entity.id)
+            return components[entity.id]
         }
         // entity is not part of mapper
         return null
@@ -94,7 +98,7 @@ class ComponentMapper<T : Any>(
      * Returns true if and only if the given [entity] has a component of the specific type.
      */
     operator fun contains(entity: Entity): Boolean =
-        components.size > entity.id && components.getOrNull(entity.id) != null
+        components.size > entity.id && components[entity.id] != null
 
     override fun toString(): String {
         return "ComponentMapper($name)"
@@ -122,7 +126,7 @@ class ComponentService(
             // Therefore, we do some string manipulation to get the name of the component correctly.
             // Format of toString() is package.Component$Companion
             val name = compType::class.toString().substringAfterLast(".").substringBefore("$")
-            mappersBag[compType.id] = ComponentMapper(world, name, bag(64))
+            mappersBag[compType.id] = ComponentMapper(world, name, Array<Any?>(64) { null })
         }
         return mappersBag[compType.id]
     }
@@ -135,7 +139,8 @@ class ComponentService(
     @Suppress("UNCHECKED_CAST")
     inline fun <reified T : Any> mapper(compType: ComponentType<T>): ComponentMapper<T> {
         if (mappersBag.hasNoValueAtIndex(compType.id)) {
-            mappersBag[compType.id] = ComponentMapper(world, T::class.simpleName ?: "anonymous", bag<T>(64))
+            val name = T::class.simpleName ?: "anonymous"
+            mappersBag[compType.id] = ComponentMapper(world, name, Array<T?>(64) { null })
         }
         return mappersBag[compType.id] as ComponentMapper<T>
     }
