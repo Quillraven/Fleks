@@ -2,8 +2,20 @@ package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.Bag
 import com.github.quillraven.fleks.collection.bag
-import kotlin.math.max
-import kotlin.reflect.KClass
+import kotlin.native.concurrent.ThreadLocal
+
+abstract class ComponentType<T> {
+    val id: Int = nextId++
+
+    @ThreadLocal
+    companion object {
+        private var nextId = 0
+    }
+}
+
+interface Component<T> {
+    fun type(): ComponentType<T>
+}
 
 /**
  * Interface of a component listener that gets notified when a component of a specific type
@@ -22,16 +34,15 @@ interface ComponentListener<T> {
  * Refer to [ComponentService] for more details.
  */
 class ComponentMapper<T>(
+    private val name: String,
     @PublishedApi
-    internal val id: Int = 0,
-    @PublishedApi
-    @Suppress("UNCHECKED_CAST")
-    internal var components: Array<T?> = Array<Any?>(64) { null } as Array<T?>,
-    @PublishedApi
-    internal val factory: () -> T
+    internal var components: Bag<T>
 ) {
     @PublishedApi
     internal val listeners = bag<ComponentListener<T>>(2)
+
+    // TODO to be removed
+    var id = 0
 
     /**
      * Creates and returns a new component of the specific type for the given [entity] and applies the [configuration].
@@ -40,25 +51,7 @@ class ComponentMapper<T>(
      */
     @PublishedApi
     internal inline fun addInternal(entity: Entity, configuration: T.() -> Unit = {}): T {
-        if (entity.id >= components.size) {
-            components = components.copyOf(max(components.size * 2, entity.id + 1))
-        }
-        val comp = components[entity.id]
-        return if (comp == null) {
-            val newComp = factory.invoke().apply(configuration)
-            components[entity.id] = newComp
-            listeners.forEach { it.onComponentAdded(entity, newComp) }
-            newComp
-        } else {
-            // component already added -> reuse it and do not create a new instance.
-            // Call onComponentRemoved first in case users do something special in onComponentAdded.
-            // Otherwise, onComponentAdded will be executed twice on a single component without executing onComponentRemoved
-            // which is not correct.
-            listeners.forEach { it.onComponentRemoved(entity, comp) }
-            val existingComp = comp.apply(configuration)
-            listeners.forEach { it.onComponentAdded(entity, existingComp) }
-            existingComp
-        }
+        TODO("to be removed")
     }
 
     /**
@@ -68,6 +61,15 @@ class ComponentMapper<T>(
     @Suppress("UNCHECKED_CAST")
     internal fun addInternal(entity: Entity, component: Any) {
         components[entity.id] = component as T
+        listeners.forEach { it.onComponentAdded(entity, component) }
+    }
+
+    fun add(entity: Entity, component: T) {
+        components.getOrNull(entity.id)?.let { existingCmp ->
+            listeners.forEach { it.onComponentRemoved(entity, existingCmp) }
+        }
+
+        components[entity.id] = component
         listeners.forEach { it.onComponentAdded(entity, component) }
     }
 
@@ -93,10 +95,7 @@ class ComponentMapper<T>(
      */
     @PublishedApi
     internal fun removeInternal(entity: Entity) {
-        components[entity.id]?.let { comp ->
-            listeners.forEach { it.onComponentRemoved(entity, comp) }
-        }
-        components[entity.id] = null
+        TODO("to be removed")
     }
 
     /**
@@ -105,7 +104,7 @@ class ComponentMapper<T>(
      * @throws [FleksNoSuchEntityComponentException] if the [entity] does not have such a component.
      */
     operator fun get(entity: Entity): T {
-        return components[entity.id] ?: throw FleksNoSuchEntityComponentException(entity, factory.toString())
+        return components.getOrNull(entity.id) ?: throw FleksNoSuchEntityComponentException(entity, name)
     }
 
     /**
@@ -149,7 +148,7 @@ class ComponentMapper<T>(
     operator fun contains(listener: ComponentListener<T>) = listener in listeners
 
     override fun toString(): String {
-        return "ComponentMapper(id=$id, component=${factory})"
+        return "ComponentMapper($name)"
     }
 }
 
@@ -157,55 +156,32 @@ class ComponentMapper<T>(
  * A service class that is responsible for managing [ComponentMapper] instances.
  * It creates a [ComponentMapper] for every unique component type and assigns a unique id for each mapper.
  */
-class ComponentService(
-    componentFactory: Map<KClass<*>, () -> Any>
-) {
-    /**
-     * Returns map of [ComponentMapper] that stores mappers by its component type.
-     * It is used by the [SystemService] during system creation and by the [EntityService] for entity creation.
-     */
-    @PublishedApi
-    internal val mappers = HashMap<KClass<*>, ComponentMapper<*>>()
-
+class ComponentService {
     /**
      * Returns [Bag] of [ComponentMapper]. The id of the mapper is the index of the bag.
      * It is used by the [EntityService] to fasten up the cleanup process of delayed entity removals.
      */
-    private val mappersBag = bag<ComponentMapper<*>>()
+    @PublishedApi
+    internal val mappersBag = bag<ComponentMapper<*>>()
 
-    init {
-        // Create component mappers with help of constructor functions from component factory
-        componentFactory.forEach { (type, factory) ->
-            val compMapper = ComponentMapper(id = mappersBag.size, factory = factory)
-            mappersBag.add(compMapper)
-            mappers[type] = compMapper
+    fun wildcardMapper(compType: ComponentType<*>): ComponentMapper<*> {
+        if (!mappersBag.hasValueAtIndex(compType.id)) {
+            // This function is called by wildcard component types (=ComponentType<*>).
+            // We cannot use the simpleName because it returns "Companion".
+            // And I don't like the qualifiedName.
+            // Therefore, we do some string manipulation to get the same result as the reified version.
+            // Received format is "package.ComponentName.Companion". We strip of package and Companion.
+            val name = compType::class.qualifiedName?.substringBeforeLast(".")?.substringAfterLast(".")
+            mappersBag[compType.id] = ComponentMapper(name ?: "anonymous", bag<Any>(64) as Bag<*>)
         }
+        return mappersBag[compType.id]
     }
 
-    /**
-     * Returns a [ComponentMapper] for the given [type].
-     *
-     * @throws [FleksNoSuchComponentException] if the component of the given [type] does not exist in the
-     * world configuration.
-     */
     @Suppress("UNCHECKED_CAST")
-    fun <T : Any> mapper(type: KClass<T>): ComponentMapper<T> {
-        return mappers[type] as ComponentMapper<T>
+    inline fun <reified T> mapper(compType: ComponentType<T>): ComponentMapper<T> {
+        if (!mappersBag.hasValueAtIndex(compType.id)) {
+            mappersBag[compType.id] = ComponentMapper(T::class.simpleName ?: "anonymous", bag<T>(64))
+        }
+        return mappersBag[compType.id] as ComponentMapper<T>
     }
-
-    /**
-     * Returns a [ComponentMapper] for the specific type.
-     *
-     * @throws [FleksNoSuchComponentException] if the component of the given type does not exist in the
-     * world configuration.
-     */
-    @Suppress("UNCHECKED_CAST")
-    inline fun <reified T : Any> mapper(): ComponentMapper<T> {
-        return mappers[T::class] as ComponentMapper<T>
-    }
-
-    /**
-     * Returns an already existing [ComponentMapper] for the given [compId].
-     */
-    fun mapper(compId: Int) = mappersBag[compId]
 }

@@ -1,6 +1,6 @@
 package com.github.quillraven.fleks
 
-import com.github.quillraven.fleks.collection.BitArray
+/*import com.github.quillraven.fleks.collection.BitArray
 import kotlin.reflect.KClass
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -288,4 +288,4 @@ internal class EntityTest {
         assertFalse(e2 in service)
         assertFalse(e3 in service)
     }
-}
+}*/

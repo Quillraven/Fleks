@@ -7,6 +7,32 @@ import com.github.quillraven.fleks.collection.bag
 import kotlin.native.concurrent.ThreadLocal
 import kotlin.reflect.KClass
 
+@DslMarker
+annotation class FamilyDefinitionMarker
+
+@FamilyDefinitionMarker
+class FamilyDefinition {
+    var allOfComponents: Set<ComponentType<*>>? = null
+    var noneOfComponents: Set<ComponentType<*>>? = null
+    var anyOfComponents: Set<ComponentType<*>>? = null
+
+    fun allOf(vararg types: ComponentType<*>) {
+        allOfComponents = types.toSet()
+    }
+
+    fun noneOf(vararg types: ComponentType<*>) {
+        noneOfComponents = types.toSet()
+    }
+
+    fun anyOf(vararg types: ComponentType<*>) {
+        anyOfComponents = types.toSet()
+    }
+}
+
+fun familyDefinition(cfg: FamilyDefinition.() -> Unit): FamilyDefinition {
+    return FamilyDefinition().apply(cfg)
+}
+
 /**
  * Abstract class of a [family][Family] listener that gets notified when an
  * [entity][Entity] gets added to, or removed from a family.
@@ -21,7 +47,8 @@ abstract class FamilyListener(
     anyOfComponents: Array<KClass<*>>? = null,
 ) {
     init {
-        CURRENT_FAMILY = World.CURRENT_WORLD.family(allOfComponents, noneOfComponents, anyOfComponents)
+        // TODO
+        //CURRENT_FAMILY = World.CURRENT_WORLD.family(allOfComponents, noneOfComponents, anyOfComponents)
     }
 
     /**

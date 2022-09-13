@@ -254,7 +254,7 @@ class World internal constructor(
         get() = systemService.systems
 
     init {
-        componentService = ComponentService(componentFactory)
+        componentService = ComponentService()
         entityService = EntityService(entityCapacity, componentService)
         // add the world as a used dependency in case any system or ComponentListener needs it
         injectables["World"] = Injectable(this, true)
@@ -266,7 +266,8 @@ class World internal constructor(
         CURRENT_WORLD = this
 
         Inject.injectObjects = injectables
-        Inject.mapperObjects = componentService.mappers
+        // TODO
+        // Inject.mapperObjects = componentService.mappers
 
         // create and register ComponentListener
         // it is important to do this BEFORE creating systems because if a system's init block
@@ -274,8 +275,9 @@ class World internal constructor(
         compListenerFactory.forEach {
             val compType = it.key
             val listener = it.value.invoke()
-            val mapper = componentService.mapper(compType)
-            mapper.addComponentListenerInternal(listener)
+            // TODO
+            //val mapper = componentService.mapper(compType)
+            //mapper.addComponentListenerInternal(listener)
         }
 
         // create and register FamilyListener
@@ -316,6 +318,10 @@ class World internal constructor(
      */
     inline fun entity(configuration: EntityCreateCfg.(Entity) -> Unit = {}): Entity {
         return entityService.create(configuration)
+    }
+
+    inline operator fun <reified T> get(entity: Entity, componentType: ComponentType<T>): T {
+        return componentService.mapper(componentType)[entity]
     }
 
     /**
@@ -365,45 +371,22 @@ class World internal constructor(
      * @throws [FleksNoSuchComponentException] if the component of the given type does not exist in the
      * world configuration.
      */
-    inline fun <reified T : Any> mapper() = componentService.mapper<T>()
+    inline fun <reified T : Any> mapper() {
+        TODO("to be removed")
+    }
 
-    /**
-     * Creates a new [Family] for the given [allOf], [noneOf] and [anyOf] component configuration.
-     *
-     * This function internally either creates or reuses an already existing [family][Family].
-     * In case a new [family][Family] gets created it will be initialized with any already existing [entity][Entity]
-     * that matches its configuration.
-     * Therefore, this might have a performance impact on the first call if there are a lot of entities in the world.
-     *
-     * As a best practice families should be created as early as possible, ideally during world creation.
-     * Also, store the result of this function instead of calling this function multiple times with the same arguments.
-     *
-     * @throws [FleksFamilyException] if [allOf], [noneOf] and [anyOf] are null or empty.
-     */
-    fun family(
-        allOf: Array<KClass<*>>? = null,
-        noneOf: Array<KClass<*>>? = null,
-        anyOf: Array<KClass<*>>? = null,
-    ): Family {
-        val allOfCmps = if (!allOf.isNullOrEmpty()) {
-            allOf.map { componentService.mapper(it) }
-        } else {
-            null
+    fun familyOfDefinition(definition: FamilyDefinition): Family {
+        val allOfMappers = definition.allOfComponents?.map {
+            componentService.wildcardMapper(it)
+        }
+        val noneOfMappers = definition.noneOfComponents?.map {
+            componentService.wildcardMapper(it)
+        }
+        val anyOfMappers = definition.anyOfComponents?.map {
+            componentService.wildcardMapper(it)
         }
 
-        val noneOfCmps = if (!noneOf.isNullOrEmpty()) {
-            noneOf.map { componentService.mapper(it) }
-        } else {
-            null
-        }
-
-        val anyOfCmps = if (!anyOf.isNullOrEmpty()) {
-            anyOf.map { componentService.mapper(it) }
-        } else {
-            null
-        }
-
-        return familyOfMappers(allOfCmps, noneOfCmps, anyOfCmps)
+        return familyOfMappers(allOfMappers, noneOfMappers, anyOfMappers)
     }
 
     /**
@@ -454,7 +437,8 @@ class World internal constructor(
             val components = mutableListOf<Any>()
             val compMask = entityService.compMasks[entity.id]
             compMask.forEachSetBit { cmpId ->
-                components += componentService.mapper(cmpId)[entity] as Any
+                // TODO
+                // components += componentService.mapper(cmpId)[entity] as Any
             }
             entityComps[entity] = components
         }
@@ -471,7 +455,8 @@ class World internal constructor(
 
         if (entity in entityService) {
             entityService.compMasks[entity.id].forEachSetBit { cmpId ->
-                comps += componentService.mapper(cmpId)[entity] as Any
+                // TODO
+                // comps += componentService.mapper(cmpId)[entity] as Any
             }
         }
 

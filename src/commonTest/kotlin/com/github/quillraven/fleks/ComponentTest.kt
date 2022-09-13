@@ -1,6 +1,6 @@
 package com.github.quillraven.fleks
 
-import kotlin.reflect.KClass
+/*import kotlin.reflect.KClass
 import kotlin.test.*
 
 internal class ComponentTest {
@@ -269,3 +269,4 @@ internal class ComponentTest {
         assertEquals(2, actualCmp.x)
     }
 }
+*/

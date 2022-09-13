@@ -1,6 +1,6 @@
 package com.github.quillraven.fleks
 
-import com.github.quillraven.fleks.collection.BitArray
+/*import com.github.quillraven.fleks.collection.BitArray
 import com.github.quillraven.fleks.collection.compareEntity
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -248,3 +248,4 @@ internal class FamilyTest {
         assertFalse { listener in family }
     }
 }
+*/

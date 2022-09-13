@@ -1,6 +1,6 @@
 package com.github.quillraven.fleks
 
-import kotlin.reflect.KClass
+/*import kotlin.reflect.KClass
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 
@@ -32,3 +32,4 @@ internal class ComponentTestJvm {
         assertFailsWith<IndexOutOfBoundsException> { mapper.removeInternal(entity) }
     }
 }
+*/

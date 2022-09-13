@@ -1,6 +1,6 @@
 package com.github.quillraven.fleks
 
-import com.github.quillraven.fleks.collection.compareEntity
+/*import com.github.quillraven.fleks.collection.compareEntity
 import kotlin.test.*
 
 private data class WorldTestComponent(var x: Float = 0f)
@@ -831,3 +831,4 @@ internal class WorldTest {
         assertEquals(Entity(2), w.entity())
     }
 }
+*/

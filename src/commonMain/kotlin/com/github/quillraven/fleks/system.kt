@@ -130,9 +130,6 @@ object Manual : SortingType
  * @param enabled defines if the system gets updated when the [world][World] gets updated. Default is true.
  */
 abstract class IteratingSystem(
-    allOfComponents: Array<KClass<*>>? = null,
-    noneOfComponents: Array<KClass<*>>? = null,
-    anyOfComponents: Array<KClass<*>>? = null,
     private val comparator: EntityComparator = EMPTY_COMPARATOR,
     private val sortingType: SortingType = Automatic,
     interval: Interval = EachFrame,
@@ -141,13 +138,16 @@ abstract class IteratingSystem(
     /**
      * Returns the [family][Family] of this system.
      */
-    val family: Family = world.family(allOfComponents, noneOfComponents, anyOfComponents)
+    val family: Family = world.familyOfDefinition(this.familyDefinition())
 
     /**
      * Returns the [entityService][EntityService] of this system.
      */
     @PublishedApi
     internal val entityService: EntityService = world.entityService
+
+    @PublishedApi
+    internal val compService: ComponentService = world.componentService
 
     /**
      * Flag that defines if sorting of [entities][Entity] will be performed the next time [onTick] is called.
@@ -157,6 +157,12 @@ abstract class IteratingSystem(
      * Otherwise, it must be set programmatically to perform sorting. The flag gets cleared after sorting.
      */
     var doSort = sortingType == Automatic && comparator != EMPTY_COMPARATOR
+
+    abstract fun familyDefinition(): FamilyDefinition
+
+    inline operator fun <reified T> Entity.get(type: ComponentType<T>): T {
+        return compService.mapper(type)[this]
+    }
 
     /**
      * Updates an [entity] using the given [configuration] to add and remove components.

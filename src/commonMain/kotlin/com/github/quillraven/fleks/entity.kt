@@ -56,9 +56,18 @@ class EntityCreateCfg(
      * Notifies any registered [ComponentListener].
      */
     inline fun <reified T : Any> add(configuration: T.() -> Unit = {}): T {
-        val mapper = compService.mapper<T>()
-        compMask.set(mapper.id)
-        return mapper.addInternal(entity, configuration)
+        TODO()
+
+        /*        val mapper = compService.mapper<T>()
+                compMask.set(mapper.id)
+                return mapper.addInternal(entity, configuration)*/
+    }
+
+    inline operator fun <reified T : Component<T>> Entity.plusAssign(component: T) {
+        val compType: ComponentType<T> = component.type()
+        compMask.set(compType.id)
+        val mapper: ComponentMapper<T> = compService.mapper(compType)
+        mapper.add(this, component)
     }
 }
 
@@ -221,13 +230,14 @@ class EntityService(
      * This function is only used by [World.loadSnapshot].
      */
     internal fun configureEntity(entity: Entity, components: List<Any>) {
-        val compMask = compMasks[entity.id]
+        TODO()
+        /*val compMask = compMasks[entity.id]
         components.forEach { cmp ->
             val mapper = compService.mapper(cmp::class)
             mapper.addInternal(entity, cmp)
             compMask.set(mapper.id)
         }
-        listeners.forEach { it.onEntityCfgChanged(entity, compMask) }
+        listeners.forEach { it.onEntityCfgChanged(entity, compMask) }*/
     }
 
     /**
@@ -262,7 +272,8 @@ class EntityService(
             val compMask = compMasks[entity.id]
             recycledEntities.add(entity)
             compMask.forEachSetBit { compId ->
-                compService.mapper(compId).removeInternal(entity)
+                TODO()
+                // compService.mapper(compId).removeInternal(entity)
             }
             compMask.clearAll()
             listeners.forEach { it.onEntityRemoved(entity) }
