@@ -9,30 +9,6 @@ import com.github.quillraven.fleks.collection.bag
  */
 data class Entity(val id: Int)
 
-/**
- * Interface of an [entity][Entity] listener that gets notified when the component configuration changes.
- * The [onEntityCfgChanged] function gets also called when an [entity][Entity] gets created and removed.
- */
-interface EntityListener {
-    /**
-     * Function that gets called when an [entity's][Entity] component configuration changes.
-     * This happens when a component gets added or removed or the [entity] gets added or removed from the [world][World].
-     *
-     * @param entity the [entity][Entity] with the updated component configuration.
-     *
-     * @param compMask the [BitArray] representing what type of components the entity has. Each component type has a
-     * unique id. Refer to [ComponentMapper] for more details.
-     */
-    fun onEntityCfgChanged(entity: Entity, compMask: BitArray) = Unit
-
-    /**
-     * Function that gets called when an [entity][Entity] gets removed.
-     *
-     * @param entity the [entity][Entity] that gets removed.
-     */
-    fun onEntityRemoved(entity: Entity) = Unit
-}
-
 @DslMarker
 annotation class EntityCfgMarker
 
@@ -105,8 +81,10 @@ class EntityUpdateCfg(
  * what kind of components an entity has or doesn't have.
  */
 class EntityService(
+    @PublishedApi
+    internal val world: World,
     initialEntityCapacity: Int,
-    private val compService: ComponentService
+    private val compService: ComponentService = world.componentService,
 ) {
     /**
      * The id that will be given to a newly created [entity][Entity] if there are no [recycledEntities].
@@ -151,9 +129,6 @@ class EntityService(
     @PublishedApi
     internal val updateCfg = EntityUpdateCfg(compService)
 
-    @PublishedApi
-    internal val listeners = bag<EntityListener>()
-
     /**
      * Flag that indicates if an iteration of an [IteratingSystem] is currently in progress.
      * In such cases entities will not be removed immediately.
@@ -190,7 +165,7 @@ class EntityService(
             this.compMask = compMask
             configuration(this.entity)
         }
-        listeners.forEach { it.onEntityCfgChanged(newEntity, compMask) }
+        world.allFamilies.forEach { it.onEntityAdded(newEntity, compMask) }
 
         return newEntity
     }
@@ -205,7 +180,7 @@ class EntityService(
             this.compMask = compMask
             configuration(entity)
         }
-        listeners.forEach { it.onEntityCfgChanged(entity, compMask) }
+        world.allFamilies.forEach { it.onEntityCfgChanged(entity, compMask) }
     }
 
     /**
@@ -220,7 +195,7 @@ class EntityService(
             mapper.addInternalWildcard(entity, cmp)
             compMask.set(cmp.type().id)
         }
-        listeners.forEach { it.onEntityCfgChanged(entity, compMask) }
+        world.allFamilies.forEach { it.onEntityCfgChanged(entity, compMask) }
     }
 
     /**
@@ -258,7 +233,7 @@ class EntityService(
                 compService.mapperByIndex(compId).removeInternal(entity)
             }
             compMask.clearAll()
-            listeners.forEach { it.onEntityRemoved(entity) }
+            world.allFamilies.forEach { it.onEntityRemoved(entity) }
         }
     }
 
@@ -316,19 +291,4 @@ class EntityService(
             delayedEntities.clear()
         }
     }
-
-    /**
-     * Adds the given [listener] to the list of [EntityListener].
-     */
-    fun addEntityListener(listener: EntityListener) = listeners.add(listener)
-
-    /**
-     * Removes the given [listener] from the list of [EntityListener].
-     */
-    fun removeEntityListener(listener: EntityListener) = listeners.removeValue(listener)
-
-    /**
-     * Returns true if and only if the given [listener] is part of the list of [EntityListener].
-     */
-    operator fun contains(listener: EntityListener) = listener in listeners
 }

@@ -81,7 +81,7 @@ data class Family(
     internal val world: World,
     @PublishedApi
     internal val entityService: EntityService = world.entityService,
-) : EntityListener {
+) {
     @PublishedApi
     internal var addHook: ((World, Entity) -> Unit)? = null
 
@@ -216,13 +216,21 @@ data class Family(
         entitiesBag.sort(comparator)
     }
 
+    fun onEntityAdded(entity: Entity, compMask: BitArray) {
+        if (compMask in this) {
+            isDirty = true
+            entities.set(entity.id)
+            addHook?.invoke(world, entity)
+        }
+    }
+
     /**
      * Checks if the [entity] is part of the family by analyzing the entity's components.
      * The [compMask] is a [BitArray] that indicates which components the [entity] currently has.
      *
      * The [entity] gets either added to the [entities] or removed and [isDirty] is set when needed.
      */
-    override fun onEntityCfgChanged(entity: Entity, compMask: BitArray) {
+    fun onEntityCfgChanged(entity: Entity, compMask: BitArray) {
         val entityInFamily = compMask in this
         if (entityInFamily && !entities[entity.id]) {
             // new entity gets added
@@ -241,7 +249,7 @@ data class Family(
      * Removes the [entity] of the family and sets the [isDirty] flag if and only
      * if the [entity] is already in the family.
      */
-    override fun onEntityRemoved(entity: Entity) {
+    fun onEntityRemoved(entity: Entity) {
         if (entities[entity.id]) {
             // existing entity gets removed
             isDirty = true

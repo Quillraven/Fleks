@@ -212,14 +212,15 @@ class World internal constructor(
     internal val componentService = ComponentService(this)
 
     @PublishedApi
-    internal val entityService = EntityService(entityCapacity, componentService)
+    internal val entityService = EntityService(this, entityCapacity)
 
     /**
      * List of all [families][Family] of the world that are created either via
      * an [IteratingSystem] or via the world's [family] function to
      * avoid creating duplicates.
      */
-    internal val allFamilies = mutableListOf<Family>()
+    @PublishedApi
+    internal var allFamilies = emptyArray<Family>()
 
     /**
      * Returns the amount of active entities.
@@ -313,8 +314,7 @@ class World internal constructor(
         var family = allFamilies.find { it.allOf == allBs && it.noneOf == noneBs && it.anyOf == anyBs }
         if (family == null) {
             family = Family(allBs, noneBs, anyBs, this).apply {
-                entityService.addEntityListener(this)
-                allFamilies.add(this)
+                allFamilies += this
                 // initialize a newly created family by notifying it for any already existing entity
                 entityService.forEach { this.onEntityCfgChanged(it, entityService.compMasks[it.id]) }
             }
