@@ -116,6 +116,7 @@ open class ArtemisBenchmark {
         repeat(NUM_ENTITIES) {
             state.world.createEntity().edit().create(ArtemisPosition::class.java)
         }
+        state.world.process()
         repeat(NUM_ENTITIES) {
             state.world.delete(it)
         }
