@@ -42,11 +42,12 @@ class ComponentMapper<T : Any>(
      * used by [World.loadSnapshot].
      */
     @Suppress("UNCHECKED_CAST")
-    internal fun addInternal(entity: Entity, component: Any) {
-        add(entity, component as T)
+    internal fun addInternalWildcard(entity: Entity, component: Any) {
+        addInternal(entity, component as T)
     }
 
-    fun add(entity: Entity, component: T) {
+    @PublishedApi
+    internal fun addInternal(entity: Entity, component: T) {
         if (entity.id >= components.size) {
             components = components.copyOf(max(components.size * 2, entity.id + 1))
         }

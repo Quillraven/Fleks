@@ -28,17 +28,16 @@ class FleksNoSuchEntityComponentException(entity: Entity, component: String) :
 class FleksUnusedInjectablesException(unused: List<KClass<*>>) :
     FleksException("There are unused injectables of following types: ${unused.map { it.simpleName }}")
 
-class FleksFamilyException(
-    allOf: List<ComponentMapper<*>>?,
-    noneOf: List<ComponentMapper<*>>?,
-    anyOf: List<ComponentMapper<*>>?,
-) : FleksException(
-    """Family must have at least one of allOf, noneOf or anyOf.
-        |allOf: $allOf
-        |noneOf: $noneOf
-        |anyOf: $anyOf""".trimMargin()
-)
+class FleksFamilyException(familyDefinition: FamilyDefinition) :
+    FleksException("Family must have at least one of allOf, noneOf or anyOf. Definition: $familyDefinition}")
 
 class FleksSnapshotException(reason: String) : FleksException("Cannot load snapshot: $reason!")
 
-class FleksNoSuchInjectable(name: String) : FleksException("There is no injectable with name $name registered!")
+class FleksNoSuchInjectable(name: String) :
+    FleksException("There is no injectable with name $name registered! Make sure to define 'injectables' before your 'systems' in the WorldConfiguration.")
+
+class FleksHookAlreadyAddedException(hookType: String, objType: String) :
+    FleksException("$hookType for $objType already available!")
+
+class FleksWrongConfigurationOrder :
+    FleksException("Component hooks and family hooks must be defined BEFORE any system. The 'systems' block must come last in a WorldConfiguration.")

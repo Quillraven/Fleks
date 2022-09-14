@@ -1,7 +1,6 @@
 package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.World.Companion.CURRENT_WORLD
-import com.github.quillraven.fleks.collection.Bag
 import com.github.quillraven.fleks.collection.BitArray
 import kotlin.native.concurrent.ThreadLocal
 
@@ -26,14 +25,30 @@ class ComponentConfiguration(
         componentType: ComponentType<T>,
         noinline action: (World, Entity, T) -> Unit
     ) {
-        world[componentType].addHook = action
+        if (world.systems.isNotEmpty()) {
+            throw FleksWrongConfigurationOrder()
+        }
+
+        val mapper = world[componentType]
+        if (mapper.addHook != null) {
+            throw FleksHookAlreadyAddedException("addHook", "Component ${componentType::class.simpleName}")
+        }
+        mapper.addHook = action
     }
 
     inline fun <reified T : Any> onRemove(
         componentType: ComponentType<T>,
         noinline action: (World, Entity, T) -> Unit
     ) {
-        world[componentType].removeHook = action
+        if (world.systems.isNotEmpty()) {
+            throw FleksWrongConfigurationOrder()
+        }
+
+        val mapper = world[componentType]
+        if (mapper.removeHook != null) {
+            throw FleksHookAlreadyAddedException("removeHook", "Component ${componentType::class.simpleName}")
+        }
+        mapper.removeHook = action
     }
 }
 
@@ -46,10 +61,10 @@ annotation class SystemCfgMarker
 @SystemCfgMarker
 class SystemConfiguration(private val world: World) {
     fun add(system: IntervalSystem) {
-        if (system in world.systems) {
+        if (world.systems.any { it::class == system::class }) {
             throw FleksSystemAlreadyAddedException(system::class)
         }
-        world.systemService.systems.add(system)
+        world.systemService.systems += system
     }
 }
 
@@ -102,14 +117,30 @@ class FamilyConfiguration(
         familyDefinition: FamilyDefinition,
         noinline action: (World, Entity) -> Unit
     ) {
-        world.familyOfDefinition(familyDefinition).addHook = action
+        if (world.systems.isNotEmpty()) {
+            throw FleksWrongConfigurationOrder()
+        }
+
+        val family = world.family(familyDefinition)
+        if (family.addHook != null) {
+            throw FleksHookAlreadyAddedException("addHook", "Family $familyDefinition")
+        }
+        family.addHook = action
     }
 
     inline fun onRemove(
         familyDefinition: FamilyDefinition,
         noinline action: (World, Entity) -> Unit
     ) {
-        world.familyOfDefinition(familyDefinition).removeHook = action
+        if (world.systems.isNotEmpty()) {
+            throw FleksWrongConfigurationOrder()
+        }
+
+        val family = world.family(familyDefinition)
+        if (family.removeHook != null) {
+            throw FleksHookAlreadyAddedException("removeHook", "Family $familyDefinition")
+        }
+        family.removeHook = action
     }
 }
 
@@ -124,21 +155,19 @@ annotation class WorldCfgMarker
  */
 @WorldCfgMarker
 class WorldConfiguration(internal val world: World) {
-    internal val compCfg = ComponentConfiguration(world)
 
-    internal val systemCfg = SystemConfiguration(world)
-
-    internal val injectableCfg = InjectableConfiguration(world)
-
-    internal val familyCfg = FamilyConfiguration(world)
-
-    fun components(cfg: ComponentConfiguration.() -> Unit) = compCfg.run(cfg)
-
-    fun systems(cfg: SystemConfiguration.() -> Unit) = systemCfg.run(cfg)
+    private val compCfg = ComponentConfiguration(world)
+    private val systemCfg = SystemConfiguration(world)
+    private val injectableCfg = InjectableConfiguration(world)
+    private val familyCfg = FamilyConfiguration(world)
 
     fun injectables(cfg: InjectableConfiguration.() -> Unit) = injectableCfg.run(cfg)
 
+    fun components(cfg: ComponentConfiguration.() -> Unit) = compCfg.run(cfg)
+
     fun families(cfg: FamilyConfiguration.() -> Unit) = familyCfg.run(cfg)
+
+    fun systems(cfg: SystemConfiguration.() -> Unit) = systemCfg.run(cfg)
 }
 
 fun world(entityCapacity: Int = 512, cfg: WorldConfiguration.() -> Unit): World {
@@ -207,7 +236,7 @@ class World internal constructor(
     /**
      * Returns the world's systems.
      */
-    val systems: Bag<IntervalSystem>
+    val systems: Array<IntervalSystem>
         get() = systemService.systems
 
     inline fun <reified T> inject(name: String = T::class.simpleName ?: "anonymous"): T {
@@ -268,10 +297,14 @@ class World internal constructor(
         return componentService.mapper(componentType)
     }
 
-    fun familyOfDefinition(definition: FamilyDefinition): Family {
+    fun family(definition: FamilyDefinition): Family {
         val allOf = definition.allOfComponents
         val noneOf = definition.noneOfComponents
         val anyOf = definition.anyOfComponents
+
+        if (allOf.isNullOrEmpty() && noneOf.isNullOrEmpty() && anyOf.isNullOrEmpty()) {
+            throw FleksFamilyException(definition)
+        }
 
         val allBs = if (allOf.isNullOrEmpty()) null else BitArray().apply { allOf.forEach { this.set(it.id) } }
         val noneBs = if (noneOf.isNullOrEmpty()) null else BitArray().apply { noneOf.forEach { this.set(it.id) } }

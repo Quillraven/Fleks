@@ -1,7 +1,6 @@
 package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.EntityComparator
-import com.github.quillraven.fleks.collection.bag
 
 /**
  * An interval for an [IntervalSystem]. There are two kind of intervals:
@@ -137,7 +136,7 @@ abstract class IteratingSystem(
     /**
      * Returns the [family][Family] of this system.
      */
-    val family: Family = world.familyOfDefinition(this.familyDefinition())
+    val family: Family = world.family(this.familyDefinition())
 
     /**
      * Returns the [entityService][EntityService] of this system.
@@ -221,7 +220,7 @@ abstract class IteratingSystem(
  */
 class SystemService {
     @PublishedApi
-    internal val systems = bag<IntervalSystem>()
+    internal var systems = emptyArray<IntervalSystem>()
 
     /**
      * Returns the specified [system][IntervalSystem].

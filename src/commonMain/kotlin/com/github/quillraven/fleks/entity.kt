@@ -54,7 +54,7 @@ class EntityCreateCfg(
         val compType: ComponentType<T> = component.type()
         compMask.set(compType.id)
         val mapper: ComponentMapper<T> = compService.mapper(compType)
-        mapper.add(this, component)
+        mapper.addInternal(this, component)
     }
 }
 
@@ -75,7 +75,7 @@ class EntityUpdateCfg(
         val compType: ComponentType<T> = component.type()
         compMask.set(compType.id)
         val mapper: ComponentMapper<T> = compService.mapper(compType)
-        mapper.add(this, component)
+        mapper.addInternal(this, component)
     }
 
     inline operator fun Entity.minusAssign(componentType: ComponentType<*>) {
@@ -92,7 +92,7 @@ class EntityUpdateCfg(
         val mapper: ComponentMapper<T> = compService.mapper(componentType)
         val existingComp = mapper.getOrNull(this)
         if (existingComp == null) {
-            mapper.add(this, add())
+            mapper.addInternal(this, add())
         } else {
             existingComp.also(update)
         }
@@ -217,7 +217,7 @@ class EntityService(
         val compMask = compMasks[entity.id]
         components.forEach { cmp ->
             val mapper = compService.wildcardMapper(cmp.type())
-            mapper.addInternal(entity, cmp)
+            mapper.addInternalWildcard(entity, cmp)
             compMask.set(cmp.type().id)
         }
         listeners.forEach { it.onEntityCfgChanged(entity, compMask) }

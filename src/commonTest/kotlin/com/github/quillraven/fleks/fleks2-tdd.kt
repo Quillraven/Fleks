@@ -212,7 +212,7 @@ class Fleks2TDD {
         val removeEntity = testWorld.entity { it += Position(0f, 0f) }
         testWorld.configure(removeEntity) { it -= Position }
         // trigger family update to call the hooks
-        testWorld.familyOfDefinition(testFamilyDef).updateActiveEntities()
+        testWorld.family(testFamilyDef).updateActiveEntities()
 
         assertEquals(2, numAddCalls)
         assertEquals(1, numRemoveCalls)

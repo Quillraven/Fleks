@@ -24,6 +24,34 @@ class FamilyDefinition {
     fun anyOf(vararg types: ComponentType<*>) {
         anyOfComponents = types.toSet()
     }
+
+    override fun toString(): String {
+        return buildString {
+            val allOf = allOfComponents
+            if (allOf != null) {
+                this.append("allOf:")
+                this.append(allOf.map { it.toString().substringAfterLast(".").substringBefore("$") })
+            }
+
+            val noneOf = noneOfComponents
+            if (noneOf != null) {
+                if (this.isNotBlank()) {
+                    this.append(", ")
+                }
+                this.append("noneOf:")
+                this.append(noneOf.map { it.toString().substringAfterLast(".").substringBefore("$") })
+            }
+
+            val anyOf = anyOfComponents
+            if (anyOf != null) {
+                if (this.isNotBlank()) {
+                    this.append(", ")
+                }
+                this.append("anyOf:")
+                this.append(anyOf.map { it.toString().substringAfterLast(".").substringBefore("$") })
+            }
+        }
+    }
 }
 
 fun familyDefinition(cfg: FamilyDefinition.() -> Unit): FamilyDefinition {
