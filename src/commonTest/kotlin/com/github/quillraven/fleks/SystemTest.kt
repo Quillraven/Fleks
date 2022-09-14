@@ -48,7 +48,7 @@ private data class SystemTestComponent(
     companion object : ComponentType<SystemTestComponent>()
 }
 
-private class SystemTestIteratingSystemMapper : IteratingSystem(interval = Fixed(0.25f)) {
+private class SystemTestIteratingSystem : IteratingSystem(interval = Fixed(0.25f)) {
     var numEntityCalls = 0
     var numAlphaCalls = 0
     var lastAlpha = 0f
@@ -239,16 +239,15 @@ internal class SystemTest {
     fun createIteratingSystemWithComponentMapperArg() {
         val expectedWorld = world {
             systems {
-                add(SystemTestIteratingSystemMapper())
+                add(SystemTestIteratingSystem())
             }
         }
 
         val service = expectedWorld.systemService
 
-        val actualSystem = service.system<SystemTestIteratingSystemMapper>()
+        val actualSystem = service.system<SystemTestIteratingSystem>()
         assertEquals(1, service.systems.size)
         assertSame(expectedWorld, actualSystem.world)
-        assertEquals(SystemTestComponent::class.simpleName, "SystemTestComponent")
     }
 
     @Test
@@ -297,7 +296,7 @@ internal class SystemTest {
     fun iteratingSystemCallsOnTickAndOnAlphaForEachEntityOfTheSystem() {
         val world = world {
             systems {
-                add(SystemTestIteratingSystemMapper())
+                add(SystemTestIteratingSystem())
             }
         }
         val service = world.systemService
@@ -306,7 +305,7 @@ internal class SystemTest {
 
         world.update(0.3f)
 
-        val system = service.system<SystemTestIteratingSystemMapper>()
+        val system = service.system<SystemTestIteratingSystem>()
         assertEquals(2, system.numEntityCalls)
         assertEquals(2, system.numAlphaCalls)
         assertEquals(0.05f / 0.25f, system.lastAlpha, 0.0001f)
@@ -316,12 +315,12 @@ internal class SystemTest {
     fun configureEntityDuringIteration() {
         val world = world {
             systems {
-                add(SystemTestIteratingSystemMapper())
+                add(SystemTestIteratingSystem())
             }
         }
         val service = world.systemService
         val entity = world.entity { it += SystemTestComponent() }
-        val system = service.system<SystemTestIteratingSystemMapper>()
+        val system = service.system<SystemTestIteratingSystem>()
         system.entityToConfigure = entity
 
         world.update(0.3f)
