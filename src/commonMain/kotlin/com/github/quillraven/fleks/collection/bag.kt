@@ -1,6 +1,8 @@
 package com.github.quillraven.fleks.collection
 
+import com.github.quillraven.fleks.ComponentType
 import com.github.quillraven.fleks.Entity
+import com.github.quillraven.fleks.World.Companion.mapper
 import kotlin.math.max
 import kotlin.math.min
 
@@ -182,6 +184,19 @@ fun compareEntity(compareFun: (Entity, Entity) -> Int): EntityComparator {
     return object : EntityComparator {
         override fun compare(entityA: Entity, entityB: Entity): Int {
             return compareFun(entityA, entityB)
+        }
+    }
+}
+
+inline fun <reified T : Comparable<*>> compareEntityBy(componentType: ComponentType<T>): EntityComparator {
+    return object : EntityComparator {
+        private val mapper = mapper(componentType)
+
+        @Suppress("UNCHECKED_CAST")
+        override fun compare(entityA: Entity, entityB: Entity): Int {
+            val valA: Comparable<T> = mapper[entityA] as Comparable<T>
+            val valB = mapper[entityB]
+            return valA.compareTo(valB)
         }
     }
 }

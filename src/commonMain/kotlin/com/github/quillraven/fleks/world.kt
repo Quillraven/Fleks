@@ -426,5 +426,8 @@ class World internal constructor(
         inline fun <reified T> inject(name: String = T::class.simpleName ?: "anonymous"): T {
             return CURRENT_WORLD.inject(name)
         }
+
+        inline fun <reified T : Any> mapper(componentType: ComponentType<T>): ComponentMapper<T> =
+            CURRENT_WORLD[componentType]
     }
 }
