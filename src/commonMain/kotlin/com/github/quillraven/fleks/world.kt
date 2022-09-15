@@ -172,14 +172,17 @@ fun world(entityCapacity: Int = 512, cfg: WorldConfiguration.() -> Unit): World 
     val newWorld = World(entityCapacity)
     CURRENT_WORLD = newWorld
 
-    WorldConfiguration(newWorld).run(cfg)
-    // verify that there are no unused injectables
-    val unusedInjectables = newWorld.injectables.filterValues { !it.used }.map { it.value.injObj::class }
-    if (unusedInjectables.isNotEmpty()) {
-        throw FleksUnusedInjectablesException(unusedInjectables)
+    try {
+        WorldConfiguration(newWorld).run(cfg)
+        // verify that there are no unused injectables
+        val unusedInjectables = newWorld.injectables.filterValues { !it.used }.map { it.value.injObj::class }
+        if (unusedInjectables.isNotEmpty()) {
+            throw FleksUnusedInjectablesException(unusedInjectables)
+        }
+    } finally {
+        CURRENT_WORLD = null
     }
 
-    CURRENT_WORLD = null
     return newWorld
 }
 

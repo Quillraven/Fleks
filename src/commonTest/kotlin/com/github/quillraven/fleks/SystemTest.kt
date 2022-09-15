@@ -1,6 +1,5 @@
 package com.github.quillraven.fleks
 
-import com.github.quillraven.fleks.World.Companion.CURRENT_WORLD
 import com.github.quillraven.fleks.World.Companion.family
 import com.github.quillraven.fleks.World.Companion.inject
 import com.github.quillraven.fleks.World.Companion.mapper
@@ -164,8 +163,12 @@ private class SystemTestIteratingSystemQualifiedInjectable(
 internal class SystemTest {
     @Test
     fun systemWithIntervalEachFrameGetsCalledEveryTime() {
-        World.CURRENT_WORLD = world { }
-        val system = SystemTestIntervalSystemEachFrame()
+        val w = world {
+            systems {
+                add(SystemTestIntervalSystemEachFrame())
+            }
+        }
+        val system = w.system<SystemTestIntervalSystemEachFrame>()
 
         system.onUpdate()
         system.onUpdate()
@@ -175,20 +178,27 @@ internal class SystemTest {
 
     @Test
     fun systemWithIntervalEachFrameReturnsWorldDeltaTime() {
-        World.CURRENT_WORLD = world { }
-        val system = SystemTestIntervalSystemEachFrame()
-        system.world.update(42f)
+        val w = world {
+            systems {
+                add(SystemTestIntervalSystemEachFrame())
+            }
+        }
+        val system = w.system<SystemTestIntervalSystemEachFrame>()
+        w.update(42f)
 
         assertEquals(42f, system.deltaTime)
     }
 
     @Test
     fun systemWithFixedIntervalOf025fGetsCalledFourTimesWhenDeltaTimeIs11f() {
-        World.CURRENT_WORLD = world { }
-        val system = SystemTestIntervalSystemFixed()
-        system.world.update(1.1f)
+        val w = world {
+            systems {
+                add(SystemTestIntervalSystemFixed())
+            }
+        }
+        val system = w.system<SystemTestIntervalSystemFixed>()
 
-        system.onUpdate()
+        system.world.update(1.1f)
 
         assertEquals(4, system.numCalls)
         assertEquals(0.1f / 0.25f, system.lastAlpha, 0.0001f)
@@ -196,8 +206,12 @@ internal class SystemTest {
 
     @Test
     fun systemWithFixedIntervalReturnsStepRateAsDeltaTime() {
-        CURRENT_WORLD = world { }
-        val system = SystemTestIntervalSystemFixed()
+        val w = world {
+            systems {
+                add(SystemTestIntervalSystemFixed())
+            }
+        }
+        val system = w.system<SystemTestIntervalSystemFixed>()
 
         assertEquals(0.25f, system.deltaTime, 0.0001f)
     }
