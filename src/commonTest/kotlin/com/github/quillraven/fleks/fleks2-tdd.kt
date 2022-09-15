@@ -2,6 +2,7 @@ package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.Sprite.Companion.SpriteBackground
 import com.github.quillraven.fleks.Sprite.Companion.SpriteForeground
+import com.github.quillraven.fleks.World.Companion.family
 import com.github.quillraven.fleks.World.Companion.inject
 import kotlin.test.*
 
@@ -36,11 +37,7 @@ private data class Sprite(
     }
 }
 
-private class PositionSystem : IteratingSystem() {
-    override fun familyDefinition(): FamilyDefinition = familyDefinition {
-        allOf(Position)
-    }
-
+private class PositionSystem : IteratingSystem(family { all(Position) }) {
     override fun onTickEntity(entity: Entity) {
         entity[Position].x++
     }
@@ -48,12 +45,8 @@ private class PositionSystem : IteratingSystem() {
 
 private class SpriteSystem(
     val cstrInjectable: String = inject()
-) : IteratingSystem() {
+) : IteratingSystem(family { any(SpriteBackground, SpriteForeground) }) {
     val propInjectable: String = world.inject("qualifiedString")
-
-    override fun familyDefinition() = familyDefinition {
-        anyOf(SpriteBackground, SpriteForeground)
-    }
 
     override fun onTickEntity(entity: Entity) = Unit
 }
@@ -186,19 +179,20 @@ class Fleks2TDD {
 
     @Test
     fun testFamilyHooks() {
-        val testFamilyDef = familyDefinition { allOf(Position) }
+        lateinit var testWorld: World
+        lateinit var testFamily: Family
         var numAddCalls = 0
         var numRemoveCalls = 0
-        lateinit var testWorld: World
         testWorld = world {
+            testFamily = family { all(Position) }
             families {
-                onAdd(testFamilyDef) { world, entity ->
+                onAdd(testFamily) { world, entity ->
                     ++numAddCalls
                     assertEquals(testWorld, world)
                     assertTrue { entity.id in 0..1 }
                 }
 
-                onRemove(testFamilyDef) { world, entity ->
+                onRemove(testFamily) { world, entity ->
                     ++numRemoveCalls
                     assertEquals(testWorld, world)
                     assertEquals(Entity(1), entity)
@@ -212,7 +206,7 @@ class Fleks2TDD {
         val removeEntity = testWorld.entity { it += Position(0f, 0f) }
         testWorld.configure(removeEntity) { it -= Position }
         // trigger family update to call the hooks
-        testWorld.family(testFamilyDef).updateActiveEntities()
+        testFamily.updateActiveEntities()
 
         assertEquals(2, numAddCalls)
         assertEquals(1, numRemoveCalls)

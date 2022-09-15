@@ -26,7 +26,7 @@ class ComponentConfiguration(
         noinline action: (World, Entity, T) -> Unit
     ) {
         if (world.systems.isNotEmpty()) {
-            throw FleksWrongConfigurationOrder()
+            throw FleksWrongConfigurationOrderException()
         }
 
         val mapper = world[componentType]
@@ -41,7 +41,7 @@ class ComponentConfiguration(
         noinline action: (World, Entity, T) -> Unit
     ) {
         if (world.systems.isNotEmpty()) {
-            throw FleksWrongConfigurationOrder()
+            throw FleksWrongConfigurationOrderException()
         }
 
         val mapper = world[componentType]
@@ -94,10 +94,10 @@ class InjectableConfiguration(private val world: World) {
      * Refer to [add]: the name is the simpleName of the class of the [dependency].
      *
      * @throws [FleksInjectableAlreadyAddedException] if the dependency was already added before.
-     * @throws [FleksInjectableTypeHasNoName] if the simpleName of the [dependency] is null.
+     * @throws [FleksInjectableTypeHasNoNameException] if the simpleName of the [dependency] is null.
      */
     inline fun <reified T : Any> add(dependency: T) {
-        val key = T::class.simpleName ?: throw FleksInjectableTypeHasNoName(T::class)
+        val key = T::class.simpleName ?: throw FleksInjectableTypeHasNoNameException(T::class)
         add(key, dependency)
     }
 }
@@ -113,32 +113,30 @@ class FamilyConfiguration(
     @PublishedApi
     internal val world: World
 ) {
-    inline fun onAdd(
-        familyDefinition: FamilyDefinition,
-        noinline action: (World, Entity) -> Unit
+    fun onAdd(
+        family: Family,
+        action: (World, Entity) -> Unit
     ) {
         if (world.systems.isNotEmpty()) {
-            throw FleksWrongConfigurationOrder()
+            throw FleksWrongConfigurationOrderException()
         }
 
-        val family = world.family(familyDefinition)
         if (family.addHook != null) {
-            throw FleksHookAlreadyAddedException("addHook", "Family $familyDefinition")
+            throw FleksHookAlreadyAddedException("addHook", "Family $family")
         }
         family.addHook = action
     }
 
-    inline fun onRemove(
-        familyDefinition: FamilyDefinition,
-        noinline action: (World, Entity) -> Unit
+    fun onRemove(
+        family: Family,
+        action: (World, Entity) -> Unit
     ) {
         if (world.systems.isNotEmpty()) {
-            throw FleksWrongConfigurationOrder()
+            throw FleksWrongConfigurationOrderException()
         }
 
-        val family = world.family(familyDefinition)
         if (family.removeHook != null) {
-            throw FleksHookAlreadyAddedException("removeHook", "Family $familyDefinition")
+            throw FleksHookAlreadyAddedException("removeHook", "Family $family")
         }
         family.removeHook = action
     }
@@ -171,15 +169,18 @@ class WorldConfiguration(internal val world: World) {
 }
 
 fun world(entityCapacity: Int = 512, cfg: WorldConfiguration.() -> Unit): World {
-    CURRENT_WORLD = World(entityCapacity)
-    WorldConfiguration(CURRENT_WORLD).run(cfg)
+    val newWorld = World(entityCapacity)
+    CURRENT_WORLD = newWorld
 
+    WorldConfiguration(newWorld).run(cfg)
     // verify that there are no unused injectables
-    val unusedInjectables = CURRENT_WORLD.injectables.filterValues { !it.used }.map { it.value.injObj::class }
+    val unusedInjectables = newWorld.injectables.filterValues { !it.used }.map { it.value.injObj::class }
     if (unusedInjectables.isNotEmpty()) {
         throw FleksUnusedInjectablesException(unusedInjectables)
     }
-    return CURRENT_WORLD
+
+    CURRENT_WORLD = null
+    return newWorld
 }
 
 /**
@@ -241,7 +242,7 @@ class World internal constructor(
         get() = systemService.systems
 
     inline fun <reified T> inject(name: String = T::class.simpleName ?: "anonymous"): T {
-        val injectable = injectables[name] ?: throw FleksNoSuchInjectable(name)
+        val injectable = injectables[name] ?: throw FleksNoSuchInjectableException(name)
         injectable.used = true
         return injectable.injObj as T
     }
@@ -298,10 +299,15 @@ class World internal constructor(
         return componentService.mapper(componentType)
     }
 
-    fun family(definition: FamilyDefinition): Family {
-        val allOf = definition.allOfComponents
-        val noneOf = definition.noneOfComponents
-        val anyOf = definition.anyOfComponents
+    fun family(cfg: FamilyDefinition.() -> Unit): Family {
+        return family(FamilyDefinition().apply(cfg))
+    }
+
+    @PublishedApi
+    internal fun family(definition: FamilyDefinition): Family {
+        val allOf = definition.allOf
+        val noneOf = definition.noneOf
+        val anyOf = definition.anyOf
 
         if (allOf.isNullOrEmpty() && noneOf.isNullOrEmpty() && anyOf.isNullOrEmpty()) {
             throw FleksFamilyException(definition)
@@ -421,13 +427,15 @@ class World internal constructor(
     @ThreadLocal
     companion object {
         @PublishedApi
-        internal lateinit var CURRENT_WORLD: World
+        internal var CURRENT_WORLD: World? = null
 
-        inline fun <reified T> inject(name: String = T::class.simpleName ?: "anonymous"): T {
-            return CURRENT_WORLD.inject(name)
-        }
+        inline fun <reified T> inject(name: String = T::class.simpleName ?: "anonymous"): T =
+            CURRENT_WORLD?.inject(name) ?: throw FleksWrongConfigurationUsageException()
 
         inline fun <reified T : Any> mapper(componentType: ComponentType<T>): ComponentMapper<T> =
-            CURRENT_WORLD[componentType]
+            CURRENT_WORLD?.get(componentType) ?: throw FleksWrongConfigurationUsageException()
+
+        fun family(cfg: FamilyDefinition.() -> Unit): Family =
+            CURRENT_WORLD?.family(cfg) ?: throw FleksWrongConfigurationUsageException()
     }
 }

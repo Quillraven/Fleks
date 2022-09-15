@@ -20,7 +20,10 @@ private fun compareArtemisFleksAddRemove() {
     val artemisBm = ArtemisBenchmark()
     artemisBm.addRemove(artemisState)
     repeat(3) {
-        artemisTimes.add(measureTimeMillis { artemisBm.addRemove(artemisState) })
+        artemisTimes.add(measureTimeMillis {
+            artemisBm.addRemove(artemisState)
+            artemisState.world.process()
+        })
     }
 
     val fleksTimes = mutableListOf<Long>()

@@ -9,31 +9,34 @@ annotation class FamilyDefinitionMarker
 
 @FamilyDefinitionMarker
 class FamilyDefinition {
-    var allOfComponents: Set<ComponentType<*>>? = null
-    var noneOfComponents: Set<ComponentType<*>>? = null
-    var anyOfComponents: Set<ComponentType<*>>? = null
+    var allOf: Set<ComponentType<*>>? = null
+    var noneOf: Set<ComponentType<*>>? = null
+    var anyOf: Set<ComponentType<*>>? = null
 
-    fun allOf(vararg types: ComponentType<*>) {
-        allOfComponents = types.toSet()
+    fun all(vararg types: ComponentType<*>): FamilyDefinition {
+        allOf = types.toSet()
+        return this
     }
 
-    fun noneOf(vararg types: ComponentType<*>) {
-        noneOfComponents = types.toSet()
+    fun none(vararg types: ComponentType<*>): FamilyDefinition {
+        noneOf = types.toSet()
+        return this
     }
 
-    fun anyOf(vararg types: ComponentType<*>) {
-        anyOfComponents = types.toSet()
+    fun any(vararg types: ComponentType<*>): FamilyDefinition {
+        anyOf = types.toSet()
+        return this
     }
 
     override fun toString(): String {
         return buildString {
-            val allOf = allOfComponents
+            val allOf = allOf
             if (allOf != null) {
                 this.append("allOf:")
                 this.append(allOf.map { it.toString().substringAfterLast(".").substringBefore("$") })
             }
 
-            val noneOf = noneOfComponents
+            val noneOf = noneOf
             if (noneOf != null) {
                 if (this.isNotBlank()) {
                     this.append(", ")
@@ -42,7 +45,7 @@ class FamilyDefinition {
                 this.append(noneOf.map { it.toString().substringAfterLast(".").substringBefore("$") })
             }
 
-            val anyOf = anyOfComponents
+            val anyOf = anyOf
             if (anyOf != null) {
                 if (this.isNotBlank()) {
                     this.append(", ")
@@ -52,10 +55,6 @@ class FamilyDefinition {
             }
         }
     }
-}
-
-fun familyDefinition(cfg: FamilyDefinition.() -> Unit): FamilyDefinition {
-    return FamilyDefinition().apply(cfg)
 }
 
 /**
@@ -256,5 +255,9 @@ data class Family(
             entities.clear(entity.id)
             removeHook?.invoke(world, entity)
         }
+    }
+
+    override fun toString(): String {
+        return "Family(allOf=$allOf, noneOf=$noneOf, anyOf=$anyOf)"
     }
 }

@@ -1,5 +1,7 @@
 package com.github.quillraven.fleks
 
+import com.github.quillraven.fleks.World.Companion.CURRENT_WORLD
+import com.github.quillraven.fleks.World.Companion.family
 import com.github.quillraven.fleks.World.Companion.inject
 import com.github.quillraven.fleks.World.Companion.mapper
 import com.github.quillraven.fleks.collection.EntityComparator
@@ -48,15 +50,14 @@ private data class SystemTestComponent(
     companion object : ComponentType<SystemTestComponent>()
 }
 
-private class SystemTestIteratingSystem : IteratingSystem(interval = Fixed(0.25f)) {
+private class SystemTestIteratingSystem : IteratingSystem(
+    family = family { all(SystemTestComponent) },
+    interval = Fixed(0.25f)
+) {
     var numEntityCalls = 0
     var numAlphaCalls = 0
     var lastAlpha = 0f
     var entityToConfigure: Entity? = null
-
-    override fun familyDefinition() = familyDefinition {
-        allOf(SystemTestComponent)
-    }
 
     override fun onTickEntity(entity: Entity) {
         entityToConfigure?.let { e ->
@@ -71,15 +72,11 @@ private class SystemTestIteratingSystem : IteratingSystem(interval = Fixed(0.25f
     }
 }
 
-private class SystemTestEntityCreation : IteratingSystem() {
+private class SystemTestEntityCreation : IteratingSystem(family { any(SystemTestComponent) }) {
     var numTicks = 0
 
     init {
         world.entity { it += SystemTestComponent() }
-    }
-
-    override fun familyDefinition() = familyDefinition {
-        anyOf(SystemTestComponent)
     }
 
     override fun onTickEntity(entity: Entity) {
@@ -88,6 +85,7 @@ private class SystemTestEntityCreation : IteratingSystem() {
 }
 
 private class SystemTestIteratingSystemSortAutomatic : IteratingSystem(
+    family = family { all(SystemTestComponent) },
     comparator = object : EntityComparator {
         private val mapper = mapper(SystemTestComponent)
         override fun compare(entityA: Entity, entityB: Entity): Int {
@@ -98,10 +96,6 @@ private class SystemTestIteratingSystemSortAutomatic : IteratingSystem(
     var numEntityCalls = 0
     var lastEntityProcess = Entity(-1)
     var entityToRemove: Entity? = null
-
-    override fun familyDefinition() = familyDefinition {
-        allOf(SystemTestComponent)
-    }
 
     override fun onTickEntity(entity: Entity) {
         entityToRemove?.let {
@@ -114,14 +108,13 @@ private class SystemTestIteratingSystemSortAutomatic : IteratingSystem(
     }
 }
 
-private class SystemTestFixedSystemRemoval : IteratingSystem(interval = Fixed(1f)) {
+private class SystemTestFixedSystemRemoval : IteratingSystem(
+    family = family { all(SystemTestComponent) },
+    interval = Fixed(1f)
+) {
     var numEntityCalls = 0
     var lastEntityProcess = Entity(-1)
     var entityToRemove: Entity? = null
-
-    override fun familyDefinition() = familyDefinition {
-        allOf(SystemTestComponent)
-    }
 
     override fun onTickEntity(entity: Entity) {
         entityToRemove?.let {
@@ -140,15 +133,12 @@ private class SystemTestFixedSystemRemoval : IteratingSystem(interval = Fixed(1f
 }
 
 private class SystemTestIteratingSystemSortManual : IteratingSystem(
+    family = family { all(SystemTestComponent) },
     comparator = compareEntityBy(SystemTestComponent),
     sortingType = Manual
 ) {
     var numEntityCalls = 0
     var lastEntityProcess = Entity(-1)
-
-    override fun familyDefinition() = familyDefinition {
-        allOf(SystemTestComponent)
-    }
 
     override fun onTickEntity(entity: Entity) {
         lastEntityProcess = entity
@@ -156,26 +146,17 @@ private class SystemTestIteratingSystemSortManual : IteratingSystem(
     }
 }
 
-private class SystemTestIteratingSystemInjectable : IteratingSystem() {
+private class SystemTestIteratingSystemInjectable :
+    IteratingSystem(family { none(SystemTestComponent).any(SystemTestComponent) }) {
     val injectable: String = inject()
-
-    override fun familyDefinition() = familyDefinition {
-        noneOf(SystemTestComponent)
-        anyOf(SystemTestComponent)
-    }
 
     override fun onTickEntity(entity: Entity) = Unit
 }
 
 private class SystemTestIteratingSystemQualifiedInjectable(
     val injectable: String = inject()
-) : IteratingSystem() {
+) : IteratingSystem(family { none(SystemTestComponent).any(SystemTestComponent) }) {
     val injectable2: String = world.inject("q1")
-
-    override fun familyDefinition() = familyDefinition {
-        noneOf(SystemTestComponent)
-        anyOf(SystemTestComponent)
-    }
 
     override fun onTickEntity(entity: Entity) = Unit
 }
@@ -215,6 +196,7 @@ internal class SystemTest {
 
     @Test
     fun systemWithFixedIntervalReturnsStepRateAsDeltaTime() {
+        CURRENT_WORLD = world { }
         val system = SystemTestIntervalSystemFixed()
 
         assertEquals(0.25f, system.deltaTime, 0.0001f)

@@ -35,7 +35,7 @@ abstract class IntervalSystem(
     /**
      * Returns the [world][World] to which this system belongs.
      */
-    val world: World = World.CURRENT_WORLD
+    val world: World = World.CURRENT_WORLD ?: throw FleksWrongConfigurationUsageException()
 
     private var accumulator: Float = 0.0f
 
@@ -128,15 +128,12 @@ object Manual : SortingType
  * @param enabled defines if the system gets updated when the [world][World] gets updated. Default is true.
  */
 abstract class IteratingSystem(
+    val family: Family,
     private val comparator: EntityComparator = EMPTY_COMPARATOR,
     private val sortingType: SortingType = Automatic,
     interval: Interval = EachFrame,
     enabled: Boolean = true
 ) : IntervalSystem(interval, enabled) {
-    /**
-     * Returns the [family][Family] of this system.
-     */
-    val family: Family = world.family(this.familyDefinition())
 
     /**
      * Returns the [entityService][EntityService] of this system.
@@ -155,8 +152,6 @@ abstract class IteratingSystem(
      * Otherwise, it must be set programmatically to perform sorting. The flag gets cleared after sorting.
      */
     var doSort = sortingType == Automatic && comparator != EMPTY_COMPARATOR
-
-    abstract fun familyDefinition(): FamilyDefinition
 
     inline operator fun <reified T : Any> Entity.get(type: ComponentType<T>): T {
         return compService.mapper(type)[this]

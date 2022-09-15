@@ -1,6 +1,7 @@
 package com.github.quillraven.fleks.benchmark
 
 import com.github.quillraven.fleks.*
+import com.github.quillraven.fleks.World.Companion.family
 import org.openjdk.jmh.annotations.*
 import java.util.concurrent.TimeUnit
 
@@ -22,24 +23,15 @@ data class FleksSprite(var path: String = "", var animationTime: Float = 0f) : C
     companion object : ComponentType<FleksSprite>()
 }
 
-class FleksSystemSimple : IteratingSystem() {
-    override fun familyDefinition() = familyDefinition {
-        allOf(FleksPosition)
-    }
+class FleksSystemSimple : IteratingSystem(family { all(FleksPosition) }) {
 
     override fun onTickEntity(entity: Entity) {
         entity[FleksPosition].x++
     }
 }
 
-class FleksSystemComplex1 : IteratingSystem() {
+class FleksSystemComplex1 : IteratingSystem(family { all(FleksPosition).none(FleksLife).any(FleksSprite) }) {
     private var actionCalls = 0
-
-    override fun familyDefinition() = familyDefinition {
-        allOf(FleksPosition)
-        noneOf(FleksLife)
-        anyOf(FleksSprite)
-    }
 
     override fun onTickEntity(entity: Entity) {
         if (actionCalls % 2 == 0) {
@@ -53,10 +45,7 @@ class FleksSystemComplex1 : IteratingSystem() {
     }
 }
 
-class FleksSystemComplex2 : IteratingSystem() {
-    override fun familyDefinition() = familyDefinition {
-        anyOf(FleksPosition, FleksLife, FleksSprite)
-    }
+class FleksSystemComplex2 : IteratingSystem(family { any(FleksPosition, FleksLife, FleksSprite) }) {
 
     override fun onTickEntity(entity: Entity) {
         entity.configure {

@@ -19,7 +19,7 @@ class FleksInjectableAlreadyAddedException(type: String) :
             "to inject() function in world configuration and to Inject.dependency() in your systems or component listeners."
     )
 
-class FleksInjectableTypeHasNoName(type: KClass<*>) :
+class FleksInjectableTypeHasNoNameException(type: KClass<*>) :
     FleksException("Injectable '$type' does not have simpleName in its class type.")
 
 class FleksNoSuchEntityComponentException(entity: Entity, component: String) :
@@ -33,11 +33,14 @@ class FleksFamilyException(familyDefinition: FamilyDefinition) :
 
 class FleksSnapshotException(reason: String) : FleksException("Cannot load snapshot: $reason!")
 
-class FleksNoSuchInjectable(name: String) :
+class FleksNoSuchInjectableException(name: String) :
     FleksException("There is no injectable with name $name registered! Make sure to define 'injectables' before your 'systems' in the WorldConfiguration.")
 
 class FleksHookAlreadyAddedException(hookType: String, objType: String) :
     FleksException("$hookType for $objType already available!")
 
-class FleksWrongConfigurationOrder :
+class FleksWrongConfigurationOrderException :
     FleksException("Component hooks and family hooks must be defined BEFORE any system. The 'systems' block must come last in a WorldConfiguration.")
+
+class FleksWrongConfigurationUsageException :
+    FleksException("The global functions 'inject', 'mapper' and 'family' must be used inside a WorldConfiguration scope.")

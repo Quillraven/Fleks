@@ -54,7 +54,7 @@ class EntityUpdateCfg(
         mapper.addInternal(this, component)
     }
 
-    inline operator fun Entity.minusAssign(componentType: ComponentType<*>) {
+    operator fun Entity.minusAssign(componentType: ComponentType<*>) {
         compMask.clear(componentType.id)
         compService.wildcardMapper(componentType).removeInternal(this)
     }
