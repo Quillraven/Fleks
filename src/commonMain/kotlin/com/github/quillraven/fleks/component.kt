@@ -25,7 +25,7 @@ interface Component<T> {
  *
  * Refer to [ComponentService] for more details.
  */
-class ComponentMapper<T : Any>(
+class ComponentMapper<T : Component<*>>(
     private val world: World,
     private val name: String,
     @PublishedApi
@@ -141,7 +141,7 @@ class ComponentService(
             // Therefore, we do some string manipulation to get the name of the component correctly.
             // Format of toString() is package.Component$Companion
             val name = compType::class.toString().substringAfterLast(".").substringBefore("$")
-            mappersBag[compType.id] = ComponentMapper(world, name, Array<Any?>(64) { null })
+            mappersBag[compType.id] = ComponentMapper(world, name, Array<Component<*>?>(world.capacity) { null })
         }
         return mappersBag[compType.id]
     }
@@ -152,10 +152,10 @@ class ComponentService(
     }
 
     @Suppress("UNCHECKED_CAST")
-    inline fun <reified T : Any> mapper(compType: ComponentType<T>): ComponentMapper<T> {
+    inline fun <reified T : Component<*>> mapper(compType: ComponentType<T>): ComponentMapper<T> {
         if (mappersBag.hasNoValueAtIndex(compType.id)) {
             val name = T::class.simpleName ?: "anonymous"
-            mappersBag[compType.id] = ComponentMapper(world, name, Array<T?>(64) { null })
+            mappersBag[compType.id] = ComponentMapper(world, name, Array<T?>(world.capacity) { null })
         }
         return mappersBag[compType.id] as ComponentMapper<T>
     }

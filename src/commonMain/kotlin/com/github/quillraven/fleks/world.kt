@@ -21,7 +21,7 @@ class ComponentConfiguration(
     @PublishedApi
     internal val world: World
 ) {
-    inline fun <reified T : Any> onAdd(
+    inline fun <reified T : Component<*>> onAdd(
         componentType: ComponentType<T>,
         noinline action: (World, Entity, T) -> Unit
     ) {
@@ -36,7 +36,7 @@ class ComponentConfiguration(
         mapper.addHook = action
     }
 
-    inline fun <reified T : Any> onRemove(
+    inline fun <reified T : Component<*>> onRemove(
         componentType: ComponentType<T>,
         noinline action: (World, Entity, T) -> Unit
     ) {
@@ -298,7 +298,7 @@ class World internal constructor(
         return systemService.system()
     }
 
-    inline operator fun <reified T : Any> get(componentType: ComponentType<T>): ComponentMapper<T> {
+    inline operator fun <reified T : Component<*>> get(componentType: ComponentType<T>): ComponentMapper<T> {
         return componentService.mapper(componentType)
     }
 
@@ -435,7 +435,7 @@ class World internal constructor(
         inline fun <reified T> inject(name: String = T::class.simpleName ?: "anonymous"): T =
             CURRENT_WORLD?.inject(name) ?: throw FleksWrongConfigurationUsageException()
 
-        inline fun <reified T : Any> mapper(componentType: ComponentType<T>): ComponentMapper<T> =
+        inline fun <reified T : Component<*>> mapper(componentType: ComponentType<T>): ComponentMapper<T> =
             CURRENT_WORLD?.get(componentType) ?: throw FleksWrongConfigurationUsageException()
 
         fun family(cfg: FamilyDefinition.() -> Unit): Family =

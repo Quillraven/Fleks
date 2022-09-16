@@ -1,5 +1,6 @@
 package com.github.quillraven.fleks.collection
 
+import com.github.quillraven.fleks.Component
 import com.github.quillraven.fleks.ComponentType
 import com.github.quillraven.fleks.Entity
 import com.github.quillraven.fleks.World.Companion.mapper
@@ -188,7 +189,7 @@ fun compareEntity(compareFun: (Entity, Entity) -> Int): EntityComparator {
     }
 }
 
-inline fun <reified T : Comparable<*>> compareEntityBy(componentType: ComponentType<T>): EntityComparator {
+inline fun <reified T> compareEntityBy(componentType: ComponentType<T>): EntityComparator where T : Component<*>, T : Comparable<*> {
     return object : EntityComparator {
         private val mapper = mapper(componentType)
 

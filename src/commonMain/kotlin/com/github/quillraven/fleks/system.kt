@@ -153,7 +153,7 @@ abstract class IteratingSystem(
      */
     var doSort = sortingType == Automatic && comparator != EMPTY_COMPARATOR
 
-    inline operator fun <reified T : Any> Entity.get(type: ComponentType<T>): T {
+    inline operator fun <reified T : Component<*>> Entity.get(type: ComponentType<T>): T {
         return compService.mapper(type)[this]
     }
 
