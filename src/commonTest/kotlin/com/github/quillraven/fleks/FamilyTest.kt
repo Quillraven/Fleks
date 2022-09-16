@@ -1,17 +1,18 @@
 package com.github.quillraven.fleks
 
-/*import com.github.quillraven.fleks.collection.BitArray
+import com.github.quillraven.fleks.collection.BitArray
 import com.github.quillraven.fleks.collection.compareEntity
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import kotlin.test.*
+
+private class FamilyTestComponent : Component<FamilyTestComponent> {
+    override fun type() = FamilyTestComponent
+
+    companion object : ComponentType<FamilyTestComponent>()
+}
 
 internal class FamilyTest {
-
-    private val testEntityService = EntityService(64, ComponentService(mapOf()))
-
-    private val emptyTestFamily = Family(entityService = testEntityService)
+    private val testWorld = world { }
+    private val emptyTestFamily = Family(world = testWorld)
     private fun createCmpBitmask(cmpIdx: Int): BitArray? {
         return if (cmpIdx > 0) {
             BitArray().apply { set(cmpIdx) }
@@ -79,7 +80,7 @@ internal class FamilyTest {
             val fAllOf = createCmpBitmask(it[2] as Int)
             val fNoneOf = createCmpBitmask(it[3] as Int)
             val fAnyOf = createCmpBitmask(it[4] as Int)
-            val family = Family(fAllOf, fNoneOf, fAnyOf, testEntityService)
+            val family = Family(fAllOf, fNoneOf, fAnyOf, testWorld)
             val expected = it[5] as Boolean
 
             assertEquals(expected, eCmpMask in family)
@@ -143,7 +144,7 @@ internal class FamilyTest {
         )
 
         testCases.forEach {
-            val family = Family(BitArray().apply { set(1) }, null, null, testEntityService)
+            val family = Family(BitArray().apply { set(1) }, null, null, testWorld)
             val addEntityBeforeCall = it.first
             val addEntityToFamily = it.second
             val entity = Entity(1)
@@ -167,12 +168,12 @@ internal class FamilyTest {
     @Test
     fun testNestedIteration() {
         // delayRemoval and cleanup should only get called once for the first iteration
-        val f1 = Family(entityService = testEntityService)
-        val f2 = Family(entityService = testEntityService)
-        testEntityService.addEntityListener(f1)
-        testEntityService.addEntityListener(f2)
-        val e1 = testEntityService.create { }
-        testEntityService.create { }
+        val f1 = Family(world = testWorld)
+        val f2 = Family(world = testWorld)
+        testWorld.allFamilies += f1
+        testWorld.allFamilies += f2
+        val e1 = testWorld.entity { }
+        testWorld.entity { }
         var remove = true
 
         var numOuterIterations = 0
@@ -203,49 +204,72 @@ internal class FamilyTest {
     }
 
     @Test
-    fun testFamilyListener() {
-        // FamilyListener creation internally retrieves a correct family
-        // of the related world for the registration part in the world's constructor
-        // --> fake it in this test via DummyComponent
-        class DummyComponent
-
-        World.CURRENT_WORLD = world {
-            components {
-                add(::DummyComponent)
-            }
-        }
-
+    fun testFamilyHook() {
         val requiredCmps = BitArray().apply { set(1) }
         val e = Entity(0)
-        val listener = object : FamilyListener(
-            allOfComponents = arrayOf(DummyComponent::class)
-        ) {
-            var numAdd = 0
-            var numRemove = 0
+        var numAddCalls = 0
+        var numRemoveCalls = 0
+        val family = Family(allOf = requiredCmps, world = testWorld)
 
-            override fun onEntityAdded(entity: Entity) {
-                ++numAdd
-            }
-
-            override fun onEntityRemoved(entity: Entity) {
-                ++numRemove
-            }
+        fun onAdd(world: World, entity: Entity) {
+            assertEquals(world, testWorld)
+            assertEquals(0, entity.id)
+            numAddCalls++
         }
-        val family = Family(allOf = requiredCmps, entityService = testEntityService)
 
-        family.addFamilyListener(listener)
-        assertTrue { listener in family }
+        fun onRemove(world: World, entity: Entity) {
+            assertEquals(world, testWorld)
+            assertEquals(0, entity.id)
+            numRemoveCalls++
+        }
+
+        family.addHook = ::onAdd
+        family.removeHook = ::onRemove
 
         family.onEntityCfgChanged(e, requiredCmps)
-        assertEquals(1, listener.numAdd)
-        assertEquals(0, listener.numRemove)
+        assertEquals(1, numAddCalls)
+        assertEquals(0, numRemoveCalls)
 
         family.onEntityCfgChanged(e, BitArray())
-        assertEquals(1, listener.numAdd)
-        assertEquals(1, listener.numRemove)
+        assertEquals(1, numAddCalls)
+        assertEquals(1, numRemoveCalls)
+    }
 
-        family.removeFamilyListener(listener)
-        assertFalse { listener in family }
+    @Test
+    fun configureEntityViaFamily() {
+        val family = Family(world = testWorld)
+        testWorld.allFamilies += family
+        val entity = testWorld.entity { }
+
+        family.forEach { e -> e.configure { it += FamilyTestComponent() } }
+
+        assertNotNull(testWorld[FamilyTestComponent][entity])
+    }
+
+    @Test
+    fun testFamilyDefinition() {
+        val testDefinition = FamilyDefinition()
+        assertNull(testDefinition.allOf)
+        assertNull(testDefinition.noneOf)
+        assertNull(testDefinition.anyOf)
+
+        testDefinition.all(FamilyTestComponent)
+        assertEquals(1, testDefinition.allOf?.size)
+        assertEquals(FamilyTestComponent, testDefinition.allOf?.first())
+        assertEquals(0, testDefinition.noneOf?.size ?: 0)
+        assertEquals(0, testDefinition.anyOf?.size ?: 0)
+
+        testDefinition.none(FamilyTestComponent)
+        assertEquals(1, testDefinition.allOf?.size)
+        assertEquals(1, testDefinition.noneOf?.size)
+        assertEquals(FamilyTestComponent, testDefinition.noneOf?.first())
+        assertEquals(0, testDefinition.anyOf?.size ?: 0)
+
+        testDefinition.any(FamilyTestComponent)
+        assertEquals(1, testDefinition.allOf?.size)
+        assertEquals(1, testDefinition.noneOf?.size)
+        assertEquals(1, testDefinition.anyOf?.size)
+        assertEquals(FamilyTestComponent, testDefinition.anyOf?.first())
     }
 }
-*/
+

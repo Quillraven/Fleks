@@ -258,6 +258,6 @@ data class Family(
     }
 
     override fun toString(): String {
-        return "Family(allOf=$allOf, noneOf=$noneOf, anyOf=$anyOf)"
+        return "Family(allOf=$allOf, noneOf=$noneOf, anyOf=$anyOf, numEntities=$numEntities)"
     }
 }
