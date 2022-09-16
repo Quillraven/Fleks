@@ -66,12 +66,7 @@ class EntityUpdateCfg(
     ) {
         compMask.set(componentType.id)
         val mapper: ComponentMapper<T> = compService.mapper(componentType)
-        val existingComp = mapper.getOrNull(this)
-        if (existingComp == null) {
-            mapper.addInternal(this, add())
-        } else {
-            existingComp.also(update)
-        }
+        mapper.addOrUpdateInternal(this, add, update)
     }
 }
 

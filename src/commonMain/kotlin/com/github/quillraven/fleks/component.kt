@@ -74,6 +74,20 @@ class ComponentMapper<T : Any>(
         components[entity.id] = null
     }
 
+    @PublishedApi
+    internal inline fun addOrUpdateInternal(
+        entity: Entity,
+        add: () -> T,
+        update: (T) -> Unit,
+    ) {
+        val existingComp = getOrNull(entity)
+        if (existingComp == null) {
+            addInternal(entity, add())
+        } else {
+            existingComp.also(update)
+        }
+    }
+
     /**
      * Returns a component of the specific type of the given [entity].
      *
