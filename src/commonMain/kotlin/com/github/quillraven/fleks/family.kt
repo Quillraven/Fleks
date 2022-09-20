@@ -85,6 +85,8 @@ data class Family(
     internal val world: World,
     @PublishedApi
     internal val entityService: EntityService = world.entityService,
+    @PublishedApi
+    internal val compService: ComponentService = world.componentService,
     private val hookCtx: EntityHookContext = world.hookCtx,
 ) {
     @PublishedApi
@@ -212,6 +214,9 @@ data class Family(
         entityService.configure(this, configuration)
     }
 
+    inline operator fun <reified T : Component<*>> Entity.get(type: ComponentType<T>): T {
+        return compService.mapper(type)[this]
+    }
 
     /**
      * Sorts the [entities][Entity] of this family by the given [comparator].

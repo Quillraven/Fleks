@@ -278,6 +278,12 @@ class Fleks2TDD {
         }
         // trigger family onAdd hook
         testFamily.updateActiveEntities()
+        // check easy access of components during family iteration
+        testFamily.forEach { entity ->
+            assertSame(expectedAddCmp, entity[Position])
+        }
+        // access of components also possible via world
+        assertSame(expectedAddCmp, testWorld[Position][testEntity])
         // verify EntityUpdateContext extensions
         testWorld.configure(testEntity) {
             assertSame(expectedAddCmp, it[Position])
@@ -297,5 +303,6 @@ class Fleks2TDD {
         assertTrue(cmpRemoveCalled)
         assertTrue(familyAddCalled)
         assertTrue(familyRemoveCalled)
+
     }
 }
