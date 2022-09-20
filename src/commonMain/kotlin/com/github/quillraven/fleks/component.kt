@@ -5,6 +5,8 @@ import com.github.quillraven.fleks.collection.bag
 import kotlin.math.max
 import kotlin.native.concurrent.ThreadLocal
 
+typealias ComponentHook<T> = EntityHookContext.(World, Entity, T) -> Unit
+
 abstract class ComponentType<T> {
     val id: Int = nextId++
 
@@ -29,13 +31,14 @@ class ComponentMapper<T : Component<*>>(
     private val world: World,
     private val name: String,
     @PublishedApi
-    internal var components: Array<T?>
+    internal var components: Array<T?>,
+    private val hookCtx: EntityHookContext = world.hookCtx,
 ) {
     @PublishedApi
-    internal var addHook: ((World, Entity, T) -> Unit)? = null
+    internal var addHook: ComponentHook<T>? = null
 
     @PublishedApi
-    internal var removeHook: ((World, Entity, T) -> Unit)? = null
+    internal var removeHook: ComponentHook<T>? = null
 
     /**
      * Adds the [component] to the given [entity]. This function is only
@@ -53,11 +56,11 @@ class ComponentMapper<T : Component<*>>(
         }
 
         components[entity.id]?.let { existingCmp ->
-            removeHook?.invoke(world, entity, existingCmp)
+            removeHook?.invoke(hookCtx, world, entity, existingCmp)
         }
 
         components[entity.id] = component
-        addHook?.invoke(world, entity, component)
+        addHook?.invoke(hookCtx, world, entity, component)
     }
 
     /**
@@ -69,7 +72,7 @@ class ComponentMapper<T : Component<*>>(
     @PublishedApi
     internal fun removeInternal(entity: Entity) {
         components[entity.id]?.let { existingComp ->
-            removeHook?.invoke(world, entity, existingComp)
+            removeHook?.invoke(hookCtx, world, entity, existingComp)
         }
         components[entity.id] = null
     }

@@ -160,7 +160,7 @@ abstract class IteratingSystem(
     /**
      * Updates an [entity] using the given [configuration] to add and remove components.
      */
-    inline fun Entity.configure(configuration: EntityUpdateCfg.(Entity) -> Unit) {
+    inline fun Entity.configure(configuration: EntityUpdateContext.(Entity) -> Unit) {
         entityService.configure(this, configuration)
     }
 

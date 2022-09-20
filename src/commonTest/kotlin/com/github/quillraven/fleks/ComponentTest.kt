@@ -122,22 +122,22 @@ internal class ComponentTest {
         val expectedEntity = Entity(1)
         val expectedComp = ComponentTestComponent()
 
-        fun onAdd(world: World, entity: Entity, component: ComponentTestComponent) {
+        val onAdd: ComponentHook<ComponentTestComponent> = { world, entity, component ->
             assertEquals(testWorld, world)
             assertEquals(expectedEntity, entity)
             assertEquals(expectedComp, component)
             numAddCalls++
         }
 
-        fun onRemove(world: World, entity: Entity, component: ComponentTestComponent) {
+        val onRemove: ComponentHook<ComponentTestComponent> = { world, entity, component ->
             assertEquals(testWorld, world)
             assertEquals(expectedEntity, entity)
             assertEquals(expectedComp, component)
             numRemoveCalls++
         }
 
-        testMapper.addHook = ::onAdd
-        testMapper.removeHook = ::onRemove
+        testMapper.addHook = onAdd
+        testMapper.removeHook = onRemove
 
         testMapper.addInternal(expectedEntity, expectedComp)
 
@@ -153,22 +153,22 @@ internal class ComponentTest {
         val expectedComp1 = ComponentTestComponent()
         val expectedComp2 = ComponentTestComponent()
 
-        fun onAdd(world: World, entity: Entity, component: ComponentTestComponent) {
+        val onAdd: ComponentHook<ComponentTestComponent> = { world, entity, component ->
             assertSame(testWorld, world)
             assertSame(expectedEntity, entity)
             assertTrue { expectedComp1 === component || expectedComp2 === component }
             numAddCalls++
         }
 
-        fun onRemove(world: World, entity: Entity, component: ComponentTestComponent) {
+        val onRemove: ComponentHook<ComponentTestComponent> = { world, entity, component ->
             assertSame(testWorld, world)
             assertSame(expectedEntity, entity)
             assertSame(expectedComp1, component)
             numRemoveCalls++
         }
 
-        testMapper.addHook = ::onAdd
-        testMapper.removeHook = ::onRemove
+        testMapper.addHook = onAdd
+        testMapper.removeHook = onRemove
 
         testMapper.addInternal(expectedEntity, expectedComp1)
         // this should trigger onRemove of the first component

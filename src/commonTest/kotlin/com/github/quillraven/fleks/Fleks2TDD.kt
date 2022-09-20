@@ -232,4 +232,70 @@ class Fleks2TDD {
         assertEquals(expectedCstrStr, system.cstrInjectable)
         assertEquals(expectedPropStr, system.propInjectable)
     }
+
+    @Test
+    fun testEntityContextExtensions() {
+        lateinit var testFamily: Family
+        val expectedAddCmp = Position(0f, 0f)
+        val expectedRemoveCmp = Sprite(true)
+        var cmpAddCalled = false
+        var cmpRemoveCalled = false
+        var familyAddCalled = false
+        var familyRemoveCalled = false
+        /*
+            component and family hooks run within an EntityHookContext which should
+            allow easy access of components with get operator
+         */
+        val testWorld = world {
+            components {
+                onAdd(Position) { _, entity, _ ->
+                    cmpAddCalled = true
+                    assertSame(expectedAddCmp, entity[Position])
+                }
+                onRemove(Position) { _, entity, _ ->
+                    cmpRemoveCalled = true
+                    assertSame(expectedRemoveCmp, entity[SpriteBackground])
+                }
+            }
+
+            families {
+                testFamily = family { all(Position) }
+                onAdd(testFamily) { _, entity ->
+                    familyAddCalled = true
+                    assertSame(expectedAddCmp, entity[Position])
+                }
+                onRemove(testFamily) { _, entity ->
+                    familyRemoveCalled = true
+                    assertSame(expectedRemoveCmp, entity[SpriteBackground])
+                }
+            }
+        }
+
+        // trigger component onAdd hook and verify EntityCreateContext extensions
+        val testEntity = testWorld.entity {
+            it += expectedAddCmp
+            assertSame(expectedAddCmp, it[Position])
+        }
+        // trigger family onAdd hook
+        testFamily.updateActiveEntities()
+        // verify EntityUpdateContext extensions
+        testWorld.configure(testEntity) {
+            assertSame(expectedAddCmp, it[Position])
+            it += expectedRemoveCmp
+            // trigger component onRemove hook -> this also removes the entity of the family below
+            it -= Position
+            it.addOrUpdate(
+                SpriteBackground,
+                add = { Sprite(true, "add") },
+                update = { sprite -> sprite.path = "update" }
+            )
+            assertEquals("update", it[SpriteBackground].path)
+        }
+        // trigger family onRemove hook
+        testFamily.updateActiveEntities()
+        assertTrue(cmpAddCalled)
+        assertTrue(cmpRemoveCalled)
+        assertTrue(familyAddCalled)
+        assertTrue(familyRemoveCalled)
+    }
 }

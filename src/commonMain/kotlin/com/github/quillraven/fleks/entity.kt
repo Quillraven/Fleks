@@ -10,21 +10,32 @@ import com.github.quillraven.fleks.collection.bag
 data class Entity(val id: Int)
 
 @DslMarker
-annotation class EntityCfgMarker
+annotation class EntityCtxMarker
+
+@EntityCtxMarker
+class EntityHookContext(
+    @PublishedApi
+    internal val compService: ComponentService
+) {
+    inline operator fun <reified T : Component<*>> Entity.get(type: ComponentType<T>): T {
+        return compService.mapper(type)[this]
+    }
+}
 
 /**
  * A DSL class to add components to a newly created [entity][Entity].
  */
-@EntityCfgMarker
-class EntityCreateCfg(
+@EntityCtxMarker
+class EntityCreateContext(
     @PublishedApi
     internal val compService: ComponentService
 ) {
     @PublishedApi
-    internal var entity = Entity(0)
-
-    @PublishedApi
     internal lateinit var compMask: BitArray
+
+    inline operator fun <reified T : Component<*>> Entity.get(type: ComponentType<T>): T {
+        return compService.mapper(type)[this]
+    }
 
     inline operator fun <reified T : Component<T>> Entity.plusAssign(component: T) {
         val compType: ComponentType<T> = component.type()
@@ -39,13 +50,17 @@ class EntityCreateCfg(
  * It contains extension functions for [ComponentMapper] which is how the component configuration of
  * existing entities is changed. This usually happens within [IteratingSystem] classes.
  */
-@EntityCfgMarker
-class EntityUpdateCfg(
+@EntityCtxMarker
+class EntityUpdateContext(
     @PublishedApi
     internal val compService: ComponentService
 ) {
     @PublishedApi
     internal lateinit var compMask: BitArray
+
+    inline operator fun <reified T : Component<*>> Entity.get(type: ComponentType<T>): T {
+        return compService.mapper(type)[this]
+    }
 
     inline operator fun <reified T : Component<T>> Entity.plusAssign(component: T) {
         val compType: ComponentType<T> = component.type()
@@ -119,10 +134,10 @@ class EntityService(
     internal val compMasks = bag<BitArray>(initialEntityCapacity)
 
     @PublishedApi
-    internal val createCfg = EntityCreateCfg(compService)
+    internal val createCtx = EntityCreateContext(compService)
 
     @PublishedApi
-    internal val updateCfg = EntityUpdateCfg(compService)
+    internal val updateCtx = EntityUpdateContext(compService)
 
     /**
      * Flag that indicates if an iteration of an [IteratingSystem] is currently in progress.
@@ -142,7 +157,7 @@ class EntityService(
      * If there are [recycledEntities] then they will be preferred over creating new entities.
      * Notifies any registered [EntityListener].
      */
-    inline fun create(configuration: EntityCreateCfg.(Entity) -> Unit): Entity {
+    inline fun create(configuration: EntityCreateContext.(Entity) -> Unit): Entity {
         val newEntity = if (recycledEntities.isEmpty()) {
             Entity(nextId++)
         } else {
@@ -155,10 +170,9 @@ class EntityService(
             compMasks[newEntity.id] = BitArray(64)
         }
         val compMask = compMasks[newEntity.id]
-        createCfg.run {
-            this.entity = newEntity
+        createCtx.run {
             this.compMask = compMask
-            configuration(this.entity)
+            configuration(newEntity)
         }
         world.allFamilies.forEach { it.onEntityAdded(newEntity, compMask) }
 
@@ -169,9 +183,9 @@ class EntityService(
      * Updates an [entity] with the given [configuration].
      * Notifies any registered [EntityListener].
      */
-    inline fun configure(entity: Entity, configuration: EntityUpdateCfg.(Entity) -> Unit) {
+    inline fun configure(entity: Entity, configuration: EntityUpdateContext.(Entity) -> Unit) {
         val compMask = compMasks[entity.id]
-        updateCfg.run {
+        updateCtx.run {
             this.compMask = compMask
             configuration(entity)
         }

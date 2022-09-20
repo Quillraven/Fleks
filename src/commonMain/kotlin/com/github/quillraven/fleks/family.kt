@@ -4,14 +4,19 @@ import com.github.quillraven.fleks.collection.BitArray
 import com.github.quillraven.fleks.collection.EntityComparator
 import com.github.quillraven.fleks.collection.IntBag
 
+typealias FamilyHook = EntityHookContext.(World, Entity) -> Unit
+
 @DslMarker
 annotation class FamilyDefinitionMarker
 
 @FamilyDefinitionMarker
 class FamilyDefinition {
-    var allOf: Set<ComponentType<*>>? = null
-    var noneOf: Set<ComponentType<*>>? = null
-    var anyOf: Set<ComponentType<*>>? = null
+    internal var allOf: Set<ComponentType<*>>? = null
+        private set
+    internal var noneOf: Set<ComponentType<*>>? = null
+        private set
+    internal var anyOf: Set<ComponentType<*>>? = null
+        private set
 
     fun all(vararg types: ComponentType<*>): FamilyDefinition {
         allOf = types.toSet()
@@ -80,12 +85,13 @@ data class Family(
     internal val world: World,
     @PublishedApi
     internal val entityService: EntityService = world.entityService,
+    private val hookCtx: EntityHookContext = world.hookCtx,
 ) {
     @PublishedApi
-    internal var addHook: ((World, Entity) -> Unit)? = null
+    internal var addHook: FamilyHook? = null
 
     @PublishedApi
-    internal var removeHook: ((World, Entity) -> Unit)? = null
+    internal var removeHook: FamilyHook? = null
 
     /**
      * Return the [entities] in form of an [IntBag] for better iteration performance.
@@ -202,7 +208,7 @@ data class Family(
     /**
      * Updates an [entity] using the given [configuration] to add and remove components.
      */
-    inline fun Entity.configure(configuration: EntityUpdateCfg.(Entity) -> Unit) {
+    inline fun Entity.configure(configuration: EntityUpdateContext.(Entity) -> Unit) {
         entityService.configure(this, configuration)
     }
 
@@ -219,7 +225,7 @@ data class Family(
         if (compMask in this) {
             isDirty = true
             entities.set(entity.id)
-            addHook?.invoke(world, entity)
+            addHook?.invoke(hookCtx, world, entity)
         }
     }
 
@@ -235,12 +241,12 @@ data class Family(
             // new entity gets added
             isDirty = true
             entities.set(entity.id)
-            addHook?.invoke(world, entity)
+            addHook?.invoke(hookCtx, world, entity)
         } else if (!entityInFamily && entities[entity.id]) {
             // existing entity gets removed
             isDirty = true
             entities.clear(entity.id)
-            removeHook?.invoke(world, entity)
+            removeHook?.invoke(hookCtx, world, entity)
         }
     }
 
@@ -253,7 +259,7 @@ data class Family(
             // existing entity gets removed
             isDirty = true
             entities.clear(entity.id)
-            removeHook?.invoke(world, entity)
+            removeHook?.invoke(hookCtx, world, entity)
         }
     }
 

@@ -23,7 +23,7 @@ class ComponentConfiguration(
 ) {
     inline fun <reified T : Component<*>> onAdd(
         componentType: ComponentType<T>,
-        noinline action: (World, Entity, T) -> Unit
+        noinline action: ComponentHook<T>
     ) {
         if (world.systems.isNotEmpty()) {
             throw FleksWrongConfigurationOrderException()
@@ -38,7 +38,7 @@ class ComponentConfiguration(
 
     inline fun <reified T : Component<*>> onRemove(
         componentType: ComponentType<T>,
-        noinline action: (World, Entity, T) -> Unit
+        noinline action: ComponentHook<T>
     ) {
         if (world.systems.isNotEmpty()) {
             throw FleksWrongConfigurationOrderException()
@@ -106,7 +106,7 @@ class FamilyConfiguration(
 ) {
     fun onAdd(
         family: Family,
-        action: (World, Entity) -> Unit
+        action: FamilyHook
     ) {
         if (world.systems.isNotEmpty()) {
             throw FleksWrongConfigurationOrderException()
@@ -120,7 +120,7 @@ class FamilyConfiguration(
 
     fun onRemove(
         family: Family,
-        action: (World, Entity) -> Unit
+        action: FamilyHook
     ) {
         if (world.systems.isNotEmpty()) {
             throw FleksWrongConfigurationOrderException()
@@ -204,6 +204,9 @@ class World internal constructor(
     internal val componentService = ComponentService(this)
 
     @PublishedApi
+    internal val hookCtx = EntityHookContext(componentService)
+
+    @PublishedApi
     internal val entityService = EntityService(this, entityCapacity)
 
     /**
@@ -239,16 +242,16 @@ class World internal constructor(
     }
 
     /**
-     * Adds a new [entity][Entity] to the world using the given [configuration][EntityCreateCfg].
+     * Adds a new [entity][Entity] to the world using the given [configuration][EntityCreateContext].
      */
-    inline fun entity(configuration: EntityCreateCfg.(Entity) -> Unit = {}): Entity {
+    inline fun entity(configuration: EntityCreateContext.(Entity) -> Unit = {}): Entity {
         return entityService.create(configuration)
     }
 
     /**
      * Updates an [entity] using the given [configuration] to add and remove components.
      */
-    inline fun configure(entity: Entity, configuration: EntityUpdateCfg.(Entity) -> Unit) {
+    inline fun configure(entity: Entity, configuration: EntityUpdateContext.(Entity) -> Unit) {
         entityService.configure(entity, configuration)
     }
 
