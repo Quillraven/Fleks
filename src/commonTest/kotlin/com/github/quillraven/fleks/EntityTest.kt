@@ -47,19 +47,19 @@ internal class EntityTest {
     @Test
     fun updateComponentOfEntityIfItAlreadyExists() {
         val expectedEntity = testEntityService.create { }
-        val mapper = testWorld[EntityTestComponent]
+        val holder = testWorld[EntityTestComponent]
 
         testEntityService.configure(expectedEntity) {
-            mapper.addInternal(expectedEntity, EntityTestComponent(1f))
-            mapper.addOrUpdateInternal(
+            holder[expectedEntity] = EntityTestComponent(1f)
+            holder.setOrUpdate(
                 expectedEntity,
-                add = { EntityTestComponent(1f) },
+                factory = { EntityTestComponent(1f) },
                 update = { testCmp -> testCmp.x++ }
             )
         }
 
-        assertTrue(expectedEntity in mapper)
-        assertEquals(2f, mapper[expectedEntity].x)
+        assertTrue(expectedEntity in holder)
+        assertEquals(2f, holder[expectedEntity].x)
     }
 
     @Test

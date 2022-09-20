@@ -4,9 +4,19 @@ import com.github.quillraven.fleks.collection.Bag
 import com.github.quillraven.fleks.collection.bag
 import kotlin.math.max
 import kotlin.native.concurrent.ThreadLocal
+import kotlin.reflect.KClass
 
+/**
+ * Type alias for an optional hook function for a [ComponentsHolder].
+ * Such a function runs within an [EntityHookContext] and takes the [World], [Entity] and [component][Component] as an argument.
+ */
 typealias ComponentHook<T> = EntityHookContext.(World, Entity, T) -> Unit
 
+/**
+ * A class that assigns a unique [id] per type of [Component] starting from 0.
+ * This [id] is used internally by Fleks as an index for some arrays.
+ * Every [Component] class must have at least one [ComponentType].
+ */
 abstract class ComponentType<T> {
     val id: Int = nextId++
 
@@ -16,76 +26,111 @@ abstract class ComponentType<T> {
     }
 }
 
+/**
+ * An interface that must be implemented by any component that is used for Fleks.
+ * A component must have at least one [ComponentType] that is provided via the [type] function.
+ *
+ * One convenient approach is to use the unnamed companion object of a Kotlin class as a [ComponentType].
+ * Sample code for a component that stores the position of an entity:
+ *
+ *     private data class Position(
+ *         var x: Float,
+ *         var y: Float,
+ *     ) : Component<Position> {
+ *         override fun type(): ComponentType<Position> = Position
+ *
+ *         companion object : ComponentType<Position>()
+ *     }
+ */
 interface Component<T> {
+    /**
+     * Returns the [ComponentType] of a [Component].
+     */
     fun type(): ComponentType<T>
 }
 
 /**
  * A class that is responsible to store components of a specific type for all [entities][Entity] in a [world][World].
- * Each component is assigned a unique [id] for fast access and to avoid lookups via a class which is slow.
- * Hint: A component at index [id] in the [components] array belongs to [Entity] with the same [id].
+ * The index of the [components] array is linked to the id of an [entity][Entity]. If an [entity][Entity] has
+ * a component of this specific type then the value at index 'entity.id' is not null.
  *
  * Refer to [ComponentService] for more details.
  */
-class ComponentMapper<T : Component<*>>(
+class ComponentsHolder<T : Component<*>>(
     private val world: World,
     private val name: String,
-    @PublishedApi
-    internal var components: Array<T?>,
+    private var components: Array<T?>,
     private val hookCtx: EntityHookContext = world.hookCtx,
 ) {
+    /**
+     * An optional [ComponentHook] that gets called whenever a [component][Component] gets set for an [entity][Entity].
+     */
     @PublishedApi
     internal var addHook: ComponentHook<T>? = null
 
+    /**
+     * An optional [ComponentHook] that gets called whenever a [component][Component] gets removed from an [entity][Entity].
+     */
     @PublishedApi
     internal var removeHook: ComponentHook<T>? = null
 
     /**
-     * Adds the [component] to the given [entity]. This function is only
-     * used by [World.loadSnapshot].
+     * Sets the [component] for the given [entity]. This function is only
+     * used by [World.loadSnapshot] where we don't have the correct type information
+     * during runtime, and therefore we can only provide 'Any' as a type and need to cast it internally.
      */
     @Suppress("UNCHECKED_CAST")
-    internal fun addInternalWildcard(entity: Entity, component: Any) {
-        addInternal(entity, component as T)
-    }
+    internal fun setWildcard(entity: Entity, component: Any) = set(entity, component as T)
 
-    @PublishedApi
-    internal fun addInternal(entity: Entity, component: T) {
+    /**
+     * Sets the [component] for the given [entity].
+     * If a [removeHook] is defined then it gets called if the [entity] already had a component.
+     * If an [addHook] is defined then it gets called after the [component] is assigned to the [entity].
+     */
+    operator fun set(entity: Entity, component: T) {
         if (entity.id >= components.size) {
+            // not enough space to store the new component -> resize array
             components = components.copyOf(max(components.size * 2, entity.id + 1))
         }
 
+        // check if removeHook needs to be called
         components[entity.id]?.let { existingCmp ->
             removeHook?.invoke(hookCtx, world, entity, existingCmp)
         }
 
+        // set component and call addHook if necessary
         components[entity.id] = component
         addHook?.invoke(hookCtx, world, entity, component)
     }
 
     /**
      * Removes a component of the specific type from the given [entity].
-     * Notifies any registered [ComponentListener].
+     * If a [removeHook] is defined then it gets called if the [entity] has such a component.
      *
      * @throws [IndexOutOfBoundsException] if the id of the [entity] exceeds the components' capacity.
      */
-    @PublishedApi
-    internal fun removeInternal(entity: Entity) {
+    operator fun minusAssign(entity: Entity) {
         components[entity.id]?.let { existingComp ->
             removeHook?.invoke(hookCtx, world, entity, existingComp)
         }
         components[entity.id] = null
     }
 
-    @PublishedApi
-    internal inline fun addOrUpdateInternal(
+    /**
+     * Sets or updates a component for the given [entity].
+     * If the [entity] has no component yet then [factory] is called to provide an instance for the [set] call.
+     * If the [entity] already has a component then [update] is called with the already existing component instance.
+     */
+    inline fun setOrUpdate(
         entity: Entity,
-        add: () -> T,
+        factory: () -> T,
         update: (T) -> Unit,
     ) {
+        // use getOrNull here to be safe if entity id > components.size.
+        // Array gets resized within the 'set' call if necessary.
         val existingComp = getOrNull(entity)
         if (existingComp == null) {
-            addInternal(entity, add())
+            set(entity, factory())
         } else {
             existingComp.also(update)
         }
@@ -101,16 +146,10 @@ class ComponentMapper<T : Component<*>>(
     }
 
     /**
-     * Returns a component of the specific type of the given [entity] or null if the entity does not have this component.
+     * Returns a component of the specific type of the given [entity] or null if the entity does not have such a component.
      */
-    fun getOrNull(entity: Entity): T? {
-        if (components.size > entity.id) {
-            // entity potentially has this component. However, return value can still be null
-            return components[entity.id]
-        }
-        // entity is not part of mapper
-        return null
-    }
+    fun getOrNull(entity: Entity): T? =
+        components.getOrNull(entity.id)
 
     /**
      * Returns true if and only if the given [entity] has a component of the specific type.
@@ -124,42 +163,62 @@ class ComponentMapper<T : Component<*>>(
 }
 
 /**
- * A service class that is responsible for managing [ComponentMapper] instances.
- * It creates a [ComponentMapper] for every unique component type and assigns a unique id for each mapper.
+ * A service class that is responsible for managing [ComponentsHolder] instances.
+ * It creates a [ComponentsHolder] for every unique [ComponentType].
  */
 class ComponentService(
     @PublishedApi
     internal val world: World,
 ) {
     /**
-     * Returns [Bag] of [ComponentMapper]. The id of the mapper is the index of the bag.
-     * It is used by the [EntityService] to fasten up the cleanup process of delayed entity removals.
+     * Returns [Bag] of [ComponentsHolder].
      */
     @PublishedApi
-    internal val mappersBag = bag<ComponentMapper<*>>()
+    internal val holdersBag = bag<ComponentsHolder<*>>()
 
-    fun wildcardMapper(compType: ComponentType<*>): ComponentMapper<*> {
-        if (mappersBag.hasNoValueAtIndex(compType.id)) {
+    // Format of toString() is package.Component$Companion
+    // This method returns 'Component' which is the short name of the component class.
+    fun KClass<*>.toComponentName(): String =
+        this.toString().substringAfterLast(".").substringBefore("$")
+
+    /**
+     * Returns a [ComponentsHolder] for the given [componentType]. This function is only
+     * used by [World.loadSnapshot] where we don't have the correct type information
+     * during runtime, and therefore we can only provide '*' as a type and need to cast it internally.
+     */
+    fun wildcardHolder(componentType: ComponentType<*>): ComponentsHolder<*> {
+        if (holdersBag.hasNoValueAtIndex(componentType.id)) {
             // We cannot use simpleName here because it returns "Companion".
             // Therefore, we do some string manipulation to get the name of the component correctly.
             // Format of toString() is package.Component$Companion
-            val name = compType::class.toString().substringAfterLast(".").substringBefore("$")
-            mappersBag[compType.id] = ComponentMapper(world, name, Array<Component<*>?>(world.capacity) { null })
+            val name = componentType::class.toComponentName()
+            holdersBag[componentType.id] = ComponentsHolder(world, name, Array<Component<*>?>(world.capacity) { null })
         }
-        return mappersBag[compType.id]
+        return holdersBag[componentType.id]
     }
 
-    // index = id of ComponentType
-    fun mapperByIndex(index: Int): ComponentMapper<*> {
-        return mappersBag[index]
-    }
-
+    /**
+     * Returns a [ComponentsHolder] for the given [componentType]. If no such holder exists yet, then it
+     * will be created and added to the [holdersBag].
+     */
     @Suppress("UNCHECKED_CAST")
-    inline fun <reified T : Component<*>> mapper(compType: ComponentType<T>): ComponentMapper<T> {
-        if (mappersBag.hasNoValueAtIndex(compType.id)) {
-            val name = T::class.simpleName ?: "anonymous"
-            mappersBag[compType.id] = ComponentMapper(world, name, Array<T?>(world.capacity) { null })
+    inline fun <reified T : Component<*>> holder(componentType: ComponentType<T>): ComponentsHolder<T> {
+        if (holdersBag.hasNoValueAtIndex(componentType.id)) {
+            val name = T::class.simpleName ?: T::class.toComponentName()
+            holdersBag[componentType.id] = ComponentsHolder(world, name, Array<T?>(world.capacity) { null })
         }
-        return mappersBag[compType.id] as ComponentMapper<T>
+        return holdersBag[componentType.id] as ComponentsHolder<T>
+    }
+
+    /**
+     * Returns the [ComponentsHolder] of the given [index] inside the [holdersBag]. The index
+     * is linked to the id of a [ComponentType].
+     * This function is only used internally at safe areas to speed up certain processes like
+     * removing an [entity][Entity] or creating a snapshot via [World.snapshot].
+     *
+     * @throws [IndexOutOfBoundsException] if the [index] exceeds the bag's capacity.
+     */
+    internal fun holderByIndex(index: Int): ComponentsHolder<*> {
+        return holdersBag[index]
     }
 }

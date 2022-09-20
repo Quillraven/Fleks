@@ -289,8 +289,8 @@ class World internal constructor(
         return systemService.system()
     }
 
-    inline operator fun <reified T : Component<*>> get(componentType: ComponentType<T>): ComponentMapper<T> {
-        return componentService.mapper(componentType)
+    inline operator fun <reified T : Component<*>> get(componentType: ComponentType<T>): ComponentsHolder<T> {
+        return componentService.holder(componentType)
     }
 
     fun family(cfg: FamilyDefinition.() -> Unit): Family {
@@ -335,7 +335,7 @@ class World internal constructor(
             val components = mutableListOf<Component<*>>()
             val compMask = entityService.compMasks[entity.id]
             compMask.forEachSetBit { cmpId ->
-                components += componentService.mapperByIndex(cmpId)[entity] as Component<*>
+                components += componentService.holderByIndex(cmpId)[entity]
             }
             entityComps[entity] = components
         }
@@ -352,7 +352,7 @@ class World internal constructor(
 
         if (entity in entityService) {
             entityService.compMasks[entity.id].forEachSetBit { cmpId ->
-                comps += componentService.mapperByIndex(cmpId)[entity] as Component<*>
+                comps += componentService.holderByIndex(cmpId)[entity]
             }
         }
 
@@ -426,7 +426,7 @@ class World internal constructor(
         inline fun <reified T> inject(name: String = T::class.simpleName ?: "anonymous"): T =
             CURRENT_WORLD?.inject(name) ?: throw FleksWrongConfigurationUsageException()
 
-        inline fun <reified T : Component<*>> mapper(componentType: ComponentType<T>): ComponentMapper<T> =
+        inline fun <reified T : Component<*>> mapper(componentType: ComponentType<T>): ComponentsHolder<T> =
             CURRENT_WORLD?.get(componentType) ?: throw FleksWrongConfigurationUsageException()
 
         fun family(cfg: FamilyDefinition.() -> Unit): Family =

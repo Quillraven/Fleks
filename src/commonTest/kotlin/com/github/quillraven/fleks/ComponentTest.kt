@@ -12,54 +12,54 @@ internal class ComponentTest {
 
     private val testWorld = world { }
     private val testService = ComponentService(testWorld)
-    private val testMapper = testService.mapper(ComponentTestComponent)
+    private val testHolder = testService.holder(ComponentTestComponent)
 
     @Test
-    fun addEntityToMapperWithSufficientCapacity() {
+    fun addEntityToHolderWithSufficientCapacity() {
         val entity = Entity(0)
         val expectedComp = ComponentTestComponent()
 
-        testMapper.addInternal(entity, expectedComp)
+        testHolder[entity] = expectedComp
 
-        assertTrue(entity in testMapper)
-        assertEquals(expectedComp, testMapper[entity])
+        assertTrue(entity in testHolder)
+        assertEquals(expectedComp, testHolder[entity])
     }
 
     @Test
-    fun addEntityToMapperWithInsufficientCapacity() {
+    fun addEntityToHolderWithInsufficientCapacity() {
         val entity = Entity(10_000)
         val expectedComp = ComponentTestComponent()
 
-        testMapper.addInternal(entity, expectedComp)
+        testHolder[entity] = expectedComp
 
-        assertTrue(entity in testMapper)
-        assertEquals(expectedComp, testMapper[entity])
+        assertTrue(entity in testHolder)
+        assertEquals(expectedComp, testHolder[entity])
     }
 
     @Test
-    fun returnsFalseWhenEntityIsNotPartOfMapper() {
+    fun returnsFalseWhenEntityIsNotPartOfHolder() {
         // within capacity
-        assertFalse(Entity(0) in testMapper)
+        assertFalse(Entity(0) in testHolder)
         // outside capacity
-        assertFalse(Entity(10_000) in testMapper)
+        assertFalse(Entity(10_000) in testHolder)
     }
 
     @Test
-    fun removeExistingEntityFromMapper() {
+    fun removeExistingEntityFromHolder() {
         val entity = Entity(0)
-        testMapper.addInternal(entity, ComponentTestComponent())
+        testHolder[entity] = ComponentTestComponent()
 
-        testMapper.removeInternal(entity)
+        testHolder -= entity
 
-        assertFalse(entity in testMapper)
+        assertFalse(entity in testHolder)
     }
 
     @Test
     fun getComponentOfExistingEntity() {
         val entity = Entity(0)
-        testMapper.addInternal(entity, ComponentTestComponent(2))
+        testHolder[entity] = ComponentTestComponent(2)
 
-        val cmp = testMapper[entity]
+        val cmp = testHolder[entity]
 
         assertEquals(2, cmp.x)
     }
@@ -68,14 +68,14 @@ internal class ComponentTest {
     fun cannotGetComponentOfNonExistingEntity() {
         val entity = Entity(0)
 
-        assertFailsWith<FleksNoSuchEntityComponentException> { testMapper[entity] }
+        assertFailsWith<FleksNoSuchEntityComponentException> { testHolder[entity] }
     }
 
     @Test
     fun getComponentOfNonExistingEntityWithSufficientCapacity() {
         val entity = Entity(0)
 
-        val cmp = testMapper.getOrNull(entity)
+        val cmp = testHolder.getOrNull(entity)
 
         assertNull(cmp)
     }
@@ -84,7 +84,7 @@ internal class ComponentTest {
     fun getComponentOfNonExistingEntityWithoutSufficientCapacity() {
         val entity = Entity(2048)
 
-        val cmp = testMapper.getOrNull(entity)
+        val cmp = testHolder.getOrNull(entity)
 
         assertNull(cmp)
     }
@@ -92,27 +92,27 @@ internal class ComponentTest {
     @Test
     fun getComponentOfExistingEntityViaGetOrNull() {
         val entity = Entity(0)
-        testMapper.addInternal(entity, ComponentTestComponent(2))
+        testHolder[entity] = ComponentTestComponent(2)
 
-        val cmp = testMapper.getOrNull(entity)
+        val cmp = testHolder.getOrNull(entity)
 
         assertEquals(2, cmp?.x)
     }
 
     @Test
-    fun doNotCreateTheSameMapperTwice() {
-        val expected = testService.mapper(ComponentTestComponent)
+    fun doNotCreateTheSameHolderTwice() {
+        val expected = testService.holder(ComponentTestComponent)
 
-        val actual = testService.mapper(ComponentTestComponent)
+        val actual = testService.holder(ComponentTestComponent)
 
         assertSame(expected, actual)
     }
 
     @Test
-    fun getMapperByComponentId() {
-        val actual = testService.mapperByIndex(0)
+    fun getHolderByComponentId() {
+        val actual = testService.holderByIndex(0)
 
-        assertSame(testMapper, actual)
+        assertSame(testHolder, actual)
     }
 
     @Test
@@ -136,10 +136,10 @@ internal class ComponentTest {
             numRemoveCalls++
         }
 
-        testMapper.addHook = onAdd
-        testMapper.removeHook = onRemove
+        testHolder.addHook = onAdd
+        testHolder.removeHook = onRemove
 
-        testMapper.addInternal(expectedEntity, expectedComp)
+        testHolder[expectedEntity] = expectedComp
 
         assertEquals(1, numAddCalls)
         assertEquals(0, numRemoveCalls)
@@ -167,12 +167,12 @@ internal class ComponentTest {
             numRemoveCalls++
         }
 
-        testMapper.addHook = onAdd
-        testMapper.removeHook = onRemove
+        testHolder.addHook = onAdd
+        testHolder.removeHook = onRemove
 
-        testMapper.addInternal(expectedEntity, expectedComp1)
+        testHolder[expectedEntity] = expectedComp1
         // this should trigger onRemove of the first component
-        testMapper.addInternal(expectedEntity, expectedComp2)
+        testHolder[expectedEntity] = expectedComp2
 
         assertEquals(2, numAddCalls)
         assertEquals(1, numRemoveCalls)
@@ -182,28 +182,28 @@ internal class ComponentTest {
     fun addComponentIfItDoesNotExistYet() {
         val entity = Entity(1)
 
-        testMapper.addOrUpdateInternal(
+        testHolder.setOrUpdate(
             entity,
-            add = { ComponentTestComponent(1) },
+            factory = { ComponentTestComponent(1) },
             update = { cmp -> cmp.x = 2 }
         )
 
-        assertTrue(entity in testMapper)
-        assertEquals(1, testMapper[entity].x)
+        assertTrue(entity in testHolder)
+        assertEquals(1, testHolder[entity].x)
     }
 
     @Test
     fun updateComponentIfItAlreadyExists() {
         val entity = Entity(1)
-        testMapper.addInternal(entity, ComponentTestComponent(0))
+        testHolder[entity] = ComponentTestComponent(0)
 
-        testMapper.addOrUpdateInternal(
+        testHolder.setOrUpdate(
             entity,
-            add = { ComponentTestComponent(1) },
+            factory = { ComponentTestComponent(1) },
             update = { cmp -> cmp.x = 2 }
         )
 
-        assertTrue(entity in testMapper)
-        assertEquals(2, testMapper[entity].x)
+        assertTrue(entity in testHolder)
+        assertEquals(2, testHolder[entity].x)
     }
 }

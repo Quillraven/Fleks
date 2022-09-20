@@ -18,7 +18,7 @@ class EntityHookContext(
     internal val compService: ComponentService
 ) {
     inline operator fun <reified T : Component<*>> Entity.get(type: ComponentType<T>): T {
-        return compService.mapper(type)[this]
+        return compService.holder(type)[this]
     }
 }
 
@@ -34,20 +34,20 @@ class EntityCreateContext(
     internal lateinit var compMask: BitArray
 
     inline operator fun <reified T : Component<*>> Entity.get(type: ComponentType<T>): T {
-        return compService.mapper(type)[this]
+        return compService.holder(type)[this]
     }
 
     inline operator fun <reified T : Component<T>> Entity.plusAssign(component: T) {
         val compType: ComponentType<T> = component.type()
         compMask.set(compType.id)
-        val mapper: ComponentMapper<T> = compService.mapper(compType)
-        mapper.addInternal(this, component)
+        val holder: ComponentsHolder<T> = compService.holder(compType)
+        holder[this] = component
     }
 }
 
 /**
  * A DSL class to update components of an already existing [entity][Entity].
- * It contains extension functions for [ComponentMapper] which is how the component configuration of
+ * It contains extension functions for [ComponentsHolder] which is how the component configuration of
  * existing entities is changed. This usually happens within [IteratingSystem] classes.
  */
 @EntityCtxMarker
@@ -59,19 +59,19 @@ class EntityUpdateContext(
     internal lateinit var compMask: BitArray
 
     inline operator fun <reified T : Component<*>> Entity.get(type: ComponentType<T>): T {
-        return compService.mapper(type)[this]
+        return compService.holder(type)[this]
     }
 
     inline operator fun <reified T : Component<T>> Entity.plusAssign(component: T) {
         val compType: ComponentType<T> = component.type()
         compMask.set(compType.id)
-        val mapper: ComponentMapper<T> = compService.mapper(compType)
-        mapper.addInternal(this, component)
+        val holder: ComponentsHolder<T> = compService.holder(compType)
+        holder[this] = component
     }
 
-    operator fun Entity.minusAssign(componentType: ComponentType<*>) {
+    inline operator fun <reified T : Component<*>> Entity.minusAssign(componentType: ComponentType<T>) {
         compMask.clear(componentType.id)
-        compService.wildcardMapper(componentType).removeInternal(this)
+        compService.holder(componentType) -= this
     }
 
     inline fun <reified T : Component<T>> Entity.addOrUpdate(
@@ -80,8 +80,8 @@ class EntityUpdateContext(
         update: (T) -> Unit,
     ) {
         compMask.set(componentType.id)
-        val mapper: ComponentMapper<T> = compService.mapper(componentType)
-        mapper.addOrUpdateInternal(this, add, update)
+        val holder: ComponentsHolder<T> = compService.holder(componentType)
+        holder.setOrUpdate(this, add, update)
     }
 }
 
@@ -200,8 +200,8 @@ class EntityService(
     internal fun configure(entity: Entity, components: List<Component<*>>) {
         val compMask = compMasks[entity.id]
         components.forEach { cmp ->
-            val mapper = compService.wildcardMapper(cmp.type())
-            mapper.addInternalWildcard(entity, cmp)
+            val mapper = compService.wildcardHolder(cmp.type())
+            mapper.setWildcard(entity, cmp)
             compMask.set(cmp.type().id)
         }
         world.allFamilies.forEach { it.onEntityCfgChanged(entity, compMask) }
@@ -239,7 +239,7 @@ class EntityService(
             val compMask = compMasks[entity.id]
             recycledEntities.add(entity)
             compMask.forEachSetBit { compId ->
-                compService.mapperByIndex(compId).removeInternal(entity)
+                compService.holderByIndex(compId) -= entity
             }
             compMask.clearAll()
             world.allFamilies.forEach { it.onEntityRemoved(entity) }

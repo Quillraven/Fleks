@@ -215,7 +215,7 @@ data class Family(
     }
 
     inline operator fun <reified T : Component<*>> Entity.get(type: ComponentType<T>): T {
-        return compService.mapper(type)[this]
+        return compService.holder(type)[this]
     }
 
     /**

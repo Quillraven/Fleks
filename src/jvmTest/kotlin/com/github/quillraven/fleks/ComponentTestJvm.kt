@@ -12,12 +12,12 @@ internal class ComponentTestJvm {
     }
 
     @Test
-    fun cannotRemoveNonExistingEntityFromMapperWithInsufficientCapacity() {
+    fun cannotRemoveNonExistingEntityFromHolderWithInsufficientCapacity() {
         val world = world { }
         val cmpService = ComponentService(world)
-        val mapper = cmpService.mapper(ComponentTestComponent)
+        val holder = cmpService.holder(ComponentTestComponent)
         val entity = Entity(10_000)
 
-        assertFailsWith<IndexOutOfBoundsException> { mapper.removeInternal(entity) }
+        assertFailsWith<IndexOutOfBoundsException> { holder -= entity }
     }
 }
