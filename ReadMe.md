@@ -1,7 +1,7 @@
 # Fleks
 
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/Quillraven/Fleks/blob/master/LICENSE)
-[![Maven](https://img.shields.io/badge/Maven-1.6--KMP-success.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks/1.6-KMP/jar)
+[![Maven](https://img.shields.io/badge/Maven-2.0-success.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks/2.0/jar)
 
 [![Build KMP](https://img.shields.io/github/workflow/status/quillraven/fleks/Build/kmp?event=push&label=Build%20kmp)](https://github.com/Quillraven/fleks/actions)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.7.10-red.svg)](http://kotlinlang.org/)
@@ -63,26 +63,26 @@ To use Fleks add it as a dependency to your project:
 <dependency>
   <groupId>io.github.quillraven.fleks</groupId>
   <artifactId>Fleks</artifactId>
-  <version>1.6-KMP</version>
+  <version>2.0</version>
 </dependency>
 ```
 
 #### Gradle (Groovy)
 
 ```kotlin
-implementation 'io.github.quillraven.fleks:Fleks:1.6-KMP'
+implementation 'io.github.quillraven.fleks:Fleks:2.0'
 ```
 
 #### Gradle (Kotlin)
 
 ```kotlin
-implementation("io.github.quillraven.fleks:Fleks:1.6-KMP")
+implementation("io.github.quillraven.fleks:Fleks:2.0")
 ```
 
 #### KorGE
 
 ```kotlin
-dependencyMulti("io.github.quillraven.fleks:Fleks:1.6-KMP", registerPlugin = false)
+dependencyMulti("io.github.quillraven.fleks:Fleks:2.0", registerPlugin = false)
 ```
 
 ## API and examples

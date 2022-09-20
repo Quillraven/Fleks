@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "io.github.quillraven.fleks"
-version = "1.6-KMP"
+version = "2.0"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
 repositories {
