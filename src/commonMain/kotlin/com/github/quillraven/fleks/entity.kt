@@ -20,6 +20,10 @@ class EntityHookContext(
     inline operator fun <reified T : Component<*>> Entity.get(type: ComponentType<T>): T {
         return compService.holder(type)[this]
     }
+
+    inline fun <reified T : Component<*>> Entity.contains(componentType: ComponentType<T>): Boolean {
+        return compService.holder(componentType).contains(this)
+    }
 }
 
 /**
