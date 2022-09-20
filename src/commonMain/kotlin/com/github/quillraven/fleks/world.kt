@@ -4,19 +4,19 @@ import com.github.quillraven.fleks.World.Companion.CURRENT_WORLD
 import com.github.quillraven.fleks.collection.BitArray
 import kotlin.native.concurrent.ThreadLocal
 
+@DslMarker
+annotation class WorldCfgMarker
+
 /**
  * Wrapper class for injectables of the [WorldConfiguration].
  * It is used in the [SystemService] to find out any unused injectables.
  */
 data class Injectable(val injObj: Any, var used: Boolean = false)
 
-@DslMarker
-annotation class ComponentCfgMarker
-
 /**
  * A DSL class to configure components and [ComponentListener] of a [WorldConfiguration].
  */
-@ComponentCfgMarker
+@WorldCfgMarker
 class ComponentConfiguration(
     @PublishedApi
     internal val world: World
@@ -52,13 +52,10 @@ class ComponentConfiguration(
     }
 }
 
-@DslMarker
-annotation class SystemCfgMarker
-
 /**
  * A DSL class to configure [IntervalSystem] of a [WorldConfiguration].
  */
-@SystemCfgMarker
+@WorldCfgMarker
 class SystemConfiguration(private val world: World) {
     fun add(system: IntervalSystem) {
         if (world.systems.any { it::class == system::class }) {
@@ -68,13 +65,10 @@ class SystemConfiguration(private val world: World) {
     }
 }
 
-@DslMarker
-annotation class InjectableCfgMarker
-
 /**
  * A DSL class to configure [Injectable] of a [WorldConfiguration].
  */
-@InjectableCfgMarker
+@WorldCfgMarker
 class InjectableConfiguration(private val world: World) {
     /**
      * Adds the specified [dependency] under the given [name] which can then be injected to any [IntervalSystem], [ComponentListener] or [FamilyListener].
@@ -102,13 +96,10 @@ class InjectableConfiguration(private val world: World) {
     }
 }
 
-@DslMarker
-annotation class FamilyCfgMarker
-
 /**
  * A DSL class to configure [FamilyListener] of a [WorldConfiguration].
  */
-@FamilyCfgMarker
+@WorldCfgMarker
 class FamilyConfiguration(
     @PublishedApi
     internal val world: World
@@ -141,9 +132,6 @@ class FamilyConfiguration(
         family.removeHook = action
     }
 }
-
-@DslMarker
-annotation class WorldCfgMarker
 
 /**
  * A configuration for an entity [world][World] to define the initial maximum entity capacity,
