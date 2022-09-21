@@ -224,11 +224,9 @@ internal class SystemTest {
             }
         }
 
-        val service = expectedWorld.systemService
-
-        assertEquals(1, service.systems.size)
-        assertNotNull(service.system<SystemTestIntervalSystemEachFrame>())
-        assertSame(expectedWorld, service.system<SystemTestIntervalSystemEachFrame>().world)
+        assertEquals(1, expectedWorld.systems.size)
+        assertNotNull(expectedWorld.system<SystemTestIntervalSystemEachFrame>())
+        assertSame(expectedWorld, expectedWorld.system<SystemTestIntervalSystemEachFrame>().world)
     }
 
     @Test
@@ -243,10 +241,8 @@ internal class SystemTest {
             }
         }
 
-        val service = expectedWorld.systemService
-
-        val actualSystem = service.system<SystemTestIteratingSystemInjectable>()
-        assertEquals(1, service.systems.size)
+        val actualSystem = expectedWorld.system<SystemTestIteratingSystemInjectable>()
+        assertEquals(1, expectedWorld.systems.size)
         assertSame(expectedWorld, actualSystem.world)
         assertEquals("42", actualSystem.injectable)
     }
@@ -264,10 +260,8 @@ internal class SystemTest {
             }
         }
 
-        val service = expectedWorld.systemService
-
-        val actualSystem = service.system<SystemTestIteratingSystemQualifiedInjectable>()
-        assertEquals(1, service.systems.size)
+        val actualSystem = expectedWorld.system<SystemTestIteratingSystemQualifiedInjectable>()
+        assertEquals(1, expectedWorld.systems.size)
         assertSame(expectedWorld, actualSystem.world)
         assertEquals("42", actualSystem.injectable)
         assertEquals("43", actualSystem.injectable2)
@@ -280,13 +274,12 @@ internal class SystemTest {
                 add(SystemTestIteratingSystem())
             }
         }
-        val service = world.systemService
         world.entity { it += SystemTestComponent() }
         world.entity { it += SystemTestComponent() }
 
         world.update(0.3f)
 
-        val system = service.system<SystemTestIteratingSystem>()
+        val system = world.system<SystemTestIteratingSystem>()
         assertEquals(2, system.numEntityCalls)
         assertEquals(2, system.numAlphaCalls)
         assertEquals(0.05f / 0.25f, system.lastAlpha, 0.0001f)
@@ -299,9 +292,8 @@ internal class SystemTest {
                 add(SystemTestIteratingSystem())
             }
         }
-        val service = world.systemService
         val entity = world.entity { it += SystemTestComponent() }
-        val system = service.system<SystemTestIteratingSystem>()
+        val system = world.system<SystemTestIteratingSystem>()
         system.entityToConfigure = entity
 
         world.update(0.3f)
@@ -316,14 +308,13 @@ internal class SystemTest {
                 add(SystemTestIteratingSystemSortAutomatic())
             }
         }
-        val service = world.systemService
         world.entity { it += SystemTestComponent(x = 15f) }
         world.entity { it += SystemTestComponent(x = 10f) }
         val expectedEntity = world.entity { it += SystemTestComponent(x = 5f) }
 
-        service.update()
+        world.update(0f)
 
-        assertEquals(expectedEntity, service.system<SystemTestIteratingSystemSortAutomatic>().lastEntityProcess)
+        assertEquals(expectedEntity, world.system<SystemTestIteratingSystemSortAutomatic>().lastEntityProcess)
     }
 
     @Test
@@ -333,14 +324,13 @@ internal class SystemTest {
                 add(SystemTestIteratingSystemSortManual())
             }
         }
-        val service = world.systemService
         world.entity { it += SystemTestComponent(x = 15f) }
         world.entity { it += SystemTestComponent(x = 10f) }
         val expectedEntity = world.entity { it += SystemTestComponent(x = 5f) }
-        val system = service.system<SystemTestIteratingSystemSortManual>()
+        val system = world.system<SystemTestIteratingSystemSortManual>()
 
         system.doSort = true
-        service.update()
+        world.update(0f)
 
         assertEquals(expectedEntity, system.lastEntityProcess)
         assertFalse(system.doSort)
@@ -353,10 +343,9 @@ internal class SystemTest {
                 add(SystemTestIteratingSystemSortAutomatic())
             }
         }
-        val service = world.systemService
 
         assertFailsWith<FleksNoSuchSystemException> {
-            service.system<SystemTestIntervalSystemEachFrame>()
+            world.system<SystemTestIntervalSystemEachFrame>()
         }
     }
 
@@ -367,11 +356,10 @@ internal class SystemTest {
                 add(SystemTestIntervalSystemEachFrame())
             }
         }
-        val service = world.systemService
-        val system = service.system<SystemTestIntervalSystemEachFrame>()
+        val system = world.system<SystemTestIntervalSystemEachFrame>()
         system.enabled = false
 
-        service.update()
+        world.update(0f)
 
         assertEquals(0, system.numCalls)
     }
@@ -383,17 +371,16 @@ internal class SystemTest {
                 add(SystemTestIteratingSystemSortAutomatic())
             }
         }
-        val service = world.systemService
         world.entity { it += SystemTestComponent(x = 15f) }
         val entityToRemove = world.entity { it += SystemTestComponent(x = 10f) }
         world.entity { it += SystemTestComponent(x = 5f) }
-        val system = service.system<SystemTestIteratingSystemSortAutomatic>()
+        val system = world.system<SystemTestIteratingSystemSortAutomatic>()
         system.entityToRemove = entityToRemove
 
         // call it twice - first call still iterates over all three entities
         // while the second call will only iterate over the remaining two entities
-        service.update()
-        service.update()
+        world.update(0f)
+        world.update(0f)
 
         assertEquals(5, system.numEntityCalls)
     }
@@ -405,19 +392,17 @@ internal class SystemTest {
                 add(SystemTestFixedSystemRemoval())
             }
         }
-        val service = world.systemService
         // set delta time to 1f for the fixed interval
-        world.update(1f)
         world.entity { it += SystemTestComponent(x = 15f) }
         val entityToRemove = world.entity { it += SystemTestComponent(x = 10f) }
         world.entity { it += SystemTestComponent(x = 5f) }
-        val system = service.system<SystemTestFixedSystemRemoval>()
+        val system = world.system<SystemTestFixedSystemRemoval>()
         system.entityToRemove = entityToRemove
 
         // call it twice - first call still iterates over all three entities
         // while the second call will only iterate over the remaining two entities
-        service.update()
-        service.update()
+        world.update(1f)
+        world.update(1f)
 
         assertEquals(4, system.numEntityCalls)
     }
@@ -429,11 +414,10 @@ internal class SystemTest {
                 add(SystemTestIntervalSystemEachFrame())
             }
         }
-        val service = world.systemService
 
-        service.dispose()
+        world.dispose()
 
-        assertEquals(1, service.system<SystemTestIntervalSystemEachFrame>().numDisposes)
+        assertEquals(1, world.system<SystemTestIntervalSystemEachFrame>().numDisposes)
     }
 
     @Test
@@ -446,10 +430,9 @@ internal class SystemTest {
             }
         }
 
-        val service = world.systemService
-        service.update()
+        world.update(0f)
 
-        val system = service.system<SystemTestEntityCreation>()
+        val system = world.system<SystemTestEntityCreation>()
         assertEquals(1, system.numTicks)
     }
 }

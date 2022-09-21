@@ -113,14 +113,12 @@ object Manual : SortingType
 /**
  * An [IntervalSystem] of a [world][World] with a context to [entities][Entity].
  *
- * It must have at least one of allOfComponents, anyOfComponent or noneOfComponents objects defined.
- * These objects define a [Family] of entities for which the [IteratingSystem] will get active.
- * The [IteratingSystem] will use those components which are part of the family config for
- * any specific processing within this system.
+ * An IteratingSystem is always linked to exactly one [family][Family] which defines the [entities][Entity]
+ * over which it will iterate.
  *
- * @param allOfComponents is specifying the family to which this system belongs.
- * @param noneOfComponents is specifying the family to which this system belongs.
- * @param anyOfComponents is specifying the family to which this system belongs.
+ * Refer to [FamilyDefinition] for more details.
+ *
+ * @param family the [Family] that is used for iteration.
  * @param comparator an optional [EntityComparator] that is used to sort [entities][Entity].
  * Default value is an empty comparator which means no sorting.
  * @param sortingType the [type][SortingType] of sorting for entities when using a [comparator].
@@ -141,6 +139,9 @@ abstract class IteratingSystem(
     @PublishedApi
     internal val entityService: EntityService = world.entityService
 
+    /**
+     * Returns the [componentService][ComponentService] of this system.
+     */
     @PublishedApi
     internal val compService: ComponentService = world.componentService
 
@@ -175,7 +176,7 @@ abstract class IteratingSystem(
         compService.holder(type).contains(this)
 
     /**
-     * Updates an [entity] using the given [configuration] to add and remove components.
+     * Updates the [entity][Entity] using the given [configuration] to add and remove [components][Component].
      */
     inline fun Entity.configure(configuration: EntityUpdateContext.(Entity) -> Unit) {
         entityService.configure(this, configuration)
@@ -220,50 +221,5 @@ abstract class IteratingSystem(
         private val EMPTY_COMPARATOR = object : EntityComparator {
             override fun compare(entityA: Entity, entityB: Entity): Int = 0
         }
-    }
-}
-
-/**
- * A service class for any [IntervalSystem] of a [world][World]. It is responsible to create systems using
- * constructor dependency injection. It also stores [systems] and updates [enabled][IntervalSystem.enabled] systems
- * each time [update] is called.
- *
- * @param systemFactory the factory methods to create the [systems][IntervalSystem].
- */
-class SystemService {
-    @PublishedApi
-    internal var systems = emptyArray<IntervalSystem>()
-
-    /**
-     * Returns the specified [system][IntervalSystem].
-     *
-     * @throws [FleksNoSuchSystemException] if there is no such system.
-     */
-    inline fun <reified T : IntervalSystem> system(): T {
-        systems.forEach { system ->
-            if (system is T) {
-                return system
-            }
-        }
-        throw FleksNoSuchSystemException(T::class)
-    }
-
-    /**
-     * Updates all [enabled][IntervalSystem.enabled] [systems][IntervalSystem] by calling
-     * their [IntervalSystem.onUpdate] function.
-     */
-    fun update() {
-        systems.forEach { system ->
-            if (system.enabled) {
-                system.onUpdate()
-            }
-        }
-    }
-
-    /**
-     * Calls the [onDispose][IntervalSystem.onDispose] function of all [systems].
-     */
-    fun dispose() {
-        systems.forEach { it.onDispose() }
     }
 }

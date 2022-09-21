@@ -13,58 +13,6 @@ annotation class WorldCfgMarker
 data class Injectable(val injObj: Any, var used: Boolean = false)
 
 /**
- * A DSL class to configure components and [ComponentListener] of a [WorldConfiguration].
- */
-@WorldCfgMarker
-class ComponentConfiguration(
-    @PublishedApi
-    internal val world: World
-) {
-    inline fun <reified T : Component<*>> onAdd(
-        componentType: ComponentType<T>,
-        noinline action: ComponentHook<T>
-    ) {
-        if (world.systems.isNotEmpty()) {
-            throw FleksWrongConfigurationOrderException()
-        }
-
-        val mapper = world[componentType]
-        if (mapper.addHook != null) {
-            throw FleksHookAlreadyAddedException("addHook", "Component ${componentType::class.simpleName}")
-        }
-        mapper.addHook = action
-    }
-
-    inline fun <reified T : Component<*>> onRemove(
-        componentType: ComponentType<T>,
-        noinline action: ComponentHook<T>
-    ) {
-        if (world.systems.isNotEmpty()) {
-            throw FleksWrongConfigurationOrderException()
-        }
-
-        val mapper = world[componentType]
-        if (mapper.removeHook != null) {
-            throw FleksHookAlreadyAddedException("removeHook", "Component ${componentType::class.simpleName}")
-        }
-        mapper.removeHook = action
-    }
-}
-
-/**
- * A DSL class to configure [IntervalSystem] of a [WorldConfiguration].
- */
-@WorldCfgMarker
-class SystemConfiguration(private val world: World) {
-    fun add(system: IntervalSystem) {
-        if (world.systems.any { it::class == system::class }) {
-            throw FleksSystemAlreadyAddedException(system::class)
-        }
-        world.systemService.systems += system
-    }
-}
-
-/**
  * A DSL class to configure [Injectable] of a [WorldConfiguration].
  */
 @WorldCfgMarker
@@ -96,18 +44,77 @@ class InjectableConfiguration(private val world: World) {
 }
 
 /**
+ * A DSL class to configure components and [ComponentListener] of a [WorldConfiguration].
+ */
+@WorldCfgMarker
+class ComponentConfiguration(
+    @PublishedApi
+    internal val world: World,
+    @PublishedApi
+    internal val systems: List<IntervalSystem>,
+) {
+
+    inline fun <reified T : Component<*>> onAdd(
+        componentType: ComponentType<T>,
+        noinline action: ComponentHook<T>
+    ) {
+        if (systems.isNotEmpty()) {
+            throw FleksWrongConfigurationOrderException()
+        }
+
+        val mapper = world[componentType]
+        if (mapper.addHook != null) {
+            throw FleksHookAlreadyAddedException("addHook", "Component ${componentType::class.simpleName}")
+        }
+        mapper.addHook = action
+    }
+
+    inline fun <reified T : Component<*>> onRemove(
+        componentType: ComponentType<T>,
+        noinline action: ComponentHook<T>
+    ) {
+        if (systems.isNotEmpty()) {
+            throw FleksWrongConfigurationOrderException()
+        }
+
+        val mapper = world[componentType]
+        if (mapper.removeHook != null) {
+            throw FleksHookAlreadyAddedException("removeHook", "Component ${componentType::class.simpleName}")
+        }
+        mapper.removeHook = action
+    }
+}
+
+/**
+ * A DSL class to configure [IntervalSystem] of a [WorldConfiguration].
+ */
+@WorldCfgMarker
+class SystemConfiguration(
+    private val systems: MutableList<IntervalSystem> = mutableListOf()
+) {
+    fun add(system: IntervalSystem) {
+        if (systems.any { it::class == system::class }) {
+            throw FleksSystemAlreadyAddedException(system::class)
+        }
+        systems += system
+    }
+}
+
+/**
  * A DSL class to configure [FamilyListener] of a [WorldConfiguration].
  */
 @WorldCfgMarker
 class FamilyConfiguration(
     @PublishedApi
-    internal val world: World
+    internal val world: World,
+    @PublishedApi
+    internal val systems: List<IntervalSystem>,
 ) {
     fun onAdd(
         family: Family,
         action: FamilyHook
     ) {
-        if (world.systems.isNotEmpty()) {
+        if (systems.isNotEmpty()) {
             throw FleksWrongConfigurationOrderException()
         }
 
@@ -121,7 +128,7 @@ class FamilyConfiguration(
         family: Family,
         action: FamilyHook
     ) {
-        if (world.systems.isNotEmpty()) {
+        if (systems.isNotEmpty()) {
             throw FleksWrongConfigurationOrderException()
         }
 
@@ -141,10 +148,11 @@ class FamilyConfiguration(
 @WorldCfgMarker
 class WorldConfiguration(internal val world: World) {
 
-    private val compCfg = ComponentConfiguration(world)
-    private val systemCfg = SystemConfiguration(world)
+    internal val systems = mutableListOf<IntervalSystem>()
     private val injectableCfg = InjectableConfiguration(world)
-    private val familyCfg = FamilyConfiguration(world)
+    private val compCfg = ComponentConfiguration(world, systems)
+    private val familyCfg = FamilyConfiguration(world, systems)
+    private val systemCfg = SystemConfiguration(systems)
 
     fun injectables(cfg: InjectableConfiguration.() -> Unit) = injectableCfg.run(cfg)
 
@@ -160,7 +168,10 @@ fun world(entityCapacity: Int = 512, cfg: WorldConfiguration.() -> Unit): World 
     CURRENT_WORLD = newWorld
 
     try {
-        WorldConfiguration(newWorld).run(cfg)
+        val worldCfg = WorldConfiguration(newWorld).apply(cfg)
+        // assign world systems afterwards to resize the systems array only once to the correct size
+        // instead of resizing every time a system gets added to the configuration
+        newWorld.systems = worldCfg.systems.toTypedArray()
         // verify that there are no unused injectables
         val unusedInjectables = newWorld.injectables.filterValues { !it.used }.map { it.value.injObj::class }
         if (unusedInjectables.isNotEmpty()) {
@@ -197,9 +208,6 @@ class World internal constructor(
         private set
 
     @PublishedApi
-    internal val systemService = SystemService()
-
-    @PublishedApi
     internal val componentService = ComponentService(this)
 
     @PublishedApi
@@ -231,8 +239,8 @@ class World internal constructor(
     /**
      * Returns the world's systems.
      */
-    val systems: Array<IntervalSystem>
-        get() = systemService.systems
+    var systems = emptyArray<IntervalSystem>()
+        internal set
 
     inline fun <reified T> inject(name: String = T::class.simpleName ?: T::class.toString()): T {
         val injectable = injectables[name] ?: throw FleksNoSuchInjectableException(name)
@@ -280,12 +288,17 @@ class World internal constructor(
     }
 
     /**
-     * Returns the specified [system][IntervalSystem] of the world.
+     * Returns the specified [system][IntervalSystem].
      *
-     * @throws [FleksNoSuchSystemException] if there is no such [system][IntervalSystem].
+     * @throws [FleksNoSuchSystemException] if there is no such system.
      */
     inline fun <reified T : IntervalSystem> system(): T {
-        return systemService.system()
+        systems.forEach { system ->
+            if (system is T) {
+                return system
+            }
+        }
+        throw FleksNoSuchSystemException(T::class)
     }
 
     inline operator fun <reified T : Component<*>> get(componentType: ComponentType<T>): ComponentsHolder<T> {
@@ -399,7 +412,11 @@ class World internal constructor(
      */
     fun update(deltaTime: Float) {
         this.deltaTime = deltaTime
-        systemService.update()
+        systems.forEach { system ->
+            if (system.enabled) {
+                system.onUpdate()
+            }
+        }
     }
 
     /**
@@ -407,7 +424,7 @@ class World internal constructor(
      */
     fun dispose() {
         entityService.removeAll()
-        systemService.dispose()
+        systems.forEach { it.onDispose() }
     }
 
 

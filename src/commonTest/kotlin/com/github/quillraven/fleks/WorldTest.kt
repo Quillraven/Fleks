@@ -95,17 +95,6 @@ internal class WorldTest {
     }
 
     @Test
-    fun getWorldSystems() {
-        val w = world {
-            systems {
-                add(WorldTestIntervalSystem())
-            }
-        }
-
-        assertEquals(w.systemService.systems, w.systems)
-    }
-
-    @Test
     fun createEmptyWorldWith1InjectableArgsIteratingSystem() {
         val w = world {
             injectables {
@@ -763,7 +752,7 @@ internal class WorldTest {
     fun globalWorldFunctionsMustBeUsedWithinConfigurationScope() {
         // calls BEFORE configuration block
         assertFailsWith<FleksWrongConfigurationUsageException> {
-            val str: String = inject()
+            inject<String>()
         }
         assertFailsWith<FleksWrongConfigurationUsageException> {
             mapper(WorldTestComponent)
@@ -775,7 +764,7 @@ internal class WorldTest {
         // calls AFTER configuration block
         assertFailsWith<FleksWrongConfigurationUsageException> {
             world { }
-            val str: String = inject()
+            inject<String>()
         }
         assertFailsWith<FleksWrongConfigurationUsageException> {
             world { }
