@@ -276,7 +276,7 @@ class World internal constructor(
     /**
      * Performs the given [action] on each active [entity][Entity].
      */
-    fun forEach(action: (Entity) -> Unit) {
+    inline fun forEach(action: (Entity) -> Unit) {
         entityService.forEach(action)
     }
 

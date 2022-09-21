@@ -153,12 +153,24 @@ abstract class IteratingSystem(
      */
     var doSort = sortingType == Automatic && comparator != EMPTY_COMPARATOR
 
+    /**
+     * Returns a [component][Component] of the given [type] for the [entity][Entity].
+     *
+     * @throws [FleksNoSuchEntityComponentException] if the [entity][Entity] does not have such a component.
+     */
     inline operator fun <reified T : Component<*>> Entity.get(type: ComponentType<T>): T =
         compService.holder(type)[this]
 
+    /**
+     * Returns a [component][Component] of the given [type] for the [entity][Entity]
+     * or null if the [entity][Entity] does not have such a [component][Component].
+     */
     inline fun <reified T : Component<*>> Entity.getOrNull(type: ComponentType<T>): T? =
         compService.holder(type).getOrNull(this)
 
+    /**
+     * Returns true if and only if the [entity][Entity] has a [component][Component] of the given [type].
+     */
     inline operator fun <reified T : Component<*>> Entity.contains(type: ComponentType<T>): Boolean =
         compService.holder(type).contains(this)
 
