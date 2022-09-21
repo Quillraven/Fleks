@@ -232,21 +232,6 @@ internal class SystemTest {
     }
 
     @Test
-    fun createIteratingSystemWithComponentMapperArg() {
-        val expectedWorld = world {
-            systems {
-                add(SystemTestIteratingSystem())
-            }
-        }
-
-        val service = expectedWorld.systemService
-
-        val actualSystem = service.system<SystemTestIteratingSystem>()
-        assertEquals(1, service.systems.size)
-        assertSame(expectedWorld, actualSystem.world)
-    }
-
-    @Test
     fun createIteratingSystemWithAnInjectableArg() {
         val expectedWorld = world {
             injectables {

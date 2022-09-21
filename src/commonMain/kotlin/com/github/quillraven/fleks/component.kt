@@ -163,7 +163,7 @@ class ComponentsHolder<T : Component<*>>(
         components.size > entity.id && components[entity.id] != null
 
     override fun toString(): String {
-        return "ComponentMapper($name)"
+        return "ComponentsHolder($name)"
     }
 }
 

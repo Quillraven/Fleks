@@ -91,7 +91,7 @@ class InjectableConfiguration(private val world: World) {
      * @throws [FleksInjectableTypeHasNoNameException] if the simpleName of the [dependency] is null.
      */
     inline fun <reified T : Any> add(dependency: T) {
-        val key = T::class.simpleName ?: throw FleksInjectableTypeHasNoNameException(T::class)
+        val key = T::class.simpleName ?: T::class.toString()
         add(key, dependency)
     }
 }
@@ -235,7 +235,7 @@ class World internal constructor(
     val systems: Array<IntervalSystem>
         get() = systemService.systems
 
-    inline fun <reified T> inject(name: String = T::class.simpleName ?: "anonymous"): T {
+    inline fun <reified T> inject(name: String = T::class.simpleName ?: T::class.toString()): T {
         val injectable = injectables[name] ?: throw FleksNoSuchInjectableException(name)
         injectable.used = true
         return injectable.injObj as T
