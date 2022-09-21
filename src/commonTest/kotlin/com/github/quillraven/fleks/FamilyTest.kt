@@ -254,22 +254,22 @@ internal class FamilyTest {
         assertNull(testDefinition.anyOf)
 
         testDefinition.all(FamilyTestComponent)
-        assertEquals(1, testDefinition.allOf?.size)
-        assertEquals(FamilyTestComponent, testDefinition.allOf?.first())
-        assertEquals(0, testDefinition.noneOf?.size ?: 0)
-        assertEquals(0, testDefinition.anyOf?.size ?: 0)
+        assertEquals(1, testDefinition.allOf?.numBits())
+        assertEquals(true, testDefinition.allOf?.get(FamilyTestComponent.id))
+        assertEquals(0, testDefinition.noneOf?.numBits() ?: 0)
+        assertEquals(0, testDefinition.anyOf?.numBits() ?: 0)
 
         testDefinition.none(FamilyTestComponent)
-        assertEquals(1, testDefinition.allOf?.size)
-        assertEquals(1, testDefinition.noneOf?.size)
-        assertEquals(FamilyTestComponent, testDefinition.noneOf?.first())
-        assertEquals(0, testDefinition.anyOf?.size ?: 0)
+        assertEquals(1, testDefinition.allOf?.numBits())
+        assertEquals(1, testDefinition.noneOf?.numBits())
+        assertEquals(true, testDefinition.noneOf?.get(FamilyTestComponent.id))
+        assertEquals(0, testDefinition.anyOf?.numBits() ?: 0)
 
         testDefinition.any(FamilyTestComponent)
-        assertEquals(1, testDefinition.allOf?.size)
-        assertEquals(1, testDefinition.noneOf?.size)
-        assertEquals(1, testDefinition.anyOf?.size)
-        assertEquals(FamilyTestComponent, testDefinition.anyOf?.first())
+        assertEquals(1, testDefinition.allOf?.numBits())
+        assertEquals(1, testDefinition.noneOf?.numBits())
+        assertEquals(1, testDefinition.anyOf?.numBits())
+        assertEquals(true, testDefinition.anyOf?.get(FamilyTestComponent.id))
     }
 }
 

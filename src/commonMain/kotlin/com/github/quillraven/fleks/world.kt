@@ -1,7 +1,6 @@
 package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.World.Companion.CURRENT_WORLD
-import com.github.quillraven.fleks.collection.BitArray
 import kotlin.native.concurrent.ThreadLocal
 
 @DslMarker
@@ -299,21 +298,15 @@ class World internal constructor(
 
     @PublishedApi
     internal fun family(definition: FamilyDefinition): Family {
-        val allOf = definition.allOf
-        val noneOf = definition.noneOf
-        val anyOf = definition.anyOf
-
-        if (allOf.isNullOrEmpty() && noneOf.isNullOrEmpty() && anyOf.isNullOrEmpty()) {
+        if (definition.isEmpty()) {
             throw FleksFamilyException(definition)
         }
 
-        val allBs = if (allOf.isNullOrEmpty()) null else BitArray().apply { allOf.forEach { this.set(it.id) } }
-        val noneBs = if (noneOf.isNullOrEmpty()) null else BitArray().apply { noneOf.forEach { this.set(it.id) } }
-        val anyBs = if (anyOf.isNullOrEmpty()) null else BitArray().apply { anyOf.forEach { this.set(it.id) } }
+        val (defAll, defNone, defAny) = definition
 
-        var family = allFamilies.find { it.allOf == allBs && it.noneOf == noneBs && it.anyOf == anyBs }
+        var family = allFamilies.find { it.allOf == defAll && it.noneOf == defNone && it.anyOf == defAny }
         if (family == null) {
-            family = Family(allBs, noneBs, anyBs, this).apply {
+            family = Family(defAll, defNone, defAny, this).apply {
                 allFamilies += this
                 // initialize a newly created family by notifying it for any already existing entity
                 entityService.forEach { this.onEntityCfgChanged(it, entityService.compMasks[it.id]) }

@@ -202,3 +202,6 @@ class BitArray(
         }.trimEnd('0').ifBlank { "0" }
     }
 }
+
+fun BitArray?.isNullOrEmpty(): Boolean =
+    this == null || this.isEmpty

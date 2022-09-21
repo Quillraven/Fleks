@@ -3,79 +3,77 @@ package com.github.quillraven.fleks
 import com.github.quillraven.fleks.collection.BitArray
 import com.github.quillraven.fleks.collection.EntityComparator
 import com.github.quillraven.fleks.collection.IntBag
+import com.github.quillraven.fleks.collection.isNullOrEmpty
 
+/**
+ * Type alias for an optional hook function for a [Family].
+ * Such a function runs within an [EntityHookContext] and takes the [World] and [Entity] as an argument.
+ */
 typealias FamilyHook = EntityHookContext.(World, Entity) -> Unit
 
-@DslMarker
-annotation class FamilyDefinitionMarker
+/**
+ * A class to define the configuration of a [Family]. A [family][Family] contains of three parts:
+ *
+ * - **allOf**: an [entity][Entity] must have all specified [components][Component] to be part of the [family][Family].
+ * - **noneOf**: an [entity][Entity] must not have any of the specified [components][Component] to be part of the [family][Family].
+ * - **anyOf**: an [entity][Entity] must have at least one of the specified [components][Component] to be part of the [family][Family].
+ *
+ * It is not mandatory to specify all three parts but **at least one** part must be provided.
+ */
+data class FamilyDefinition(
+    internal var allOf: BitArray? = null,
+    internal var noneOf: BitArray? = null,
+    internal var anyOf: BitArray? = null,
+) {
 
-@FamilyDefinitionMarker
-class FamilyDefinition {
-    internal var allOf: Set<ComponentType<*>>? = null
-        private set
-    internal var noneOf: Set<ComponentType<*>>? = null
-        private set
-    internal var anyOf: Set<ComponentType<*>>? = null
-        private set
-
+    /**
+     * Any [entity][Entity] must have all given [types] to be part of the [family][Family].
+     */
     fun all(vararg types: ComponentType<*>): FamilyDefinition {
-        allOf = types.toSet()
-        return this
-    }
-
-    fun none(vararg types: ComponentType<*>): FamilyDefinition {
-        noneOf = types.toSet()
-        return this
-    }
-
-    fun any(vararg types: ComponentType<*>): FamilyDefinition {
-        anyOf = types.toSet()
-        return this
-    }
-
-    override fun toString(): String {
-        return buildString {
-            val allOf = allOf
-            if (allOf != null) {
-                this.append("allOf:")
-                this.append(allOf.map { it.toString().substringAfterLast(".").substringBefore("$") })
-            }
-
-            val noneOf = noneOf
-            if (noneOf != null) {
-                if (this.isNotBlank()) {
-                    this.append(", ")
-                }
-                this.append("noneOf:")
-                this.append(noneOf.map { it.toString().substringAfterLast(".").substringBefore("$") })
-            }
-
-            val anyOf = anyOf
-            if (anyOf != null) {
-                if (this.isNotBlank()) {
-                    this.append(", ")
-                }
-                this.append("anyOf:")
-                this.append(anyOf.map { it.toString().substringAfterLast(".").substringBefore("$") })
-            }
+        allOf = BitArray(types.size).also { bits ->
+            types.forEach { bits.set(it.id) }
         }
+        return this
+    }
+
+    /**
+     * Any [entity][Entity] must not have any of the given [types] to be part of the [family][Family].
+     */
+    fun none(vararg types: ComponentType<*>): FamilyDefinition {
+        noneOf = BitArray(types.size).also { bits ->
+            types.forEach { bits.set(it.id) }
+        }
+        return this
+    }
+
+    /**
+     * Any [entity][Entity] must have at least one of the given [types] to be part of the [family][Family].
+     */
+    fun any(vararg types: ComponentType<*>): FamilyDefinition {
+        anyOf = BitArray(types.size).also { bits ->
+            types.forEach { bits.set(it.id) }
+        }
+        return this
+    }
+
+    /**
+     * Returns true if and only if [allOf], [noneOf] and [anyOf] are either null or empty.
+     */
+    internal fun isEmpty(): Boolean {
+        return allOf.isNullOrEmpty() && noneOf.isNullOrEmpty() && anyOf.isNullOrEmpty()
     }
 }
 
 /**
  * A family of [entities][Entity]. It stores [entities][Entity] that have a specific configuration of components.
- * A configuration is defined via the three [IteratingSystem] properties "allOf", "noneOf" and "anyOf".
- * Each component is assigned to a unique index. That index is set in the [allOf], [noneOf] or [anyOf][] [BitArray].
+ * A configuration is defined via the a [FamilyDefinition].
+ * Each [component][Component] is assigned to a unique index via its [ComponentType].
+ * That index is set in the [allOf], [noneOf] or [anyOf][] [BitArray].
  *
- * A family is an [EntityListener] and gets notified when an [entity][Entity] is added to the world or the
- * entity's component configuration changes.
+ * A family gets notified when an [entity][Entity] is added, updated or removed of the [world][World].
  *
- * Every [IteratingSystem] is linked to exactly one family. Families are created by the [SystemService] automatically
- * when a [world][World] gets created.
- *
- * @param allOf all the components that an [entity][Entity] must have. Default value is null.
- * @param noneOf all the components that an [entity][Entity] must not have. Default value is null.
- * @param anyOf the components that an [entity][Entity] must have at least one. Default value is null.
+ * Every [IteratingSystem] is linked to exactly one family but a family can also exist outside of systems.
+ * It gets created via the [World.family] function.
  */
 data class Family(
     internal val allOf: BitArray? = null,
@@ -89,9 +87,15 @@ data class Family(
     internal val compService: ComponentService = world.componentService,
     private val hookCtx: EntityHookContext = world.hookCtx,
 ) {
+    /**
+     * An optional [FamilyHook] that gets called whenever an [entity][Entity] enters the family.
+     */
     @PublishedApi
     internal var addHook: FamilyHook? = null
 
+    /**
+     * An optional [FamilyHook] that gets called whenever an [entity][Entity] leaves the family.
+     */
     @PublishedApi
     internal var removeHook: FamilyHook? = null
 
@@ -208,7 +212,7 @@ data class Family(
     }
 
     /**
-     * Updates an [entity] using the given [configuration] to add and remove components.
+     * Updates the [entity][Entity] using the given [configuration] to add and remove [components][Component].
      */
     inline fun Entity.configure(configuration: EntityUpdateContext.(Entity) -> Unit) {
         entityService.configure(this, configuration)
@@ -243,6 +247,10 @@ data class Family(
         entitiesBag.sort(comparator)
     }
 
+    /**
+     * Adds the [entity] to the family and sets the [isDirty] flag if and only
+     * if the entity's [compMask] is matching the family configuration.
+     */
     fun onEntityAdded(entity: Entity, compMask: BitArray) {
         if (compMask in this) {
             isDirty = true
