@@ -95,6 +95,9 @@ class ComponentsHolder<T : Component<*>>(
 
         // check if removeHook needs to be called
         components[entity.id]?.let { existingCmp ->
+            // assign current component to null in order for 'contains' calls inside the hook
+            // to correctly return false
+            components[entity.id] = null
             removeHook?.invoke(hookCtx, world, entity, existingCmp)
         }
 
@@ -110,10 +113,12 @@ class ComponentsHolder<T : Component<*>>(
      * @throws [IndexOutOfBoundsException] if the id of the [entity] exceeds the components' capacity.
      */
     operator fun minusAssign(entity: Entity) {
-        components[entity.id]?.let { existingComp ->
-            removeHook?.invoke(hookCtx, world, entity, existingComp)
-        }
+        val existingCmp = components[entity.id]
+        // assign null before running the removeHook in order for 'contains' calls to correctly return false
         components[entity.id] = null
+        if (existingCmp != null) {
+            removeHook?.invoke(hookCtx, world, entity, existingCmp)
+        }
     }
 
     /**

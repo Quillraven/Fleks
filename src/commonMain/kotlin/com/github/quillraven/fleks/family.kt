@@ -214,9 +214,14 @@ data class Family(
         entityService.configure(this, configuration)
     }
 
-    inline operator fun <reified T : Component<*>> Entity.get(type: ComponentType<T>): T {
-        return compService.holder(type)[this]
-    }
+    inline operator fun <reified T : Component<*>> Entity.get(type: ComponentType<T>): T =
+        compService.holder(type)[this]
+
+    inline fun <reified T : Component<*>> Entity.getOrNull(type: ComponentType<T>): T? =
+        compService.holder(type).getOrNull(this)
+
+    inline operator fun <reified T : Component<*>> Entity.contains(type: ComponentType<T>): Boolean =
+        compService.holder(type).contains(this)
 
     /**
      * Sorts the [entities][Entity] of this family by the given [comparator].

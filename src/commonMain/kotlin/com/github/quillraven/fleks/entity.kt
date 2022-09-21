@@ -17,17 +17,14 @@ class EntityHookContext(
     @PublishedApi
     internal val compService: ComponentService
 ) {
-    inline operator fun <reified T : Component<*>> Entity.get(type: ComponentType<T>): T {
-        return compService.holder(type)[this]
-    }
+    inline operator fun <reified T : Component<*>> Entity.get(type: ComponentType<T>): T =
+        compService.holder(type)[this]
 
-    inline fun <reified T : Component<*>> Entity.contains(type: ComponentType<T>): Boolean {
-        return compService.holder(type).contains(this)
-    }
+    inline fun <reified T : Component<*>> Entity.getOrNull(type: ComponentType<T>): T? =
+        compService.holder(type).getOrNull(this)
 
-    inline fun <reified T : Component<*>> Entity.getOrNull(type: ComponentType<T>): T? {
-        return compService.holder(type).getOrNull(this)
-    }
+    inline operator fun <reified T : Component<*>> Entity.contains(type: ComponentType<T>): Boolean =
+        compService.holder(type).contains(this)
 }
 
 /**
@@ -41,9 +38,14 @@ class EntityCreateContext(
     @PublishedApi
     internal lateinit var compMask: BitArray
 
-    inline operator fun <reified T : Component<*>> Entity.get(type: ComponentType<T>): T {
-        return compService.holder(type)[this]
-    }
+    inline operator fun <reified T : Component<*>> Entity.get(type: ComponentType<T>): T =
+        compService.holder(type)[this]
+
+    inline fun <reified T : Component<*>> Entity.getOrNull(type: ComponentType<T>): T? =
+        compService.holder(type).getOrNull(this)
+
+    inline operator fun <reified T : Component<*>> Entity.contains(type: ComponentType<T>): Boolean =
+        compService.holder(type).contains(this)
 
     inline operator fun <reified T : Component<T>> Entity.plusAssign(component: T) {
         val compType: ComponentType<T> = component.type()
@@ -66,9 +68,14 @@ class EntityUpdateContext(
     @PublishedApi
     internal lateinit var compMask: BitArray
 
-    inline operator fun <reified T : Component<*>> Entity.get(type: ComponentType<T>): T {
-        return compService.holder(type)[this]
-    }
+    inline operator fun <reified T : Component<*>> Entity.get(type: ComponentType<T>): T =
+        compService.holder(type)[this]
+
+    inline fun <reified T : Component<*>> Entity.getOrNull(type: ComponentType<T>): T? =
+        compService.holder(type).getOrNull(this)
+
+    inline operator fun <reified T : Component<*>> Entity.contains(type: ComponentType<T>): Boolean =
+        compService.holder(type).contains(this)
 
     inline operator fun <reified T : Component<T>> Entity.plusAssign(component: T) {
         val compType: ComponentType<T> = component.type()
