@@ -47,7 +47,7 @@ internal class EntityTest {
     @Test
     fun updateComponentOfEntityIfItAlreadyExists() {
         val expectedEntity = testEntityService.create { }
-        val holder = testWorld[EntityTestComponent]
+        val holder = testWorld.componentService.holder(EntityTestComponent)
 
         testEntityService.configure(expectedEntity) {
             holder[expectedEntity] = EntityTestComponent(1f)

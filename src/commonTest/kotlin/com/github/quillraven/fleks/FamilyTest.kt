@@ -125,7 +125,7 @@ internal class FamilyTest {
         family.updateActiveEntities()
 
         // sort descending by entity id
-        family.sort(compareEntity { e1, e2 -> e2.id.compareTo(e1.id) })
+        family.sort(compareEntity(testWorld) { e1, e2 -> e2.id.compareTo(e1.id) })
 
         assertEquals(2, family.entitiesBag[0])
         assertEquals(1, family.entitiesBag[1])
@@ -243,7 +243,7 @@ internal class FamilyTest {
 
         family.forEach { e -> e.configure { it += FamilyTestComponent() } }
 
-        assertNotNull(testWorld[FamilyTestComponent][entity])
+        assertNotNull(testWorld.componentService.holder(FamilyTestComponent)[entity])
     }
 
     @Test

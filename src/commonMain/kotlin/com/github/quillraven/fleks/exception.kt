@@ -37,4 +37,7 @@ class FleksWrongConfigurationOrderException :
     FleksException("Component hooks and family hooks must be defined BEFORE any system. The 'systems' block must come last in a WorldConfiguration.")
 
 class FleksWrongConfigurationUsageException :
-    FleksException("The global functions 'inject', 'mapper' and 'family' must be used inside a WorldConfiguration scope.")
+    FleksException(
+        "The global functions 'inject' and 'family' must be used inside a WorldConfiguration scope." +
+            "The same applies for 'compareEntityBy' and 'compareEntity' unless you specify the world parameter explicitly."
+    )

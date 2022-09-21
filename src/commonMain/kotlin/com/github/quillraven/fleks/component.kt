@@ -113,6 +113,8 @@ class ComponentsHolder<T : Component<*>>(
      * @throws [IndexOutOfBoundsException] if the id of the [entity] exceeds the components' capacity.
      */
     operator fun minusAssign(entity: Entity) {
+        if (entity.id < 0 || entity.id >= components.size) throw IndexOutOfBoundsException("$entity.id is not valid for components of size ${components.size}")
+
         val existingCmp = components[entity.id]
         // assign null before running the removeHook in order for 'contains' calls to correctly return false
         components[entity.id] = null

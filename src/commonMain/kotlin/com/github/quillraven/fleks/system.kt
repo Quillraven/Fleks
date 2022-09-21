@@ -176,6 +176,12 @@ abstract class IteratingSystem(
         compService.holder(type).contains(this)
 
     /**
+     * Returns true if and only if the [entity][Entity] has a [component][Component] of the given [type].
+     */
+    inline infix fun <reified T : Component<*>> Entity.has(type: ComponentType<T>): Boolean =
+        compService.holder(type).contains(this)
+
+    /**
      * Updates the [entity][Entity] using the given [configuration] to add and remove [components][Component].
      */
     inline fun Entity.configure(configuration: EntityUpdateContext.(Entity) -> Unit) {

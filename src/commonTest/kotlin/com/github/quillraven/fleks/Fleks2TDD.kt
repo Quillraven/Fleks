@@ -41,6 +41,7 @@ private class PositionSystem : IteratingSystem(family { all(Position) }) {
     override fun onTickEntity(entity: Entity) {
         entity[Position].x++
         assertTrue(Position in entity)
+        assertTrue(entity has Position)
         assertNotNull(entity.getOrNull(Position))
     }
 }
@@ -64,7 +65,7 @@ class Fleks2TDD {
             it += expectedComp
         }
 
-        val actualComp: Position = emptyWorld[Position][entity]
+        val actualComp: Position = emptyWorld.query(entity) { it[Position] }
         assertEquals(expectedComp, actualComp)
     }
 
@@ -78,8 +79,8 @@ class Fleks2TDD {
             it += expectedComp2
         }
 
-        assertEquals(expectedComp1, emptyWorld[SpriteBackground][entity])
-        assertEquals(expectedComp2, emptyWorld[SpriteForeground][entity])
+        assertEquals(expectedComp1, emptyWorld.query(entity) { it[SpriteBackground] })
+        assertEquals(expectedComp2, emptyWorld.query(entity) { it[SpriteForeground] })
     }
 
     @Test
@@ -87,7 +88,7 @@ class Fleks2TDD {
         val entity = emptyWorld.entity()
 
         assertFailsWith<FleksNoSuchEntityComponentException> {
-            emptyWorld[Position][entity]
+            emptyWorld.query(entity) { it[Position] }
         }
     }
 
@@ -100,8 +101,8 @@ class Fleks2TDD {
             it += Sprite(true, "")
         }
 
-        assertFalse(entity in emptyWorld[Position])
-        assertTrue(entity in emptyWorld[SpriteBackground])
+        assertFalse(emptyWorld.query(entity) { Position in it })
+        assertTrue(emptyWorld.query(entity) { it has SpriteBackground })
     }
 
     @Test
@@ -126,8 +127,8 @@ class Fleks2TDD {
             )
         }
 
-        assertEquals(Position(2f, 2f), emptyWorld[Position][posEntity])
-        assertEquals(Position(1f, 1f), emptyWorld[Position][emptyEntity])
+        assertEquals(Position(2f, 2f), emptyWorld.query(posEntity) { it[Position] })
+        assertEquals(Position(1f, 1f), emptyWorld.query(emptyEntity) { it[Position] })
     }
 
     @Test
@@ -143,7 +144,7 @@ class Fleks2TDD {
 
         world.update(1f)
 
-        assertEquals(1f, world[Position][entity].x)
+        assertEquals(1f, world.query(entity) { it[Position] }.x)
     }
 
     @Test
@@ -238,7 +239,7 @@ class Fleks2TDD {
     @Test
     fun testEntityContextExtensions() {
         /*
-            Verifies that Entity.get, Entity.getOrNull and Entity.contains
+            Verifies that Entity.get, Entity.getOrNull, Entity.contains and Entity.has
             are working within a hook context, entity create and update context, and family context.
 
             For systems it is already verified above within the PositionSystem.
@@ -257,12 +258,14 @@ class Fleks2TDD {
                     cmpAddCalled = true
                     assertSame(expectedAddCmp, entity[Position])
                     assertTrue(Position in entity)
+                    assertTrue(entity has Position)
                     assertNotNull(entity.getOrNull(Position))
                 }
                 onRemove(Position) { _, entity, _ ->
                     cmpRemoveCalled = true
                     assertSame(expectedRemoveCmp, entity[SpriteBackground])
                     assertFalse(Position in entity)
+                    assertFalse(entity has Position)
                     assertNull(entity.getOrNull(Position))
                 }
             }
@@ -273,12 +276,14 @@ class Fleks2TDD {
                     familyAddCalled = true
                     assertSame(expectedAddCmp, entity[Position])
                     assertTrue(Position in entity)
+                    assertTrue(entity has Position)
                     assertNotNull(entity.getOrNull(Position))
                 }
                 onRemove(testFamily) { _, entity ->
                     familyRemoveCalled = true
                     assertSame(expectedRemoveCmp, entity[SpriteBackground])
                     assertFalse(Position in entity)
+                    assertFalse(entity has Position)
                     assertNull(entity.getOrNull(Position))
                 }
             }
@@ -289,6 +294,7 @@ class Fleks2TDD {
             it += expectedAddCmp
             assertSame(expectedAddCmp, it[Position])
             assertTrue(Position in it)
+            assertTrue(it has Position)
             assertNotNull(it.getOrNull(Position))
         }
         // trigger family onAdd hook
@@ -297,14 +303,16 @@ class Fleks2TDD {
         testFamily.forEach { entity ->
             assertSame(expectedAddCmp, entity[Position])
             assertTrue(Position in entity)
+            assertTrue(entity has Position)
             assertNotNull(entity.getOrNull(Position))
         }
         // access of components also possible via world
-        assertSame(expectedAddCmp, testWorld[Position][testEntity])
+        assertSame(expectedAddCmp, testWorld.query(testEntity) { it[Position] })
         // verify EntityUpdateContext extensions
         testWorld.configure(testEntity) {
             assertSame(expectedAddCmp, it[Position])
             assertTrue(Position in it)
+            assertTrue(it has Position)
             assertNotNull(it.getOrNull(Position))
             it += expectedRemoveCmp
             // trigger component onRemove hook -> this also removes the entity of the family below

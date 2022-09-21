@@ -1,5 +1,6 @@
 package com.github.quillraven.fleks.collection
 
+import com.github.quillraven.fleks.world
 import kotlin.test.*
 
 class GenericBagTest {
@@ -78,7 +79,7 @@ class GenericBagTest {
     fun cannotGetStringValueOfInvalidInBoundsIndex() {
         val bag = bag<String>()
 
-        assertFailsWith<NoSuchElementException> { bag[0] }
+        assertFailsWith<IndexOutOfBoundsException> { bag[0] }
     }
 
     @Test
@@ -96,6 +97,13 @@ class GenericBagTest {
 
         assertEquals(2, numCalls)
         assertEquals(listOf("42", "43"), valuesCalled)
+    }
+
+    @Test
+    fun cannotGetStringValueOfInvalidOutOfBoundsIndex() {
+        val bag = bag<String>(2)
+
+        assertFailsWith<IndexOutOfBoundsException> { bag[2] }
     }
 }
 
@@ -193,7 +201,7 @@ class IntBagTest {
         val bag = IntBag()
         repeat(6) { bag.add(6 - it) }
 
-        bag.sort(compareEntity { e1, e2 -> e1.id.compareTo(e2.id) })
+        bag.sort(compareEntity(world { }) { e1, e2 -> e1.id.compareTo(e2.id) })
 
         repeat(6) {
             assertEquals(it + 1, bag[it])
@@ -205,7 +213,7 @@ class IntBagTest {
         val bag = IntBag()
         repeat(8) { bag.add(8 - it) }
 
-        bag.sort(compareEntity { e1, e2 -> e1.id.compareTo(e2.id) })
+        bag.sort(compareEntity(world { }) { e1, e2 -> e1.id.compareTo(e2.id) })
 
         repeat(8) {
             assertEquals(it + 1, bag[it])
@@ -217,10 +225,24 @@ class IntBagTest {
         val bag = IntBag()
         repeat(51) { bag.add(51 - it) }
 
-        bag.sort(compareEntity { e1, e2 -> e1.id.compareTo(e2.id) })
+        bag.sort(compareEntity(world { }) { e1, e2 -> e1.id.compareTo(e2.id) })
 
         repeat(51) {
             assertEquals(it + 1, bag[it])
         }
+    }
+
+    @Test
+    fun addValueUnsafeWithInsufficientCapacity() {
+        val bag = IntBag(0)
+
+        assertFailsWith<IndexOutOfBoundsException> { bag.unsafeAdd(42) }
+    }
+
+    @Test
+    fun cannotGetValueOfOutOfBoundsIndex() {
+        val bag = IntBag(2)
+
+        assertFailsWith<IndexOutOfBoundsException> { bag[2] }
     }
 }

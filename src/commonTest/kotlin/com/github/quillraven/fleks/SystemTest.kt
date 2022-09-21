@@ -2,8 +2,7 @@ package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.World.Companion.family
 import com.github.quillraven.fleks.World.Companion.inject
-import com.github.quillraven.fleks.World.Companion.mapper
-import com.github.quillraven.fleks.collection.EntityComparator
+import com.github.quillraven.fleks.collection.compareEntity
 import com.github.quillraven.fleks.collection.compareEntityBy
 import kotlin.test.*
 
@@ -85,11 +84,8 @@ private class SystemTestEntityCreation : IteratingSystem(family { any(SystemTest
 
 private class SystemTestIteratingSystemSortAutomatic : IteratingSystem(
     family = family { all(SystemTestComponent) },
-    comparator = object : EntityComparator {
-        private val mapper = mapper(SystemTestComponent)
-        override fun compare(entityA: Entity, entityB: Entity): Int {
-            return mapper[entityB].x.compareTo(mapper[entityA].x)
-        }
+    comparator = compareEntity { entityA, entityB ->
+        entityB[SystemTestComponent].x.compareTo(entityA[SystemTestComponent].x)
     },
 ) {
     var numEntityCalls = 0
@@ -298,7 +294,7 @@ internal class SystemTest {
 
         world.update(0.3f)
 
-        assertFalse { entity in world[SystemTestComponent] }
+        assertFalse(world.query(entity) { it has SystemTestComponent })
     }
 
     @Test

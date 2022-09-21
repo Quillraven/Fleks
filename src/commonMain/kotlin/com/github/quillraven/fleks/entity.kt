@@ -3,6 +3,7 @@ package com.github.quillraven.fleks
 import com.github.quillraven.fleks.collection.BitArray
 import com.github.quillraven.fleks.collection.IntBag
 import com.github.quillraven.fleks.collection.bag
+import com.github.quillraven.fleks.collection.compareEntity
 
 /**
  * An entity of a [world][World]. It represents a unique id.
@@ -17,7 +18,11 @@ annotation class EntityCtxMarker
 
 /**
  * A DSL class for basic [Entity] extension functions within an add/remove hook of a [Component] or [Family].
- * The same extension functions are provided by a [Family] and an [IteratingSystem].
+ * These extensions are also used by [World.query] and [compareEntity].
+ *
+ *
+ * Also, the same functionality is provided by a [Family] and an [IteratingSystem] but not via this class.
+ * The methods must be manually copied in all those areas because unfortunately, I have no better idea how to solve that :(
  */
 @EntityCtxMarker
 open class EntityHookContext(
@@ -43,6 +48,12 @@ open class EntityHookContext(
      * Returns true if and only if the [entity][Entity] has a [component][Component] of the given [type].
      */
     inline operator fun <reified T : Component<*>> Entity.contains(type: ComponentType<T>): Boolean =
+        compService.holder(type).contains(this)
+
+    /**
+     * Returns true if and only if the [entity][Entity] has a [component][Component] of the given [type].
+     */
+    inline infix fun <reified T : Component<*>> Entity.has(type: ComponentType<T>): Boolean =
         compService.holder(type).contains(this)
 }
 

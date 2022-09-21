@@ -2,14 +2,17 @@ package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.World.Companion.family
 import com.github.quillraven.fleks.World.Companion.inject
-import com.github.quillraven.fleks.World.Companion.mapper
 import com.github.quillraven.fleks.collection.compareEntity
+import com.github.quillraven.fleks.collection.compareEntityBy
 import kotlin.test.*
 
-private data class WorldTestComponent(var x: Float = 0f) : Component<WorldTestComponent> {
+private data class WorldTestComponent(var x: Float = 0f) : Component<WorldTestComponent>,
+    Comparable<WorldTestComponent> {
     override fun type(): ComponentType<WorldTestComponent> = WorldTestComponent
 
     companion object : ComponentType<WorldTestComponent>()
+
+    override fun compareTo(other: WorldTestComponent) = 0
 }
 
 private class WorldTestComponent2 : Component<WorldTestComponent2> {
@@ -190,7 +193,7 @@ internal class WorldTest {
 
         assertEquals(1, w.numEntities)
         assertEquals(0, e.id)
-        assertEquals(5f, w[WorldTestComponent][e].x)
+        assertEquals(5f, w.query(e) { it[WorldTestComponent].x })
     }
 
     @Test
@@ -249,13 +252,6 @@ internal class WorldTest {
 
         assertTrue(w.system<WorldTestIntervalSystem>().disposed)
         assertEquals(0, w.numEntities)
-    }
-
-    @Test
-    fun getMapper() {
-        val w = world { }
-
-        assertNotNull(w[WorldTestComponent])
     }
 
     @Test
@@ -380,17 +376,16 @@ internal class WorldTest {
 
     @Test
     fun sortedIterationOverFamily() {
-        val w = world { }
-        val e1 = w.entity { it += WorldTestComponent(x = 15f) }
-        val e2 = w.entity { it += WorldTestComponent(x = 10f) }
-        val f = w.family { all(WorldTestComponent) }
+        val world = world { }
+        val entity1 = world.entity { it += WorldTestComponent(x = 15f) }
+        val entity2 = world.entity { it += WorldTestComponent(x = 10f) }
+        val family = world.family { all(WorldTestComponent) }
         val actualEntities = mutableListOf<Entity>()
-        val mapper = w[WorldTestComponent]
 
-        f.sort(compareEntity { entity1, entity2 -> mapper[entity1].x.compareTo(mapper[entity2].x) })
-        f.forEach { actualEntities.add(it) }
+        family.sort(compareEntity(world) { e1, e2 -> e1[WorldTestComponent].x.compareTo(e2[WorldTestComponent].x) })
+        family.forEach { actualEntities.add(it) }
 
-        assertEquals(arrayListOf(e2, e1), actualEntities)
+        assertEquals(arrayListOf(entity2, entity1), actualEntities)
     }
 
     @Test
@@ -410,7 +405,7 @@ internal class WorldTest {
             }
         }
 
-        val mapper = w[WorldTestComponent]
+        val mapper = w.componentService.holder(WorldTestComponent)
         assertNotNull(mapper.addHook)
         assertNotNull(mapper.removeHook)
     }
@@ -755,7 +750,8 @@ internal class WorldTest {
             inject<String>()
         }
         assertFailsWith<FleksWrongConfigurationUsageException> {
-            mapper(WorldTestComponent)
+            compareEntity { _, _ -> 0 }
+            compareEntityBy(WorldTestComponent)
         }
         assertFailsWith<FleksWrongConfigurationUsageException> {
             family { all(WorldTestComponent) }
@@ -768,7 +764,8 @@ internal class WorldTest {
         }
         assertFailsWith<FleksWrongConfigurationUsageException> {
             world { }
-            mapper(WorldTestComponent)
+            compareEntity { _, _ -> 0 }
+            compareEntityBy(WorldTestComponent)
         }
         assertFailsWith<FleksWrongConfigurationUsageException> {
             world { }

@@ -206,4 +206,14 @@ internal class ComponentTest {
         assertTrue(entity in testHolder)
         assertEquals(2, testHolder[entity].x)
     }
+
+    @Test
+    fun cannotRemoveNonExistingEntityFromHolderWithInsufficientCapacity() {
+        val world = world { }
+        val cmpService = ComponentService(world)
+        val holder = cmpService.holder(ComponentTestComponent)
+        val entity = Entity(10_000)
+
+        assertFailsWith<IndexOutOfBoundsException> { holder -= entity }
+    }
 }

@@ -1,9 +1,6 @@
 package com.github.quillraven.fleks.collection
 
-import com.github.quillraven.fleks.Component
-import com.github.quillraven.fleks.ComponentType
-import com.github.quillraven.fleks.Entity
-import com.github.quillraven.fleks.World.Companion.mapper
+import com.github.quillraven.fleks.*
 import kotlin.math.max
 import kotlin.math.min
 
@@ -43,10 +40,9 @@ class Bag<T>(
     }
 
     operator fun get(index: Int): T {
+        if (index < 0 || index >= size) throw IndexOutOfBoundsException("$index is not valid for bag of size $size")
         return values[index] ?: throw NoSuchElementException("Bag has no value at index $index")
     }
-
-    fun getOrNull(index: Int): T? = if (index >= size) null else values[index]
 
     fun hasNoValueAtIndex(index: Int): Boolean {
         return index >= size || values[index] == null
@@ -61,12 +57,6 @@ class Bag<T>(
             }
         }
         return false
-    }
-
-    fun clearIndex(index: Int) {
-        if (index < size) {
-            values[index] = null
-        }
     }
 
     fun clear() {
@@ -136,10 +126,12 @@ class IntBag(
     }
 
     internal fun unsafeAdd(value: Int) {
+        if (size >= values.size) throw IndexOutOfBoundsException("Cannot add value because of insufficient size")
         values[size++] = value
     }
 
     operator fun get(index: Int): Int {
+        if (index < 0 || index >= size) throw IndexOutOfBoundsException("$index is not valid for bag of size $size")
         return values[index]
     }
 
@@ -181,22 +173,30 @@ interface EntityComparator {
     fun compare(entityA: Entity, entityB: Entity): Int
 }
 
-fun compareEntity(compareFun: (Entity, Entity) -> Int): EntityComparator {
+fun compareEntity(
+    world: World = World.CURRENT_WORLD ?: throw FleksWrongConfigurationUsageException(),
+    compareFun: EntityHookContext.(Entity, Entity) -> Int,
+): EntityComparator {
     return object : EntityComparator {
+        private val hookCtx = world.hookCtx
+
         override fun compare(entityA: Entity, entityB: Entity): Int {
-            return compareFun(entityA, entityB)
+            return compareFun(hookCtx, entityA, entityB)
         }
     }
 }
 
-inline fun <reified T> compareEntityBy(componentType: ComponentType<T>): EntityComparator where T : Component<*>, T : Comparable<*> {
+inline fun <reified T> compareEntityBy(
+    componentType: ComponentType<T>,
+    world: World = World.CURRENT_WORLD ?: throw FleksWrongConfigurationUsageException(),
+): EntityComparator where T : Component<*>, T : Comparable<*> {
     return object : EntityComparator {
-        private val mapper = mapper(componentType)
+        private val holder = world.componentService.holder(componentType)
 
         @Suppress("UNCHECKED_CAST")
         override fun compare(entityA: Entity, entityB: Entity): Int {
-            val valA: Comparable<T> = mapper[entityA] as Comparable<T>
-            val valB = mapper[entityB]
+            val valA: Comparable<T> = holder[entityA] as Comparable<T>
+            val valB = holder[entityB]
             return valA.compareTo(valB)
         }
     }
