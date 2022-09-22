@@ -255,14 +255,21 @@ internal class WorldTest {
     }
 
     @Test
-    fun throwExceptionWhenThereAreUnusedInjectables() {
-        assertFailsWith<FleksUnusedInjectablesException> {
-            world {
-                injectables {
-                    add("42")
-                }
+    fun getUnusedInjectables() {
+        val world = world {
+            injectables {
+                add("42", "myString")
+                add(1337)
+                add("used")
             }
         }
+        val expected = mapOf("42" to "myString", "Int" to 1337)
+        // this sets the 'used' string injectable to used=true
+        world.inject<String>()
+
+        val actual = world.unusedInjectables()
+
+        assertEquals(expected, actual)
     }
 
     @Test

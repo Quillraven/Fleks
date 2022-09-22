@@ -19,9 +19,6 @@ class FleksInjectableAlreadyAddedException(name: String) :
 class FleksNoSuchEntityComponentException(entity: Entity, component: String) :
     FleksException("Entity '$entity' has no component of type '$component'.")
 
-class FleksUnusedInjectablesException(unused: List<KClass<*>>) :
-    FleksException("There are unused injectables of following types: ${unused.map { it.simpleName }}")
-
 class FleksFamilyException(familyDefinition: FamilyDefinition) :
     FleksException("Family must have at least one of allOf, noneOf or anyOf. Definition: $familyDefinition}")
 

@@ -200,11 +200,6 @@ fun world(entityCapacity: Int = 512, cfg: WorldConfiguration.() -> Unit): World 
         // assign world systems afterwards to resize the systems array only once to the correct size
         // instead of resizing every time a system gets added to the configuration
         newWorld.systems = worldCfg.systems.toTypedArray()
-        // verify that there are no unused injectables
-        val unusedInjectables = newWorld.injectables.filterValues { !it.used }.map { it.value.injObj::class }
-        if (unusedInjectables.isNotEmpty()) {
-            throw FleksUnusedInjectablesException(unusedInjectables)
-        }
     } finally {
         CURRENT_WORLD = null
     }
@@ -275,6 +270,13 @@ class World internal constructor(
         injectable.used = true
         return injectable.injObj as T
     }
+
+    /**
+     * Returns a new map of unused [injectables][Injectable]. An injectable gets set to 'used'
+     * when it gets injected at least once via a call to [inject].
+     */
+    fun unusedInjectables(): Map<String, Any> =
+        injectables.filterValues { !it.used }.mapValues { it.value.injObj }
 
     /**
      * Adds a new [entity][Entity] to the world using the given [configuration][EntityCreateContext].
