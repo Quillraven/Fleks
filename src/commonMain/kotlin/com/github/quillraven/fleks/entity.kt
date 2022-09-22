@@ -240,8 +240,8 @@ class EntityService(
     internal fun configure(entity: Entity, components: List<Component<*>>) {
         val compMask = compMasks[entity.id]
         components.forEach { cmp ->
-            val mapper = compService.wildcardHolder(cmp.type())
-            mapper.setWildcard(entity, cmp)
+            val holder = compService.wildcardHolder(cmp.type())
+            holder.setWildcard(entity, cmp)
             compMask.set(cmp.type().id)
         }
         world.allFamilies.forEach { it.onEntityCfgChanged(entity, compMask) }

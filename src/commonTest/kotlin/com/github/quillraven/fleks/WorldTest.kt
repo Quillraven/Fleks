@@ -405,9 +405,9 @@ internal class WorldTest {
             }
         }
 
-        val mapper = w.componentService.holder(WorldTestComponent)
-        assertNotNull(mapper.addHook)
-        assertNotNull(mapper.removeHook)
+        val holder = w.componentService.holder(WorldTestComponent)
+        assertNotNull(holder.addHook)
+        assertNotNull(holder.removeHook)
     }
 
     @Test

@@ -205,11 +205,11 @@ internal class FamilyTest {
 
     @Test
     fun testFamilyHook() {
-        val requiredCmps = BitArray().apply { set(1) }
+        val requiredComps = BitArray().apply { set(1) }
         val e = Entity(0)
         var numAddCalls = 0
         var numRemoveCalls = 0
-        val family = Family(allOf = requiredCmps, world = testWorld)
+        val family = Family(allOf = requiredComps, world = testWorld)
 
         val onAdd: FamilyHook = { world, entity ->
             assertEquals(world, testWorld)
@@ -226,7 +226,7 @@ internal class FamilyTest {
         family.addHook = onAdd
         family.removeHook = onRemove
 
-        family.onEntityCfgChanged(e, requiredCmps)
+        family.onEntityCfgChanged(e, requiredComps)
         assertEquals(1, numAddCalls)
         assertEquals(0, numRemoveCalls)
 
