@@ -43,17 +43,23 @@ then use [Artemis-odb](https://github.com/junkdog/artemis-odb) or [Ashley](https
 
 ## Current Status
 
-Thanks to [jobe-m](https://github.com/jobe-m) Fleks also has a Kotlin Multiplatform version which will be the future for Fleks.
-However, since KMP is still in alpha and in my opinion the developer experience is not yet there where it should be,
-Fleks will come in two flavors and will also have two releases in parallel:
-- **JVM** which can be used for any backend that supports a JVM like native Java applications or Android
-- **KMP** which can be used for any platform and can also be used in a [KorGE](https://korge.org/) game
+After about one year of the first release of Fleks, we are now at version 2.0.
+This version combines the **KMP** and **JVM** flavors into a single one.
+The history of the 1.6 version is kept in separate branches. Also, the wiki
+will contain a separate section for 1.6 for users who don't want to migrate to 2.x
+or prefer the other API:
+- [1.6-JVM](https://github.com/Quillraven/Fleks/tree/JVM-1.6)
+- [1.6-KMP](https://github.com/Quillraven/Fleks/tree/KMP-1.6)
 
-You can find the JVM version [here](https://github.com/Quillraven/Fleks/tree/master).
-This is the KMP version which has a slightly different API for the world's configuration due to limitations in reflection but after that
-everything is the same as in the JVM version. And as mentioned above, in the future those
-two flavors will be combined into a single one which is most likely the KMP version once I figured out
-how to support a similar nice user experience as in the JVM flavor ;)
+I want to make a big shout out to [jobe-m](https://github.com/jobe-m) who helped with the first
+Kotlin multiplatform version and who also helped throughout the development of 2.0. Thank you!
+
+With version 2.0 I tried to simplify the API and usage of Fleks for new users. This means that
+e.g. `ComponentMapper` are no longer necessary and also the API is more in style with typical
+Kotlin libraries which means more concise and easier to read (imho).
+And of course the big goal was to combine the JVM and KMP branch which was also achieved by
+completely removing reflection usage. This hopefully also makes the code easier to understand
+and debug.
 
 To use Fleks add it as a dependency to your project:
 
@@ -93,7 +99,7 @@ also contains an example section for JVM and KMP projects.
 ## Performance
 
 One important topic for me throughout the development of Fleks was performance. For that I compared Fleks with
-Artemis-odb and Ashley in three scenarios which you can find in the **benchmarks** source set:
+Artemis-odb and Ashley in three scenarios which you can find in the **jvmBenchmarks** source set:
 
 1) **AddRemove**: Creates 10_000 entities with a single component each and removes those entities.
 2) **Simple**: Steps the world 1_000 times for 10_000 entities with an `IteratingSystem` for a single component that
@@ -123,12 +129,12 @@ Here is the result (the higher the Score the better):
 | ------- | --------- | ---- | --- |---------|------------| ----- |
 | |
 | Ashley | AddRemove | thrpt | 3 | 207,007 | ± 39,121   | ops/s |
-| Artemis | AddRemove | thrpt | 3 | 677,231 | ± 2002,449 | ops/s |
-| Fleks | AddRemove | thrpt | 3 | 810,189 | ± 289,080  | ops/s |
+| Artemis | AddRemove | thrpt | 3 | 677,231 | ± 473,361 | ops/s |
+| Fleks | AddRemove | thrpt | 3 | 841,916 | ± 75,492  | ops/s |
 | |
 | Ashley | Simple | thrpt | 3 | 3,986   | ± 1,390    | ops/s |
 | Artemis | Simple | thrpt | 3 | 32,830  | ± 2,965    | ops/s |
-| Fleks | Simple | thrpt | 3 | 32,098  | ± 7,348    | ops/s |
+| Fleks | Simple | thrpt | 3 | 33,017  | ± 3,089    | ops/s |
 | |
 | Ashley | Complex | thrpt | 3 | 0,056   | ± 0,117    | ops/s |
 | Artemis | Complex | thrpt | 3 | 1,452   | ± 0,452    | ops/s |
