@@ -123,9 +123,10 @@ class ComponentsHolder<T : Component<*>>(
     }
 
     /**
-     * Sets or updates a component for the given [entity].
-     * If the [entity] has no component yet then [factory] is called to provide an instance for the [set] call.
-     * If the [entity] already has a component then [update] is called with the already existing component instance.
+     * Updates a [component][Component] for the given [entity] by calling [update].
+     *
+     * If the [entity] has no [component][Component] yet then [factory] is called to
+     * provide an instance for the [set] call, before calling [update].
      */
     inline fun setOrUpdate(
         entity: Entity,
@@ -136,7 +137,7 @@ class ComponentsHolder<T : Component<*>>(
         // Array gets resized within the 'set' call if necessary.
         val existingComp = getOrNull(entity)
         if (existingComp == null) {
-            set(entity, factory())
+            set(entity, factory().also(update))
         } else {
             existingComp.also(update)
         }

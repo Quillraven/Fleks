@@ -106,13 +106,10 @@ class EntityUpdateContext(compService: ComponentService) : EntityCreateContext(c
     }
 
     /**
-     * Adds or updates a [component][Component] of the given [type] for the [entity][Entity].
+     * Updates a [component][Component] of the given [type] for the [entity][Entity] by calling [update].
      *
-     * If the [entity][Entity] has no such [component][Component] yet then [add] is called to
-     * assign the returned [component][Component] to the [entity][Entity].
-     *
-     * If the [entity][Entity] already has such a [component][Component] then [update] is called
-     * with the already existing [component][Component] instance.
+     * If the [entity][Entity] does not have such a [component][Component] yet then [add] is called to
+     * assign the returned [component][Component] to the [entity][Entity] before calling [update].
      */
     inline fun <reified T : Component<T>> Entity.addOrUpdate(
         type: ComponentType<T>,

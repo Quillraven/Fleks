@@ -189,7 +189,7 @@ internal class ComponentTest {
         )
 
         assertTrue(entity in testHolder)
-        assertEquals(1, testHolder[entity].x)
+        assertEquals(2, testHolder[entity].x)
     }
 
     @Test
