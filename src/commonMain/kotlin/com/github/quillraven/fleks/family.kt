@@ -83,7 +83,7 @@ data class Family(
     internal val world: World,
     @PublishedApi
     internal val entityService: EntityService = world.entityService,
-) : BaseEntityExtensions(world.componentService) {
+) : EntityGetComponentContext(world.componentService) {
     /**
      * An optional [FamilyHook] that gets called whenever an [entity][Entity] enters the family.
      */

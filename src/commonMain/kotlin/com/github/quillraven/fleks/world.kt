@@ -214,7 +214,7 @@ fun world(entityCapacity: Int = 512, cfg: WorldConfiguration.() -> Unit): World 
  */
 class World internal constructor(
     entityCapacity: Int,
-) : BaseEntityExtensions(ComponentService()) {
+) : EntityGetComponentContext(ComponentService()) {
     @PublishedApi
     internal val injectables = mutableMapOf<String, Injectable>()
 
@@ -409,7 +409,7 @@ class World internal constructor(
         var family = allFamilies.find { it.allOf == defAll && it.noneOf == defNone && it.anyOf == defAny }
         if (family == null) {
             family = Family(defAll, defNone, defAny, this).apply {
-                allFamilies += this
+                this@World.allFamilies += this
                 // initialize a newly created family by notifying it for any already existing entity
                 entityService.forEach { this.onEntityCfgChanged(it, entityService.compMasks[it.id]) }
             }

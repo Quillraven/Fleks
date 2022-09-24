@@ -35,7 +35,7 @@ abstract class IntervalSystem(
      * Returns the [world][World] to which this system belongs.
      */
     val world: World = World.CURRENT_WORLD ?: throw FleksWrongConfigurationUsageException()
-) : BaseEntityExtensions(world.componentService) {
+) : EntityGetComponentContext(world.componentService) {
 
     private var accumulator: Float = 0.0f
 
@@ -165,7 +165,7 @@ abstract class IteratingSystem(
             family.sort(comparator)
         }
 
-        family.forEach { onTickEntity(it) }
+        family.forEach { this@IteratingSystem.onTickEntity(it) }
     }
 
     /**
@@ -180,7 +180,7 @@ abstract class IteratingSystem(
      * @param alpha a value between 0 (inclusive) and 1 (exclusive) that describes the progress between two ticks.
      */
     override fun onAlpha(alpha: Float) {
-        family.forEach { onAlphaEntity(it, alpha) }
+        family.forEach { this@IteratingSystem.onAlphaEntity(it, alpha) }
     }
 
     /**

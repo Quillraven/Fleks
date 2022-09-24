@@ -11,10 +11,17 @@ import com.github.quillraven.fleks.collection.compareEntity
 data class Entity(val id: Int)
 
 /**
- * A class for basic [Entity] extension functions within an add/remove hook of a [Component], [Family],
+ * DSL marker for the three different entity contexts: hook, create and update.
+ */
+@DslMarker
+annotation class EntityCtxMarker
+
+/**
+ * A DSL class for basic [Entity] extension functions within an add/remove hook of a [Component], [Family],
  * [IntervalSystem], [World] or [compareEntity].
  */
-abstract class BaseEntityExtensions(
+@EntityCtxMarker
+abstract class EntityGetComponentContext(
     @PublishedApi
     internal val componentService: ComponentService
 ) {
@@ -48,22 +55,16 @@ abstract class BaseEntityExtensions(
     /**
      * Returns true if and only if the [entity][Entity] doesn't have a [component][Component] of the given [type].
      */
-    inline infix fun <reified T : Component<*>> Entity.notHas(type: ComponentType<T>): Boolean =
+    inline infix fun <reified T : Component<*>> Entity.hasNo(type: ComponentType<T>): Boolean =
         this !in componentService.holder(type)
 }
 
 /**
- * DSL marker for the three different entity contexts: hook, create and update.
- */
-@DslMarker
-annotation class EntityCtxMarker
-
-/**
- * A DSL class that extends the extension functionality of an [BaseEntityExtensions] by also providing
+ * A DSL class that extends the extension functionality of an [EntityGetComponentContext] by also providing
  * the possibility to create [components][Component].
  */
 @EntityCtxMarker
-open class EntityCreateContext(compService: ComponentService) : BaseEntityExtensions(compService) {
+open class EntityCreateContext(compService: ComponentService) : EntityGetComponentContext(compService) {
     @PublishedApi
     internal lateinit var compMask: BitArray
 
