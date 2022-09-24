@@ -42,6 +42,7 @@ private class PositionSystem : IteratingSystem(family { all(Position) }) {
         entity[Position].x++
         assertTrue(Position in entity)
         assertTrue(entity has Position)
+        assertFalse(entity notHas Position)
         assertNotNull(entity.getOrNull(Position))
     }
 }
@@ -116,19 +117,19 @@ class Fleks2TDD {
             it.addOrUpdate(
                 Position,
                 add = { Position(1f, 1f) },
-                update = { position -> position.set(2f, 2f) }
+                update = { position -> position.x = 2f }
             )
         }
         emptyWorld.configure(emptyEntity) {
             it.addOrUpdate(
                 Position,
                 add = { Position(1f, 1f) },
-                update = { position -> position.set(2f, 2f) }
+                update = { position -> position.x = 3f }
             )
         }
 
-        assertEquals(Position(2f, 2f), with(emptyWorld) { posEntity[Position] })
-        assertEquals(Position(1f, 1f), with(emptyWorld) { emptyEntity[Position] })
+        assertEquals(Position(2f, 0f), with(emptyWorld) { posEntity[Position] })
+        assertEquals(Position(3f, 1f), with(emptyWorld) { emptyEntity[Position] })
     }
 
     @Test
@@ -259,6 +260,7 @@ class Fleks2TDD {
                     assertSame(expectedAddCmp, entity[Position])
                     assertTrue(Position in entity)
                     assertTrue(entity has Position)
+                    assertFalse(entity notHas Position)
                     assertNotNull(entity.getOrNull(Position))
                 }
                 onRemove(Position) { entity, _ ->
@@ -266,6 +268,7 @@ class Fleks2TDD {
                     assertSame(expectedRemoveCmp, entity[SpriteBackground])
                     assertFalse(Position in entity)
                     assertFalse(entity has Position)
+                    assertTrue(entity notHas Position)
                     assertNull(entity.getOrNull(Position))
                 }
             }
@@ -277,6 +280,7 @@ class Fleks2TDD {
                     assertSame(expectedAddCmp, entity[Position])
                     assertTrue(Position in entity)
                     assertTrue(entity has Position)
+                    assertFalse(entity notHas Position)
                     assertNotNull(entity.getOrNull(Position))
                 }
                 onRemove(testFamily) { entity ->
@@ -284,6 +288,7 @@ class Fleks2TDD {
                     assertSame(expectedRemoveCmp, entity[SpriteBackground])
                     assertFalse(Position in entity)
                     assertFalse(entity has Position)
+                    assertTrue(entity notHas Position)
                     assertNull(entity.getOrNull(Position))
                 }
             }
@@ -295,6 +300,7 @@ class Fleks2TDD {
             assertSame(expectedAddCmp, it[Position])
             assertTrue(Position in it)
             assertTrue(it has Position)
+            assertFalse(it notHas Position)
             assertNotNull(it.getOrNull(Position))
         }
         // trigger family onAdd hook
@@ -304,6 +310,7 @@ class Fleks2TDD {
             assertSame(expectedAddCmp, entity[Position])
             assertTrue(Position in entity)
             assertTrue(entity has Position)
+            assertFalse(entity notHas Position)
             assertNotNull(entity.getOrNull(Position))
         }
         // access of components also possible via world
@@ -313,6 +320,7 @@ class Fleks2TDD {
             assertSame(expectedAddCmp, it[Position])
             assertTrue(Position in it)
             assertTrue(it has Position)
+            assertFalse(it notHas Position)
             assertNotNull(it.getOrNull(Position))
             it += expectedRemoveCmp
             // trigger component onRemove hook -> this also removes the entity of the family below
