@@ -294,7 +294,7 @@ internal class SystemTest {
 
         world.update(0.3f)
 
-        assertFalse(world.query(entity) { it has SystemTestComponent })
+        assertFalse(with(world) { entity has SystemTestComponent })
     }
 
     @Test

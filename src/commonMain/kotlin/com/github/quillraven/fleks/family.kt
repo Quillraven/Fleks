@@ -7,9 +7,9 @@ import com.github.quillraven.fleks.collection.isNullOrEmpty
 
 /**
  * Type alias for an optional hook function for a [Family].
- * Such a function runs within an [EntityHookContext] and takes the [World] and [Entity] as an argument.
+ * Such a function runs within a [World] and takes the [Entity] as an argument.
  */
-typealias FamilyHook = EntityHookContext.(World, Entity) -> Unit
+typealias FamilyHook = World.(Entity) -> Unit
 
 /**
  * A class to define the configuration of a [Family]. A [family][Family] contains of three parts:
@@ -83,10 +83,7 @@ data class Family(
     internal val world: World,
     @PublishedApi
     internal val entityService: EntityService = world.entityService,
-    @PublishedApi
-    internal val compService: ComponentService = world.componentService,
-    private val hookCtx: EntityHookContext = world.hookCtx,
-) {
+) : BaseEntityExtensions(world.componentService) {
     /**
      * An optional [FamilyHook] that gets called whenever an [entity][Entity] enters the family.
      */
@@ -219,33 +216,6 @@ data class Family(
     }
 
     /**
-     * Returns a [component][Component] of the given [type] for the [entity][Entity].
-     *
-     * @throws [FleksNoSuchEntityComponentException] if the [entity][Entity] does not have such a component.
-     */
-    inline operator fun <reified T : Component<*>> Entity.get(type: ComponentType<T>): T =
-        compService.holder(type)[this]
-
-    /**
-     * Returns a [component][Component] of the given [type] for the [entity][Entity]
-     * or null if the [entity][Entity] does not have such a [component][Component].
-     */
-    inline fun <reified T : Component<*>> Entity.getOrNull(type: ComponentType<T>): T? =
-        compService.holder(type).getOrNull(this)
-
-    /**
-     * Returns true if and only if the [entity][Entity] has a [component][Component] of the given [type].
-     */
-    inline operator fun <reified T : Component<*>> Entity.contains(type: ComponentType<T>): Boolean =
-        compService.holder(type).contains(this)
-
-    /**
-     * Returns true if and only if the [entity][Entity] has a [component][Component] of the given [type].
-     */
-    inline infix fun <reified T : Component<*>> Entity.has(type: ComponentType<T>): Boolean =
-        compService.holder(type).contains(this)
-
-    /**
      * Sorts the [entities][Entity] of this family by the given [comparator].
      */
     fun sort(comparator: EntityComparator) {
@@ -261,7 +231,7 @@ data class Family(
         if (compMask in this) {
             isDirty = true
             entities.set(entity.id)
-            addHook?.invoke(hookCtx, world, entity)
+            addHook?.invoke(world, entity)
         }
     }
 
@@ -277,12 +247,12 @@ data class Family(
             // new entity gets added
             isDirty = true
             entities.set(entity.id)
-            addHook?.invoke(hookCtx, world, entity)
+            addHook?.invoke(world, entity)
         } else if (!entityInFamily && entities[entity.id]) {
             // existing entity gets removed
             isDirty = true
             entities.clear(entity.id)
-            removeHook?.invoke(hookCtx, world, entity)
+            removeHook?.invoke(world, entity)
         }
     }
 
@@ -295,7 +265,7 @@ data class Family(
             // existing entity gets removed
             isDirty = true
             entities.clear(entity.id)
-            removeHook?.invoke(hookCtx, world, entity)
+            removeHook?.invoke(world, entity)
         }
     }
 

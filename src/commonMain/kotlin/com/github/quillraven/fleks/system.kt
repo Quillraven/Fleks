@@ -30,12 +30,12 @@ data class Fixed(val step: Float) : Interval
  */
 abstract class IntervalSystem(
     val interval: Interval = EachFrame,
-    var enabled: Boolean = true
-) {
+    var enabled: Boolean = true,
     /**
      * Returns the [world][World] to which this system belongs.
      */
     val world: World = World.CURRENT_WORLD ?: throw FleksWrongConfigurationUsageException()
+) : BaseEntityExtensions(world.componentService) {
 
     private var accumulator: Float = 0.0f
 
@@ -140,12 +140,6 @@ abstract class IteratingSystem(
     internal val entityService: EntityService = world.entityService
 
     /**
-     * Returns the [componentService][ComponentService] of this system.
-     */
-    @PublishedApi
-    internal val compService: ComponentService = world.componentService
-
-    /**
      * Flag that defines if sorting of [entities][Entity] will be performed the next time [onTick] is called.
      *
      * If a [comparator] is defined and [sortingType] is [Automatic] then this flag is always true.
@@ -153,33 +147,6 @@ abstract class IteratingSystem(
      * Otherwise, it must be set programmatically to perform sorting. The flag gets cleared after sorting.
      */
     var doSort = sortingType == Automatic && comparator != EMPTY_COMPARATOR
-
-    /**
-     * Returns a [component][Component] of the given [type] for the [entity][Entity].
-     *
-     * @throws [FleksNoSuchEntityComponentException] if the [entity][Entity] does not have such a component.
-     */
-    inline operator fun <reified T : Component<*>> Entity.get(type: ComponentType<T>): T =
-        compService.holder(type)[this]
-
-    /**
-     * Returns a [component][Component] of the given [type] for the [entity][Entity]
-     * or null if the [entity][Entity] does not have such a [component][Component].
-     */
-    inline fun <reified T : Component<*>> Entity.getOrNull(type: ComponentType<T>): T? =
-        compService.holder(type).getOrNull(this)
-
-    /**
-     * Returns true if and only if the [entity][Entity] has a [component][Component] of the given [type].
-     */
-    inline operator fun <reified T : Component<*>> Entity.contains(type: ComponentType<T>): Boolean =
-        compService.holder(type).contains(this)
-
-    /**
-     * Returns true if and only if the [entity][Entity] has a [component][Component] of the given [type].
-     */
-    inline infix fun <reified T : Component<*>> Entity.has(type: ComponentType<T>): Boolean =
-        compService.holder(type).contains(this)
 
     /**
      * Updates the [entity][Entity] using the given [configuration] to add and remove [components][Component].

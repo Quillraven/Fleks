@@ -214,7 +214,7 @@ fun world(entityCapacity: Int = 512, cfg: WorldConfiguration.() -> Unit): World 
  */
 class World internal constructor(
     entityCapacity: Int,
-) {
+) : BaseEntityExtensions(ComponentService()) {
     @PublishedApi
     internal val injectables = mutableMapOf<String, Injectable>()
 
@@ -224,12 +224,6 @@ class World internal constructor(
      */
     var deltaTime = 0f
         private set
-
-    @PublishedApi
-    internal val componentService = ComponentService(this)
-
-    @PublishedApi
-    internal val hookCtx = EntityHookContext(componentService)
 
     @PublishedApi
     internal val entityService = EntityService(this, entityCapacity)
@@ -260,6 +254,17 @@ class World internal constructor(
     var systems = emptyArray<IntervalSystem>()
         internal set
 
+    init {
+        /**
+         * Maybe because of design flaws, the world reference of the ComponentService must be
+         * set in the world's constructor because the parent class (=BaseEntityExtensions) already
+         * requires a ComponentService and it is not possible to pass "this" reference directly.
+         *
+         * That's why it is happening here to set it as soon as possible.
+         */
+        componentService.world = this
+    }
+
     /**
      * Returns an already registered injectable of the given [name] and marks it as used.
      *
@@ -283,15 +288,6 @@ class World internal constructor(
      */
     inline fun entity(configuration: EntityCreateContext.(Entity) -> Unit = {}): Entity {
         return entityService.create(configuration)
-    }
-
-    /**
-     * Executes and returns the result of a [query] for the given [entity].
-     * This can be used to retrieve [components][Component] of the [entity] or check
-     * if it has certain [components][Component].
-     */
-    inline fun <reified T> query(entity: Entity, query: EntityHookContext.(Entity) -> T): T {
-        return query(hookCtx, entity)
     }
 
     /**

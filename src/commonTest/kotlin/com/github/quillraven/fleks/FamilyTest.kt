@@ -211,14 +211,14 @@ internal class FamilyTest {
         var numRemoveCalls = 0
         val family = Family(allOf = requiredComps, world = testWorld)
 
-        val onAdd: FamilyHook = { world, entity ->
-            assertEquals(world, testWorld)
+        val onAdd: FamilyHook = { entity ->
+            assertEquals(this, testWorld)
             assertEquals(0, entity.id)
             numAddCalls++
         }
 
-        val onRemove: FamilyHook = { world, entity ->
-            assertEquals(world, testWorld)
+        val onRemove: FamilyHook = { entity ->
+            assertEquals(this, testWorld)
             assertEquals(0, entity.id)
             numRemoveCalls++
         }

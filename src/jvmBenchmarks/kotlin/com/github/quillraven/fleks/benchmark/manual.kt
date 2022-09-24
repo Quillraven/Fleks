@@ -65,7 +65,7 @@ private fun compareArtemisFleksSimple() {
     // verify benchmark
     assert(fleksState.world.numEntities == NUM_ENTITIES)
     fleksState.world.forEach { entity ->
-        assert(fleksState.world.query(entity) { it[FleksPosition] }.x == WORLD_UPDATES.toFloat())
+        with(fleksState.world) { assert(entity[FleksPosition].x == WORLD_UPDATES.toFloat()) }
     }
 
     repeat(3) {

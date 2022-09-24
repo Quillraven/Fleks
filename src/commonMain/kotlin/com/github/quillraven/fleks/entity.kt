@@ -11,23 +11,12 @@ import com.github.quillraven.fleks.collection.compareEntity
 data class Entity(val id: Int)
 
 /**
- * DSL marker for the three different entity contexts: hook, create and update.
+ * A class for basic [Entity] extension functions within an add/remove hook of a [Component], [Family],
+ * [IntervalSystem], [World] or [compareEntity].
  */
-@DslMarker
-annotation class EntityCtxMarker
-
-/**
- * A DSL class for basic [Entity] extension functions within an add/remove hook of a [Component] or [Family].
- * These extensions are also used by [World.query] and [compareEntity].
- *
- *
- * Also, the same functionality is provided by a [Family] and an [IteratingSystem] but not via this class.
- * The methods must be manually copied in all those areas because unfortunately, I have no better idea how to solve that :(
- */
-@EntityCtxMarker
-open class EntityHookContext(
+abstract class BaseEntityExtensions(
     @PublishedApi
-    internal val compService: ComponentService
+    internal val componentService: ComponentService
 ) {
     /**
      * Returns a [component][Component] of the given [type] for the [entity][Entity].
@@ -35,34 +24,46 @@ open class EntityHookContext(
      * @throws [FleksNoSuchEntityComponentException] if the [entity][Entity] does not have such a component.
      */
     inline operator fun <reified T : Component<*>> Entity.get(type: ComponentType<T>): T =
-        compService.holder(type)[this]
+        componentService.holder(type)[this]
 
     /**
      * Returns a [component][Component] of the given [type] for the [entity][Entity]
      * or null if the [entity][Entity] does not have such a [component][Component].
      */
     inline fun <reified T : Component<*>> Entity.getOrNull(type: ComponentType<T>): T? =
-        compService.holder(type).getOrNull(this)
+        componentService.holder(type).getOrNull(this)
 
     /**
      * Returns true if and only if the [entity][Entity] has a [component][Component] of the given [type].
      */
     inline operator fun <reified T : Component<*>> Entity.contains(type: ComponentType<T>): Boolean =
-        compService.holder(type).contains(this)
+        this in componentService.holder(type)
 
     /**
      * Returns true if and only if the [entity][Entity] has a [component][Component] of the given [type].
      */
     inline infix fun <reified T : Component<*>> Entity.has(type: ComponentType<T>): Boolean =
-        compService.holder(type).contains(this)
+        this in componentService.holder(type)
+
+    /**
+     * Returns true if and only if the [entity][Entity] doesn't have a [component][Component] of the given [type].
+     */
+    inline infix fun <reified T : Component<*>> Entity.notHas(type: ComponentType<T>): Boolean =
+        this !in componentService.holder(type)
 }
 
 /**
- * A DSL class that extends the extension functionality of an [EntityHookContext] by also providing
+ * DSL marker for the three different entity contexts: hook, create and update.
+ */
+@DslMarker
+annotation class EntityCtxMarker
+
+/**
+ * A DSL class that extends the extension functionality of an [BaseEntityExtensions] by also providing
  * the possibility to create [components][Component].
  */
 @EntityCtxMarker
-open class EntityCreateContext(compService: ComponentService) : EntityHookContext(compService) {
+open class EntityCreateContext(compService: ComponentService) : BaseEntityExtensions(compService) {
     @PublishedApi
     internal lateinit var compMask: BitArray
 
@@ -79,7 +80,7 @@ open class EntityCreateContext(compService: ComponentService) : EntityHookContex
     inline operator fun <reified T : Component<T>> Entity.plusAssign(component: T) {
         val compType: ComponentType<T> = component.type()
         compMask.set(compType.id)
-        val holder: ComponentsHolder<T> = compService.holder(compType)
+        val holder: ComponentsHolder<T> = componentService.holder(compType)
         holder[this] = component
     }
 }
@@ -101,7 +102,7 @@ class EntityUpdateContext(compService: ComponentService) : EntityCreateContext(c
      */
     inline operator fun <reified T : Component<*>> Entity.minusAssign(type: ComponentType<T>) {
         compMask.clear(type.id)
-        compService.holder(type) -= this
+        componentService.holder(type) -= this
     }
 
     /**
@@ -119,7 +120,7 @@ class EntityUpdateContext(compService: ComponentService) : EntityCreateContext(c
         update: (T) -> Unit,
     ) {
         compMask.set(type.id)
-        val holder: ComponentsHolder<T> = compService.holder(type)
+        val holder: ComponentsHolder<T> = componentService.holder(type)
         holder.setOrUpdate(this, add, update)
     }
 }

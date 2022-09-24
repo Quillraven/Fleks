@@ -65,7 +65,7 @@ class Fleks2TDD {
             it += expectedComp
         }
 
-        val actualComp: Position = emptyWorld.query(entity) { it[Position] }
+        val actualComp: Position = with(emptyWorld) { entity[Position] }
         assertEquals(expectedComp, actualComp)
     }
 
@@ -79,8 +79,8 @@ class Fleks2TDD {
             it += expectedComp2
         }
 
-        assertEquals(expectedComp1, emptyWorld.query(entity) { it[SpriteBackground] })
-        assertEquals(expectedComp2, emptyWorld.query(entity) { it[SpriteForeground] })
+        assertEquals(expectedComp1, with(emptyWorld) { entity[SpriteBackground] })
+        assertEquals(expectedComp2, with(emptyWorld) { entity[SpriteForeground] })
     }
 
     @Test
@@ -88,7 +88,7 @@ class Fleks2TDD {
         val entity = emptyWorld.entity()
 
         assertFailsWith<FleksNoSuchEntityComponentException> {
-            emptyWorld.query(entity) { it[Position] }
+            with(emptyWorld) { entity[Position] }
         }
     }
 
@@ -101,8 +101,8 @@ class Fleks2TDD {
             it += Sprite(true, "")
         }
 
-        assertFalse(emptyWorld.query(entity) { Position in it })
-        assertTrue(emptyWorld.query(entity) { it has SpriteBackground })
+        assertFalse(with(emptyWorld) { Position in entity })
+        assertTrue(with(emptyWorld) { entity has SpriteBackground })
     }
 
     @Test
@@ -127,8 +127,8 @@ class Fleks2TDD {
             )
         }
 
-        assertEquals(Position(2f, 2f), emptyWorld.query(posEntity) { it[Position] })
-        assertEquals(Position(1f, 1f), emptyWorld.query(emptyEntity) { it[Position] })
+        assertEquals(Position(2f, 2f), with(emptyWorld) { posEntity[Position] })
+        assertEquals(Position(1f, 1f), with(emptyWorld) { emptyEntity[Position] })
     }
 
     @Test
@@ -144,7 +144,7 @@ class Fleks2TDD {
 
         world.update(1f)
 
-        assertEquals(1f, world.query(entity) { it[Position] }.x)
+        assertEquals(1f, with(world) { entity[Position] }.x)
     }
 
     @Test
@@ -154,16 +154,16 @@ class Fleks2TDD {
         lateinit var testWorld: World
         testWorld = world {
             components {
-                onAdd(Position) { world, entity, component ->
+                onAdd(Position) { entity, component ->
                     component.x = 1f
-                    assertEquals(testWorld, world)
+                    assertEquals(testWorld, this)
                     assertTrue { entity.id in 0..1 }
                     assertTrue { component in listOf(addComponent, removeComponent) }
                 }
 
-                onRemove(Position) { world, entity, component ->
+                onRemove(Position) { entity, component ->
                     component.x = 2f
-                    assertEquals(testWorld, world)
+                    assertEquals(testWorld, this)
                     assertEquals(Entity(1), entity)
                     assertEquals(removeComponent, component)
                 }
@@ -189,15 +189,15 @@ class Fleks2TDD {
         testWorld = world {
             testFamily = family { all(Position) }
             families {
-                onAdd(testFamily) { world, entity ->
+                onAdd(testFamily) { entity ->
                     ++numAddCalls
-                    assertEquals(testWorld, world)
+                    assertEquals(testWorld, this)
                     assertTrue { entity.id in 0..1 }
                 }
 
-                onRemove(testFamily) { world, entity ->
+                onRemove(testFamily) { entity ->
                     ++numRemoveCalls
-                    assertEquals(testWorld, world)
+                    assertEquals(testWorld, this)
                     assertEquals(Entity(1), entity)
                 }
             }
@@ -254,14 +254,14 @@ class Fleks2TDD {
         var familyRemoveCalled = false
         val testWorld = world {
             components {
-                onAdd(Position) { _, entity, _ ->
+                onAdd(Position) { entity, _ ->
                     cmpAddCalled = true
                     assertSame(expectedAddCmp, entity[Position])
                     assertTrue(Position in entity)
                     assertTrue(entity has Position)
                     assertNotNull(entity.getOrNull(Position))
                 }
-                onRemove(Position) { _, entity, _ ->
+                onRemove(Position) { entity, _ ->
                     cmpRemoveCalled = true
                     assertSame(expectedRemoveCmp, entity[SpriteBackground])
                     assertFalse(Position in entity)
@@ -272,14 +272,14 @@ class Fleks2TDD {
 
             families {
                 testFamily = family { all(Position) }
-                onAdd(testFamily) { _, entity ->
+                onAdd(testFamily) { entity ->
                     familyAddCalled = true
                     assertSame(expectedAddCmp, entity[Position])
                     assertTrue(Position in entity)
                     assertTrue(entity has Position)
                     assertNotNull(entity.getOrNull(Position))
                 }
-                onRemove(testFamily) { _, entity ->
+                onRemove(testFamily) { entity ->
                     familyRemoveCalled = true
                     assertSame(expectedRemoveCmp, entity[SpriteBackground])
                     assertFalse(Position in entity)
@@ -307,7 +307,7 @@ class Fleks2TDD {
             assertNotNull(entity.getOrNull(Position))
         }
         // access of components also possible via world
-        assertSame(expectedAddCmp, testWorld.query(testEntity) { it[Position] })
+        assertSame(expectedAddCmp, with(testWorld) { testEntity[Position] })
         // verify EntityUpdateContext extensions
         testWorld.configure(testEntity) {
             assertSame(expectedAddCmp, it[Position])

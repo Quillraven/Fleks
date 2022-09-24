@@ -11,7 +11,7 @@ internal class ComponentTest {
     }
 
     private val testWorld = world { }
-    private val testService = ComponentService(testWorld)
+    private val testService = ComponentService().also { it.world = testWorld }
     private val testHolder = testService.holder(ComponentTestComponent)
 
     @Test
@@ -122,15 +122,15 @@ internal class ComponentTest {
         val expectedEntity = Entity(1)
         val expectedComp = ComponentTestComponent()
 
-        val onAdd: ComponentHook<ComponentTestComponent> = { world, entity, component ->
-            assertEquals(testWorld, world)
+        val onAdd: ComponentHook<ComponentTestComponent> = { entity, component ->
+            assertEquals(testWorld, this)
             assertEquals(expectedEntity, entity)
             assertEquals(expectedComp, component)
             numAddCalls++
         }
 
-        val onRemove: ComponentHook<ComponentTestComponent> = { world, entity, component ->
-            assertEquals(testWorld, world)
+        val onRemove: ComponentHook<ComponentTestComponent> = { entity, component ->
+            assertEquals(testWorld, this)
             assertEquals(expectedEntity, entity)
             assertEquals(expectedComp, component)
             numRemoveCalls++
@@ -153,15 +153,15 @@ internal class ComponentTest {
         val expectedComp1 = ComponentTestComponent()
         val expectedComp2 = ComponentTestComponent()
 
-        val onAdd: ComponentHook<ComponentTestComponent> = { world, entity, component ->
-            assertSame(testWorld, world)
+        val onAdd: ComponentHook<ComponentTestComponent> = { entity, component ->
+            assertSame(testWorld, this)
             assertSame(expectedEntity, entity)
             assertTrue { expectedComp1 === component || expectedComp2 === component }
             numAddCalls++
         }
 
-        val onRemove: ComponentHook<ComponentTestComponent> = { world, entity, component ->
-            assertSame(testWorld, world)
+        val onRemove: ComponentHook<ComponentTestComponent> = { entity, component ->
+            assertSame(testWorld, this)
             assertSame(expectedEntity, entity)
             assertSame(expectedComp1, component)
             numRemoveCalls++
@@ -209,9 +209,7 @@ internal class ComponentTest {
 
     @Test
     fun cannotRemoveNonExistingEntityFromHolderWithInsufficientCapacity() {
-        val world = world { }
-        val cmpService = ComponentService(world)
-        val holder = cmpService.holder(ComponentTestComponent)
+        val holder = testService.holder(ComponentTestComponent)
         val entity = Entity(10_000)
 
         assertFailsWith<IndexOutOfBoundsException> { holder -= entity }

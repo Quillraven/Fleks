@@ -8,9 +8,9 @@ import kotlin.reflect.KClass
 
 /**
  * Type alias for an optional hook function for a [ComponentsHolder].
- * Such a function runs within an [EntityHookContext] and takes the [World], [Entity] and [component][Component] as an argument.
+ * Such a function runs within a [World] and takes the [Entity] and [component][Component] as an argument.
  */
-typealias ComponentHook<T> = EntityHookContext.(World, Entity, T) -> Unit
+typealias ComponentHook<T> = World.(Entity, T) -> Unit
 
 /**
  * A class that assigns a unique [id] per type of [Component] starting from 0.
@@ -60,7 +60,6 @@ class ComponentsHolder<T : Component<*>>(
     private val world: World,
     private val name: String,
     private var components: Array<T?>,
-    private val hookCtx: EntityHookContext = world.hookCtx,
 ) {
     /**
      * An optional [ComponentHook] that gets called whenever a [component][Component] gets set for an [entity][Entity].
@@ -98,12 +97,12 @@ class ComponentsHolder<T : Component<*>>(
             // assign current component to null in order for 'contains' calls inside the hook
             // to correctly return false
             components[entity.id] = null
-            removeHook?.invoke(hookCtx, world, entity, existingCmp)
+            removeHook?.invoke(world, entity, existingCmp)
         }
 
         // set component and call addHook if necessary
         components[entity.id] = component
-        addHook?.invoke(hookCtx, world, entity, component)
+        addHook?.invoke(world, entity, component)
     }
 
     /**
@@ -119,7 +118,7 @@ class ComponentsHolder<T : Component<*>>(
         // assign null before running the removeHook in order for 'contains' calls to correctly return false
         components[entity.id] = null
         if (existingCmp != null) {
-            removeHook?.invoke(hookCtx, world, entity, existingCmp)
+            removeHook?.invoke(world, entity, existingCmp)
         }
     }
 
@@ -173,10 +172,10 @@ class ComponentsHolder<T : Component<*>>(
  * A service class that is responsible for managing [ComponentsHolder] instances.
  * It creates a [ComponentsHolder] for every unique [ComponentType].
  */
-class ComponentService(
+class ComponentService {
     @PublishedApi
-    internal val world: World,
-) {
+    internal lateinit var world: World
+
     /**
      * Returns [Bag] of [ComponentsHolder].
      */

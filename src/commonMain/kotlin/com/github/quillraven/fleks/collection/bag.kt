@@ -175,13 +175,11 @@ interface EntityComparator {
 
 fun compareEntity(
     world: World = World.CURRENT_WORLD ?: throw FleksWrongConfigurationUsageException(),
-    compareFun: EntityHookContext.(Entity, Entity) -> Int,
+    compareFun: World.(Entity, Entity) -> Int,
 ): EntityComparator {
     return object : EntityComparator {
-        private val hookCtx = world.hookCtx
-
         override fun compare(entityA: Entity, entityB: Entity): Int {
-            return compareFun(hookCtx, entityA, entityB)
+            return compareFun(world, entityA, entityB)
         }
     }
 }

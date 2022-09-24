@@ -193,7 +193,7 @@ internal class WorldTest {
 
         assertEquals(1, w.numEntities)
         assertEquals(0, e.id)
-        assertEquals(5f, w.query(e) { it[WorldTestComponent].x })
+        assertEquals(5f, with(w) { e[WorldTestComponent].x })
     }
 
     @Test
@@ -407,8 +407,8 @@ internal class WorldTest {
     fun createWorldWithComponentHooks() {
         val w = world {
             components {
-                onAdd(WorldTestComponent) { _, _, _ -> }
-                onRemove(WorldTestComponent) { _, _, _ -> }
+                onAdd(WorldTestComponent) { _, _ -> }
+                onRemove(WorldTestComponent) { _, _ -> }
             }
         }
 
@@ -424,8 +424,8 @@ internal class WorldTest {
 
         world {
             components {
-                onAdd(WorldTestComponent) { _, _, _ -> ++numAddCalls }
-                onRemove(WorldTestComponent) { _, _, _ -> ++numRemoveCalls }
+                onAdd(WorldTestComponent) { _, _ -> ++numAddCalls }
+                onRemove(WorldTestComponent) { _, _ -> ++numRemoveCalls }
             }
 
             systems {
@@ -443,8 +443,8 @@ internal class WorldTest {
         world {
             testFamily = family { all(WorldTestComponent) }
             families {
-                onAdd(testFamily) { _, _ -> }
-                onRemove(testFamily) { _, _ -> }
+                onAdd(testFamily) { }
+                onRemove(testFamily) { }
             }
         }
 
@@ -458,8 +458,8 @@ internal class WorldTest {
             world {
                 val testFamily = family { all(WorldTestComponent) }
                 families {
-                    onAdd(testFamily) { _, _ -> }
-                    onAdd(testFamily) { _, _ -> }
+                    onAdd(testFamily) { }
+                    onAdd(testFamily) { }
                 }
             }
         }
@@ -474,8 +474,8 @@ internal class WorldTest {
         val w = world {
             testFamily = family { all(WorldTestComponent) }
             families {
-                onAdd(testFamily) { _, _ -> ++numAddCalls }
-                onRemove(testFamily) { _, _ -> ++numRemoveCalls }
+                onAdd(testFamily) { ++numAddCalls }
+                onRemove(testFamily) { ++numRemoveCalls }
             }
 
             systems {
@@ -644,8 +644,8 @@ internal class WorldTest {
             }
 
             components {
-                onAdd(WorldTestComponent) { _, _, _ -> ++numAddCalls }
-                onRemove(WorldTestComponent) { _, _, _ -> ++numRemoveCalls }
+                onAdd(WorldTestComponent) { _, _ -> ++numAddCalls }
+                onRemove(WorldTestComponent) { _, _ -> ++numRemoveCalls }
             }
 
             systems {
@@ -705,7 +705,7 @@ internal class WorldTest {
                 }
 
                 components {
-                    onAdd(WorldTestComponent) { _, _, _ -> }
+                    onAdd(WorldTestComponent) { _, _ -> }
                 }
             }
         }
@@ -718,7 +718,7 @@ internal class WorldTest {
                 }
 
                 components {
-                    onRemove(WorldTestComponent) { _, _, _ -> }
+                    onRemove(WorldTestComponent) { _, _ -> }
                 }
             }
         }
@@ -731,7 +731,7 @@ internal class WorldTest {
                 }
 
                 families {
-                    onAdd(family { all(WorldTestComponent) }) { _, _ -> }
+                    onAdd(family { all(WorldTestComponent) }) { }
                 }
             }
         }
@@ -744,7 +744,7 @@ internal class WorldTest {
                 }
 
                 families {
-                    onRemove(family { all(WorldTestComponent) }) { _, _ -> }
+                    onRemove(family { all(WorldTestComponent) }) { }
                 }
             }
         }
