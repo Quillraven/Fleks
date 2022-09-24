@@ -11,16 +11,9 @@ import com.github.quillraven.fleks.collection.compareEntity
 data class Entity(val id: Int)
 
 /**
- * DSL marker for the three different entity contexts: hook, create and update.
- */
-@DslMarker
-annotation class EntityCtxMarker
-
-/**
- * A DSL class for basic [Entity] extension functions within an add/remove hook of a [Component], [Family],
+ * A class for basic [Entity] extension functions within an add/remove hook of a [Component], [Family],
  * [IntervalSystem], [World] or [compareEntity].
  */
-@EntityCtxMarker
 abstract class EntityGetComponentContext(
     @PublishedApi
     internal val componentService: ComponentService
@@ -60,10 +53,9 @@ abstract class EntityGetComponentContext(
 }
 
 /**
- * A DSL class that extends the extension functionality of an [EntityGetComponentContext] by also providing
+ * A class that extends the extension functionality of an [EntityGetComponentContext] by also providing
  * the possibility to create [components][Component].
  */
-@EntityCtxMarker
 open class EntityCreateContext(compService: ComponentService) : EntityGetComponentContext(compService) {
     @PublishedApi
     internal lateinit var compMask: BitArray
@@ -87,10 +79,9 @@ open class EntityCreateContext(compService: ComponentService) : EntityGetCompone
 }
 
 /**
- * A DSL class that extends the extension functionality of an [EntityCreateContext] by also providing
+ * A class that extends the extension functionality of an [EntityCreateContext] by also providing
  * the possibility to update [components][Component].
  */
-@EntityCtxMarker
 class EntityUpdateContext(compService: ComponentService) : EntityCreateContext(compService) {
     /**
      * Removes a [component][Component] of the given [type] from the [entity][Entity].

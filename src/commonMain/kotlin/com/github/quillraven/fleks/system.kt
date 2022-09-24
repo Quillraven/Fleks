@@ -165,7 +165,7 @@ abstract class IteratingSystem(
             family.sort(comparator)
         }
 
-        family.forEach { this@IteratingSystem.onTickEntity(it) }
+        family.forEach { onTickEntity(it) }
     }
 
     /**
@@ -180,7 +180,7 @@ abstract class IteratingSystem(
      * @param alpha a value between 0 (inclusive) and 1 (exclusive) that describes the progress between two ticks.
      */
     override fun onAlpha(alpha: Float) {
-        family.forEach { this@IteratingSystem.onAlphaEntity(it, alpha) }
+        family.forEach { onAlphaEntity(it, alpha) }
     }
 
     /**

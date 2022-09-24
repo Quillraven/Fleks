@@ -409,7 +409,7 @@ class World internal constructor(
         var family = allFamilies.find { it.allOf == defAll && it.noneOf == defNone && it.anyOf == defAny }
         if (family == null) {
             family = Family(defAll, defNone, defAny, this).apply {
-                this@World.allFamilies += this
+                allFamilies += this
                 // initialize a newly created family by notifying it for any already existing entity
                 entityService.forEach { this.onEntityCfgChanged(it, entityService.compMasks[it.id]) }
             }
