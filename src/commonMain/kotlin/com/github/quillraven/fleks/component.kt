@@ -33,7 +33,7 @@ abstract class ComponentType<T> {
  * One convenient approach is to use the unnamed companion object of a Kotlin class as a [ComponentType].
  * Sample code for a component that stores the position of an entity:
  *
- *     private data class Position(
+ *     data class Position(
  *         var x: Float,
  *         var y: Float,
  *     ) : Component<Position> {
