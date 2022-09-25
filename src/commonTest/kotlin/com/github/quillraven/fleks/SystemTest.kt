@@ -94,7 +94,7 @@ private class SystemTestIteratingSystemSortAutomatic : IteratingSystem(
 
     override fun onTickEntity(entity: Entity) {
         entityToRemove?.let {
-            world.remove(it)
+            world -= it
             entityToRemove = null
         }
 
@@ -113,7 +113,7 @@ private class SystemTestFixedSystemRemoval : IteratingSystem(
 
     override fun onTickEntity(entity: Entity) {
         entityToRemove?.let {
-            world.remove(it)
+            world -= it
             entityToRemove = null
         }
     }

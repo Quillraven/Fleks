@@ -119,7 +119,7 @@ open class FleksBenchmark {
             }
         }
         repeat(NUM_ENTITIES) {
-            state.world.remove(Entity(it))
+            state.world -= Entity(it)
         }
     }
 

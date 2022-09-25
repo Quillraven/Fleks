@@ -14,7 +14,7 @@ data class Entity(val id: Int)
  * A class for basic [Entity] extension functions within an add/remove hook of a [Component], [Family],
  * [IntervalSystem], [World] or [compareEntity].
  */
-abstract class EntityGetComponentContext(
+abstract class EntityComponentContext(
     @PublishedApi
     internal val componentService: ComponentService
 ) {
@@ -50,13 +50,25 @@ abstract class EntityGetComponentContext(
      */
     inline infix fun <reified T : Component<*>> Entity.hasNo(type: ComponentType<T>): Boolean =
         this !in componentService.holder(type)
+
+    /**
+     * Updates the [entity][Entity] using the given [configuration] to add and remove [components][Component].
+     */
+    inline fun Entity.configure(configuration: EntityUpdateContext.(Entity) -> Unit) =
+        componentService.world.entityService.configure(this, configuration)
+
+    /**
+     * Removes the [entity][Entity] from the world. The [entity][Entity] will be recycled and reused for
+     * future calls to [World.entity].
+     */
+    fun Entity.remove() = componentService.world.minusAssign(this)
 }
 
 /**
- * A class that extends the extension functionality of an [EntityGetComponentContext] by also providing
+ * A class that extends the extension functionality of an [EntityComponentContext] by also providing
  * the possibility to create [components][Component].
  */
-open class EntityCreateContext(compService: ComponentService) : EntityGetComponentContext(compService) {
+open class EntityCreateContext(compService: ComponentService) : EntityComponentContext(compService) {
     @PublishedApi
     internal lateinit var compMask: BitArray
 
@@ -256,7 +268,7 @@ class EntityService(
      *
      * Notifies all [families][World.allFamilies] when the [entity] gets removed.
      */
-    fun remove(entity: Entity) {
+    operator fun minusAssign(entity: Entity) {
         if (removedEntities[entity.id]) {
             // entity is already removed
             return
@@ -289,7 +301,7 @@ class EntityService(
             if (removedEntities[entity.id]) {
                 continue
             }
-            remove(entity)
+            this -= entity
         }
 
         if (clearRecycled) {
@@ -326,7 +338,7 @@ class EntityService(
     fun cleanupDelays() {
         delayRemoval = false
         if (delayedEntities.isNotEmpty) {
-            delayedEntities.forEach { remove(Entity(it)) }
+            delayedEntities.forEach { this -= Entity(it) }
             delayedEntities.clear()
         }
     }

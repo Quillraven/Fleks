@@ -83,7 +83,7 @@ data class Family(
     internal val world: World,
     @PublishedApi
     internal val entityService: EntityService = world.entityService,
-) : EntityGetComponentContext(world.componentService) {
+) : EntityComponentContext(world.componentService) {
     /**
      * An optional [FamilyHook] that gets called whenever an [entity][Entity] enters the family.
      */
@@ -142,7 +142,7 @@ data class Family(
      *
      * @param compMask the component configuration of an [entity][Entity].
      */
-    operator fun contains(compMask: BitArray): Boolean {
+    internal operator fun contains(compMask: BitArray): Boolean {
         return (allOf == null || compMask.contains(allOf))
             && (noneOf == null || !compMask.intersects(noneOf))
             && (anyOf == null || compMask.intersects(anyOf))
@@ -209,13 +209,6 @@ data class Family(
     }
 
     /**
-     * Updates the [entity][Entity] using the given [configuration] to add and remove [components][Component].
-     */
-    inline fun Entity.configure(configuration: EntityUpdateContext.(Entity) -> Unit) {
-        entityService.configure(this, configuration)
-    }
-
-    /**
      * Sorts the [entities][Entity] of this family by the given [comparator].
      */
     fun sort(comparator: EntityComparator) {
@@ -227,7 +220,8 @@ data class Family(
      * Adds the [entity] to the family and sets the [isDirty] flag if and only
      * if the entity's [compMask] is matching the family configuration.
      */
-    fun onEntityAdded(entity: Entity, compMask: BitArray) {
+    @PublishedApi
+    internal fun onEntityAdded(entity: Entity, compMask: BitArray) {
         if (compMask in this) {
             isDirty = true
             entities.set(entity.id)
@@ -241,7 +235,8 @@ data class Family(
      *
      * The [entity] gets either added to the [entities] or removed and [isDirty] is set when needed.
      */
-    fun onEntityCfgChanged(entity: Entity, compMask: BitArray) {
+    @PublishedApi
+    internal fun onEntityCfgChanged(entity: Entity, compMask: BitArray) {
         val entityInFamily = compMask in this
         if (entityInFamily && !entities[entity.id]) {
             // new entity gets added
@@ -260,7 +255,7 @@ data class Family(
      * Removes the [entity] of the family and sets the [isDirty] flag if and only
      * if the [entity] is already in the family.
      */
-    fun onEntityRemoved(entity: Entity) {
+    internal fun onEntityRemoved(entity: Entity) {
         if (entities[entity.id]) {
             // existing entity gets removed
             isDirty = true

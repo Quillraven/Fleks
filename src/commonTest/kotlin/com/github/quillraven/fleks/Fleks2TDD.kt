@@ -40,10 +40,6 @@ private data class Sprite(
 private class PositionSystem : IteratingSystem(family { all(Position) }) {
     override fun onTickEntity(entity: Entity) {
         entity[Position].x++
-        assertTrue(Position in entity)
-        assertTrue(entity has Position)
-        assertFalse(entity hasNo Position)
-        assertNotNull(entity.getOrNull(Position))
     }
 }
 
@@ -97,9 +93,11 @@ class Fleks2TDD {
     fun configureEntityAfterCreation() {
         val entity = emptyWorld.entity { it += Position(0f, 0f) }
 
-        emptyWorld.configure(entity) {
-            it -= Position
-            it += Sprite(true, "")
+        with(emptyWorld) {
+            entity.configure {
+                it -= Position
+                it += Sprite(true, "")
+            }
         }
 
         assertFalse(with(emptyWorld) { Position in entity })
@@ -113,19 +111,22 @@ class Fleks2TDD {
         // this entity gets its position component added
         val emptyEntity = emptyWorld.entity()
 
-        emptyWorld.configure(posEntity) {
-            it.addOrUpdate(
-                Position,
-                add = { Position(1f, 1f) },
-                update = { position -> position.x = 2f }
-            )
-        }
-        emptyWorld.configure(emptyEntity) {
-            it.addOrUpdate(
-                Position,
-                add = { Position(1f, 1f) },
-                update = { position -> position.x = 3f }
-            )
+        with(emptyWorld) {
+            posEntity.configure {
+                it.addOrUpdate(
+                    Position,
+                    add = { Position(1f, 1f) },
+                    update = { position -> position.x = 2f }
+                )
+            }
+
+            emptyEntity.configure {
+                it.addOrUpdate(
+                    Position,
+                    add = { Position(1f, 1f) },
+                    update = { position -> position.x = 3f }
+                )
+            }
         }
 
         assertEquals(Position(2f, 0f), with(emptyWorld) { posEntity[Position] })
@@ -175,7 +176,7 @@ class Fleks2TDD {
         testWorld.entity { it += addComponent }
         // entity that triggers onRemove hook
         val removeEntity = testWorld.entity { it += removeComponent }
-        testWorld.configure(removeEntity) { it -= Position }
+        with(testWorld) { removeEntity.configure { it -= Position } }
 
         assertEquals(1f, addComponent.x)
         assertEquals(2f, removeComponent.x)
@@ -208,7 +209,7 @@ class Fleks2TDD {
         testWorld.entity { it += Position(0f, 0f) }
         // entity that triggers onRemove hook
         val removeEntity = testWorld.entity { it += Position(0f, 0f) }
-        testWorld.configure(removeEntity) { it -= Position }
+        with(testWorld) { removeEntity.configure { it -= Position } }
         // trigger family update to call the hooks
         testFamily.updateActiveEntities()
 
@@ -238,105 +239,35 @@ class Fleks2TDD {
     }
 
     @Test
-    fun testEntityContextExtensions() {
-        /*
-            Verifies that Entity.get, Entity.getOrNull, Entity.contains and Entity.has
-            are working within a hook context, entity create and update context, and family context.
+    fun testEntityComponentContextExtensions() {
+        val world = world { }
+        val expectedCmp = Position(0f, 0f)
+        val entity = world.entity { it += expectedCmp }
 
-            For systems it is already verified above within the PositionSystem.
-         */
+        with(world) {
+            // get extensions
+            assertSame(expectedCmp, entity[Position])
+            assertSame(expectedCmp, entity.getOrNull(Position))
+            assertNull(entity.getOrNull(SpriteForeground))
 
-        lateinit var testFamily: Family
-        val expectedAddCmp = Position(0f, 0f)
-        val expectedRemoveCmp = Sprite(true)
-        var cmpAddCalled = false
-        var cmpRemoveCalled = false
-        var familyAddCalled = false
-        var familyRemoveCalled = false
-        val testWorld = world {
-            components {
-                onAdd(Position) { entity, _ ->
-                    cmpAddCalled = true
-                    assertSame(expectedAddCmp, entity[Position])
-                    assertTrue(Position in entity)
-                    assertTrue(entity has Position)
-                    assertFalse(entity hasNo Position)
-                    assertNotNull(entity.getOrNull(Position))
-                }
-                onRemove(Position) { entity, _ ->
-                    cmpRemoveCalled = true
-                    assertSame(expectedRemoveCmp, entity[SpriteBackground])
-                    assertFalse(Position in entity)
-                    assertFalse(entity has Position)
-                    assertTrue(entity hasNo Position)
-                    assertNull(entity.getOrNull(Position))
-                }
-            }
-
-            families {
-                testFamily = family { all(Position) }
-                onAdd(testFamily) { entity ->
-                    familyAddCalled = true
-                    assertSame(expectedAddCmp, entity[Position])
-                    assertTrue(Position in entity)
-                    assertTrue(entity has Position)
-                    assertFalse(entity hasNo Position)
-                    assertNotNull(entity.getOrNull(Position))
-                }
-                onRemove(testFamily) { entity ->
-                    familyRemoveCalled = true
-                    assertSame(expectedRemoveCmp, entity[SpriteBackground])
-                    assertFalse(Position in entity)
-                    assertFalse(entity has Position)
-                    assertTrue(entity hasNo Position)
-                    assertNull(entity.getOrNull(Position))
-                }
-            }
-        }
-
-        // trigger component onAdd hook and verify EntityCreateContext extensions
-        val testEntity = testWorld.entity {
-            it += expectedAddCmp
-            assertSame(expectedAddCmp, it[Position])
-            assertTrue(Position in it)
-            assertTrue(it has Position)
-            assertFalse(it hasNo Position)
-            assertNotNull(it.getOrNull(Position))
-        }
-        // trigger family onAdd hook
-        testFamily.updateActiveEntities()
-        // check easy access of components during family iteration
-        testFamily.forEach { entity ->
-            assertSame(expectedAddCmp, entity[Position])
+            // contains extensions
             assertTrue(Position in entity)
             assertTrue(entity has Position)
             assertFalse(entity hasNo Position)
-            assertNotNull(entity.getOrNull(Position))
+            assertFalse(SpriteForeground in entity)
+            assertFalse(entity has SpriteForeground)
+            assertTrue(entity hasNo SpriteForeground)
+
+            // configure extension
+            entity.configure {
+                it += Sprite(background = false)
+            }
+            assertTrue(entity has SpriteForeground)
+
+            // remove extension
+            assertTrue(entity in world)
+            entity.remove()
+            assertFalse(entity in world)
         }
-        // access of components also possible via world
-        assertSame(expectedAddCmp, with(testWorld) { testEntity[Position] })
-        // verify EntityUpdateContext extensions
-        testWorld.configure(testEntity) {
-            assertSame(expectedAddCmp, it[Position])
-            assertTrue(Position in it)
-            assertTrue(it has Position)
-            assertFalse(it hasNo Position)
-            assertNotNull(it.getOrNull(Position))
-            it += expectedRemoveCmp
-            // trigger component onRemove hook -> this also removes the entity of the family below
-            it -= Position
-            it.addOrUpdate(
-                SpriteBackground,
-                add = { Sprite(true, "add") },
-                update = { sprite -> sprite.path = "update" }
-            )
-            assertEquals("update", it[SpriteBackground].path)
-        }
-        // trigger family onRemove hook
-        testFamily.updateActiveEntities()
-        assertTrue(cmpAddCalled)
-        assertTrue(cmpRemoveCalled)
-        assertTrue(familyAddCalled)
-        assertTrue(familyRemoveCalled)
     }
 }

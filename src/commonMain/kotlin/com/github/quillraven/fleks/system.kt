@@ -35,7 +35,7 @@ abstract class IntervalSystem(
      * Returns the [world][World] to which this system belongs.
      */
     val world: World = World.CURRENT_WORLD ?: throw FleksWrongConfigurationUsageException()
-) : EntityGetComponentContext(world.componentService) {
+) : EntityComponentContext(world.componentService) {
 
     private var accumulator: Float = 0.0f
 
@@ -132,13 +132,6 @@ abstract class IteratingSystem(
     interval: Interval = EachFrame,
     enabled: Boolean = true
 ) : IntervalSystem(interval, enabled) {
-
-    /**
-     * Returns the [entityService][EntityService] of this system.
-     */
-    @PublishedApi
-    internal val entityService: EntityService = world.entityService
-
     /**
      * Flag that defines if sorting of [entities][Entity] will be performed the next time [onTick] is called.
      *
@@ -147,13 +140,6 @@ abstract class IteratingSystem(
      * Otherwise, it must be set programmatically to perform sorting. The flag gets cleared after sorting.
      */
     var doSort = sortingType == Automatic && comparator != EMPTY_COMPARATOR
-
-    /**
-     * Updates the [entity][Entity] using the given [configuration] to add and remove [components][Component].
-     */
-    inline fun Entity.configure(configuration: EntityUpdateContext.(Entity) -> Unit) {
-        entityService.configure(this, configuration)
-    }
 
     /**
      * Updates the [family] if needed and calls [onTickEntity] for each [entity][Entity] of the [family].

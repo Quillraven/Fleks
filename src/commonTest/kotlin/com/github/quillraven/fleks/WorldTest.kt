@@ -201,7 +201,7 @@ internal class WorldTest {
         val w = world {}
         val e = w.entity()
 
-        w.remove(e)
+        w -= e
 
         assertEquals(0, w.numEntities)
     }
@@ -278,7 +278,7 @@ internal class WorldTest {
         val e1 = w.entity()
         val e2 = w.entity()
         val e3 = w.entity()
-        w.remove(e2)
+        w -= e2
         val actualEntities = mutableListOf<Entity>()
 
         w.forEach { actualEntities.add(it) }
@@ -330,7 +330,7 @@ internal class WorldTest {
         }
         val e = w.entity()
 
-        w.configure(e) { it += WorldTestComponent() }
+        with(w) { e.configure { it += WorldTestComponent() } }
         w.update(0f)
 
         assertEquals(1, w.system<WorldTestIteratingSystem>().numCallsEntity)
@@ -524,7 +524,7 @@ internal class WorldTest {
             if (actualEntities.isEmpty()) {
                 // remove second entity on first iteration
                 // this will not flag the family as 'dirty' because removal is delayed
-                w.remove(e2)
+                w -= e2
                 // that's why we add an entity to flag the family
                 w.entity { it += WorldTestComponent() }
             }
@@ -550,7 +550,7 @@ internal class WorldTest {
         family.updateActiveEntities()
         assertTrue(e.id in family.entitiesBag)
 
-        w.remove(e)
+        w -= e
         family.updateActiveEntities()
         assertFalse(e.id in family.entitiesBag)
     }

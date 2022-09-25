@@ -214,7 +214,7 @@ fun world(entityCapacity: Int = 512, cfg: WorldConfiguration.() -> Unit): World 
  */
 class World internal constructor(
     entityCapacity: Int,
-) : EntityGetComponentContext(ComponentService()) {
+) : EntityComponentContext(ComponentService()) {
     @PublishedApi
     internal val injectables = mutableMapOf<String, Injectable>()
 
@@ -291,18 +291,16 @@ class World internal constructor(
     }
 
     /**
-     * Updates an [entity] using the given [configuration] to add and remove components.
+     * Returns true if and only if the [entity] is not removed and is part of the [World].
      */
-    inline fun configure(entity: Entity, configuration: EntityUpdateContext.(Entity) -> Unit) {
-        entityService.configure(entity, configuration)
-    }
+    operator fun contains(entity: Entity) = entityService.contains(entity)
 
     /**
      * Removes the given [entity] from the world. The [entity] will be recycled and reused for
      * future calls to [World.entity].
      */
-    fun remove(entity: Entity) {
-        entityService.remove(entity)
+    operator fun minusAssign(entity: Entity) {
+        entityService -= entity
     }
 
     /**

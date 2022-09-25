@@ -77,7 +77,7 @@ internal class EntityTest {
     fun removeAllEntitiesWithAlreadyRecycledEntities() {
         val recycled = testEntityService.create {}
         testEntityService.create {}
-        testEntityService.remove(recycled)
+        testEntityService -= recycled
 
         testEntityService.removeAll()
 
@@ -101,7 +101,7 @@ internal class EntityTest {
     @Test
     fun createRecycledEntity() {
         val expectedEntity = testEntityService.create { }
-        testEntityService.remove(expectedEntity)
+        testEntityService -= expectedEntity
 
         val actualEntity = testEntityService.create { }
 
@@ -113,7 +113,7 @@ internal class EntityTest {
         val entity = testEntityService.create { }
         testEntityService.delayRemoval = true
 
-        testEntityService.remove(entity)
+        testEntityService -= entity
 
         assertEquals(0, testEntityService.recycledEntities.size)
         assertEquals(1, testEntityService.numEntities)
@@ -123,7 +123,7 @@ internal class EntityTest {
     fun removeDelayedEntity() {
         val entity = testEntityService.create { }
         testEntityService.delayRemoval = true
-        testEntityService.remove(entity)
+        testEntityService -= entity
 
         // call two times to make sure that removals are only processed once
         testEntityService.cleanupDelays()
@@ -138,8 +138,8 @@ internal class EntityTest {
     fun removeEntityTwice() {
         val entity = testEntityService.create { }
 
-        testEntityService.remove(entity)
-        testEntityService.remove(entity)
+        testEntityService -= entity
+        testEntityService -= entity
 
         assertEquals(1, testEntityService.recycledEntities.size)
         assertEquals(0, testEntityService.numEntities)
@@ -149,7 +149,7 @@ internal class EntityTest {
     fun testContainsEntity() {
         val e1 = testEntityService.create { }
         val e2 = testEntityService.create { }
-        testEntityService.remove(e2)
+        testEntityService -= e2
         val e3 = Entity(2)
 
         assertTrue(e1 in testEntityService)

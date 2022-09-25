@@ -185,7 +185,7 @@ internal class FamilyTest {
                 assertTrue { this.entityService.delayRemoval }
                 if (remove) {
                     remove = false
-                    entityService.remove(e1)
+                    entityService -= e1
                 }
                 ++numInnerIterations
             }
