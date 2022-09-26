@@ -322,13 +322,13 @@ class EntityService(
     /**
      * Performs the given [action] on each active [entity][Entity].
      */
-    inline fun forEach(action: (Entity) -> Unit) {
+    inline fun forEach(action: World.(Entity) -> Unit) {
         for (id in 0 until nextId) {
             val entity = Entity(id)
             if (removedEntities[entity.id]) {
                 continue
             }
-            entity.run(action)
+            world.action(entity)
         }
     }
 

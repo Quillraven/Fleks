@@ -281,7 +281,9 @@ internal class WorldTest {
         w -= e2
         val actualEntities = mutableListOf<Entity>()
 
-        w.forEach { actualEntities.add(it) }
+        w.forEach {
+            actualEntities.add(it)
+        }
 
         assertContentEquals(listOf(e1, e3), actualEntities)
     }

@@ -316,7 +316,7 @@ class World internal constructor(
     /**
      * Performs the given [action] on each active [entity][Entity].
      */
-    inline fun forEach(action: (Entity) -> Unit) {
+    inline fun forEach(action: World.(Entity) -> Unit) {
         entityService.forEach(action)
     }
 
@@ -406,11 +406,11 @@ class World internal constructor(
 
         var family = allFamilies.find { it.allOf == defAll && it.noneOf == defNone && it.anyOf == defAny }
         if (family == null) {
-            family = Family(defAll, defNone, defAny, this).apply {
-                allFamilies += this
-                // initialize a newly created family by notifying it for any already existing entity
-                entityService.forEach { this.onEntityCfgChanged(it, entityService.compMasks[it.id]) }
-            }
+            family = Family(defAll, defNone, defAny, this)
+            allFamilies += family
+            // initialize a newly created family by notifying it for any already existing entity
+            // world.allFamilies.forEach { it.onEntityCfgChanged(entity, compMask) }
+            entityService.forEach { family.onEntityCfgChanged(it, entityService.compMasks[it.id]) }
         }
         return family
     }
