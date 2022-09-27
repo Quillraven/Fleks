@@ -1,9 +1,9 @@
 # Fleks
 
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/Quillraven/Fleks/blob/master/LICENSE)
-[![Maven](https://img.shields.io/badge/Maven-1.6--JVM-success.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks/1.6-JVM/jar)
+[![Maven](https://img.shields.io/badge/Maven-2.0-success.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks/2.0/jar)
 
-[![Build Master](https://img.shields.io/github/workflow/status/quillraven/fleks/Build/master?event=push&label=Build%20master)](https://github.com/Quillraven/fleks/actions)
+[![Build KMP](https://img.shields.io/github/workflow/status/quillraven/fleks/Build/kmp?event=push&label=Build%20kmp)](https://github.com/Quillraven/fleks/actions)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.7.10-red.svg)](http://kotlinlang.org/)
 
 A **f**ast, **l**ightweight, **e**ntity component **s**ystem library written in **K**otlin.
@@ -16,7 +16,7 @@ as an [**E**ntity **C**omponent **S**ystem](https://en.wikipedia.org/wiki/Entity
 the box with LibGDX and performance wise it was always good enough for me.
 
 When using [Kotlin](https://kotlinlang.org/) and [LibKTX](https://github.com/libktx/ktx) you even get nice extension
-functions for it but I never was fully happy with how it felt because:
+functions for it, but I was never fully happy with how it felt because:
 
 - Defining [ComponentMapper](https://github.com/libgdx/ashley/wiki/How-to-use-Ashley#retrieving-components-with-componentmapper)
   for every [Component](https://github.com/libgdx/ashley/wiki/How-to-use-Ashley#components) felt very redundant
@@ -43,17 +43,23 @@ then use [Artemis-odb](https://github.com/junkdog/artemis-odb) or [Ashley](https
 
 ## Current Status
 
-Thanks to [jobe-m](https://github.com/jobe-m) Fleks also has a Kotlin Multiplatform version which will be the future for Fleks.
-However, since KMP is still in alpha and in my opinion the developer experience is not yet there where it should be,
-Fleks will come in two flavors and will also have two releases in parallel:
-- **JVM** which can be used for any backend that supports a JVM like native Java applications or Android
-- **KMP** which can be used for any platform and can also be used in a [KorGE](https://korge.org/) game
+After about one year of the first release of Fleks, we are now at version 2.0.
+This version combines the **KMP** and **JVM** flavors into a single one.
+The history of the 1.6 version is kept in separate branches. Also, the wiki
+will contain a separate section for 1.6 for users who don't want to migrate to 2.x
+or prefer the other API:
+- [1.6-JVM](https://github.com/Quillraven/Fleks/tree/JVM-1.6)
+- [1.6-KMP](https://github.com/Quillraven/Fleks/tree/KMP-1.6)
 
-You can find the KMP version [here](https://github.com/Quillraven/Fleks/tree/kmp).
-It has a slightly different API for the world's configuration due to limitations in reflection but after that
-everything is the same as in the JVM version. And as mentioned above, in the future those
-two flavors will be combined into a single one which is most likely the KMP version once I figured out
-how to support a similar nice user experience as in the JVM flavor ;)
+I want to make a big shout out to [jobe-m](https://github.com/jobe-m) who helped with the first
+Kotlin multiplatform version and who also helped throughout the development of 2.0. Thank you!
+
+With version 2.0 I tried to simplify the API and usage of Fleks for new users. This means that
+e.g. `ComponentMapper` are no longer necessary and also the API is more in style with typical
+Kotlin libraries which means more concise and easier to read (imho).
+And of course the big goal was to combine the JVM and KMP branch which was also achieved by
+completely removing reflection usage. This hopefully also makes the code easier to understand
+and debug.
 
 To use Fleks add it as a dependency to your project:
 
@@ -63,20 +69,26 @@ To use Fleks add it as a dependency to your project:
 <dependency>
   <groupId>io.github.quillraven.fleks</groupId>
   <artifactId>Fleks</artifactId>
-  <version>1.6-JVM</version>
+  <version>2.0</version>
 </dependency>
 ```
 
 #### Gradle (Groovy)
 
 ```kotlin
-implementation 'io.github.quillraven.fleks:Fleks:1.6-JVM'
+implementation 'io.github.quillraven.fleks:Fleks:2.0'
 ```
 
 #### Gradle (Kotlin)
 
 ```kotlin
-implementation("io.github.quillraven.fleks:Fleks:1.6-JVM")
+implementation("io.github.quillraven.fleks:Fleks:2.0")
+```
+
+#### KorGE
+
+```kotlin
+dependencyMulti("io.github.quillraven.fleks:Fleks:2.0", registerPlugin = false)
 ```
 
 ## API and examples
@@ -87,7 +99,7 @@ also contains an example section for JVM and KMP projects.
 ## Performance
 
 One important topic for me throughout the development of Fleks was performance. For that I compared Fleks with
-Artemis-odb and Ashley in three scenarios which you can find in the **benchmarks** source set:
+Artemis-odb and Ashley in three scenarios which you can find in the **jvmBenchmarks** source set:
 
 1) **AddRemove**: Creates 10_000 entities with a single component each and removes those entities.
 2) **Simple**: Steps the world 1_000 times for 10_000 entities with an `IteratingSystem` for a single component that
@@ -113,20 +125,20 @@ is:
 
 Here is the result (the higher the Score the better):
 
-| Library | Benchmark | Mode | Cnt | Score | Error | Units |
-| ------- | --------- | ---- | --- | ----- | ----- | ----- |
+| Library | Benchmark | Mode | Cnt | Score   | Error      | Units |
+| ------- | --------- | ---- | --- |---------|------------| ----- |
 | |
-| Ashley | AddRemove | thrpt | 3 | 207,007 | ± 39,121 | ops/s |
-| Artemis | AddRemove | thrpt | 3 | 677,231 | ± 2002,449 | ops/s |
-| Fleks | AddRemove | thrpt | 3 | 806,189 | ± 249,523 | ops/s |
+| Ashley | AddRemove | thrpt | 3 | 207,007 | ± 39,121   | ops/s |
+| Artemis | AddRemove | thrpt | 3 | 677,231 | ± 473,361 | ops/s |
+| Fleks | AddRemove | thrpt | 3 | 841,916 | ± 75,492  | ops/s |
 | |
-| Ashley | Simple | thrpt | 3 | 3,986 | ± 1,390 | ops/s |
-| Artemis | Simple | thrpt | 3 | 32,830 | ± 2,965 | ops/s |
-| Fleks | Simple | thrpt | 3 | 32,639 | ± 5,651 | ops/s |
+| Ashley | Simple | thrpt | 3 | 3,986   | ± 1,390    | ops/s |
+| Artemis | Simple | thrpt | 3 | 32,830  | ± 2,965    | ops/s |
+| Fleks | Simple | thrpt | 3 | 33,017  | ± 3,089    | ops/s |
 | |
-| Ashley | Complex | thrpt | 3 | 0,056 | ± 0,117 | ops/s |
-| Artemis | Complex | thrpt | 3 | 1,452 | ± 0,452 | ops/s |
-| Fleks | Complex | thrpt | 3 | 1,196 | ± 0,210 | ops/s |
+| Ashley | Complex | thrpt | 3 | 0,056   | ± 0,117    | ops/s |
+| Artemis | Complex | thrpt | 3 | 1,452   | ± 0,452    | ops/s |
+| Fleks | Complex | thrpt | 3 | 1,326   | ± 0,269    | ops/s |
 
 I am not an expert for performance measurement, that's why you should take those numbers with a grain of salt but as you
 can see in the table:
@@ -134,4 +146,4 @@ can see in the table:
 - Ashley is the slowest of the three libraries by far
 - Fleks is ~1.2x the speed of Artemis in the **AddRemove** benchmark
 - Fleks is ~the same speed as Artemis in the **Simple** benchmark
-- Fleks is ~0.8x the speed of Artemis in the **Complex** benchmark
+- Fleks is ~0.9x the speed of Artemis in the **Complex** benchmark

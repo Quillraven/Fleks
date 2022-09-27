@@ -1,5 +1,7 @@
+@file:Suppress("UNUSED_VARIABLE")
+
 plugins {
-    kotlin("jvm") version "1.7.10"
+    kotlin("multiplatform") version "1.7.10"
     id("org.jetbrains.kotlinx.benchmark") version "0.4.4"
     id("org.jetbrains.dokka") version "1.7.10"
     `maven-publish`
@@ -7,68 +9,86 @@ plugins {
 }
 
 group = "io.github.quillraven.fleks"
-version = "1.6-JVM"
+version = "2.0"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
-
-val bmSourceSetName = "benchmarks"
-sourceSets {
-    create(bmSourceSetName) {
-        compileClasspath += sourceSets["main"].output
-        runtimeClasspath += sourceSets["main"].output
-    }
-}
-
-configurations {
-    getByName("${bmSourceSetName}Implementation") {
-        extendsFrom(configurations["implementation"])
-    }
-}
 
 repositories {
     mavenCentral()
 }
 
-dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+kotlin {
+    targets {
+        jvm {
+            compilations {
+                all {
+                    kotlinOptions {
+                        jvmTarget = "1.8"
+                    }
+                }
+                val main by getting { }
+                // custom benchmark compilation
+                val benchmarks by compilations.creating {
+                    defaultSourceSet {
+                        dependencies {
+                            // Compile against the main compilation's compile classpath and outputs:
+                            implementation(main.compileDependencyFiles + main.output.classesDirs)
+                        }
+                    }
+                }
+            }
+            withJava()
+            testRuns["test"].executionTask.configure {
+                useJUnitPlatform()
+            }
+        }
+    }
+    js(BOTH) {
+        browser { }
+    }
+    val hostOs = System.getProperty("os.name")
+    val isMingwX64 = hostOs.startsWith("Windows")
+    val nativeTarget = when {
+        hostOs == "Mac OS X" -> macosX64("native")
+        hostOs == "Linux" -> linuxX64("native")
+        isMingwX64 -> mingwX64("native")
+        else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
+    }
 
-    testImplementation("org.jetbrains.kotlin:kotlin-test:1.7.10")
-
-    configurations["${bmSourceSetName}Implementation"]("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:0.4.4")
-    configurations["${bmSourceSetName}Implementation"]("com.badlogicgames.ashley:ashley:1.7.4")
-    configurations["${bmSourceSetName}Implementation"]("net.onedaybeard.artemis:artemis-odb:2.3.0")
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions {
-        jvmTarget = "1.8"
+    sourceSets {
+        val commonMain by getting { }
+        val commonTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
+        val jvmMain by getting
+        val jvmTest by getting
+        val jvmBenchmarks by getting {
+            dependsOn(commonMain)
+            dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:0.4.4")
+                implementation("com.badlogicgames.ashley:ashley:1.7.4")
+                implementation("net.onedaybeard.artemis:artemis-odb:2.3.0")
+            }
+        }
+        val jsMain by getting
+        val jsTest by getting
+        val nativeMain by getting
+        val nativeTest by getting
     }
 }
 
-tasks.test {
-    useJUnitPlatform()
+benchmark {
+    targets {
+        register("jvmBenchmarks")
+    }
 }
 
-val dokkaJavadocJar = tasks.create<Jar>("jarDokkaJavadoc") {
-    group = "build"
-
-    dependsOn(tasks.dokkaJavadoc)
-    from(tasks.dokkaJavadoc.flatMap { it.outputDirectory })
+val javadocJar by tasks.registering(Jar::class) {
     archiveClassifier.set("javadoc")
+    from(tasks.dokkaHtml)
 }
 
-val sourcesJar = tasks.create<Jar>("jarSources") {
-    group = "build"
-
-    from(sourceSets.main.get().allSource)
-    archiveClassifier.set("sources")
-}
-
-artifacts {
-    archives(dokkaJavadocJar)
-    archives(sourcesJar)
-}
-
-val publicationName = "mavenFleks"
 publishing {
     repositories {
         maven {
@@ -86,43 +106,58 @@ publishing {
     }
 
     publications {
-        register<MavenPublication>(publicationName) {
+        val kotlinMultiplatform by getting(MavenPublication::class) {
+            // we need to keep this block up here because
+            // otherwise the different target folders like js/jvm/native are not created
             version = project.version.toString()
             groupId = project.group.toString()
             artifactId = "Fleks"
+        }
+    }
 
-            from(components["kotlin"])
-            artifact(dokkaJavadocJar)
-            artifact(sourcesJar)
+    publications.forEach {
+        if (it !is MavenPublication) {
+            return@forEach
+        }
 
-            pom {
-                name.set("Fleks")
-                packaging = "jar"
-                description.set("A lightweight entity component system written in Kotlin.")
-                url.set("https://github.com/Quillraven/Fleks")
+        // We need to add the javadocJar to every publication
+        // because otherwise maven is complaining.
+        // It is not sufficient to only have it in the "root" folder.
+        it.artifact(javadocJar)
 
-                scm {
-                    connection.set("scm:git:git@github.com:quillraven/fleks.git")
-                    developerConnection.set("scm:git:git@github.com:quillraven/fleks.git")
-                    url.set("https://github.com/quillraven/fleks/")
-                }
+        // pom information needs to be specified per publication
+        // because otherwise maven will complain again that
+        // information like license, developer or url are missing.
+        it.pom {
+            name.set("Fleks")
+            description.set("A lightweight entity component system written in Kotlin.")
+            url.set("https://github.com/Quillraven/Fleks")
 
+            scm {
+                connection.set("scm:git:git@github.com:quillraven/fleks.git")
+                developerConnection.set("scm:git:git@github.com:quillraven/fleks.git")
+                url.set("https://github.com/quillraven/fleks/")
+            }
 
-                licenses {
-                    license {
-                        name.set("MIT License")
-                        url.set("https://opensource.org/licenses/MIT")
-                    }
-                }
-
-                developers {
-                    developer {
-                        id.set("Quillraven")
-                        name.set("Simon Klausner")
-                        email.set("quillraven@gmail.com")
-                    }
+            licenses {
+                license {
+                    name.set("MIT License")
+                    url.set("https://opensource.org/licenses/MIT")
                 }
             }
+
+            developers {
+                developer {
+                    id.set("Quillraven")
+                    name.set("Simon Klausner")
+                    email.set("quillraven@gmail.com")
+                }
+            }
+        }
+
+        signing {
+            useInMemoryPgpKeys(System.getenv("SIGNING_KEY"), System.getenv("SIGNING_PASSWORD"))
+            sign(it)
         }
     }
 }
@@ -131,15 +166,4 @@ publishing {
 // this makes it easier to publish to mavenLocal and test the packed version.
 tasks.withType<Sign>().configureEach {
     onlyIf { !project.version.toString().endsWith("SNAPSHOT") }
-}
-
-signing {
-    useInMemoryPgpKeys(System.getenv("SIGNING_KEY"), System.getenv("SIGNING_PASSWORD"))
-    sign(publishing.publications[publicationName])
-}
-
-benchmark {
-    targets {
-        register(bmSourceSetName)
-    }
 }
