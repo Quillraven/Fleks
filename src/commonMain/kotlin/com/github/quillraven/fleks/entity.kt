@@ -110,19 +110,25 @@ class EntityUpdateContext(compService: ComponentService) : EntityCreateContext(c
     }
 
     /**
-     * Updates a [component][Component] of the given [type] for the [entity][Entity] by calling [update].
+     * Returns a [component][Component] of the given [type] for the [entity][Entity].
      *
-     * If the [entity][Entity] does not have such a [component][Component] yet then [add] is called to
-     * assign the returned [component][Component] to the [entity][Entity] before calling [update].
+     * If the [entity][Entity] does not have such a [component][Component] then [add] is called
+     * to assign it to the [entity][Entity] and return it.
      */
-    inline fun <reified T : Component<T>> Entity.addOrUpdate(
+    inline fun <reified T : Component<T>> Entity.getOrAdd(
         type: ComponentType<T>,
         add: () -> T,
-        update: (T) -> Unit,
-    ) {
-        compMask.set(type.id)
+    ): T {
         val holder: ComponentsHolder<T> = componentService.holder(type)
-        holder.setOrUpdate(this, add, update)
+        val existingCmp = holder.getOrNull(this)
+        if (existingCmp != null) {
+            return existingCmp
+        }
+
+        compMask.set(type.id)
+        val newCmp = add()
+        holder[this] = newCmp
+        return newCmp
     }
 }
 

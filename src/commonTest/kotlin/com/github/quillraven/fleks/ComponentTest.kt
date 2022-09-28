@@ -179,35 +179,6 @@ internal class ComponentTest {
     }
 
     @Test
-    fun addComponentIfItDoesNotExistYet() {
-        val entity = Entity(1)
-
-        testHolder.setOrUpdate(
-            entity,
-            factory = { ComponentTestComponent(1) },
-            update = { cmp -> cmp.x = 2 }
-        )
-
-        assertTrue(entity in testHolder)
-        assertEquals(2, testHolder[entity].x)
-    }
-
-    @Test
-    fun updateComponentIfItAlreadyExists() {
-        val entity = Entity(1)
-        testHolder[entity] = ComponentTestComponent(0)
-
-        testHolder.setOrUpdate(
-            entity,
-            factory = { ComponentTestComponent(1) },
-            update = { cmp -> cmp.x = 2 }
-        )
-
-        assertTrue(entity in testHolder)
-        assertEquals(2, testHolder[entity].x)
-    }
-
-    @Test
     fun cannotRemoveNonExistingEntityFromHolderWithInsufficientCapacity() {
         val holder = testService.holder(ComponentTestComponent)
         val entity = Entity(10_000)

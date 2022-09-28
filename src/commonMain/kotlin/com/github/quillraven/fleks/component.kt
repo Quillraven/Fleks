@@ -123,27 +123,6 @@ class ComponentsHolder<T : Component<*>>(
     }
 
     /**
-     * Updates a [component][Component] for the given [entity] by calling [update].
-     *
-     * If the [entity] has no [component][Component] yet then [factory] is called to
-     * provide an instance for the [set] call, before calling [update].
-     */
-    inline fun setOrUpdate(
-        entity: Entity,
-        factory: () -> T,
-        update: (T) -> Unit,
-    ) {
-        // use getOrNull here to be safe if entity id > components.size.
-        // Array gets resized within the 'set' call if necessary.
-        val existingComp = getOrNull(entity)
-        if (existingComp == null) {
-            set(entity, factory().also(update))
-        } else {
-            existingComp.also(update)
-        }
-    }
-
-    /**
      * Returns a component of the specific type of the given [entity].
      *
      * @throws [FleksNoSuchEntityComponentException] if the [entity] does not have such a component.

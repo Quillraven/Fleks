@@ -5,12 +5,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-private data class EntityTestComponent(var x: Float = 0f) : Component<EntityTestComponent> {
-    override fun type(): ComponentType<EntityTestComponent> = EntityTestComponent
-
-    companion object : ComponentType<EntityTestComponent>()
-}
-
 internal class EntityTest {
     private val testWorld = world { }
     private val testEntityService = EntityService(testWorld, 32)
@@ -42,24 +36,6 @@ internal class EntityTest {
         assertEquals(0, entity.id)
         assertEquals(1, service.numEntities)
         assertEquals(1, service.capacity)
-    }
-
-    @Test
-    fun updateComponentOfEntityIfItAlreadyExists() {
-        val expectedEntity = testEntityService.create { }
-        val holder = testWorld.componentService.holder(EntityTestComponent)
-
-        testEntityService.configure(expectedEntity) {
-            holder[expectedEntity] = EntityTestComponent(1f)
-            holder.setOrUpdate(
-                expectedEntity,
-                factory = { EntityTestComponent(1f) },
-                update = { testCmp -> testCmp.x++ }
-            )
-        }
-
-        assertTrue(expectedEntity in holder)
-        assertEquals(2f, holder[expectedEntity].x)
     }
 
     @Test

@@ -105,7 +105,7 @@ class Fleks2TDD {
     }
 
     @Test
-    fun configureEntityWithAddOrUpdate() {
+    fun configureEntityWithGetOrAdd() {
         // this entity gets its position component updated
         val posEntity = emptyWorld.entity { it += Position(0f, 0f) }
         // this entity gets its position component added
@@ -113,19 +113,11 @@ class Fleks2TDD {
 
         with(emptyWorld) {
             posEntity.configure {
-                it.addOrUpdate(
-                    Position,
-                    add = { Position(1f, 1f) },
-                    update = { position -> position.x = 2f }
-                )
+                it.getOrAdd(Position) { Position(1f, 1f) }.x = 2f
             }
 
             emptyEntity.configure {
-                it.addOrUpdate(
-                    Position,
-                    add = { Position(1f, 1f) },
-                    update = { position -> position.x = 3f }
-                )
+                it.getOrAdd(Position) { Position(1f, 1f) }.x = 3f
             }
         }
 
