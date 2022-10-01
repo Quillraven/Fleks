@@ -5,9 +5,21 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
+private class EntityTestComponent1 : Component<EntityTestComponent1> {
+    override fun type() = EntityTestComponent1
+
+    companion object : ComponentType<EntityTestComponent1>()
+}
+
+private class EntityTestComponent2 : Component<EntityTestComponent2> {
+    override fun type() = EntityTestComponent2
+
+    companion object : ComponentType<EntityTestComponent2>()
+}
+
 internal class EntityTest {
-    private val testWorld = world { }
-    private val testEntityService = EntityService(testWorld, 32)
+    private val testWorld = world(32) { }
+    private val testEntityService = testWorld.entityService
 
     @Test
     fun createEmptyServiceFor32Entities() {
@@ -132,5 +144,53 @@ internal class EntityTest {
         assertFalse(e2 in testEntityService)
         assertFalse(e3 in testEntityService)
         assertEquals(1, testEntityService.numEntities)
+    }
+
+    @Test
+    fun testNestedEntityCreation() {
+        lateinit var entity1: Entity
+        lateinit var entity2: Entity
+
+        testEntityService.create { e1 ->
+            entity1 = e1
+            e1 += EntityTestComponent1()
+
+            testEntityService.create { e2 ->
+                entity2 = e2
+                e2 += EntityTestComponent1()
+            }
+
+            e1 += EntityTestComponent2()
+        }
+
+        assertEquals(0, entity1.id)
+        assertEquals(1, entity2.id)
+        assertTrue(testEntityService.compMasks[entity1.id][EntityTestComponent1.id])
+        assertTrue(testEntityService.compMasks[entity1.id][EntityTestComponent2.id])
+        assertTrue(testEntityService.compMasks[entity2.id][EntityTestComponent1.id])
+        assertFalse(testEntityService.compMasks[entity2.id][EntityTestComponent2.id])
+    }
+
+    @Test
+    fun testNestedEntityConfiguration() {
+        val entity1 = testEntityService.create { }
+        val entity2 = testEntityService.create { }
+
+        testEntityService.configure(entity1) {
+            entity1 += EntityTestComponent1()
+
+            testEntityService.configure(entity2) {
+                entity2 += EntityTestComponent1()
+            }
+
+            entity1 += EntityTestComponent2()
+        }
+
+        assertEquals(0, entity1.id)
+        assertEquals(1, entity2.id)
+        assertTrue(testEntityService.compMasks[entity1.id][EntityTestComponent1.id])
+        assertTrue(testEntityService.compMasks[entity1.id][EntityTestComponent2.id])
+        assertTrue(testEntityService.compMasks[entity2.id][EntityTestComponent1.id])
+        assertFalse(testEntityService.compMasks[entity2.id][EntityTestComponent2.id])
     }
 }

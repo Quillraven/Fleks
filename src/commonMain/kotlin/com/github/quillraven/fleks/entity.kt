@@ -1,9 +1,6 @@
 package com.github.quillraven.fleks
 
-import com.github.quillraven.fleks.collection.BitArray
-import com.github.quillraven.fleks.collection.IntBag
-import com.github.quillraven.fleks.collection.bag
-import com.github.quillraven.fleks.collection.compareEntity
+import com.github.quillraven.fleks.collection.*
 
 /**
  * An entity of a [world][World]. It represents a unique id.
@@ -68,9 +65,11 @@ abstract class EntityComponentContext(
  * A class that extends the extension functionality of an [EntityComponentContext] by also providing
  * the possibility to create [components][Component].
  */
-open class EntityCreateContext(compService: ComponentService) : EntityComponentContext(compService) {
+open class EntityCreateContext(
+    compService: ComponentService,
     @PublishedApi
-    internal lateinit var compMask: BitArray
+    internal val compMasks: Bag<BitArray>,
+) : EntityComponentContext(compService) {
 
     /**
      * Adds the [component] to the [entity][Entity].
@@ -84,7 +83,7 @@ open class EntityCreateContext(compService: ComponentService) : EntityComponentC
      */
     inline operator fun <reified T : Component<T>> Entity.plusAssign(component: T) {
         val compType: ComponentType<T> = component.type()
-        compMask.set(compType.id)
+        compMasks[this.id].set(compType.id)
         val holder: ComponentsHolder<T> = componentService.holder(compType)
         holder[this] = component
     }
@@ -94,7 +93,10 @@ open class EntityCreateContext(compService: ComponentService) : EntityComponentC
  * A class that extends the extension functionality of an [EntityCreateContext] by also providing
  * the possibility to update [components][Component].
  */
-class EntityUpdateContext(compService: ComponentService) : EntityCreateContext(compService) {
+class EntityUpdateContext(
+    compService: ComponentService,
+    compMasks: Bag<BitArray>,
+) : EntityCreateContext(compService, compMasks) {
     /**
      * Removes a [component][Component] of the given [type] from the [entity][Entity].
      *
@@ -105,7 +107,7 @@ class EntityUpdateContext(compService: ComponentService) : EntityCreateContext(c
      * This can only happen when the [entity][Entity] never had such a component.
      */
     inline operator fun <reified T : Component<*>> Entity.minusAssign(type: ComponentType<T>) {
-        compMask.clear(type.id)
+        compMasks[this.id].clear(type.id)
         componentService.holder(type) -= this
     }
 
@@ -125,7 +127,7 @@ class EntityUpdateContext(compService: ComponentService) : EntityCreateContext(c
             return existingCmp
         }
 
-        compMask.set(type.id)
+        compMasks[this.id].set(type.id)
         val newCmp = add()
         holder[this] = newCmp
         return newCmp
@@ -181,10 +183,10 @@ class EntityService(
     internal val compMasks = bag<BitArray>(initialEntityCapacity)
 
     @PublishedApi
-    internal val createCtx = EntityCreateContext(compService)
+    internal val createCtx = EntityCreateContext(compService, compMasks)
 
     @PublishedApi
-    internal val updateCtx = EntityUpdateContext(compService)
+    internal val updateCtx = EntityUpdateContext(compService, compMasks)
 
     /**
      * Flag that indicates if an iteration of an [IteratingSystem] is currently in progress.
@@ -217,10 +219,7 @@ class EntityService(
             compMasks[newEntity.id] = BitArray(64)
         }
         val compMask = compMasks[newEntity.id]
-        createCtx.run {
-            this.compMask = compMask
-            configuration(newEntity)
-        }
+        createCtx.configuration(newEntity)
         world.allFamilies.forEach { it.onEntityAdded(newEntity, compMask) }
 
         return newEntity
@@ -232,10 +231,7 @@ class EntityService(
      */
     inline fun configure(entity: Entity, configuration: EntityUpdateContext.(Entity) -> Unit) {
         val compMask = compMasks[entity.id]
-        updateCtx.run {
-            this.compMask = compMask
-            configuration(entity)
-        }
+        updateCtx.configuration(entity)
         world.allFamilies.forEach { it.onEntityCfgChanged(entity, compMask) }
     }
 
