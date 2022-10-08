@@ -13,6 +13,7 @@ private class FamilyTestComponent : Component<FamilyTestComponent> {
 internal class FamilyTest {
     private val testWorld = world { }
     private val emptyTestFamily = Family(world = testWorld)
+
     private fun createCmpBitmask(cmpIdx: Int): BitArray? {
         return if (cmpIdx > 0) {
             BitArray().apply { set(cmpIdx) }
@@ -270,6 +271,16 @@ internal class FamilyTest {
         assertEquals(1, testDefinition.noneOf?.numBits())
         assertEquals(1, testDefinition.anyOf?.numBits())
         assertEquals(true, testDefinition.anyOf?.get(FamilyTestComponent.id))
+    }
+
+    @Test
+    fun testFamilyContainsEntity() {
+        val family = testWorld.family { all(FamilyTestComponent) }
+        val e1 = testWorld.entity { it += FamilyTestComponent() }
+        val e2 = testWorld.entity()
+
+        assertTrue(e1 in family)
+        assertFalse(e2 in family)
     }
 }
 

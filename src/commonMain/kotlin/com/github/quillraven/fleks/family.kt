@@ -149,6 +149,11 @@ data class Family(
     }
 
     /**
+     * Returns true if and only if the given [entity] is part of the family.
+     */
+    operator fun contains(entity: Entity): Boolean = entities[entity.id]
+
+    /**
      * Updates the [entitiesBag] and clears the [isDirty] flag if needed.
      */
     @PublishedApi
