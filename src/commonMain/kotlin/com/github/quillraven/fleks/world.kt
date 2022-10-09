@@ -285,6 +285,20 @@ class World internal constructor(
 
     /**
      * Adds a new [entity][Entity] to the world using the given [configuration][EntityCreateContext].
+     *
+     * **Attention** when you use nested calls of this function. Make sure that you only modify the entity
+     * of the current scope. Otherwise you will get wrong behavior for families.
+     * E.g. don't do this:
+     *
+     *     entity { outer ->
+     *         val innerEntity = entity{ inner ->
+     *             // Don't do this. Only modify inner.
+     *             outer += Position()
+     *         }
+     *
+     *         // Don't do this. Only modify outer.
+     *         innerEntity += Position()
+     *     }
      */
     inline fun entity(configuration: EntityCreateContext.(Entity) -> Unit = {}): Entity {
         return entityService.create(configuration)

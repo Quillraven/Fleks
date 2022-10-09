@@ -50,6 +50,20 @@ abstract class EntityComponentContext(
 
     /**
      * Updates the [entity][Entity] using the given [configuration] to add and remove [components][Component].
+     *
+     * **Attention** when you use nested calls of this function. Make sure that you only modify the entity
+     * of the current scope. Otherwise you will get wrong behavior for families.
+     * E.g. don't do this:
+     *
+     *     outerEntity.configure { outer ->
+     *         innerEntity.configure{ inner ->
+     *             // Don't do this. Only modify inner.
+     *             outer += Position()
+     *         }
+     *
+     *         // Don't do this. Only modify outer.
+     *         innerEntity += Position()
+     *     }
      */
     inline fun Entity.configure(configuration: EntityUpdateContext.(Entity) -> Unit) =
         componentService.world.entityService.configure(this, configuration)
