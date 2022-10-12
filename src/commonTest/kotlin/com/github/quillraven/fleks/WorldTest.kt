@@ -779,4 +779,24 @@ internal class WorldTest {
             family { all(WorldTestComponent) }
         }
     }
+
+    @Test
+    fun testAsEntityBag() {
+        val world = world { }
+        val e1 = world.entity()
+        val e2 = world.entity()
+
+        var entities = world.asEntityBag()
+
+        assertTrue(e1 in entities)
+        assertTrue(e2 in entities)
+        assertEquals(2, entities.size)
+
+        with(world) { e1.remove() }
+        entities = world.asEntityBag()
+
+        assertFalse(e1 in entities)
+        assertTrue(e2 in entities)
+        assertEquals(1, entities.size)
+    }
 }

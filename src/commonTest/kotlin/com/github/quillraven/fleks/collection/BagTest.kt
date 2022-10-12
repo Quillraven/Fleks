@@ -121,7 +121,7 @@ class EntityBagTest {
     fun addValueToBag() {
         val bag = EntityBag()
 
-        bag.add(Entity(42))
+        bag += Entity(42)
 
         assertTrue(bag.isNotEmpty())
         assertEquals(1, bag.size)
@@ -131,8 +131,8 @@ class EntityBagTest {
     @Test
     fun clearAllValuesFromBag() {
         val bag = EntityBag()
-        bag.add(Entity(42))
-        bag.add(Entity(43))
+        bag += Entity(42)
+        bag += Entity(43)
 
         bag.clear()
 
@@ -154,7 +154,7 @@ class EntityBagTest {
     fun addValueToBagWithInsufficientCapacity() {
         val bag = EntityBag(0)
 
-        bag.add(Entity(42))
+        bag += Entity(42)
 
         assertEquals(1, bag.size)
         assertEquals(Entity(42), bag[0])
@@ -182,8 +182,8 @@ class EntityBagTest {
     @Test
     fun executeActionForEachValueOfBag() {
         val bag = EntityBag(4)
-        bag.add(Entity(42))
-        bag.add(Entity(43))
+        bag += Entity(42)
+        bag += Entity(43)
         var numCalls = 0
         val valuesCalled = mutableListOf<Entity>()
 
@@ -200,7 +200,7 @@ class EntityBagTest {
     @Test
     fun sortValuesByNormalEntityComparisonWithSizeLessThan7() {
         val bag = EntityBag()
-        repeat(6) { bag.add(Entity(6 - it)) }
+        repeat(6) { bag += Entity(6 - it) }
 
         bag.sort(compareEntity(world { }) { e1, e2 -> e1.id.compareTo(e2.id) })
 
@@ -212,7 +212,7 @@ class EntityBagTest {
     @Test
     fun sortValuesByNormalEntityComparisonWithSizeLessThan50ButGreater7() {
         val bag = EntityBag()
-        repeat(8) { bag.add(Entity(8 - it)) }
+        repeat(8) { bag += Entity(8 - it) }
 
         bag.sort(compareEntity(world { }) { e1, e2 -> e1.id.compareTo(e2.id) })
 
@@ -224,7 +224,7 @@ class EntityBagTest {
     @Test
     fun sortValuesByNormalEntityComparisonWithSizeGreater50() {
         val bag = EntityBag()
-        repeat(51) { bag.add(Entity(51 - it)) }
+        repeat(51) { bag += Entity(51 - it) }
 
         bag.sort(compareEntity(world { }) { e1, e2 -> e1.id.compareTo(e2.id) })
 
