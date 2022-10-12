@@ -285,7 +285,7 @@ class EntityService(
         }
 
         if (delayRemoval) {
-            delayedEntities.add(entity)
+            delayedEntities += entity
         } else {
             removedEntities.set(entity.id)
             val compMask = compMasks[entity.id]

@@ -21,7 +21,7 @@ class EntityBag(
     val capacity: Int
         get() = values.size
 
-    internal fun add(entity: Entity) {
+    internal operator fun plusAssign(entity: Entity) {
         if (size == values.size) {
             values = values.copyInto(Array(max(1, size * 2)) { Entity(-1) })
         }
