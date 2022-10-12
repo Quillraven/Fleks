@@ -155,14 +155,14 @@ internal class ComponentTest {
 
         val onAdd: ComponentHook<ComponentTestComponent> = { entity, component ->
             assertSame(testWorld, this)
-            assertSame(expectedEntity, entity)
+            assertEquals(expectedEntity, entity)
             assertTrue { expectedComp1 === component || expectedComp2 === component }
             numAddCalls++
         }
 
         val onRemove: ComponentHook<ComponentTestComponent> = { entity, component ->
             assertSame(testWorld, this)
-            assertSame(expectedEntity, entity)
+            assertEquals(expectedEntity, entity)
             assertSame(expectedComp1, component)
             numRemoveCalls++
         }

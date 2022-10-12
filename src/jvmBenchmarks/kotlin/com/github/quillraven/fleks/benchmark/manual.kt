@@ -2,18 +2,6 @@ package com.github.quillraven.fleks.benchmark
 
 import kotlin.system.measureTimeMillis
 
-/**
- *  ADD_REMOVE:
-Artemis: max(18)    min(6)  avg(11.666666666666666)
-Fleks:   max(10)    min(6)  avg(7.666666666666667)
-SIMPLE:
-Artemis: max(11)    min(10)  avg(10.666666666666666)
-Fleks:   max(32)    min(32)  avg(32.0)
-COMPLEX:
-Artemis: max(471)    min(454)  avg(461.0)
-Fleks:   max(547)    min(534)  avg(538.6666666666666)
- */
-
 fun main() {
     compareArtemisFleksAddRemove()
     compareArtemisFleksSimple()

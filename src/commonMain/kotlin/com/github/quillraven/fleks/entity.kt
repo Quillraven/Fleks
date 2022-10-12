@@ -1,11 +1,13 @@
 package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.*
+import kotlin.jvm.JvmInline
 
 /**
  * An entity of a [world][World]. It represents a unique id.
  */
-data class Entity(val id: Int)
+@JvmInline
+value class Entity(val id: Int)
 
 /**
  * A class for basic [Entity] extension functions within an add/remove hook of a [Component], [Family],
