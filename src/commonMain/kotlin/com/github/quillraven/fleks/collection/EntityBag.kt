@@ -6,7 +6,7 @@ import kotlin.math.min
 import kotlin.random.Random
 
 /**
- * A bag implementation for [entities][Entity](=integer) values in Kotlin to avoid autoboxing.
+ * A bag implementation for [entities][Entity] (=integer) values in Kotlin to avoid autoboxing.
  * It contains only the necessary functions for Fleks.
  */
 class EntityBag(

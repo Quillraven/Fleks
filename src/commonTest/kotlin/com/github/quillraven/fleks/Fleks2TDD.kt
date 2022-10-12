@@ -202,8 +202,6 @@ class Fleks2TDD {
         // entity that triggers onRemove hook
         val removeEntity = testWorld.entity { it += Position(0f, 0f) }
         with(testWorld) { removeEntity.configure { it -= Position } }
-        // trigger family update to call the hooks
-        testFamily.updateActiveEntities()
 
         assertEquals(2, numAddCalls)
         assertEquals(1, numRemoveCalls)

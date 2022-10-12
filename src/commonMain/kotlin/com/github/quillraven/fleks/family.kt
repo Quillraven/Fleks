@@ -79,33 +79,41 @@ data class Family(
     internal val allOf: BitArray? = null,
     internal val noneOf: BitArray? = null,
     internal val anyOf: BitArray? = null,
-    @PublishedApi
-    internal val world: World,
+    private val world: World,
     @PublishedApi
     internal val entityService: EntityService = world.entityService,
 ) : EntityComponentContext(world.componentService) {
     /**
      * An optional [FamilyHook] that gets called whenever an [entity][Entity] enters the family.
      */
-    @PublishedApi
     internal var addHook: FamilyHook? = null
 
     /**
      * An optional [FamilyHook] that gets called whenever an [entity][Entity] leaves the family.
      */
-    @PublishedApi
     internal var removeHook: FamilyHook? = null
-
-    /**
-     * Return the [entities] in form of an [EntityBag] for better iteration performance.
-     */
-    @PublishedApi
-    internal val entitiesBag = EntityBag()
 
     /**
      * Returns the [entities][Entity] that belong to this family.
      */
-    private val entities = BitArray(world.capacity)
+    private val entityBits = BitArray(world.capacity)
+
+    /**
+     * Returns the [entities][Entity] that belong to this family.
+     * Be aware that the underlying [EntityBag] collection is not always up to date.
+     * The collection is not updated while a family iteration is in progress. It
+     * gets automatically updated whenever it is accessed and no iteration is currently
+     * in progress.
+     */
+    // This bag is added in addition to the BitArray for better iteration performance.
+    val entities: EntityBag = EntityBag()
+        get() {
+            if (!entityService.delayRemoval || field.isEmpty()) {
+                // no iteration in process -> update entities if necessary
+                updateActiveEntities(field)
+            }
+            return field
+        }
 
     /**
      * Returns the number of [entities][Entity] that belong to this family.
@@ -113,29 +121,27 @@ data class Family(
      * iterates through the entire underlying [BitArray].
      */
     val numEntities: Int
-        get() = entities.numBits()
+        get() = entityBits.numBits()
 
     /**
      * Returns true if and only if this [Family] does not contain any entity.
      */
     val isEmpty: Boolean
-        get() = entities.isEmpty
+        get() = entityBits.isEmpty
 
     /**
      * Returns true if and only if this [Family] contains at least one entity.
      */
     val isNotEmpty: Boolean
-        get() = entities.isNotEmpty
+        get() = entityBits.isNotEmpty
 
     /**
-     * Flag to indicate if there are changes in the [entities]. If it is true then the [entitiesBag] should get
+     * Flag to indicate if there are changes in the [entityBits]. If it is true then the [entities] should get
      * updated via a call to [updateActiveEntities].
      *
      * Refer to [IteratingSystem.onTick] for an example implementation.
      */
-    @PublishedApi
-    internal var isDirty = false
-        private set
+    private var isDirty = false
 
     /**
      * Returns true if the specified [compMask] matches the family's component configuration.
@@ -151,16 +157,15 @@ data class Family(
     /**
      * Returns true if and only if the given [entity] is part of the family.
      */
-    operator fun contains(entity: Entity): Boolean = entities[entity.id]
+    operator fun contains(entity: Entity): Boolean = entityBits[entity.id]
 
     /**
-     * Updates the [entitiesBag] and clears the [isDirty] flag if needed.
+     * Updates the [entities] and clears the [isDirty] flag if needed.
      */
-    @PublishedApi
-    internal fun updateActiveEntities() {
+    private fun updateActiveEntities(bag: EntityBag) {
         if (isDirty) {
             isDirty = false
-            entities.toEntityBag(entitiesBag)
+            entityBits.toEntityBag(bag)
         }
     }
 
@@ -177,13 +182,16 @@ data class Family(
      * that a removed entity of this family will still be part of the [action] for the current iteration.
      */
     inline fun forEach(crossinline action: Family.(Entity) -> Unit) {
-        updateActiveEntities()
         if (!entityService.delayRemoval) {
-            entityService.delayRemoval = true
-            entitiesBag.forEach { this.action(it) }
-            entityService.cleanupDelays()
+            // access entities BEFORE setting delayRemoval to true to properly
+            // update them (check getter of entities property)
+            with(entities) {
+                entityService.delayRemoval = true
+                forEach { action(it) }
+                entityService.cleanupDelays()
+            }
         } else {
-            entitiesBag.forEach { this.action(it) }
+            entities.forEach { this.action(it) }
         }
     }
 
@@ -191,34 +199,17 @@ data class Family(
      * Updates this family if needed and returns its first [Entity].
      * @throws [NoSuchElementException] if the family has no entities.
      */
-    fun first(): Entity {
-        if (!entityService.delayRemoval || entitiesBag.isEmpty()) {
-            // no iteration in process -> update entities if necessary
-            updateActiveEntities()
-        }
-
-        return entitiesBag.first()
-    }
+    fun first(): Entity = entities.first()
 
     /**
      * Updates this family if needed and returns its first [Entity] or null if the family has no entities.
      */
-    fun firstOrNull(): Entity? {
-        if (!entityService.delayRemoval || entitiesBag.isEmpty()) {
-            // no iteration in process -> update entities if necessary
-            updateActiveEntities()
-        }
-
-        return entitiesBag.firstOrNull()
-    }
+    fun firstOrNull(): Entity? = entities.firstOrNull()
 
     /**
      * Sorts the [entities][Entity] of this family by the given [comparator].
      */
-    fun sort(comparator: EntityComparator) {
-        updateActiveEntities()
-        entitiesBag.sort(comparator)
-    }
+    fun sort(comparator: EntityComparator) = entities.sort(comparator)
 
     /**
      * Adds the [entity] to the family and sets the [isDirty] flag if and only
@@ -228,7 +219,7 @@ data class Family(
     internal fun onEntityAdded(entity: Entity, compMask: BitArray) {
         if (compMask in this) {
             isDirty = true
-            entities.set(entity.id)
+            entityBits.set(entity.id)
             addHook?.invoke(world, entity)
         }
     }
@@ -237,20 +228,20 @@ data class Family(
      * Checks if the [entity] is part of the family by analyzing the entity's components.
      * The [compMask] is a [BitArray] that indicates which components the [entity] currently has.
      *
-     * The [entity] gets either added to the [entities] or removed and [isDirty] is set when needed.
+     * The [entity] gets either added to the [entityBits] or removed and [isDirty] is set when needed.
      */
     @PublishedApi
     internal fun onEntityCfgChanged(entity: Entity, compMask: BitArray) {
         val entityInFamily = compMask in this
-        if (entityInFamily && !entities[entity.id]) {
+        if (entityInFamily && !entityBits[entity.id]) {
             // new entity gets added
             isDirty = true
-            entities.set(entity.id)
+            entityBits.set(entity.id)
             addHook?.invoke(world, entity)
-        } else if (!entityInFamily && entities[entity.id]) {
+        } else if (!entityInFamily && entityBits[entity.id]) {
             // existing entity gets removed
             isDirty = true
-            entities.clear(entity.id)
+            entityBits.clear(entity.id)
             removeHook?.invoke(world, entity)
         }
     }
@@ -260,10 +251,10 @@ data class Family(
      * if the [entity] is already in the family.
      */
     internal fun onEntityRemoved(entity: Entity) {
-        if (entities[entity.id]) {
+        if (entityBits[entity.id]) {
             // existing entity gets removed
             isDirty = true
-            entities.clear(entity.id)
+            entityBits.clear(entity.id)
             removeHook?.invoke(world, entity)
         }
     }
