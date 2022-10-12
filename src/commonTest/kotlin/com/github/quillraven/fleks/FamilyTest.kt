@@ -97,7 +97,7 @@ internal class FamilyTest {
 
         assertFalse { family.isDirty }
         assertEquals(1, family.entitiesBag.size)
-        assertEquals(0, family.entitiesBag[0])
+        assertEquals(Entity(0), family.entitiesBag[0])
     }
 
     @Test
@@ -128,9 +128,9 @@ internal class FamilyTest {
         // sort descending by entity id
         family.sort(compareEntity(testWorld) { e1, e2 -> e2.id.compareTo(e1.id) })
 
-        assertEquals(2, family.entitiesBag[0])
-        assertEquals(1, family.entitiesBag[1])
-        assertEquals(0, family.entitiesBag[2])
+        assertEquals(Entity(2), family.entitiesBag[0])
+        assertEquals(Entity(1), family.entitiesBag[1])
+        assertEquals(Entity(0), family.entitiesBag[2])
     }
 
     @Test

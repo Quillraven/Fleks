@@ -1,5 +1,6 @@
 package com.github.quillraven.fleks.collection
 
+import com.github.quillraven.fleks.Entity
 import kotlin.math.min
 
 /**
@@ -145,7 +146,7 @@ class BitArray(
         }
     }
 
-    fun toIntBag(bag: IntBag) {
+    fun toEntityBag(bag: EntityBag) {
         var checkSize = true
         bag.clear()
         forEachSetBit { idx ->
@@ -153,7 +154,7 @@ class BitArray(
                 checkSize = false
                 bag.ensureCapacity(idx)
             }
-            bag.unsafeAdd(idx)
+            bag.unsafeAdd(Entity(idx))
         }
     }
 

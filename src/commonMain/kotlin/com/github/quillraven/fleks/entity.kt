@@ -207,7 +207,7 @@ class EntityService(
     /**
      * The entities that get removed at the end of an [IteratingSystem] iteration.
      */
-    private val delayedEntities = IntBag()
+    private val delayedEntities = EntityBag()
 
     /**
      * Creates and returns a new [entity][Entity] and applies the given [configuration].
@@ -285,7 +285,7 @@ class EntityService(
         }
 
         if (delayRemoval) {
-            delayedEntities.add(entity.id)
+            delayedEntities.add(entity)
         } else {
             removedEntities.set(entity.id)
             val compMask = compMasks[entity.id]
@@ -348,7 +348,7 @@ class EntityService(
     fun cleanupDelays() {
         delayRemoval = false
         if (delayedEntities.isNotEmpty) {
-            delayedEntities.forEach { this -= Entity(it) }
+            delayedEntities.forEach { this -= it }
             delayedEntities.clear()
         }
     }

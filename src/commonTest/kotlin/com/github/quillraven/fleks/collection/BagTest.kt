@@ -1,5 +1,6 @@
 package com.github.quillraven.fleks.collection
 
+import com.github.quillraven.fleks.Entity
 import com.github.quillraven.fleks.world
 import kotlin.test.*
 
@@ -107,10 +108,10 @@ class GenericBagTest {
     }
 }
 
-class IntBagTest {
+class EntityBagTest {
     @Test
-    fun createEmptyBagOfStringOfSize32() {
-        val bag = IntBag(32)
+    fun createEmptyBagOfSize32() {
+        val bag = EntityBag(32)
 
         assertEquals(32, bag.capacity)
         assertEquals(0, bag.size)
@@ -118,51 +119,51 @@ class IntBagTest {
 
     @Test
     fun addValueToBag() {
-        val bag = IntBag()
+        val bag = EntityBag()
 
-        bag.add(42)
+        bag.add(Entity(42))
 
         assertTrue(bag.isNotEmpty)
         assertEquals(1, bag.size)
-        assertTrue(42 in bag)
+        assertTrue(Entity(42) in bag)
     }
 
     @Test
     fun clearAllValuesFromBag() {
-        val bag = IntBag()
-        bag.add(42)
-        bag.add(43)
+        val bag = EntityBag()
+        bag.add(Entity(42))
+        bag.add(Entity(43))
 
         bag.clear()
 
         assertEquals(0, bag.size)
-        assertFalse { 42 in bag }
-        assertFalse { 43 in bag }
+        assertFalse { Entity(42) in bag }
+        assertFalse { Entity(43) in bag }
     }
 
     @Test
     fun addValueUnsafeWithSufficientCapacity() {
-        val bag = IntBag(1)
+        val bag = EntityBag(1)
 
-        bag.unsafeAdd(42)
+        bag.unsafeAdd(Entity(42))
 
-        assertTrue(42 in bag)
+        assertTrue(Entity(42) in bag)
     }
 
     @Test
     fun addValueToBagWithInsufficientCapacity() {
-        val bag = IntBag(0)
+        val bag = EntityBag(0)
 
-        bag.add(42)
+        bag.add(Entity(42))
 
         assertEquals(1, bag.size)
-        assertEquals(42, bag[0])
+        assertEquals(Entity(42), bag[0])
         assertEquals(1, bag.capacity)
     }
 
     @Test
     fun doNotResizeWhenBagHasSufficientCapacity() {
-        val bag = IntBag(8)
+        val bag = EntityBag(8)
 
         bag.ensureCapacity(7)
 
@@ -171,7 +172,7 @@ class IntBagTest {
 
     @Test
     fun resizeWhenBagHasInsufficientCapacity() {
-        val bag = IntBag(8)
+        val bag = EntityBag(8)
 
         bag.ensureCapacity(9)
 
@@ -180,11 +181,11 @@ class IntBagTest {
 
     @Test
     fun executeActionForEachValueOfBag() {
-        val bag = IntBag(4)
-        bag.add(42)
-        bag.add(43)
+        val bag = EntityBag(4)
+        bag.add(Entity(42))
+        bag.add(Entity(43))
         var numCalls = 0
-        val valuesCalled = mutableListOf<Int>()
+        val valuesCalled = mutableListOf<Entity>()
 
         bag.forEach {
             ++numCalls
@@ -193,55 +194,55 @@ class IntBagTest {
 
 
         assertEquals(2, numCalls)
-        assertEquals(listOf(42, 43), valuesCalled)
+        assertEquals(listOf(Entity(42), Entity(43)), valuesCalled)
     }
 
     @Test
-    fun sortValuesByNormalIntComparisonWithSizeLessThan7() {
-        val bag = IntBag()
-        repeat(6) { bag.add(6 - it) }
+    fun sortValuesByNormalEntityComparisonWithSizeLessThan7() {
+        val bag = EntityBag()
+        repeat(6) { bag.add(Entity(6 - it)) }
 
         bag.sort(compareEntity(world { }) { e1, e2 -> e1.id.compareTo(e2.id) })
 
         repeat(6) {
-            assertEquals(it + 1, bag[it])
+            assertEquals(Entity(it + 1), bag[it])
         }
     }
 
     @Test
-    fun sortValuesByNormalIntComparisonWithSizeLessThan50ButGreater7() {
-        val bag = IntBag()
-        repeat(8) { bag.add(8 - it) }
+    fun sortValuesByNormalEntityComparisonWithSizeLessThan50ButGreater7() {
+        val bag = EntityBag()
+        repeat(8) { bag.add(Entity(8 - it)) }
 
         bag.sort(compareEntity(world { }) { e1, e2 -> e1.id.compareTo(e2.id) })
 
         repeat(8) {
-            assertEquals(it + 1, bag[it])
+            assertEquals(Entity(it + 1), bag[it])
         }
     }
 
     @Test
-    fun sortValuesByNormalIntComparisonWithSizeGreater50() {
-        val bag = IntBag()
-        repeat(51) { bag.add(51 - it) }
+    fun sortValuesByNormalEntityComparisonWithSizeGreater50() {
+        val bag = EntityBag()
+        repeat(51) { bag.add(Entity(51 - it)) }
 
         bag.sort(compareEntity(world { }) { e1, e2 -> e1.id.compareTo(e2.id) })
 
         repeat(51) {
-            assertEquals(it + 1, bag[it])
+            assertEquals(Entity(it + 1), bag[it])
         }
     }
 
     @Test
     fun addValueUnsafeWithInsufficientCapacity() {
-        val bag = IntBag(0)
+        val bag = EntityBag(0)
 
-        assertFailsWith<IndexOutOfBoundsException> { bag.unsafeAdd(42) }
+        assertFailsWith<IndexOutOfBoundsException> { bag.unsafeAdd(Entity(42)) }
     }
 
     @Test
     fun cannotGetValueOfOutOfBoundsIndex() {
-        val bag = IntBag(2)
+        val bag = EntityBag(2)
 
         assertFailsWith<IndexOutOfBoundsException> { bag[2] }
     }

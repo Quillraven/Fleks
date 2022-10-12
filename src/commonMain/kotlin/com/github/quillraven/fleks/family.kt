@@ -1,8 +1,8 @@
 package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.BitArray
+import com.github.quillraven.fleks.collection.EntityBag
 import com.github.quillraven.fleks.collection.EntityComparator
-import com.github.quillraven.fleks.collection.IntBag
 import com.github.quillraven.fleks.collection.isNullOrEmpty
 
 /**
@@ -97,10 +97,10 @@ data class Family(
     internal var removeHook: FamilyHook? = null
 
     /**
-     * Return the [entities] in form of an [IntBag] for better iteration performance.
+     * Return the [entities] in form of an [EntityBag] for better iteration performance.
      */
     @PublishedApi
-    internal val entitiesBag = IntBag()
+    internal val entitiesBag = EntityBag()
 
     /**
      * Returns the [entities][Entity] that belong to this family.
@@ -160,7 +160,7 @@ data class Family(
     internal fun updateActiveEntities() {
         if (isDirty) {
             isDirty = false
-            entities.toIntBag(entitiesBag)
+            entities.toEntityBag(entitiesBag)
         }
     }
 
@@ -180,10 +180,10 @@ data class Family(
         updateActiveEntities()
         if (!entityService.delayRemoval) {
             entityService.delayRemoval = true
-            entitiesBag.forEach { this.action(Entity(it)) }
+            entitiesBag.forEach { this.action(it) }
             entityService.cleanupDelays()
         } else {
-            entitiesBag.forEach { this.action(Entity(it)) }
+            entitiesBag.forEach { this.action(it) }
         }
     }
 
@@ -197,7 +197,7 @@ data class Family(
             updateActiveEntities()
         }
 
-        return Entity(entitiesBag.first)
+        return entitiesBag.first
     }
 
     /**
@@ -209,8 +209,7 @@ data class Family(
             updateActiveEntities()
         }
 
-        val id = entitiesBag.firstOrNull ?: return null
-        return Entity(id)
+        return entitiesBag.firstOrNull
     }
 
     /**

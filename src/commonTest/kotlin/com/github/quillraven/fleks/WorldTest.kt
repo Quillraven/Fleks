@@ -550,11 +550,11 @@ internal class WorldTest {
         val e = w.entity { }
 
         family.updateActiveEntities()
-        assertTrue(e.id in family.entitiesBag)
+        assertTrue(e in family.entitiesBag)
 
         w -= e
         family.updateActiveEntities()
-        assertFalse(e.id in family.entitiesBag)
+        assertFalse(e in family.entitiesBag)
     }
 
     @Test

@@ -81,14 +81,14 @@ class Bag<T>(
 }
 
 /**
- * A bag implementation for integer values in Kotlin to avoid autoboxing. It is used for [entities][Entity]
- * and contains only the necessary functions for Fleks.
+ * A bag implementation for [entities][Entity](=integer) values in Kotlin to avoid autoboxing.
+ * It contains only the necessary functions for Fleks.
  */
-class IntBag(
+class EntityBag(
     size: Int = 64
 ) {
     @PublishedApi
-    internal var values: IntArray = IntArray(size)
+    internal var values: Array<Entity> = Array(size) { Entity(-1) }
 
     var size: Int = 0
         private set
@@ -102,7 +102,7 @@ class IntBag(
     val isNotEmpty: Boolean
         get() = size > 0
 
-    val first: Int
+    val first: Entity
         get() {
             if (isEmpty) {
                 throw NoSuchElementException("Bag is empty!")
@@ -110,7 +110,7 @@ class IntBag(
             return values[0]
         }
 
-    val firstOrNull: Int?
+    val firstOrNull: Entity?
         get() {
             if (isEmpty) {
                 return null
@@ -118,35 +118,35 @@ class IntBag(
             return values[0]
         }
 
-    fun add(value: Int) {
+    fun add(value: Entity) {
         if (size == values.size) {
-            values = values.copyOf(max(1, size * 2))
+            values = values.copyInto(Array(max(1, size * 2)) { Entity(-1) })
         }
         values[size++] = value
     }
 
-    internal fun unsafeAdd(value: Int) {
+    internal fun unsafeAdd(value: Entity) {
         if (size >= values.size) throw IndexOutOfBoundsException("Cannot add value because of insufficient size")
         values[size++] = value
     }
 
-    operator fun get(index: Int): Int {
+    operator fun get(index: Int): Entity {
         if (index < 0 || index >= size) throw IndexOutOfBoundsException("$index is not valid for bag of size $size")
         return values[index]
     }
 
     fun clear() {
-        values.fill(0)
+        values.fill(Entity(-1))
         size = 0
     }
 
     fun ensureCapacity(capacity: Int) {
         if (capacity >= values.size) {
-            values = values.copyOf(capacity + 1)
+            values = values.copyInto(Array(capacity + 1) { Entity(-1) })
         }
     }
 
-    operator fun contains(value: Int): Boolean {
+    operator fun contains(value: Entity): Boolean {
         for (i in 0 until size) {
             if (values[i] == value) {
                 return true
@@ -155,7 +155,7 @@ class IntBag(
         return false
     }
 
-    inline fun forEach(action: (Int) -> Unit) {
+    inline fun forEach(action: (Entity) -> Unit) {
         for (i in 0 until size) {
             action(values[i])
         }
@@ -203,13 +203,13 @@ inline fun <reified T> compareEntityBy(
 private const val SMALL = 7
 private const val MEDIUM = 50
 
-private fun IntArray.swap(idxA: Int, idxB: Int) {
+private fun Array<Entity>.swap(idxA: Int, idxB: Int) {
     val tmp = this[idxA]
     this[idxA] = this[idxB]
     this[idxB] = tmp
 }
 
-private fun IntArray.vecSwap(idxA: Int, idxB: Int, n: Int) {
+private fun Array<Entity>.vecSwap(idxA: Int, idxB: Int, n: Int) {
     var a = idxA
     var b = idxB
     for (i in 0 until n) {
@@ -217,10 +217,10 @@ private fun IntArray.vecSwap(idxA: Int, idxB: Int, n: Int) {
     }
 }
 
-private fun IntArray.med3(idxA: Int, idxB: Int, idxC: Int, comparator: EntityComparator): Int {
-    val ab = comparator.compare(Entity(this[idxA]), Entity(this[idxB]))
-    val ac = comparator.compare(Entity(this[idxA]), Entity(this[idxC]))
-    val bc = comparator.compare(Entity(this[idxB]), Entity(this[idxC]))
+private fun Array<Entity>.med3(idxA: Int, idxB: Int, idxC: Int, comparator: EntityComparator): Int {
+    val ab = comparator.compare(this[idxA], this[idxB])
+    val ac = comparator.compare(this[idxA], this[idxC])
+    val bc = comparator.compare(this[idxB], this[idxC])
 
     return when {
         ab < 0 -> {
@@ -237,11 +237,11 @@ private fun IntArray.med3(idxA: Int, idxB: Int, idxC: Int, comparator: EntityCom
     }
 }
 
-private fun IntArray.selectionSort(fromIdx: Int, toIdx: Int, comparator: EntityComparator) {
+private fun Array<Entity>.selectionSort(fromIdx: Int, toIdx: Int, comparator: EntityComparator) {
     for (i in fromIdx until toIdx - 1) {
         var m = i
         for (j in i + 1 until toIdx) {
-            if (comparator.compare(Entity(this[j]), Entity(this[m])) < 0) {
+            if (comparator.compare(this[j], this[m]) < 0) {
                 m = j
             }
         }
@@ -251,7 +251,7 @@ private fun IntArray.selectionSort(fromIdx: Int, toIdx: Int, comparator: EntityC
     }
 }
 
-private fun IntArray.quickSort(fromIdx: Int, toIdx: Int, comparator: EntityComparator) {
+private fun Array<Entity>.quickSort(fromIdx: Int, toIdx: Int, comparator: EntityComparator) {
     val len = toIdx - fromIdx
 
     // Selection sort on smallest arrays
@@ -285,14 +285,14 @@ private fun IntArray.quickSort(fromIdx: Int, toIdx: Int, comparator: EntityCompa
     while (true) {
         var comparison = 0
 
-        while (b <= c && comparator.compare(Entity(this[b]), Entity(v)).also { comparison = it } <= 0) {
+        while (b <= c && comparator.compare(this[b], v).also { comparison = it } <= 0) {
             if (comparison == 0) {
                 this.swap(a++, b)
             }
             b++
         }
 
-        while (c >= b && comparator.compare(Entity(this[c]), Entity(v)).also { comparison = it } >= 0) {
+        while (c >= b && comparator.compare(this[c], v).also { comparison = it } >= 0) {
             if (comparison == 0) {
                 this.swap(c, d--)
             }
