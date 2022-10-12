@@ -347,7 +347,7 @@ class EntityService(
      */
     fun cleanupDelays() {
         delayRemoval = false
-        if (delayedEntities.isNotEmpty) {
+        if (delayedEntities.isNotEmpty()) {
             delayedEntities.forEach { this -= it }
             delayedEntities.clear()
         }

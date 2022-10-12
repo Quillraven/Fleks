@@ -176,7 +176,7 @@ data class Family(
      * To avoid these kinds of issues, entity removals are delayed until the end of the iteration. This also means
      * that a removed entity of this family will still be part of the [action] for the current iteration.
      */
-    inline fun forEach(action: Family.(Entity) -> Unit) {
+    inline fun forEach(crossinline action: Family.(Entity) -> Unit) {
         updateActiveEntities()
         if (!entityService.delayRemoval) {
             entityService.delayRemoval = true
@@ -192,24 +192,24 @@ data class Family(
      * @throws [NoSuchElementException] if the family has no entities.
      */
     fun first(): Entity {
-        if (!entityService.delayRemoval || entitiesBag.isEmpty) {
+        if (!entityService.delayRemoval || entitiesBag.isEmpty()) {
             // no iteration in process -> update entities if necessary
             updateActiveEntities()
         }
 
-        return entitiesBag.first
+        return entitiesBag.first()
     }
 
     /**
      * Updates this family if needed and returns its first [Entity] or null if the family has no entities.
      */
     fun firstOrNull(): Entity? {
-        if (!entityService.delayRemoval || entitiesBag.isEmpty) {
+        if (!entityService.delayRemoval || entitiesBag.isEmpty()) {
             // no iteration in process -> update entities if necessary
             updateActiveEntities()
         }
 
-        return entitiesBag.firstOrNull
+        return entitiesBag.firstOrNull()
     }
 
     /**

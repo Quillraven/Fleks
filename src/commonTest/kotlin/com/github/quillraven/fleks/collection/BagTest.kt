@@ -123,7 +123,7 @@ class EntityBagTest {
 
         bag.add(Entity(42))
 
-        assertTrue(bag.isNotEmpty)
+        assertTrue(bag.isNotEmpty())
         assertEquals(1, bag.size)
         assertTrue(Entity(42) in bag)
     }
