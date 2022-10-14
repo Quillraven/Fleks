@@ -142,15 +142,6 @@ class EntityBagTest {
     }
 
     @Test
-    fun addValueUnsafeWithSufficientCapacity() {
-        val bag = EntityBag(1)
-
-        bag.unsafeAdd(Entity(42))
-
-        assertTrue(Entity(42) in bag)
-    }
-
-    @Test
     fun addValueToBagWithInsufficientCapacity() {
         val bag = EntityBag(0)
 
@@ -231,13 +222,6 @@ class EntityBagTest {
         repeat(51) {
             assertEquals(Entity(it + 1), bag[it])
         }
-    }
-
-    @Test
-    fun addValueUnsafeWithInsufficientCapacity() {
-        val bag = EntityBag(0)
-
-        assertFailsWith<IndexOutOfBoundsException> { bag.unsafeAdd(Entity(42)) }
     }
 
     @Test

@@ -134,6 +134,8 @@ class BitArray(
     }
 
     inline fun forEachSetBit(action: (Int) -> Unit) {
+        // it is important that we go from right to left because
+        // otherwise some code in toEntityBag will fail with ensureCapacity.
         for (word in bits.size - 1 downTo 0) {
             val bitsAtWord = bits[word]
             if (bitsAtWord != 0L) {
@@ -152,9 +154,11 @@ class BitArray(
         forEachSetBit { idx ->
             if (checkSize) {
                 checkSize = false
+                // this is working because forEachSetBit goes
+                // from right to left, so idx is the highest index here
                 bag.ensureCapacity(idx)
             }
-            bag.unsafeAdd(Entity(idx))
+            bag += Entity(idx)
         }
     }
 

@@ -9,6 +9,8 @@ interface EntityCollection {
 
     fun containsAll(entities: Collection<Entity>): Boolean
 
+    fun containsAll(entities: EntityBag): Boolean
+
     fun isEmpty(): Boolean
 
     fun isNotEmpty(): Boolean
