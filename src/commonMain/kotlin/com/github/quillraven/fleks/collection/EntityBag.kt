@@ -87,26 +87,12 @@ class EntityBag(
     /**
      * Returns true if and only if all given [entities] are part of the bag.
      */
-    override fun containsAll(entities: Collection<Entity>): Boolean {
-        for (i in 0 until size) {
-            if (values[i] !in entities) {
-                return false
-            }
-        }
-        return true
-    }
+    override fun containsAll(entities: Collection<Entity>): Boolean = entities.all { it in this }
 
     /**
      * Returns true if and only if all given [entities] are part of the bag.
      */
-    override fun containsAll(entities: EntityBag): Boolean {
-        for (i in 0 until size) {
-            if (values[i] !in entities) {
-                return false
-            }
-        }
-        return true
-    }
+    override fun containsAll(entities: EntityBag): Boolean = entities.all { it in this }
 
     /**
      * Returns true if and only if the bag is empty and contains no [entities][Entity].
@@ -197,7 +183,6 @@ class EntityBag(
      * provided by the [transform] function applied to each [entity][Entity] of the bag.
      */
     override fun <K, V, M : MutableMap<in K, in V>> associateTo(destination: M, transform: (Entity) -> Pair<K, V>): M {
-        destination.clear()
         for (i in 0 until size) {
             destination += transform(values[i])
         }
@@ -210,7 +195,6 @@ class EntityBag(
      * each [entity][Entity] of the bag.
      */
     override fun <K, M : MutableMap<in K, Entity>> associateByTo(destination: M, keySelector: (Entity) -> K): M {
-        destination.clear()
         for (i in 0 until size) {
             val entity = values[i]
             destination[keySelector(entity)] = entity
@@ -228,7 +212,6 @@ class EntityBag(
         keySelector: (Entity) -> K,
         valueTransform: (Entity) -> V
     ): M {
-        destination.clear()
         for (i in 0 until size) {
             val entity = values[i]
             destination[keySelector(entity)] = valueTransform(entity)
@@ -285,7 +268,7 @@ class EntityBag(
     /**
      * Returns a [List] containing only [entities][Entity] matching the given [predicate].
      */
-    override fun filterIndexed(predicate: (index: Int, Entity) -> Boolean): List<Entity> {
+    override fun filterIndexed(predicate: (index: Int, entity: Entity) -> Boolean): List<Entity> {
         val result = mutableListOf<Entity>()
         for (i in 0 until size) {
             val entity = values[i]
@@ -329,7 +312,6 @@ class EntityBag(
         destination: C,
         predicate: (index: Int, Entity) -> Boolean
     ): C {
-        destination.clear()
         for (i in 0 until size) {
             val entity = values[i]
             if (predicate(i, entity)) {
@@ -394,7 +376,7 @@ class EntityBag(
      * Accumulates value starting with [initial] value and applying [operation] from left to right to
      * current accumulator value and each [entity][Entity].
      */
-    override fun <R> fold(initial: R, operation: (acc: R, Entity) -> R): R {
+    override fun <R> fold(initial: R, operation: (acc: R, entity: Entity) -> R): R {
         var accumulator = initial
         for (i in 0 until size) {
             accumulator = operation(accumulator, values[i])
@@ -406,7 +388,7 @@ class EntityBag(
      * Accumulates value starting with [initial] value and applying [operation] from left to right to
      * current accumulator value and each [entity][Entity] with its index in the original bag.
      */
-    override fun <R> foldIndexed(initial: R, operation: (index: Int, acc: R, Entity) -> R): R {
+    override fun <R> foldIndexed(initial: R, operation: (index: Int, acc: R, entity: Entity) -> R): R {
         var accumulator = initial
         for (i in 0 until size) {
             accumulator = operation(i, accumulator, values[i])
@@ -427,7 +409,7 @@ class EntityBag(
      * Performs the given [action] on each [entity][Entity], providing sequential
      * index with the [entity][Entity].
      */
-    override fun forEachIndexed(action: (index: Int, Entity) -> Unit) {
+    override fun forEachIndexed(action: (index: Int, entity: Entity) -> Unit) {
         for (i in 0 until size) {
             action(i, values[i])
         }
@@ -449,7 +431,7 @@ class EntityBag(
      * Returns a [List] containing the results of applying the given [transform] function
      * to each [entity][Entity] and its index of the bag.
      */
-    override fun <R> mapIndexed(transform: (index: Int, Entity) -> R): List<R> {
+    override fun <R> mapIndexed(transform: (index: Int, entity: Entity) -> R): List<R> {
         val result = mutableListOf<R>()
         for (i in 0 until size) {
             result += transform(i, values[i])
@@ -476,7 +458,6 @@ class EntityBag(
         destination: C,
         transform: (index: Int, Entity) -> R
     ): C {
-        destination.clear()
         for (i in 0 until size) {
             destination += transform(i, values[i])
         }
@@ -506,7 +487,7 @@ class EntityBag(
     }
 
     /**
-     * Returns a [List] containing first [n] [entities][Entity].
+     * Returns a [List] containing the first [n] [entities][Entity].
      */
     override fun take(n: Int): List<Entity> {
         val result = mutableListOf<Entity>()
