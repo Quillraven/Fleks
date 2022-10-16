@@ -42,6 +42,22 @@ class EntityBagTest {
     }
 
     @Test
+    fun removeValueFromBag() {
+        val bag = MutableEntityBag(2)
+        val e1 = Entity(0)
+        val e2 = Entity(1)
+        bag += e1
+        bag += e2
+
+        bag -= e1
+        assertEquals(1, bag.size)
+        assertEquals(bagOf(e2), bag)
+
+        bag -= e2
+        assertTrue(bag.isEmpty())
+    }
+
+    @Test
     fun clearAllValuesFromBag() {
         val bag = MutableEntityBag()
         bag += Entity(42)

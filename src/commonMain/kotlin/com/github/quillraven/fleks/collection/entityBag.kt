@@ -153,6 +153,19 @@ class MutableEntityBag(
     }
 
     /**
+     * Removes the [entity] of the bag.
+     */
+    operator fun minusAssign(entity: Entity) {
+        for (i in 0 until size) {
+            if (values[i] == entity) {
+                values[i] = values[--size]
+                values[size] = Entity(-1)
+                return
+            }
+        }
+    }
+
+    /**
      * Returns the [entity][Entity] of the given [index].
      *
      * @throws [IndexOutOfBoundsException] if [index] is less than zero or greater equal [size].
@@ -617,8 +630,8 @@ class MutableEntityBag(
 
         other as MutableEntityBag
 
-        if (!values.contentEquals(other.values)) return false
         if (size != other.size) return false
+        if (!containsAll(other)) return false
 
         return true
     }
