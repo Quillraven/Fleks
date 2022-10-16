@@ -8,14 +8,23 @@ class EntityBagTest {
 
     private val testEntity1 = Entity(0)
     private val testEntity2 = Entity(1)
-    private val testBag = EntityBag(2).apply {
+    private val testBag = MutableEntityBag(2).apply {
         this += testEntity1
         this += testEntity2
     }
 
+    private fun bagOf(entity: Entity) = MutableEntityBag(1).apply {
+        this += entity
+    }
+
+    private fun bagOf(entity1: Entity, entity2: Entity) = MutableEntityBag(2).apply {
+        this += entity1
+        this += entity2
+    }
+
     @Test
     fun createEmptyBagOfSize32() {
-        val bag = EntityBag(32)
+        val bag = MutableEntityBag(32)
 
         assertEquals(32, bag.capacity)
         assertEquals(0, bag.size)
@@ -23,7 +32,7 @@ class EntityBagTest {
 
     @Test
     fun addValueToBag() {
-        val bag = EntityBag()
+        val bag = MutableEntityBag()
 
         bag += Entity(42)
 
@@ -34,7 +43,7 @@ class EntityBagTest {
 
     @Test
     fun clearAllValuesFromBag() {
-        val bag = EntityBag()
+        val bag = MutableEntityBag()
         bag += Entity(42)
         bag += Entity(43)
 
@@ -47,7 +56,7 @@ class EntityBagTest {
 
     @Test
     fun addValueToBagWithInsufficientCapacity() {
-        val bag = EntityBag(0)
+        val bag = MutableEntityBag(0)
 
         bag += Entity(42)
 
@@ -58,7 +67,7 @@ class EntityBagTest {
 
     @Test
     fun doNotResizeWhenBagHasSufficientCapacity() {
-        val bag = EntityBag(8)
+        val bag = MutableEntityBag(8)
 
         bag.ensureCapacity(7)
 
@@ -67,7 +76,7 @@ class EntityBagTest {
 
     @Test
     fun resizeWhenBagHasInsufficientCapacity() {
-        val bag = EntityBag(8)
+        val bag = MutableEntityBag(8)
 
         bag.ensureCapacity(9)
 
@@ -76,7 +85,7 @@ class EntityBagTest {
 
     @Test
     fun executeActionForEachValueOfBag() {
-        val bag = EntityBag(4)
+        val bag = MutableEntityBag(4)
         bag += Entity(42)
         bag += Entity(43)
         var numCalls = 0
@@ -94,7 +103,7 @@ class EntityBagTest {
 
     @Test
     fun executeActionForEachValueOfBagIndexed() {
-        val bag = EntityBag(4)
+        val bag = MutableEntityBag(4)
         bag += Entity(42)
         bag += Entity(43)
         var numCalls = 0
@@ -116,7 +125,7 @@ class EntityBagTest {
 
     @Test
     fun sortValuesByNormalEntityComparisonWithSizeLessThan7() {
-        val bag = EntityBag()
+        val bag = MutableEntityBag()
         repeat(6) { bag += Entity(6 - it) }
 
         bag.sort(compareEntity(world { }) { e1, e2 -> e1.id.compareTo(e2.id) })
@@ -128,7 +137,7 @@ class EntityBagTest {
 
     @Test
     fun sortValuesByNormalEntityComparisonWithSizeLessThan50ButGreater7() {
-        val bag = EntityBag()
+        val bag = MutableEntityBag()
         repeat(8) { bag += Entity(8 - it) }
 
         bag.sort(compareEntity(world { }) { e1, e2 -> e1.id.compareTo(e2.id) })
@@ -140,7 +149,7 @@ class EntityBagTest {
 
     @Test
     fun sortValuesByNormalEntityComparisonWithSizeGreater50() {
-        val bag = EntityBag()
+        val bag = MutableEntityBag()
         repeat(51) { bag += Entity(51 - it) }
 
         bag.sort(compareEntity(world { }) { e1, e2 -> e1.id.compareTo(e2.id) })
@@ -152,7 +161,7 @@ class EntityBagTest {
 
     @Test
     fun cannotGetValueOfOutOfBoundsIndex() {
-        val bag = EntityBag(2)
+        val bag = MutableEntityBag(2)
 
         assertFailsWith<IndexOutOfBoundsException> { bag[2] }
     }
@@ -168,7 +177,7 @@ class EntityBagTest {
 
     @Test
     fun testIsEmpty() {
-        val testBag = EntityBag(1)
+        val testBag = MutableEntityBag(1)
         assertTrue(testBag.isEmpty())
         assertFalse(testBag.isNotEmpty())
 
@@ -292,14 +301,14 @@ class EntityBagTest {
 
     @Test
     fun testCount() {
-        assertEquals(0, EntityBag().count())
+        assertEquals(0, MutableEntityBag().count())
         assertEquals(2, testBag.count())
         assertEquals(1, testBag.count { it.id == 0 })
     }
 
     @Test
     fun testFilter() {
-        val expected = listOf(testEntity1)
+        val expected = bagOf(testEntity1)
         val expectedIndices = listOf(0, 1)
 
         val actual1 = testBag.filter { it == testEntity1 }
@@ -316,7 +325,7 @@ class EntityBagTest {
 
     @Test
     fun testFilterNot() {
-        val expected = listOf(testEntity2)
+        val expected = bagOf(testEntity2)
 
         val actual = testBag.filterNot { it == testEntity1 }
 
@@ -326,10 +335,10 @@ class EntityBagTest {
     @Test
     fun testFilterTo() {
         val testEntity3 = Entity(2)
-        val expected = listOf(testEntity3, testEntity1)
+        val expected = bagOf(testEntity3, testEntity1)
         val expectedIndices = listOf(0, 1)
-        val destination1 = mutableListOf(testEntity3)
-        val destination2 = mutableListOf(testEntity3)
+        val destination1 = bagOf(testEntity3)
+        val destination2 = bagOf(testEntity3)
 
         val actual1 = testBag.filterTo(destination1) { it == testEntity1 }
         val actualIndices = mutableListOf<Int>()
@@ -346,8 +355,8 @@ class EntityBagTest {
     @Test
     fun testFilterNotTo() {
         val testEntity3 = Entity(2)
-        val expected = listOf(testEntity3, testEntity2)
-        val destination = mutableListOf(testEntity3)
+        val expected = bagOf(testEntity3, testEntity2)
+        val destination = bagOf(testEntity3)
 
         val actual = testBag.filterNotTo(destination) { it == testEntity1 }
 
@@ -364,7 +373,7 @@ class EntityBagTest {
     fun testFirst() {
         assertEquals(testEntity1, testBag.first())
         assertEquals(testEntity2, testBag.first { it == testEntity2 })
-        assertFailsWith<NoSuchElementException> { EntityBag().first() }
+        assertFailsWith<NoSuchElementException> { MutableEntityBag().first() }
         assertFailsWith<NoSuchElementException> { testBag.first { it.id == 3 } }
     }
 
@@ -372,7 +381,7 @@ class EntityBagTest {
     fun testFirstOrNull() {
         assertEquals(testEntity1, testBag.firstOrNull())
         assertEquals(testEntity2, testBag.firstOrNull { it == testEntity2 })
-        assertNull(EntityBag().firstOrNull())
+        assertNull(MutableEntityBag().firstOrNull())
         assertNull(testBag.firstOrNull { it.id == 3 })
     }
 
@@ -433,7 +442,7 @@ class EntityBagTest {
     fun testRandom() {
         val actual = testBag.random()
 
-        assertFailsWith<NoSuchElementException> { EntityBag().random() }
+        assertFailsWith<NoSuchElementException> { MutableEntityBag().random() }
         assertTrue(actual == testEntity1 || actual == testEntity2)
     }
 
@@ -441,7 +450,7 @@ class EntityBagTest {
     fun testRandomOrNull() {
         val actual = testBag.randomOrNull()
 
-        assertNull(EntityBag().randomOrNull())
+        assertNull(MutableEntityBag().randomOrNull())
         assertTrue(actual == testEntity1 || actual == testEntity2)
     }
 
@@ -449,8 +458,8 @@ class EntityBagTest {
     fun testTake() {
         assertTrue(testBag.take(-1).isEmpty())
         assertTrue(testBag.take(0).isEmpty())
-        assertContentEquals(listOf(testEntity1), testBag.take(1))
-        assertContentEquals(listOf(testEntity1, testEntity2), testBag.take(2))
-        assertContentEquals(listOf(testEntity1, testEntity2), testBag.take(3))
+        assertEquals(bagOf(testEntity1), testBag.take(1))
+        assertEquals(bagOf(testEntity1, testEntity2), testBag.take(2))
+        assertEquals(bagOf(testEntity1, testEntity2), testBag.take(3))
     }
 }

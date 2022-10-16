@@ -1,9 +1,6 @@
 package com.github.quillraven.fleks
 
-import com.github.quillraven.fleks.collection.BitArray
-import com.github.quillraven.fleks.collection.EntityBag
-import com.github.quillraven.fleks.collection.EntityComparator
-import com.github.quillraven.fleks.collection.isNullOrEmpty
+import com.github.quillraven.fleks.collection.*
 
 /**
  * Type alias for an optional hook function for a [Family].
@@ -98,15 +95,9 @@ data class Family(
      */
     private val entityBits = BitArray(world.capacity)
 
-    /**
-     * Returns the [entities][Entity] that belong to this family.
-     * Be aware that the underlying [EntityBag] collection is not always up to date.
-     * The collection is not updated while a family iteration is in progress. It
-     * gets automatically updated whenever it is accessed and no iteration is currently
-     * in progress.
-     */
     // This bag is added in addition to the BitArray for better iteration performance.
-    val entities: EntityBag = EntityBag()
+    @PublishedApi
+    internal val mutableEntities = MutableEntityBag()
         get() {
             if (!entityService.delayRemoval || field.isEmpty()) {
                 // no iteration in process -> update entities if necessary
@@ -114,6 +105,16 @@ data class Family(
             }
             return field
         }
+
+    /**
+     * Returns the [entities][Entity] that belong to this family.
+     * Be aware that the underlying [EntityBag] collection is not always up to date.
+     * The collection is not updated while a family iteration is in progress. It
+     * gets automatically updated whenever it is accessed and no iteration is currently
+     * in progress.
+     */
+    val entities: EntityBag
+        get() = mutableEntities
 
     /**
      * Returns the number of [entities][Entity] that belong to this family.
@@ -136,7 +137,7 @@ data class Family(
         get() = entityBits.isNotEmpty
 
     /**
-     * Flag to indicate if there are changes in the [entityBits]. If it is true then the [entities] should get
+     * Flag to indicate if there are changes in the [entityBits]. If it is true then the [mutableEntities] should get
      * updated via a call to [updateActiveEntities].
      *
      * Refer to [IteratingSystem.onTick] for an example implementation.
@@ -160,9 +161,9 @@ data class Family(
     operator fun contains(entity: Entity): Boolean = entityBits[entity.id]
 
     /**
-     * Updates the [entities] and clears the [isDirty] flag if needed.
+     * Updates the [mutableEntities] and clears the [isDirty] flag if needed.
      */
-    private fun updateActiveEntities(bag: EntityBag) {
+    private fun updateActiveEntities(bag: MutableEntityBag) {
         if (isDirty) {
             isDirty = false
             entityBits.toEntityBag(bag)
@@ -185,13 +186,13 @@ data class Family(
         if (!entityService.delayRemoval) {
             // access entities BEFORE setting delayRemoval to true to properly
             // update them (check getter of entities property)
-            with(entities) {
+            with(mutableEntities) {
                 entityService.delayRemoval = true
                 forEach { action(it) }
                 entityService.cleanupDelays()
             }
         } else {
-            entities.forEach { this.action(it) }
+            mutableEntities.forEach { this.action(it) }
         }
     }
 
@@ -199,17 +200,17 @@ data class Family(
      * Updates this family if needed and returns its first [Entity].
      * @throws [NoSuchElementException] if the family has no entities.
      */
-    fun first(): Entity = entities.first()
+    fun first(): Entity = mutableEntities.first()
 
     /**
      * Updates this family if needed and returns its first [Entity] or null if the family has no entities.
      */
-    fun firstOrNull(): Entity? = entities.firstOrNull()
+    fun firstOrNull(): Entity? = mutableEntities.firstOrNull()
 
     /**
      * Sorts the [entities][Entity] of this family by the given [comparator].
      */
-    fun sort(comparator: EntityComparator) = entities.sort(comparator)
+    fun sort(comparator: EntityComparator) = mutableEntities.sort(comparator)
 
     /**
      * Adds the [entity] to the family and sets the [isDirty] flag if and only

@@ -209,7 +209,7 @@ class EntityService(
     /**
      * The entities that get removed at the end of an [IteratingSystem] iteration.
      */
-    private val delayedEntities = EntityBag()
+    private val delayedEntities = MutableEntityBag()
 
     /**
      * Creates and returns a new [entity][Entity] and applies the given [configuration].

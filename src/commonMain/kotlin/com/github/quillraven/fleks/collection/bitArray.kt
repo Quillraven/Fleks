@@ -148,7 +148,7 @@ class BitArray(
         }
     }
 
-    fun toEntityBag(bag: EntityBag) {
+    fun toEntityBag(bag: MutableEntityBag) {
         var checkSize = true
         bag.clear()
         forEachSetBit { idx ->

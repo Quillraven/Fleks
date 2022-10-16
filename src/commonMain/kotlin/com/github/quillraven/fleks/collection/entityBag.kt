@@ -5,18 +5,132 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
 
+interface EntityBag {
+    val size: Int
+
+    operator fun contains(entity: Entity): Boolean
+
+    fun containsAll(entities: Collection<Entity>): Boolean
+
+    fun containsAll(entities: EntityBag): Boolean
+
+    fun isEmpty(): Boolean
+
+    fun isNotEmpty(): Boolean
+
+    fun all(predicate: (Entity) -> Boolean): Boolean
+
+    fun any(predicate: (Entity) -> Boolean): Boolean
+
+    fun none(predicate: (Entity) -> Boolean): Boolean
+
+    fun <K, V> associate(transform: (Entity) -> Pair<K, V>): Map<K, V>
+
+    fun <K> associateBy(
+        keySelector: (Entity) -> K
+    ): Map<K, Entity>
+
+    fun <K, V> associateBy(
+        keySelector: (Entity) -> K,
+        valueTransform: (Entity) -> V
+    ): Map<K, V>
+
+    fun <K, V, M : MutableMap<in K, in V>> associateTo(
+        destination: M,
+        transform: (Entity) -> Pair<K, V>
+    ): M
+
+    fun <K, M : MutableMap<in K, Entity>> associateByTo(
+        destination: M,
+        keySelector: (Entity) -> K
+    ): M
+
+    fun <K, V, M : MutableMap<in K, in V>> associateByTo(
+        destination: M,
+        keySelector: (Entity) -> K,
+        valueTransform: (Entity) -> V
+    ): M
+
+    fun count(): Int
+
+    fun count(predicate: (Entity) -> Boolean): Int
+
+    fun filter(predicate: (Entity) -> Boolean): EntityBag
+
+    fun filterNot(predicate: (Entity) -> Boolean): EntityBag
+
+    fun filterIndexed(predicate: (index: Int, Entity) -> Boolean): EntityBag
+
+    fun filterTo(
+        destination: MutableEntityBag,
+        predicate: (Entity) -> Boolean
+    ): MutableEntityBag
+
+    fun filterNotTo(
+        destination: MutableEntityBag, predicate: (Entity) -> Boolean
+    ): MutableEntityBag
+
+    fun filterIndexedTo(
+        destination: MutableEntityBag, predicate: (index: Int, Entity) -> Boolean
+    ): MutableEntityBag
+
+    fun find(predicate: (Entity) -> Boolean): Entity?
+
+    fun first(): Entity
+
+    fun first(predicate: (Entity) -> Boolean): Entity
+
+    fun firstOrNull(): Entity?
+
+    fun firstOrNull(predicate: (Entity) -> Boolean): Entity?
+
+    fun <R> fold(
+        initial: R,
+        operation: (acc: R, Entity) -> R
+    ): R
+
+    fun <R> foldIndexed(
+        initial: R,
+        operation: (index: Int, acc: R, Entity) -> R
+    ): R
+
+    fun forEach(action: (Entity) -> Unit)
+
+    fun forEachIndexed(action: (index: Int, Entity) -> Unit)
+
+    fun <R> map(transform: (Entity) -> R): List<R>
+
+    fun <R> mapIndexed(transform: (index: Int, Entity) -> R): List<R>
+
+    fun <R, C : MutableCollection<in R>> mapTo(
+        destination: C,
+        transform: (Entity) -> R
+    ): C
+
+    fun <R, C : MutableCollection<in R>> mapIndexedTo(
+        destination: C,
+        transform: (index: Int, Entity) -> R
+    ): C
+
+    fun random(): Entity
+
+    fun randomOrNull(): Entity?
+
+    fun take(n: Int): EntityBag
+}
+
 /**
  * A bag implementation for [entities][Entity] (=integer) values in Kotlin to avoid autoboxing.
  * It contains necessary functions for Fleks and some additional Kotlin standard library utilities.
  */
-class EntityBag(
+class MutableEntityBag(
     size: Int = 64
-) : EntityCollection {
+) : EntityBag {
     @PublishedApi
     internal var values: Array<Entity> = Array(size) { Entity(-1) }
 
     /**
-     * Returns the size of the [EntityBag].
+     * Returns the size of the [MutableEntityBag].
      */
     override var size: Int = 0
         private set
@@ -31,7 +145,7 @@ class EntityBag(
     /**
      * Adds the [entity] to the bag. If the [capacity] is not sufficient then a resize is happening.
      */
-    internal operator fun plusAssign(entity: Entity) {
+    operator fun plusAssign(entity: Entity) {
         if (size == values.size) {
             values = values.copyInto(Array(max(1, size * 2)) { Entity(-1) })
         }
@@ -51,7 +165,7 @@ class EntityBag(
     /**
      * Resets [size] to zero and clears any [entity][Entity] of the bag.
      */
-    internal fun clear() {
+    fun clear() {
         values.fill(Entity(-1))
         size = 0
     }
@@ -59,7 +173,7 @@ class EntityBag(
     /**
      * Resizes the bag to fit in the given [capacity] of [entities][Entity] if necessary.
      */
-    internal fun ensureCapacity(capacity: Int) {
+    fun ensureCapacity(capacity: Int) {
         if (capacity >= values.size) {
             values = values.copyInto(Array(capacity + 1) { Entity(-1) })
         }
@@ -68,7 +182,7 @@ class EntityBag(
     /**
      * Sorts the bag according to the given [comparator].
      */
-    internal fun sort(comparator: EntityComparator) {
+    fun sort(comparator: EntityComparator) {
         values.quickSort(0, size, comparator)
     }
 
@@ -240,8 +354,8 @@ class EntityBag(
     /**
      * Returns a [List] containing only [entities][Entity] matching the given [predicate].
      */
-    override fun filter(predicate: (Entity) -> Boolean): List<Entity> {
-        val result = mutableListOf<Entity>()
+    override fun filter(predicate: (Entity) -> Boolean): EntityBag {
+        val result = MutableEntityBag((size * 0.25f).toInt())
         for (i in 0 until size) {
             val entity = values[i]
             if (predicate(entity)) {
@@ -254,8 +368,8 @@ class EntityBag(
     /**
      * Returns a [List] containing all [entities][Entity] not matching the given [predicate].
      */
-    override fun filterNot(predicate: (Entity) -> Boolean): List<Entity> {
-        val result = mutableListOf<Entity>()
+    override fun filterNot(predicate: (Entity) -> Boolean): EntityBag {
+        val result = MutableEntityBag((size * 0.25f).toInt())
         for (i in 0 until size) {
             val entity = values[i]
             if (!predicate(entity)) {
@@ -268,8 +382,8 @@ class EntityBag(
     /**
      * Returns a [List] containing only [entities][Entity] matching the given [predicate].
      */
-    override fun filterIndexed(predicate: (index: Int, entity: Entity) -> Boolean): List<Entity> {
-        val result = mutableListOf<Entity>()
+    override fun filterIndexed(predicate: (index: Int, entity: Entity) -> Boolean): EntityBag {
+        val result = MutableEntityBag((size * 0.25f).toInt())
         for (i in 0 until size) {
             val entity = values[i]
             if (predicate(i, entity)) {
@@ -282,7 +396,7 @@ class EntityBag(
     /**
      * Appends all [entities][Entity] matching the given [predicate] to the given [destination].
      */
-    override fun <C : MutableCollection<Entity>> filterTo(destination: C, predicate: (Entity) -> Boolean): C {
+    override fun filterTo(destination: MutableEntityBag, predicate: (Entity) -> Boolean): MutableEntityBag {
         for (i in 0 until size) {
             val entity = values[i]
             if (predicate(entity)) {
@@ -295,7 +409,7 @@ class EntityBag(
     /**
      * Appends all [entities][Entity] not matching the given [predicate] to the given [destination].
      */
-    override fun <C : MutableCollection<Entity>> filterNotTo(destination: C, predicate: (Entity) -> Boolean): C {
+    override fun filterNotTo(destination: MutableEntityBag, predicate: (Entity) -> Boolean): MutableEntityBag {
         for (i in 0 until size) {
             val entity = values[i]
             if (!predicate(entity)) {
@@ -308,10 +422,10 @@ class EntityBag(
     /**
      * Appends all [entities][Entity] matching the given [predicate] to the given [destination].
      */
-    override fun <C : MutableCollection<Entity>> filterIndexedTo(
-        destination: C,
+    override fun filterIndexedTo(
+        destination: MutableEntityBag,
         predicate: (index: Int, Entity) -> Boolean
-    ): C {
+    ): MutableEntityBag {
         for (i in 0 until size) {
             val entity = values[i]
             if (predicate(i, entity)) {
@@ -489,11 +603,29 @@ class EntityBag(
     /**
      * Returns a [List] containing the first [n] [entities][Entity].
      */
-    override fun take(n: Int): List<Entity> {
-        val result = mutableListOf<Entity>()
+    override fun take(n: Int): EntityBag {
+        val result = MutableEntityBag(max(min(n, size), 0))
         for (i in 0 until min(n, size)) {
             result += values[i]
         }
+        return result
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || this::class != other::class) return false
+
+        other as MutableEntityBag
+
+        if (!values.contentEquals(other.values)) return false
+        if (size != other.size) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = values.contentHashCode()
+        result = 31 * result + size
         return result
     }
 }

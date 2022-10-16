@@ -2,6 +2,7 @@ package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.World.Companion.CURRENT_WORLD
 import com.github.quillraven.fleks.collection.EntityBag
+import com.github.quillraven.fleks.collection.MutableEntityBag
 import kotlin.native.concurrent.ThreadLocal
 import kotlin.reflect.KClass
 
@@ -293,7 +294,7 @@ class World internal constructor(
      * For frequent entity operations on specific entities, use [families][Family].
      */
     fun asEntityBag(): EntityBag {
-        val result = EntityBag(numEntities)
+        val result = MutableEntityBag(numEntities)
         entityService.forEach {
             result += it
         }
