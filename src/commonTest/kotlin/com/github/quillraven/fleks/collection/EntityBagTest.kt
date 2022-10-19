@@ -402,6 +402,38 @@ class EntityBagTest {
     }
 
     @Test
+    fun testFlatMap() {
+        val expectedInts = listOf(0, 0, 1, 2)
+        val expectedEntities = bagOf(testEntity1, testEntity1)
+
+        val actualIntsIter = testBag.flatMap { listOf(it.id, it.id * 2) }
+        val actualIntsSeq = testBag.flatMapSequence { listOf(it.id, it.id * 2).asSequence() }
+        val actualEntities = testBag.flatMapBag { testBag.filter { it.id == 0 } }
+
+        assertContentEquals(expectedInts, actualIntsIter)
+        assertContentEquals(expectedInts, actualIntsSeq)
+        assertEquals(expectedEntities, actualEntities)
+    }
+
+    @Test
+    fun testFlatMapNotNull() {
+        val expectedInts = listOf(0, 2)
+        val expectedEntities = bagOf(testEntity1)
+
+        val actualIntsIter = testBag.flatMapNotNull { listOf(null, it.id * 2) }
+        val actualIntsSeq = testBag.flatMapSequenceNotNull { listOf(null, it.id * 2).asSequence() }
+        val actualEntities = testBag.flatMapBagNotNull { e -> if (e.id == 0) testBag.filter { it.id == 0 } else null }
+        val actual1: List<String> = testBag.flatMapNotNull { null }
+        val actual2: List<String> = testBag.flatMapSequenceNotNull { null }
+
+        assertContentEquals(expectedInts, actualIntsIter)
+        assertContentEquals(expectedInts, actualIntsSeq)
+        assertEquals(expectedEntities, actualEntities)
+        assertTrue(actual1.isEmpty())
+        assertTrue(actual2.isEmpty())
+    }
+
+    @Test
     fun testFold() {
         val expectedIndices = listOf(0, 1)
 
@@ -418,6 +450,53 @@ class EntityBagTest {
         assertEquals(4, actual1)
         assertEquals(4, actual2)
         assertContentEquals(expectedIndices, actualIndices)
+    }
+
+    @Test
+    fun testGroupBy() {
+        val expected1 = mapOf(0 to bagOf(testEntity1), 1 to bagOf(testEntity2))
+        val expected2 = mapOf(0 to listOf(3), 1 to listOf(3))
+
+        val actual1 = testBag.groupBy { it.id }
+        val actual2 = testBag.groupBy(
+            { it.id },
+            { 3 }
+        )
+
+        assertTrue(expected1.keys.containsAll(actual1.keys))
+        assertTrue(actual1.keys.containsAll(expected1.keys))
+        expected1.forEach { (id, bag) ->
+            assertEquals(bag, actual1[id])
+        }
+        assertTrue(expected2.keys.containsAll(actual2.keys))
+        assertTrue(actual2.keys.containsAll(expected2.keys))
+        expected2.forEach { (id, intList) ->
+            assertContentEquals(intList, actual2[id])
+        }
+    }
+
+    @Test
+    fun testGroupByTo() {
+        val expected1 = mapOf(0 to bagOf(testEntity1), 1 to bagOf(testEntity2), 2 to bagOf(Entity(2)))
+        val expected2 = mapOf(0 to listOf(3), 1 to listOf(3), 2 to listOf(3))
+
+        val actual = testBag.groupByTo(mutableMapOf(2 to bagOf(Entity(2)))) { it.id }
+        val actual2 = testBag.groupByTo(
+            mutableMapOf(2 to mutableListOf(3)),
+            { it.id },
+            { 3 }
+        )
+
+        assertTrue(expected1.keys.containsAll(actual.keys))
+        assertTrue(actual.keys.containsAll(expected1.keys))
+        expected1.forEach { (id, bag) ->
+            assertEquals(bag, actual[id])
+        }
+        assertTrue(expected2.keys.containsAll(actual2.keys))
+        assertTrue(actual2.keys.containsAll(expected2.keys))
+        expected2.forEach { (id, intList) ->
+            assertContentEquals(intList, actual2[id])
+        }
     }
 
     @Test
@@ -452,6 +531,24 @@ class EntityBagTest {
         assertContentEquals(expected, actual1)
         assertContentEquals(expected, actual2)
         assertContentEquals(expectedIndices, actualIndices)
+    }
+
+    @Test
+    fun testMapNotNull() {
+        val expected = listOf(2)
+
+        val actual = testBag.mapNotNull { if (it.id == 0) 2 else null }
+
+        assertContentEquals(expected, actual)
+    }
+
+    @Test
+    fun testMapNotNullTo() {
+        val expected = listOf(5, 2)
+
+        val actual = testBag.mapNotNullTo(mutableListOf(5)) { if (it.id == 0) 2 else null }
+
+        assertContentEquals(expected, actual)
     }
 
     @Test
