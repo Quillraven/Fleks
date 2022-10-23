@@ -1,7 +1,7 @@
 # Fleks
 
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/Quillraven/Fleks/blob/master/LICENSE)
-[![Maven](https://img.shields.io/badge/Maven-2.0-success.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks/2.0/jar)
+[![Maven](https://img.shields.io/badge/Maven-2.1-success.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks/2.0/jar)
 
 [![Build Master](https://img.shields.io/github/workflow/status/quillraven/fleks/Build/master?event=push&label=Build%20master)](https://github.com/Quillraven/fleks/actions)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.7.20-red.svg)](http://kotlinlang.org/)
@@ -43,7 +43,7 @@ then use [Artemis-odb](https://github.com/junkdog/artemis-odb) or [Ashley](https
 
 ## Current Status
 
-After about one year of the first release of Fleks, we are now at version 2.0.
+After about one year of the first release of Fleks, we are now at version 2.x.
 This version combines the **KMP** and **JVM** flavors into a single one.
 The history of the 1.6 version is kept in separate branches. Also, the wiki
 will contain a separate section for 1.6 for users who don't want to migrate to 2.x
@@ -69,26 +69,26 @@ To use Fleks add it as a dependency to your project:
 <dependency>
   <groupId>io.github.quillraven.fleks</groupId>
   <artifactId>Fleks</artifactId>
-  <version>2.0</version>
+  <version>2.1</version>
 </dependency>
 ```
 
 #### Gradle (Groovy)
 
 ```kotlin
-implementation 'io.github.quillraven.fleks:Fleks:2.0'
+implementation 'io.github.quillraven.fleks:Fleks:2.1'
 ```
 
 #### Gradle (Kotlin)
 
 ```kotlin
-implementation("io.github.quillraven.fleks:Fleks:2.0")
+implementation("io.github.quillraven.fleks:Fleks:2.1")
 ```
 
 #### KorGE
 
 ```kotlin
-dependencyMulti("io.github.quillraven.fleks:Fleks:2.0", registerPlugin = false)
+dependencyMulti("io.github.quillraven.fleks:Fleks:2.1", registerPlugin = false)
 ```
 
 ## API and examples
