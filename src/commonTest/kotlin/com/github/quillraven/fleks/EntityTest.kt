@@ -148,8 +148,8 @@ internal class EntityTest {
 
     @Test
     fun testNestedEntityCreation() {
-        lateinit var entity1: Entity
-        lateinit var entity2: Entity
+        var entity1 = Entity(-1)
+        var entity2 = Entity(-1)
 
         testEntityService.create { e1 ->
             entity1 = e1

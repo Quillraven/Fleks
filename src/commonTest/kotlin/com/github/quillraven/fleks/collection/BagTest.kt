@@ -1,9 +1,8 @@
 package com.github.quillraven.fleks.collection
 
-import com.github.quillraven.fleks.world
 import kotlin.test.*
 
-class GenericBagTest {
+class BagTest {
     @Test
     fun createEmptyBagOfStringOfSize32() {
         val bag = bag<String>(32)
@@ -102,146 +101,6 @@ class GenericBagTest {
     @Test
     fun cannotGetStringValueOfInvalidOutOfBoundsIndex() {
         val bag = bag<String>(2)
-
-        assertFailsWith<IndexOutOfBoundsException> { bag[2] }
-    }
-}
-
-class IntBagTest {
-    @Test
-    fun createEmptyBagOfStringOfSize32() {
-        val bag = IntBag(32)
-
-        assertEquals(32, bag.capacity)
-        assertEquals(0, bag.size)
-    }
-
-    @Test
-    fun addValueToBag() {
-        val bag = IntBag()
-
-        bag.add(42)
-
-        assertTrue(bag.isNotEmpty)
-        assertEquals(1, bag.size)
-        assertTrue(42 in bag)
-    }
-
-    @Test
-    fun clearAllValuesFromBag() {
-        val bag = IntBag()
-        bag.add(42)
-        bag.add(43)
-
-        bag.clear()
-
-        assertEquals(0, bag.size)
-        assertFalse { 42 in bag }
-        assertFalse { 43 in bag }
-    }
-
-    @Test
-    fun addValueUnsafeWithSufficientCapacity() {
-        val bag = IntBag(1)
-
-        bag.unsafeAdd(42)
-
-        assertTrue(42 in bag)
-    }
-
-    @Test
-    fun addValueToBagWithInsufficientCapacity() {
-        val bag = IntBag(0)
-
-        bag.add(42)
-
-        assertEquals(1, bag.size)
-        assertEquals(42, bag[0])
-        assertEquals(1, bag.capacity)
-    }
-
-    @Test
-    fun doNotResizeWhenBagHasSufficientCapacity() {
-        val bag = IntBag(8)
-
-        bag.ensureCapacity(7)
-
-        assertEquals(8, bag.capacity)
-    }
-
-    @Test
-    fun resizeWhenBagHasInsufficientCapacity() {
-        val bag = IntBag(8)
-
-        bag.ensureCapacity(9)
-
-        assertEquals(10, bag.capacity)
-    }
-
-    @Test
-    fun executeActionForEachValueOfBag() {
-        val bag = IntBag(4)
-        bag.add(42)
-        bag.add(43)
-        var numCalls = 0
-        val valuesCalled = mutableListOf<Int>()
-
-        bag.forEach {
-            ++numCalls
-            valuesCalled.add(it)
-        }
-
-
-        assertEquals(2, numCalls)
-        assertEquals(listOf(42, 43), valuesCalled)
-    }
-
-    @Test
-    fun sortValuesByNormalIntComparisonWithSizeLessThan7() {
-        val bag = IntBag()
-        repeat(6) { bag.add(6 - it) }
-
-        bag.sort(compareEntity(world { }) { e1, e2 -> e1.id.compareTo(e2.id) })
-
-        repeat(6) {
-            assertEquals(it + 1, bag[it])
-        }
-    }
-
-    @Test
-    fun sortValuesByNormalIntComparisonWithSizeLessThan50ButGreater7() {
-        val bag = IntBag()
-        repeat(8) { bag.add(8 - it) }
-
-        bag.sort(compareEntity(world { }) { e1, e2 -> e1.id.compareTo(e2.id) })
-
-        repeat(8) {
-            assertEquals(it + 1, bag[it])
-        }
-    }
-
-    @Test
-    fun sortValuesByNormalIntComparisonWithSizeGreater50() {
-        val bag = IntBag()
-        repeat(51) { bag.add(51 - it) }
-
-        bag.sort(compareEntity(world { }) { e1, e2 -> e1.id.compareTo(e2.id) })
-
-        repeat(51) {
-            assertEquals(it + 1, bag[it])
-        }
-    }
-
-    @Test
-    fun addValueUnsafeWithInsufficientCapacity() {
-        val bag = IntBag(0)
-
-        assertFailsWith<IndexOutOfBoundsException> { bag.unsafeAdd(42) }
-    }
-
-    @Test
-    fun cannotGetValueOfOutOfBoundsIndex() {
-        val bag = IntBag(2)
 
         assertFailsWith<IndexOutOfBoundsException> { bag[2] }
     }

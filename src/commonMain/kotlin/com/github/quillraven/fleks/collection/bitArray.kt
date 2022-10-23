@@ -1,5 +1,6 @@
 package com.github.quillraven.fleks.collection
 
+import com.github.quillraven.fleks.Entity
 import kotlin.math.min
 
 /**
@@ -133,6 +134,8 @@ class BitArray(
     }
 
     inline fun forEachSetBit(action: (Int) -> Unit) {
+        // it is important that we go from right to left because
+        // otherwise some code in toEntityBag will fail with ensureCapacity.
         for (word in bits.size - 1 downTo 0) {
             val bitsAtWord = bits[word]
             if (bitsAtWord != 0L) {
@@ -145,15 +148,17 @@ class BitArray(
         }
     }
 
-    fun toIntBag(bag: IntBag) {
+    fun toEntityBag(bag: MutableEntityBag) {
         var checkSize = true
         bag.clear()
         forEachSetBit { idx ->
             if (checkSize) {
                 checkSize = false
+                // this is working because forEachSetBit goes
+                // from right to left, so idx is the highest index here
                 bag.ensureCapacity(idx)
             }
-            bag.unsafeAdd(idx)
+            bag += Entity(idx)
         }
     }
 

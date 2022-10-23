@@ -93,18 +93,16 @@ internal class FamilyTest {
         val family = emptyTestFamily
 
         family.onEntityCfgChanged(Entity(0), BitArray())
-        family.updateActiveEntities()
 
-        assertFalse { family.isDirty }
-        assertEquals(1, family.entitiesBag.size)
-        assertEquals(0, family.entitiesBag[0])
+        // accessing the entities will trigger an internal update
+        assertEquals(1, family.mutableEntities.size)
+        assertEquals(Entity(0), family.mutableEntities[0])
     }
 
     @Test
     fun callActionForEachEntity() {
         val family = emptyTestFamily
         family.onEntityCfgChanged(Entity(0), BitArray())
-        family.updateActiveEntities()
         var processedEntity = -1
         var numExecutions = 0
 
@@ -123,14 +121,13 @@ internal class FamilyTest {
         family.onEntityCfgChanged(Entity(0), BitArray())
         family.onEntityCfgChanged(Entity(2), BitArray())
         family.onEntityCfgChanged(Entity(1), BitArray())
-        family.updateActiveEntities()
 
         // sort descending by entity id
         family.sort(compareEntity(testWorld) { e1, e2 -> e2.id.compareTo(e1.id) })
 
-        assertEquals(2, family.entitiesBag[0])
-        assertEquals(1, family.entitiesBag[1])
-        assertEquals(0, family.entitiesBag[2])
+        assertEquals(Entity(2), family.mutableEntities[0])
+        assertEquals(Entity(1), family.mutableEntities[1])
+        assertEquals(Entity(0), family.mutableEntities[2])
     }
 
     @Test
@@ -151,17 +148,18 @@ internal class FamilyTest {
             val entity = Entity(1)
             if (addEntityBeforeCall) {
                 family.onEntityCfgChanged(entity, BitArray().apply { set(1) })
-                family.updateActiveEntities()
+                // accessing entities triggers an internal family update
+                family.mutableEntities
             }
 
             if (addEntityToFamily) {
                 family.onEntityCfgChanged(entity, BitArray().apply { set(1) })
 
-                assertEquals(!addEntityBeforeCall, family.isDirty)
+                assertEquals(1, family.mutableEntities.size)
             } else {
                 family.onEntityCfgChanged(entity, BitArray())
 
-                assertEquals(addEntityBeforeCall, family.isDirty)
+                assertEquals(0, family.mutableEntities.size)
             }
         }
     }

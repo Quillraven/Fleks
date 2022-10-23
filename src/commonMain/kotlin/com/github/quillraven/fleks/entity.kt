@@ -1,11 +1,13 @@
 package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.*
+import kotlin.jvm.JvmInline
 
 /**
  * An entity of a [world][World]. It represents a unique id.
  */
-data class Entity(val id: Int)
+@JvmInline
+value class Entity(val id: Int)
 
 /**
  * A class for basic [Entity] extension functions within an add/remove hook of a [Component], [Family],
@@ -207,7 +209,7 @@ class EntityService(
     /**
      * The entities that get removed at the end of an [IteratingSystem] iteration.
      */
-    private val delayedEntities = IntBag()
+    private val delayedEntities = MutableEntityBag()
 
     /**
      * Creates and returns a new [entity][Entity] and applies the given [configuration].
@@ -285,7 +287,7 @@ class EntityService(
         }
 
         if (delayRemoval) {
-            delayedEntities.add(entity.id)
+            delayedEntities += entity
         } else {
             removedEntities.set(entity.id)
             val compMask = compMasks[entity.id]
@@ -347,8 +349,8 @@ class EntityService(
      */
     fun cleanupDelays() {
         delayRemoval = false
-        if (delayedEntities.isNotEmpty) {
-            delayedEntities.forEach { this -= Entity(it) }
+        if (delayedEntities.isNotEmpty()) {
+            delayedEntities.forEach { this -= it }
             delayedEntities.clear()
         }
     }
