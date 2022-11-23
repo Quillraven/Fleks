@@ -95,13 +95,20 @@ data class Family(
      */
     private val entityBits = BitArray(world.capacity)
 
+    /**
+     * Returns true if an iteration of this family is currently in process.
+     */
+    @PublishedApi
+    internal var isIterating = false
+
     // This bag is added in addition to the BitArray for better iteration performance.
     @PublishedApi
     internal val mutableEntities = MutableEntityBag()
         get() {
-            if (!entityService.delayRemoval || field.isEmpty()) {
+            if (isDirty && !isIterating) {
                 // no iteration in process -> update entities if necessary
-                updateActiveEntities(field)
+                isDirty = false
+                entityBits.toEntityBag(field)
             }
             return field
         }
@@ -137,10 +144,8 @@ data class Family(
         get() = entityBits.isNotEmpty
 
     /**
-     * Flag to indicate if there are changes in the [entityBits]. If it is true then the [mutableEntities] should get
-     * updated via a call to [updateActiveEntities].
-     *
-     * Refer to [IteratingSystem.onTick] for an example implementation.
+     * Flag to indicate if there are changes in the [entityBits].
+     * If it is true then the [mutableEntities] will get updated the next time it is accessed.
      */
     private var isDirty = false
 
@@ -161,16 +166,6 @@ data class Family(
     operator fun contains(entity: Entity): Boolean = entityBits[entity.id]
 
     /**
-     * Updates the [mutableEntities] and clears the [isDirty] flag if needed.
-     */
-    private fun updateActiveEntities(bag: MutableEntityBag) {
-        if (isDirty) {
-            isDirty = false
-            entityBits.toEntityBag(bag)
-        }
-    }
-
-    /**
      * Updates this family if needed and runs the given [action] for all [entities][Entity].
      *
      * **Important note**: There is a potential risk when iterating over entities and one of those entities
@@ -183,16 +178,20 @@ data class Family(
      * that a removed entity of this family will still be part of the [action] for the current iteration.
      */
     inline fun forEach(crossinline action: Family.(Entity) -> Unit) {
+        // Access entities before 'forEach' call to properly update them.
+        // Check mutableEntities getter for more details.
+        val entitiesForIteration = mutableEntities
+
         if (!entityService.delayRemoval) {
-            // access entities BEFORE setting delayRemoval to true to properly
-            // update them (check getter of entities property)
-            with(mutableEntities) {
-                entityService.delayRemoval = true
-                forEach { action(it) }
-                entityService.cleanupDelays()
-            }
+            entityService.delayRemoval = true
+            isIterating = true
+            entitiesForIteration.forEach { action(it) }
+            isIterating = false
+            entityService.cleanupDelays()
         } else {
-            mutableEntities.forEach { this.action(it) }
+            isIterating = true
+            entitiesForIteration.forEach { this.action(it) }
+            isIterating = false
         }
     }
 
