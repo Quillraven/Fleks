@@ -318,5 +318,26 @@ internal class FamilyTest {
         assertTrue(f1.entities.isEmpty())
         assertTrue(f2.entities.isEmpty())
     }
+
+    @Test
+    fun testFamilyForIteration() {
+        val f = testWorld.family { all(FamilyTestComponent) }
+        val e1 = testWorld.entity { it += FamilyTestComponent() }
+        val e2 = testWorld.entity { it += FamilyTestComponent() }
+
+        var numIterations = 0
+        for (i in 0 until f.numEntities) {
+            ++numIterations
+            for (j in i + 1 until f.numEntities) {
+                ++numIterations
+                val forE1 = f.entities[i]
+                val forE2 = f.entities[j]
+                assertTrue(forE1 == e1 || forE1 == e2)
+                assertTrue(forE2 == e1 || forE2 == e2)
+            }
+        }
+
+        assertEquals(3, numIterations)
+    }
 }
 
