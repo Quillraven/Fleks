@@ -1,15 +1,15 @@
 @file:Suppress("UNUSED_VARIABLE")
 
 plugins {
-    kotlin("multiplatform") version "1.7.20"
-    id("org.jetbrains.kotlinx.benchmark") version "0.4.4"
+    kotlin("multiplatform") version "1.7.21"
+    id("org.jetbrains.kotlinx.benchmark") version "0.4.5"
     id("org.jetbrains.dokka") version "1.7.20"
     `maven-publish`
     signing
 }
 
 group = "io.github.quillraven.fleks"
-version = "2.1"
+version = "2.1a"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
 repositories {
@@ -66,7 +66,7 @@ kotlin {
         val jvmBenchmarks by getting {
             dependsOn(commonMain)
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:0.4.4")
+                implementation("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:0.4.5")
                 implementation("com.badlogicgames.ashley:ashley:1.7.4")
                 implementation("net.onedaybeard.artemis:artemis-odb:2.3.0")
             }

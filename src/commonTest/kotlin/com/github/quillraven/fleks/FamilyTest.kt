@@ -10,6 +10,12 @@ private class FamilyTestComponent : Component<FamilyTestComponent> {
     companion object : ComponentType<FamilyTestComponent>()
 }
 
+private class FamilyTestComponent2 : Component<FamilyTestComponent2> {
+    override fun type() = FamilyTestComponent2
+
+    companion object : ComponentType<FamilyTestComponent2>()
+}
+
 internal class FamilyTest {
     private val testWorld = world { }
     private val emptyTestFamily = Family(world = testWorld)
@@ -279,6 +285,38 @@ internal class FamilyTest {
 
         assertTrue(e1 in family)
         assertFalse(e2 in family)
+    }
+
+    @Test
+    fun testNestedFamilyUpdate() {
+        val f1 = testWorld.family { all(FamilyTestComponent) }
+        val f2 = testWorld.family { all(FamilyTestComponent2) }
+        testWorld.entity {
+            it += FamilyTestComponent()
+            it += FamilyTestComponent2()
+        }
+
+        // initially the entity is in both families
+        // verify via 'entities' bag to also test the behavior outside of usual system access
+        assertTrue(f1.entities.isNotEmpty())
+        assertTrue(f2.entities.isNotEmpty())
+
+        f1.forEach {
+            // configuration change to remove the entity from both families
+            it.configure { e ->
+                e -= FamilyTestComponent
+                e -= FamilyTestComponent2
+            }
+            // f2 should get updated immediately because there is no iteration of this family happening.
+            // f1 should NOT get updated because an iteration is currently in progress.
+            f2.forEach { }
+            assertTrue(f1.entities.isNotEmpty())
+            assertTrue(f2.entities.isEmpty())
+        }
+
+        // f1 should get updated when 'entities' is accessed outside an iteration
+        assertTrue(f1.entities.isEmpty())
+        assertTrue(f2.entities.isEmpty())
     }
 }
 
