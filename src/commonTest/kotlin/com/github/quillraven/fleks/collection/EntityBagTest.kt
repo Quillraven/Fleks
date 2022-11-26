@@ -179,6 +179,7 @@ class EntityBagTest {
     fun cannotGetValueOfOutOfBoundsIndex() {
         val bag = MutableEntityBag(2)
 
+        assertFailsWith<IndexOutOfBoundsException> { bag[-1] }
         assertFailsWith<IndexOutOfBoundsException> { bag[2] }
     }
 

@@ -248,6 +248,13 @@ interface EntityBag {
     fun forEachIndexed(action: (index: Int, Entity) -> Unit)
 
     /**
+     * Returns the [entity][Entity] of the given [index].
+     *
+     * @throws [IndexOutOfBoundsException] if [index] is less than zero or greater equal [size].
+     */
+    operator fun get(index: Int): Entity
+
+    /**
      * Groups [entities][Entity] by the key returned by the given [keySelector] function
      * applied to each [entity][Entity] and returns a map where each group key is associated with an [EntityBag]
      * of corresponding [entities][Entity].
@@ -392,16 +399,6 @@ class MutableEntityBag(
                 return
             }
         }
-    }
-
-    /**
-     * Returns the [entity][Entity] of the given [index].
-     *
-     * @throws [IndexOutOfBoundsException] if [index] is less than zero or greater equal [size].
-     */
-    operator fun get(index: Int): Entity {
-        if (index < 0 || index >= size) throw IndexOutOfBoundsException("$index is not valid for bag of size $size")
-        return values[index]
     }
 
     /**
@@ -863,6 +860,16 @@ class MutableEntityBag(
             result.getOrPut(key) { MutableEntityBag() } += entity
         }
         return result
+    }
+
+    /**
+     * Returns the [entity][Entity] of the given [index].
+     *
+     * @throws [IndexOutOfBoundsException] if [index] is less than zero or greater equal [size].
+     */
+    override operator fun get(index: Int): Entity {
+        if (index < 0 || index >= size) throw IndexOutOfBoundsException("$index is not valid for bag of size $size")
+        return values[index]
     }
 
     /**
