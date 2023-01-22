@@ -531,15 +531,15 @@ class World internal constructor(
         if (entity !in entityService) {
             // entity not part of service yet -> create it
             if (entity.id >= entityService.nextId) {
-                // adjust ID for next entity to be created
-                entityService.nextId = entity.id + 1
-
                 // entity with given id was never created before -> create all missing entities ...
                 repeat(entity.id - entityService.nextId + 1) {
                     entityService.recycle(Entity(entityService.nextId + it))
                 }
                 // ... and then create the entity to guarantee that it has the correct ID.
                 // The entity is at the end of the recycled list.
+
+                // adjust ID for future entities to be created
+                entityService.nextId = entity.id + 1
                 entityService.create { }
             } else {
                 // entity with given id was already created before and is part of the recycled entities
