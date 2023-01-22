@@ -517,6 +517,44 @@ class World internal constructor(
     }
 
     /**
+     * Loads the given [entity] and its [components].
+     * If the entity does not exist yet it will be created.
+     * If the entity already exists it will be updated with the given components.
+     *
+     * @throws FleksSnapshotException if a family iteration is currently in process.
+     */
+    fun loadSnapshotOf(entity: Entity, components: List<Component<*>>) {
+        if (entityService.delayRemoval) {
+            throw FleksSnapshotException("Snapshots cannot be loaded while a family iteration is in process")
+        }
+
+        if (entity !in entityService) {
+            // entity not part of service yet -> create it
+            if (entity.id >= entityService.nextId) {
+                // adjust ID for next entity to be created
+                entityService.nextId = entity.id + 1
+
+                // entity with given id was never created before -> create all missing entities ...
+                repeat(entity.id - entityService.nextId + 1) {
+                    entityService.recycle(Entity(entityService.nextId + it))
+                }
+                // ... and then create the entity to guarantee that it has the correct ID.
+                // The entity is at the end of the recycled list.
+                entityService.create { }
+            } else {
+                // entity with given id was already created before and is part of the recycled entities
+                // -> move it to the end to be used by the next create call
+                entityService.recycledEntities.remove(entity)
+                entityService.recycledEntities.addLast(entity)
+                entityService.create { }
+            }
+        }
+
+        // load components for entity
+        entityService.configure(entity, components)
+    }
+
+    /**
      * Updates all [enabled][IntervalSystem.enabled] [systems][IntervalSystem] of the world
      * using the given [deltaTime].
      */
