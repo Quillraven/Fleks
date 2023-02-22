@@ -248,16 +248,30 @@ class EntityService(
     /**
      * Updates an [entity] with the given [components].
      * Notifies all [families][World.allFamilies].
-     * This function is only used by [World.loadSnapshot] and is therefore working
-     * with unsafe wildcards ('*').
+     * This function is only used by [World.loadSnapshot] and [World.loadSnapshotOf],
+     * and is therefore working with unsafe wildcards ('*').
      */
     internal fun configure(entity: Entity, components: List<Component<*>>) {
         val compMask = compMasks[entity.id]
+
+        // remove any existing components that are not part of the new components to set
+        compMask.forEachSetBit { cmpId ->
+            if (components.any { it.type().id == cmpId }) return@forEachSetBit
+
+            // we can use holderByIndex because we can be sure that the holder already exists
+            // because otherwise the entity would not even have the component
+            compService.holderByIndex(cmpId) -= entity
+        }
+        compMask.clearAll()
+
+        // set new components
         components.forEach { cmp ->
             val holder = compService.wildcardHolder(cmp.type())
             holder.setWildcard(entity, cmp)
             compMask.set(cmp.type().id)
         }
+
+        // notify families
         world.allFamilies.forEach { it.onEntityCfgChanged(entity, compMask) }
     }
 

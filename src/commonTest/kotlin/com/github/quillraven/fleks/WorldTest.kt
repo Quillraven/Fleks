@@ -696,6 +696,73 @@ internal class WorldTest {
     }
 
     @Test
+    fun testLoadSnapshotOfEmptyWorld() {
+        val w = world { }
+        val family = w.family { all(WorldTestComponent) }
+        val entity = Entity(0)
+        val components = listOf(WorldTestComponent())
+
+        assertFalse { entity in family }
+        w.loadSnapshotOf(entity, components)
+
+        assertEquals(1, w.numEntities)
+        assertEquals(1, w.entityService.nextId)
+        assertEquals(0, w.entityService.recycledEntities.size)
+        assertTrue { with(w) { entity has WorldTestComponent } }
+        assertTrue { entity in family }
+    }
+
+    @Test
+    fun testLoadSnapshotOfEmptyWorldWithRecycling() {
+        val w = world { }
+        val family = w.family { all(WorldTestComponent) }
+        val entity = Entity(1)
+        val components = listOf(WorldTestComponent())
+
+        assertFalse { entity in family }
+        w.loadSnapshotOf(entity, components)
+
+        assertEquals(1, w.numEntities)
+        assertEquals(2, w.entityService.nextId)
+        assertEquals(1, w.entityService.recycledEntities.size)
+        assertTrue { with(w) { entity has WorldTestComponent } }
+        assertTrue { entity in family }
+    }
+
+    @Test
+    fun testLoadSnapshotOfWithExistingEntity() {
+        val w = world { }
+        val family = w.family { any(WorldTestComponent) }
+        val family2 = w.family { any(WorldTestComponent2) }
+        val entity = w.entity {
+            it += WorldTestComponent2()
+        }
+        val components = listOf(WorldTestComponent())
+
+        assertTrue { entity in family2 }
+        assertFalse { entity in family }
+        w.loadSnapshotOf(entity, components)
+
+        assertTrue { with(w) { entity has WorldTestComponent } }
+        assertTrue { with(w) { entity hasNo WorldTestComponent2 } }
+        assertFalse { entity in family2 }
+        assertTrue { entity in family }
+    }
+
+    @Test
+    fun testLoadSnapshotOfWhileFamilyIterationInProcess() {
+        val w = world { }
+        val f = w.family { all(WorldTestComponent) }
+        val entity = Entity(0)
+        val components = listOf(WorldTestComponent())
+        w.entity { it += WorldTestComponent() }
+
+        f.forEach {
+            assertFailsWith<FleksSnapshotException> { w.loadSnapshotOf(entity, components) }
+        }
+    }
+
+    @Test
     fun systemsMustBeSpecifiedLast() {
         // component add hook defined after system
         assertFailsWith<FleksWrongConfigurationOrderException> {
