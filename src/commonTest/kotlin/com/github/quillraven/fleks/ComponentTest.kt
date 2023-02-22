@@ -10,6 +10,17 @@ internal class ComponentTest {
         companion object : ComponentType<ComponentTestComponent>()
     }
 
+    private data class ComponentTestComponent2(
+        val realType: ComponentType<ComponentTestComponent2>
+    ) : Component<ComponentTestComponent2> {
+        override fun type(): ComponentType<ComponentTestComponent2> = realType
+
+        companion object {
+            val type1 = componentTypeOf<ComponentTestComponent2>()
+            val type2 = componentTypeOf<ComponentTestComponent2>()
+        }
+    }
+
     private val testWorld = world { }
     private val testService = ComponentService().also { it.world = testWorld }
     private val testHolder = testService.holder(ComponentTestComponent)
@@ -184,5 +195,10 @@ internal class ComponentTest {
         val entity = Entity(10_000)
 
         assertFailsWith<IndexOutOfBoundsException> { holder -= entity }
+    }
+
+    @Test
+    fun testComponentTypeOf() {
+        assertFalse { ComponentTestComponent2.type1.id == ComponentTestComponent2.type2.id }
     }
 }
