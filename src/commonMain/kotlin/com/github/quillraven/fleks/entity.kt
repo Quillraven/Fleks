@@ -97,6 +97,27 @@ open class EntityCreateContext(
         val holder: ComponentsHolder<T> = componentService.holder(compType)
         holder[this] = component
     }
+
+    /**
+     * Adds the [components] to the [entity][Entity]. This function should only be used
+     * in exceptional cases.
+     * It is preferred to use the [plusAssign] function whenever possible to have type-safety.
+     *
+     * If a component [addHook][ComponentsHolder.addHook] is defined then it
+     * gets called after the component is assigned to the [entity][Entity].
+     *
+     * If a component [removeHook][ComponentsHolder.removeHook] is defined and the [entity][Entity]
+     * already had such a component then it gets called with the previous assigned component before
+     * the [addHook][ComponentsHolder.addHook] is called.
+     */
+    inline operator fun Entity.plusAssign(components: List<Component<*>>) {
+        components.forEach { cmp ->
+            val compType = cmp.type()
+            compMasks[this.id].set(compType.id)
+            val holder = componentService.wildcardHolder(compType)
+            holder.setWildcard(this, cmp)
+        }
+    }
 }
 
 /**

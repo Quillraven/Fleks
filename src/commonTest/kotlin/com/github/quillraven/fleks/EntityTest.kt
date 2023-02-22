@@ -193,4 +193,17 @@ internal class EntityTest {
         assertTrue(testEntityService.compMasks[entity2.id][EntityTestComponent1.id])
         assertFalse(testEntityService.compMasks[entity2.id][EntityTestComponent2.id])
     }
+
+    @Test
+    fun testWildcardPlusAssign() {
+        val entity = testEntityService.create { }
+
+        testEntityService.configure(entity) {
+            entity += listOf(EntityTestComponent1(), EntityTestComponent2())
+        }
+
+        assertEquals(0, entity.id)
+        assertTrue(testEntityService.compMasks[entity.id][EntityTestComponent1.id])
+        assertTrue(testEntityService.compMasks[entity.id][EntityTestComponent2.id])
+    }
 }
