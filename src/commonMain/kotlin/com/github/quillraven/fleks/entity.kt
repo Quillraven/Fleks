@@ -54,7 +54,7 @@ abstract class EntityComponentContext(
      * Updates the [entity][Entity] using the given [configuration] to add and remove [components][Component].
      *
      * **Attention** Make sure that you only modify the entity of the current scope.
-     * Otherwise you will get wrong behavior for families. E.g. don't do this:
+     * Otherwise, you will get wrong behavior for families. E.g. don't do this:
      *
      *     entity.configure {
      *         // don't do this
