@@ -166,7 +166,7 @@ class FamilyConfiguration(
  * @param world the [World] to be configured.
  */
 @WorldCfgMarker
-class WorldConfiguration(internal val world: World) {
+class WorldConfiguration(@PublishedApi internal val world: World) {
 
     internal val systems = mutableListOf<IntervalSystem>()
     private val injectableCfg = InjectableConfiguration(world)
@@ -181,6 +181,24 @@ class WorldConfiguration(internal val world: World) {
     fun families(cfg: FamilyConfiguration.() -> Unit) = familyCfg.run(cfg)
 
     fun systems(cfg: SystemConfiguration.() -> Unit) = systemCfg.run(cfg)
+
+    /**
+     * Sets the add entity [hook][EntityService.addHook].
+     * This hook gets called whenever an [entity][Entity] gets created and
+     * after its [components][Component] are assigned and [families][Family] are updated.
+     */
+    inline fun onAddEntity(noinline hook: EntityHook) {
+        world.setEntityAddHook(hook)
+    }
+
+    /**
+     * Sets the remove entity [hook][EntityService.removeHook].
+     * This hook gets called whenever an [entity][Entity] gets removed and
+     * before its [components][Component] are removed and [families][Family] are updated.
+     */
+    inline fun onRemoveEntity(noinline hook: EntityHook) {
+        world.setEntityRemoveHook(hook)
+    }
 }
 
 /**
@@ -392,6 +410,32 @@ class World internal constructor(
             throw FleksHookAlreadyAddedException("removeHook", "Component ${type::class.simpleName}")
         }
         holder.removeHook = hook
+    }
+
+    /**
+     * Sets the [hook] as an [EntityService.addHook].
+     *
+     * @throws FleksHookAlreadyAddedException if the [EntityService] already has an add hook set.
+     */
+    @PublishedApi
+    internal inline fun setEntityAddHook(noinline hook: EntityHook) {
+        if (entityService.addHook != null) {
+            throw FleksHookAlreadyAddedException("addHook", "Entity")
+        }
+        entityService.addHook = hook
+    }
+
+    /**
+     * Sets the [hook] as an [EntityService.removeHook].
+     *
+     * @throws FleksHookAlreadyAddedException if the [EntityService] already has a remove hook set.
+     */
+    @PublishedApi
+    internal inline fun setEntityRemoveHook(noinline hook: EntityHook) {
+        if (entityService.removeHook != null) {
+            throw FleksHookAlreadyAddedException("removeHook", "Entity")
+        }
+        entityService.removeHook = hook
     }
 
     /**

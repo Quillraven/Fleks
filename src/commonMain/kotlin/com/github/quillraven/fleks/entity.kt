@@ -10,6 +10,12 @@ import kotlin.jvm.JvmInline
 value class Entity(val id: Int)
 
 /**
+ * Type alias for an optional hook function for an [EntityService].
+ * Such a function runs within a [World] and takes the [Entity] as an argument.
+ */
+typealias EntityHook = World.(Entity) -> Unit
+
+/**
  * A class for basic [Entity] extension functions within an add/remove hook of a [Component], [Family],
  * [IntervalSystem], [World] or [compareEntity].
  */
@@ -212,6 +218,20 @@ class EntityService(
     private val delayedEntities = MutableEntityBag()
 
     /**
+     * An optional [EntityHook] that gets called whenever an [entity][Entity] gets created and
+     * after its [components][Component] are assigned and [families][Family] are updated.
+     */
+    @PublishedApi
+    internal var addHook: EntityHook? = null
+
+    /**
+     * An optional [EntityHook] that gets called whenever an [entity][Entity] gets removed and
+     * before its [components][Component] are removed and [families][Family] are updated.
+     */
+    @PublishedApi
+    internal var removeHook: EntityHook? = null
+
+    /**
      * Creates and returns a new [entity][Entity] and applies the given [configuration].
      * If there are [recycledEntities] then they will be preferred over creating new entities.
      * Notifies all [families][World.allFamilies].
@@ -225,12 +245,18 @@ class EntityService(
             recycled
         }
 
+        // add components
         if (newEntity.id >= compMasks.size) {
             compMasks[newEntity.id] = BitArray(64)
         }
         val compMask = compMasks[newEntity.id]
         createCtx.configuration(newEntity)
+
+        // update families
         world.allFamilies.forEach { it.onEntityAdded(newEntity, compMask) }
+
+        // trigger optional add hook
+        addHook?.invoke(world, newEntity)
 
         return newEntity
     }
@@ -306,10 +332,17 @@ class EntityService(
             removedEntities.set(entity.id)
             val compMask = compMasks[entity.id]
             recycledEntities.add(entity)
+
+            // trigger optional remove hook
+            removeHook?.invoke(world, entity)
+
+            // remove components
             compMask.forEachSetBit { compId ->
                 compService.holderByIndex(compId) -= entity
             }
             compMask.clearAll()
+
+            // update families
             world.allFamilies.forEach { it.onEntityRemoved(entity) }
         }
     }
