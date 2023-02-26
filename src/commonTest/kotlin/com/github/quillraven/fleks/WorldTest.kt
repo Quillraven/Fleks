@@ -866,4 +866,62 @@ internal class WorldTest {
         assertTrue(e2 in entities)
         assertEquals(1, entities.size)
     }
+
+    @Test
+    fun testEntityHook() {
+        val dummyEntity = Entity(-1)
+        var actualAddEntity: Entity
+        var actualRemoveEntity: Entity
+        lateinit var family: Family
+        val world = world {
+            family = family { all(WorldTestComponent) }
+
+            onAddEntity { entity ->
+                actualAddEntity = entity
+                assertTrue { entity has WorldTestComponent }
+                assertTrue { entity in family }
+            }
+
+            onRemoveEntity { entity ->
+                actualRemoveEntity = entity
+                assertTrue { entity has WorldTestComponent }
+                assertTrue { entity in family }
+            }
+        }
+
+        // test onAdd
+        actualAddEntity = dummyEntity
+        actualRemoveEntity = dummyEntity
+        val entity = world.entity { it += WorldTestComponent() }
+        assertEquals(entity, actualAddEntity)
+        assertEquals(dummyEntity, actualRemoveEntity)
+
+        // test onRemove
+        actualAddEntity = dummyEntity
+        actualRemoveEntity = dummyEntity
+        world -= entity
+        assertEquals(dummyEntity, actualAddEntity)
+        assertEquals(entity, actualRemoveEntity)
+        with(world) {
+            assertFalse { entity has WorldTestComponent }
+            assertFalse { entity in family }
+        }
+    }
+
+    @Test
+    fun cannotAddEntityHookTwice() {
+        assertFailsWith<FleksHookAlreadyAddedException> {
+            world {
+                onAddEntity { }
+                onAddEntity { }
+            }
+        }
+
+        assertFailsWith<FleksHookAlreadyAddedException> {
+            world {
+                onRemoveEntity { }
+                onRemoveEntity { }
+            }
+        }
+    }
 }
