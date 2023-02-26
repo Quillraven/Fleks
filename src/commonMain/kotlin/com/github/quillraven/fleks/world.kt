@@ -260,7 +260,7 @@ class World internal constructor(
         /**
          * Maybe because of design flaws, the world reference of the ComponentService must be
          * set in the world's constructor because the parent class (=BaseEntityExtensions) already
-         * requires a ComponentService and it is not possible to pass "this" reference directly.
+         * requires a ComponentService, and it is not possible to pass "this" reference directly.
          *
          * That's why it is happening here to set it as soon as possible.
          */
@@ -518,7 +518,7 @@ class World internal constructor(
 
     /**
      * Loads the given [entity] and its [components].
-     * If the entity does not exist yet it will be created.
+     * If the entity does not exist yet, it will be created.
      * If the entity already exists it will be updated with the given components.
      *
      * @throws FleksSnapshotException if a family iteration is currently in process.

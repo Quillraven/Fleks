@@ -54,7 +54,7 @@ abstract class EntityComponentContext(
      * Updates the [entity][Entity] using the given [configuration] to add and remove [components][Component].
      *
      * **Attention** Make sure that you only modify the entity of the current scope.
-     * Otherwise you will get wrong behavior for families. E.g. don't do this:
+     * Otherwise, you will get wrong behavior for families. E.g. don't do this:
      *
      *     entity.configure {
      *         // don't do this
@@ -96,6 +96,27 @@ open class EntityCreateContext(
         compMasks[this.id].set(compType.id)
         val holder: ComponentsHolder<T> = componentService.holder(compType)
         holder[this] = component
+    }
+
+    /**
+     * Adds the [components] to the [entity][Entity]. This function should only be used
+     * in exceptional cases.
+     * It is preferred to use the [plusAssign] function whenever possible to have type-safety.
+     *
+     * If a component [addHook][ComponentsHolder.addHook] is defined then it
+     * gets called after the component is assigned to the [entity][Entity].
+     *
+     * If a component [removeHook][ComponentsHolder.removeHook] is defined and the [entity][Entity]
+     * already had such a component then it gets called with the previous assigned component before
+     * the [addHook][ComponentsHolder.addHook] is called.
+     */
+    inline operator fun Entity.plusAssign(components: List<Component<*>>) {
+        components.forEach { cmp ->
+            val compType = cmp.type()
+            compMasks[this.id].set(compType.id)
+            val holder = componentService.wildcardHolder(compType)
+            holder.setWildcard(this, cmp)
+        }
     }
 }
 

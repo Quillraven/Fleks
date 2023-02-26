@@ -27,6 +27,12 @@ abstract class ComponentType<T> {
 }
 
 /**
+ * Function to create an object for a [ComponentType] of type T.
+ * This is a convenience function for [components][Component] that have more than one [ComponentType].
+ */
+inline fun <reified T> componentTypeOf(): ComponentType<T> = object : ComponentType<T>() {}
+
+/**
  * An interface that must be implemented by any component that is used for Fleks.
  * A component must have at least one [ComponentType] that is provided via the [type] function.
  *
@@ -79,6 +85,7 @@ class ComponentsHolder<T : Component<*>>(
      * during runtime, and therefore we can only provide 'Any' as a type and need to cast it internally.
      */
     @Suppress("UNCHECKED_CAST")
+    @PublishedApi
     internal fun setWildcard(entity: Entity, component: Any) = set(entity, component as T)
 
     /**
