@@ -518,7 +518,7 @@ class World internal constructor(
 
     /**
      * Loads the given [entity] and its [components].
-     * If the entity does not exist yet it will be created.
+     * If the entity does not exist yet, it will be created.
      * If the entity already exists it will be updated with the given components.
      *
      * @throws FleksSnapshotException if a family iteration is currently in process.
