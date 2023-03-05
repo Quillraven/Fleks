@@ -4,6 +4,7 @@ plugins {
     kotlin("multiplatform") version "1.7.21"
     id("org.jetbrains.kotlinx.benchmark") version "0.4.5"
     id("org.jetbrains.dokka") version "1.7.20"
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.4.0"
     `maven-publish`
     signing
 }
@@ -55,7 +56,11 @@ kotlin {
     }
 
     sourceSets {
-        val commonMain by getting { }
+        val commonMain by getting {
+            dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.0")
+            }
+        }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
