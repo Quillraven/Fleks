@@ -1,16 +1,18 @@
 @file:Suppress("UNUSED_VARIABLE")
 
+import kotlinx.benchmark.gradle.KotlinJvmBenchmarkTarget
+
 plugins {
-    kotlin("multiplatform") version "1.7.21"
-    id("org.jetbrains.kotlinx.benchmark") version "0.4.5"
-    id("org.jetbrains.dokka") version "1.7.20"
+    kotlin("multiplatform") version "1.8.21"
+    id("org.jetbrains.kotlinx.benchmark") version "0.4.8"
+    id("org.jetbrains.dokka") version "1.8.10"
     `maven-publish`
     signing
 }
 
 group = "io.github.quillraven.fleks"
 version = "2.3"
-java.sourceCompatibility = JavaVersion.VERSION_1_8
+java.sourceCompatibility = JavaVersion.VERSION_11
 
 repositories {
     mavenCentral()
@@ -20,21 +22,14 @@ kotlin {
     targets {
         jvm {
             compilations {
-                all {
-                    kotlinOptions {
-                        jvmTarget = "1.8"
-                    }
-                }
-                val main by getting { }
+                all { kotlinOptions { jvmTarget = "11" } }
+                val main by getting
+
                 // custom benchmark compilation
-                val benchmarks by compilations.creating {
-                    defaultSourceSet {
-                        dependencies {
-                            // Compile against the main compilation's compile classpath and outputs:
-                            implementation(main.compileDependencyFiles + main.output.classesDirs)
-                        }
-                    }
-                }
+                val benchmarks by creating { associateWith(main) }
+                benchmark.targets.add(
+                    KotlinJvmBenchmarkTarget(benchmark, benchmarks.defaultSourceSet.name, benchmarks)
+                )
             }
             withJava()
             testRuns["test"].executionTask.configure {
@@ -42,7 +37,7 @@ kotlin {
             }
         }
     }
-    js(BOTH) {
+    js(IR) {
         browser { }
     }
     val hostOs = System.getProperty("os.name")
@@ -55,7 +50,7 @@ kotlin {
     }
 
     sourceSets {
-        val commonMain by getting { }
+        val commonMain by getting
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
@@ -64,9 +59,8 @@ kotlin {
         val jvmMain by getting
         val jvmTest by getting
         val jvmBenchmarks by getting {
-            dependsOn(commonMain)
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:0.4.5")
+                implementation("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:0.4.8")
                 implementation("com.badlogicgames.ashley:ashley:1.7.4")
                 implementation("net.onedaybeard.artemis:artemis-odb:2.3.0")
             }
@@ -75,12 +69,6 @@ kotlin {
         val jsTest by getting
         val nativeMain by getting
         val nativeTest by getting
-    }
-}
-
-benchmark {
-    targets {
-        register("jvmBenchmarks")
     }
 }
 

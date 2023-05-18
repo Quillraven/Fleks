@@ -1033,9 +1033,7 @@ class MutableEntityBag(
         other as MutableEntityBag
 
         if (size != other.size) return false
-        if (!containsAll(other)) return false
-
-        return true
+        return containsAll(other)
     }
 
     override fun hashCode(): Int {
