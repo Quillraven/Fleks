@@ -52,7 +52,7 @@ private class SpriteSystem(
 }
 
 class Fleks2TDD {
-    private val emptyWorld = world { }
+    private val emptyWorld = configureWorld { }
 
     @Test
     fun createWorldWithEntityAndComponent() {
@@ -127,7 +127,7 @@ class Fleks2TDD {
 
     @Test
     fun updatePositionSystem() {
-        val world = world {
+        val world = configureWorld {
             systems {
                 add(PositionSystem())
             }
@@ -146,7 +146,7 @@ class Fleks2TDD {
         val addComponent = Position(0f, 0f)
         val removeComponent = Position(0f, 0f)
         lateinit var testWorld: World
-        testWorld = world {
+        testWorld = configureWorld {
             components {
                 onAdd(Position) { entity, component ->
                     component.x = 1f
@@ -180,7 +180,7 @@ class Fleks2TDD {
         lateinit var testFamily: Family
         var numAddCalls = 0
         var numRemoveCalls = 0
-        testWorld = world {
+        testWorld = configureWorld {
             testFamily = family { all(Position) }
             families {
                 onAdd(testFamily) { entity ->
@@ -211,7 +211,7 @@ class Fleks2TDD {
     fun testSystemCreationWithInjectables() {
         val expectedCstrStr = "42"
         val expectedPropStr = "1337"
-        val world = world(64) {
+        val world = configureWorld(64) {
             injectables {
                 add(expectedCstrStr)
                 add("qualifiedString", expectedPropStr)
@@ -230,7 +230,7 @@ class Fleks2TDD {
 
     @Test
     fun testEntityComponentContextExtensions() {
-        val world = world { }
+        val world = configureWorld { }
         val expectedCmp = Position(0f, 0f)
         val entity = world.entity { it += expectedCmp }
 

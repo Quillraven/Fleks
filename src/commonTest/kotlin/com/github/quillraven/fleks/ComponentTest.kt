@@ -21,7 +21,7 @@ internal class ComponentTest {
         }
     }
 
-    private val testWorld = world { }
+    private val testWorld = configureWorld { }
     private val testService = ComponentService().also { it.world = testWorld }
     private val testHolder = testService.holder(ComponentTestComponent)
 

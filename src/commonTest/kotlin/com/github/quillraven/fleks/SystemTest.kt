@@ -159,7 +159,7 @@ private class SystemTestIteratingSystemQualifiedInjectable(
 internal class SystemTest {
     @Test
     fun systemWithIntervalEachFrameGetsCalledEveryTime() {
-        val w = world {
+        val w = configureWorld {
             systems {
                 add(SystemTestIntervalSystemEachFrame())
             }
@@ -174,7 +174,7 @@ internal class SystemTest {
 
     @Test
     fun systemWithIntervalEachFrameReturnsWorldDeltaTime() {
-        val w = world {
+        val w = configureWorld {
             systems {
                 add(SystemTestIntervalSystemEachFrame())
             }
@@ -187,7 +187,7 @@ internal class SystemTest {
 
     @Test
     fun systemWithFixedIntervalOf025fGetsCalledFourTimesWhenDeltaTimeIs11f() {
-        val w = world {
+        val w = configureWorld {
             systems {
                 add(SystemTestIntervalSystemFixed())
             }
@@ -202,7 +202,7 @@ internal class SystemTest {
 
     @Test
     fun systemWithFixedIntervalReturnsStepRateAsDeltaTime() {
-        val w = world {
+        val w = configureWorld {
             systems {
                 add(SystemTestIntervalSystemFixed())
             }
@@ -214,7 +214,7 @@ internal class SystemTest {
 
     @Test
     fun createIntervalSystemWithNoArgs() {
-        val expectedWorld = world {
+        val expectedWorld = configureWorld {
             systems {
                 add(SystemTestIntervalSystemEachFrame())
             }
@@ -227,7 +227,7 @@ internal class SystemTest {
 
     @Test
     fun createIteratingSystemWithAnInjectableArg() {
-        val expectedWorld = world {
+        val expectedWorld = configureWorld {
             injectables {
                 add("42")
             }
@@ -245,7 +245,7 @@ internal class SystemTest {
 
     @Test
     fun createIteratingSystemWithQualifiedArgs() {
-        val expectedWorld = world {
+        val expectedWorld = configureWorld {
             injectables {
                 add("42")
                 add("q1", "43")
@@ -265,7 +265,7 @@ internal class SystemTest {
 
     @Test
     fun iteratingSystemCallsOnTickAndOnAlphaForEachEntityOfTheSystem() {
-        val world = world {
+        val world = configureWorld {
             systems {
                 add(SystemTestIteratingSystem())
             }
@@ -283,7 +283,7 @@ internal class SystemTest {
 
     @Test
     fun configureEntityDuringIteration() {
-        val world = world {
+        val world = configureWorld {
             systems {
                 add(SystemTestIteratingSystem())
             }
@@ -299,7 +299,7 @@ internal class SystemTest {
 
     @Test
     fun sortEntitiesAutomatically() {
-        val world = world {
+        val world = configureWorld {
             systems {
                 add(SystemTestIteratingSystemSortAutomatic())
             }
@@ -315,7 +315,7 @@ internal class SystemTest {
 
     @Test
     fun sortEntitiesProgrammatically() {
-        val world = world {
+        val world = configureWorld {
             systems {
                 add(SystemTestIteratingSystemSortManual())
             }
@@ -334,7 +334,7 @@ internal class SystemTest {
 
     @Test
     fun cannotGetNonExistingSystem() {
-        val world = world {
+        val world = configureWorld {
             systems {
                 add(SystemTestIteratingSystemSortAutomatic())
             }
@@ -347,7 +347,7 @@ internal class SystemTest {
 
     @Test
     fun updateOnlyCallsEnabledSystems() {
-        val world = world {
+        val world = configureWorld {
             systems {
                 add(SystemTestIntervalSystemEachFrame())
             }
@@ -362,7 +362,7 @@ internal class SystemTest {
 
     @Test
     fun removingAnEntityDuringUpdateIsDelayed() {
-        val world = world {
+        val world = configureWorld {
             systems {
                 add(SystemTestIteratingSystemSortAutomatic())
             }
@@ -383,7 +383,7 @@ internal class SystemTest {
 
     @Test
     fun removingAnEntityDuringAlphaIsDelayed() {
-        val world = world {
+        val world = configureWorld {
             systems {
                 add(SystemTestFixedSystemRemoval())
             }
@@ -405,7 +405,7 @@ internal class SystemTest {
 
     @Test
     fun disposeService() {
-        val world = world {
+        val world = configureWorld {
             systems {
                 add(SystemTestIntervalSystemEachFrame())
             }
@@ -420,7 +420,7 @@ internal class SystemTest {
     fun createEntityDuringSystemInit() {
         // this test verifies that entities that are created in a system's init block
         // are correctly added to families
-        val world = world {
+        val world = configureWorld {
             systems {
                 add(SystemTestEntityCreation())
             }

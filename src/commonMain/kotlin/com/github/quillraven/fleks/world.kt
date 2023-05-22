@@ -211,7 +211,7 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
  * @param cfg the [configuration][WorldConfiguration] of the world containing the [systems][IntervalSystem],
  * [injectables][Injectable], [ComponentHook]s and [FamilyHook]s.
  */
-fun world(entityCapacity: Int = 512, cfg: WorldConfiguration.() -> Unit): World {
+fun configureWorld(entityCapacity: Int = 512, cfg: WorldConfiguration.() -> Unit): World {
     val newWorld = World(entityCapacity)
     CURRENT_WORLD = newWorld
 

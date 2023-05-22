@@ -61,7 +61,7 @@ open class FleksStateAddRemove {
 
     @Setup(value = Level.Iteration)
     fun setup() {
-        world = world(NUM_ENTITIES) { }
+        world = configureWorld(NUM_ENTITIES) { }
     }
 }
 
@@ -71,7 +71,7 @@ open class FleksStateSimple {
 
     @Setup(value = Level.Iteration)
     fun setup() {
-        world = world(NUM_ENTITIES) {
+        world = configureWorld(NUM_ENTITIES) {
             systems {
                 add(FleksSystemSimple())
             }
@@ -91,7 +91,7 @@ open class FleksStateComplex {
 
     @Setup(value = Level.Iteration)
     fun setup() {
-        world = world(NUM_ENTITIES) {
+        world = configureWorld(NUM_ENTITIES) {
             systems {
                 add(FleksSystemComplex1())
                 add(FleksSystemComplex2())
