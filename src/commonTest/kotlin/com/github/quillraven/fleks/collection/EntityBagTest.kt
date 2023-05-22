@@ -1,7 +1,7 @@
 package com.github.quillraven.fleks.collection
 
 import com.github.quillraven.fleks.Entity
-import com.github.quillraven.fleks.world
+import com.github.quillraven.fleks.configureWorld
 import kotlin.test.*
 
 class EntityBagTest {
@@ -144,7 +144,7 @@ class EntityBagTest {
         val bag = MutableEntityBag()
         repeat(6) { bag += Entity(6 - it) }
 
-        bag.sort(compareEntity(world { }) { e1, e2 -> e1.id.compareTo(e2.id) })
+        bag.sort(compareEntity(configureWorld { }) { e1, e2 -> e1.id.compareTo(e2.id) })
 
         repeat(6) {
             assertEquals(Entity(it + 1), bag[it])
@@ -156,7 +156,7 @@ class EntityBagTest {
         val bag = MutableEntityBag()
         repeat(8) { bag += Entity(8 - it) }
 
-        bag.sort(compareEntity(world { }) { e1, e2 -> e1.id.compareTo(e2.id) })
+        bag.sort(compareEntity(configureWorld { }) { e1, e2 -> e1.id.compareTo(e2.id) })
 
         repeat(8) {
             assertEquals(Entity(it + 1), bag[it])
@@ -168,7 +168,7 @@ class EntityBagTest {
         val bag = MutableEntityBag()
         repeat(51) { bag += Entity(51 - it) }
 
-        bag.sort(compareEntity(world { }) { e1, e2 -> e1.id.compareTo(e2.id) })
+        bag.sort(compareEntity(configureWorld { }) { e1, e2 -> e1.id.compareTo(e2.id) })
 
         repeat(51) {
             assertEquals(Entity(it + 1), bag[it])

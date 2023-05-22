@@ -17,7 +17,7 @@ private class FamilyTestComponent2 : Component<FamilyTestComponent2> {
 }
 
 internal class FamilyTest {
-    private val testWorld = world { }
+    private val testWorld = configureWorld { }
     private val emptyTestFamily = Family(world = testWorld)
 
     private fun createCmpBitmask(cmpIdx: Int): BitArray? {
