@@ -4,6 +4,7 @@ import kotlinx.benchmark.gradle.KotlinJvmBenchmarkTarget
 
 plugins {
     kotlin("multiplatform") version "1.8.21"
+    kotlin("plugin.serialization") version "1.8.21"
     id("org.jetbrains.kotlinx.benchmark") version "0.4.8"
     id("org.jetbrains.dokka") version "1.8.10"
     `maven-publish`
@@ -50,7 +51,11 @@ kotlin {
     }
 
     sourceSets {
-        val commonMain by getting
+        val commonMain by getting {
+            dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
+            }
+        }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))

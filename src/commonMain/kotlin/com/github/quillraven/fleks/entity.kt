@@ -1,12 +1,14 @@
 package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.*
+import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
 
 /**
  * An entity of a [world][World]. It represents a unique id.
  */
 @JvmInline
+@Serializable
 value class Entity(val id: Int)
 
 /**
