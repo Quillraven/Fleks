@@ -105,9 +105,11 @@ class BitArray(
         for (word in bits.size - 1 downTo 0) {
             val bitsAtWord = bits[word]
             if (bitsAtWord != 0L) {
+                val w = word shl 6
+
                 for (bit in 63 downTo 0) {
                     if ((bitsAtWord and (1L shl bit)) != 0L) {
-                        return (word shl 6) + bit + 1
+                        return w + bit + 1
                     }
                 }
             }
@@ -139,9 +141,11 @@ class BitArray(
         for (word in bits.size - 1 downTo 0) {
             val bitsAtWord = bits[word]
             if (bitsAtWord != 0L) {
+                val w = word shl 6
+
                 for (bit in 63 downTo 0) {
                     if ((bitsAtWord and (1L shl bit)) != 0L) {
-                        action((word shl 6) + bit)
+                        action(w + bit)
                     }
                 }
             }
