@@ -706,8 +706,6 @@ internal class WorldTest {
         w.loadSnapshotOf(entity, components)
 
         assertEquals(1, w.numEntities)
-        assertEquals(1, w.entityService.nextId)
-        assertEquals(0, w.entityService.recycledEntities.size)
         assertTrue { with(w) { entity has WorldTestComponent } }
         assertTrue { entity in family }
     }
@@ -723,8 +721,6 @@ internal class WorldTest {
         w.loadSnapshotOf(entity, components)
 
         assertEquals(1, w.numEntities)
-        assertEquals(2, w.entityService.nextId)
-        assertEquals(1, w.entityService.recycledEntities.size)
         assertTrue { with(w) { entity has WorldTestComponent } }
         assertTrue { entity in family }
     }

@@ -199,6 +199,10 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
     inline fun onRemoveEntity(noinline hook: EntityHook) {
         world.setEntityRemoveHook(hook)
     }
+
+    fun entityProvider(factory: World.() -> EntityProvider) {
+        world.entityService.entityProvider = world.run(factory)
+    }
 }
 
 /**
@@ -217,7 +221,7 @@ fun configureWorld(entityCapacity: Int = 512, cfg: WorldConfiguration.() -> Unit
 
     try {
         val worldCfg = WorldConfiguration(newWorld).apply(cfg)
-        // assign world systems afterwards to resize the systems array only once to the correct size
+        // assign world systems afterward to resize the systems array only once to the correct size
         // instead of resizing every time a system gets added to the configuration
         newWorld.systems = worldCfg.systems.toTypedArray()
     } finally {
@@ -246,7 +250,7 @@ class World internal constructor(
         private set
 
     @PublishedApi
-    internal val entityService = EntityService(this, entityCapacity)
+    internal var entityService = EntityService(this, entityCapacity)
 
     /**
      * List of all [families][Family] of the world that are created either via
@@ -360,7 +364,7 @@ class World internal constructor(
     /**
      * Performs the given [action] on each active [entity][Entity].
      */
-    inline fun forEach(action: World.(Entity) -> Unit) {
+    inline fun forEach(noinline action: World.(Entity) -> Unit) {
         entityService.forEach(action)
     }
 
@@ -546,7 +550,6 @@ class World internal constructor(
         // ids to guarantee that the provided snapshot entity ids match the newly created ones.
         with(entityService) {
             val maxId = snapshot.keys.maxOf { it.id }
-            this.nextId = maxId + 1
             repeat(maxId + 1) {
                 val entity = Entity(it)
                 this.recycle(entity)
@@ -574,24 +577,7 @@ class World internal constructor(
 
         if (entity !in entityService) {
             // entity not part of service yet -> create it
-            if (entity.id >= entityService.nextId) {
-                // entity with given id was never created before -> create all missing entities ...
-                repeat(entity.id - entityService.nextId + 1) {
-                    entityService.recycle(Entity(entityService.nextId + it))
-                }
-                // ... and then create the entity to guarantee that it has the correct ID.
-                // The entity is at the end of the recycled list.
-
-                // adjust ID for future entities to be created
-                entityService.nextId = entity.id + 1
-                entityService.create { }
-            } else {
-                // entity with given id was already created before and is part of the recycled entities
-                // -> move it to the end to be used by the next create call
-                entityService.recycledEntities.remove(entity)
-                entityService.recycledEntities.addLast(entity)
-                entityService.create { }
-            }
+            entityService.create(entity.id) { }
         }
 
         // load components for entity
