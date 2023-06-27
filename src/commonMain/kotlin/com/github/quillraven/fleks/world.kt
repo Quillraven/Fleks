@@ -200,6 +200,10 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
         world.setEntityRemoveHook(hook)
     }
 
+    /**
+     * Sets the [EntityProvider] for the [EntityService] by calling the [factory] function
+     * within the context of a [World]. Per default the [DefaultEntityProvider] is used.
+     */
     fun entityProvider(factory: World.() -> EntityProvider) {
         world.entityService.entityProvider = world.run(factory)
     }
@@ -250,7 +254,7 @@ class World internal constructor(
         private set
 
     @PublishedApi
-    internal var entityService = EntityService(this, entityCapacity)
+    internal val entityService = EntityService(this, entityCapacity)
 
     /**
      * List of all [families][Family] of the world that are created either via
