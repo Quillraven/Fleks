@@ -788,61 +788,6 @@ internal class WorldTest {
     }
 
     @Test
-    fun systemsMustBeSpecifiedLast() {
-        // component add hook defined after system
-        assertFailsWith<FleksWrongConfigurationOrderException> {
-            configureWorld {
-                systems {
-                    add(WorldTestInitSystem())
-                }
-
-                components {
-                    onAdd(WorldTestComponent) { _, _ -> }
-                }
-            }
-        }
-
-        // component remove hook defined after system
-        assertFailsWith<FleksWrongConfigurationOrderException> {
-            configureWorld {
-                systems {
-                    add(WorldTestInitSystem())
-                }
-
-                components {
-                    onRemove(WorldTestComponent) { _, _ -> }
-                }
-            }
-        }
-
-        // family add hook defined after system
-        assertFailsWith<FleksWrongConfigurationOrderException> {
-            configureWorld {
-                systems {
-                    add(WorldTestInitSystem())
-                }
-
-                families {
-                    onAdd(family { all(WorldTestComponent) }) { }
-                }
-            }
-        }
-
-        // family remove hook defined after system
-        assertFailsWith<FleksWrongConfigurationOrderException> {
-            configureWorld {
-                systems {
-                    add(WorldTestInitSystem())
-                }
-
-                families {
-                    onRemove(family { all(WorldTestComponent) }) { }
-                }
-            }
-        }
-    }
-
-    @Test
     fun globalWorldFunctionsMustBeUsedWithinConfigurationScope() {
         // calls BEFORE configuration block
         assertFailsWith<FleksWrongConfigurationUsageException> {
@@ -953,11 +898,11 @@ internal class WorldTest {
     @Test
     fun testCustomEntityProvider() {
         val world = configureWorld {
-            entityProvider { WorldEntityProvider(this) }
-
             systems {
                 add(WorldTestInitSystem())
             }
+
+            entityProvider { WorldEntityProvider(this) }
         }
 
         assertEquals(1, world.numEntities)
