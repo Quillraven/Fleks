@@ -181,6 +181,12 @@ class EntityUpdateContext(
 interface EntityProvider {
 
     /**
+     * Reference to the [World] of the [EntityProvider].
+     * It is needed for the [forEach] implementation.
+     */
+    val world: World
+
+    /**
      * Returns the total amount of active [entities][Entity].
      */
     fun numEntities(): Int
@@ -224,8 +230,7 @@ interface EntityProvider {
  * The first [entity][Entity] starts with ID zero.
  */
 class DefaultEntityProvider(
-    @PublishedApi
-    internal val world: World,
+    override val world: World,
     initialEntityCapacity: Int
 ) : EntityProvider {
 

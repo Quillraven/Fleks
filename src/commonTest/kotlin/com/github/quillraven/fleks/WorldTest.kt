@@ -77,6 +77,35 @@ private class WorldTestNamedDependencySystem(
     override fun onTick() = Unit
 }
 
+private class WorldEntityProvider(
+    override val world: World
+) : EntityProvider {
+    private var id = 10
+    private var entities = mutableListOf<Entity>()
+
+    override fun numEntities(): Int = entities.size
+
+    override fun create(): Entity = Entity(id++).also { entities += it }
+
+    override fun create(id: Int): Entity = Entity(id).also { entities += it }
+
+    override fun minusAssign(entity: Entity) {
+        entities -= entity
+    }
+
+    override fun contains(entity: Entity): Boolean = entity in entities
+
+    override fun reset() {
+        id = 10
+        entities.clear()
+    }
+
+    override fun forEach(action: World.(Entity) -> Unit) {
+        entities.forEach { world.action(it) }
+    }
+}
+
+
 internal class WorldTest {
     @Test
     fun createEmptyWorldFor32Entities() {
@@ -919,5 +948,19 @@ internal class WorldTest {
                 onRemoveEntity { }
             }
         }
+    }
+
+    @Test
+    fun testCustomEntityProvider() {
+        val world = configureWorld {
+            entityProvider { WorldEntityProvider(this) }
+
+            systems {
+                add(WorldTestInitSystem())
+            }
+        }
+
+        assertEquals(1, world.numEntities)
+        assertEquals(10, world.asEntityBag().first().id)
     }
 }
