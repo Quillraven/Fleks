@@ -57,7 +57,6 @@ internal class EntityTest {
 
         testEntityService.removeAll()
 
-        assertEquals(2, testEntityService.recycledEntities.size)
         assertEquals(0, testEntityService.numEntities)
     }
 
@@ -69,7 +68,6 @@ internal class EntityTest {
 
         testEntityService.removeAll()
 
-        assertEquals(2, testEntityService.recycledEntities.size)
         assertEquals(0, testEntityService.numEntities)
     }
 
@@ -82,7 +80,6 @@ internal class EntityTest {
         testEntityService.removeAll()
 
         assertTrue(testEntityService.delayRemoval)
-        assertEquals(0, testEntityService.recycledEntities.size)
         assertEquals(2, testEntityService.numEntities)
     }
 
@@ -103,7 +100,6 @@ internal class EntityTest {
 
         testEntityService -= entity
 
-        assertEquals(0, testEntityService.recycledEntities.size)
         assertEquals(1, testEntityService.numEntities)
     }
 
@@ -118,7 +114,6 @@ internal class EntityTest {
         testEntityService.cleanupDelays()
 
         assertFalse(testEntityService.delayRemoval)
-        assertEquals(1, testEntityService.recycledEntities.size)
         assertEquals(0, testEntityService.numEntities)
     }
 
@@ -129,7 +124,6 @@ internal class EntityTest {
         testEntityService -= entity
         testEntityService -= entity
 
-        assertEquals(1, testEntityService.recycledEntities.size)
         assertEquals(0, testEntityService.numEntities)
     }
 

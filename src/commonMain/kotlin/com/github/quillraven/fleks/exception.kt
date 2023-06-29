@@ -30,9 +30,6 @@ class FleksNoSuchInjectableException(name: String) :
 class FleksHookAlreadyAddedException(hookType: String, objType: String) :
     FleksException("$hookType for $objType already available!")
 
-class FleksWrongConfigurationOrderException :
-    FleksException("Component hooks and family hooks must be defined BEFORE any system. The 'systems' block must come last in a WorldConfiguration.")
-
 class FleksWrongConfigurationUsageException :
     FleksException(
         "The global functions 'inject' and 'family' must be used inside a WorldConfiguration scope." +

@@ -197,13 +197,13 @@ internal class FamilyTest {
             ++numOuterIterations
 
             // check that inner iteration is not clearing the delayRemoval flag
-            assertTrue { this.entityService.delayRemoval }
+            assertTrue(this.entityService.delayRemoval)
             // check that inner iteration is not cleaning up the delayed removals
-            assertEquals(0, this.entityService.removedEntities.length())
+            assertTrue(e1 in this.entityService)
         }
 
-        assertFalse { f1.entityService.delayRemoval }
-        assertEquals(1, f1.entityService.removedEntities.length())
+        assertFalse(f1.entityService.delayRemoval)
+        assertFalse(e1 in f1.entityService)
         assertEquals(2, numOuterIterations)
         assertEquals(4, numInnerIterations)
     }

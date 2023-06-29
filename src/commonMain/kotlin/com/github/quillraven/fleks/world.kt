@@ -55,8 +55,6 @@ class InjectableConfiguration(private val world: World) {
 class ComponentConfiguration(
     @PublishedApi
     internal val world: World,
-    @PublishedApi
-    internal val systems: List<IntervalSystem>,
 ) {
 
     /**
@@ -67,10 +65,6 @@ class ComponentConfiguration(
         type: ComponentType<T>,
         noinline hook: ComponentHook<T>
     ) {
-        if (systems.isNotEmpty()) {
-            throw FleksWrongConfigurationOrderException()
-        }
-
         world.setComponentAddHook(type, hook)
     }
 
@@ -82,10 +76,6 @@ class ComponentConfiguration(
         type: ComponentType<T>,
         noinline hook: ComponentHook<T>
     ) {
-        if (systems.isNotEmpty()) {
-            throw FleksWrongConfigurationOrderException()
-        }
-
         world.setComponentRemoveHook(type, hook)
     }
 }
@@ -95,7 +85,7 @@ class ComponentConfiguration(
  */
 @WorldCfgMarker
 class SystemConfiguration(
-    private val systems: MutableList<IntervalSystem> = mutableListOf()
+    internal val systems: MutableList<IntervalSystem> = mutableListOf()
 ) {
     /**
      * Adds the [system] to the [world][World].
@@ -118,8 +108,6 @@ class SystemConfiguration(
 class FamilyConfiguration(
     @PublishedApi
     internal val world: World,
-    @PublishedApi
-    internal val systems: List<IntervalSystem>,
 ) {
 
     /**
@@ -130,10 +118,6 @@ class FamilyConfiguration(
         family: Family,
         hook: FamilyHook
     ) {
-        if (systems.isNotEmpty()) {
-            throw FleksWrongConfigurationOrderException()
-        }
-
         if (family.addHook != null) {
             throw FleksHookAlreadyAddedException("addHook", "Family $family")
         }
@@ -148,10 +132,6 @@ class FamilyConfiguration(
         family: Family,
         hook: FamilyHook
     ) {
-        if (systems.isNotEmpty()) {
-            throw FleksWrongConfigurationOrderException()
-        }
-
         if (family.removeHook != null) {
             throw FleksHookAlreadyAddedException("removeHook", "Family $family")
         }
@@ -168,19 +148,26 @@ class FamilyConfiguration(
 @WorldCfgMarker
 class WorldConfiguration(@PublishedApi internal val world: World) {
 
-    internal val systems = mutableListOf<IntervalSystem>()
-    private val injectableCfg = InjectableConfiguration(world)
-    private val compCfg = ComponentConfiguration(world, systems)
-    private val familyCfg = FamilyConfiguration(world, systems)
-    private val systemCfg = SystemConfiguration(systems)
+    private var injectableCfg: (InjectableConfiguration.() -> Unit)? = null
+    private var compCfg: (ComponentConfiguration.() -> Unit)? = null
+    private var familyCfg: (FamilyConfiguration.() -> Unit)? = null
+    private var systemCfg: (SystemConfiguration.() -> Unit)? = null
 
-    fun injectables(cfg: InjectableConfiguration.() -> Unit) = injectableCfg.run(cfg)
+    fun injectables(cfg: InjectableConfiguration.() -> Unit) {
+        injectableCfg = cfg
+    }
 
-    fun components(cfg: ComponentConfiguration.() -> Unit) = compCfg.run(cfg)
+    fun components(cfg: ComponentConfiguration.() -> Unit) {
+        compCfg = cfg
+    }
 
-    fun families(cfg: FamilyConfiguration.() -> Unit) = familyCfg.run(cfg)
+    fun families(cfg: FamilyConfiguration.() -> Unit) {
+        familyCfg = cfg
+    }
 
-    fun systems(cfg: SystemConfiguration.() -> Unit) = systemCfg.run(cfg)
+    fun systems(cfg: SystemConfiguration.() -> Unit) {
+        systemCfg = cfg
+    }
 
     /**
      * Sets the add entity [hook][EntityService.addHook].
@@ -199,6 +186,26 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
     inline fun onRemoveEntity(noinline hook: EntityHook) {
         world.setEntityRemoveHook(hook)
     }
+
+    /**
+     * Sets the [EntityProvider] for the [EntityService] by calling the [factory] function
+     * within the context of a [World]. Per default the [DefaultEntityProvider] is used.
+     */
+    fun entityProvider(factory: World.() -> EntityProvider) {
+        world.entityService.entityProvider = world.run(factory)
+    }
+
+    fun configure() {
+        injectableCfg?.invoke(InjectableConfiguration(world))
+        compCfg?.invoke(ComponentConfiguration(world))
+        familyCfg?.invoke(FamilyConfiguration(world))
+        SystemConfiguration().also {
+            systemCfg?.invoke(it)
+            // assign world systems afterward to resize the systems array only once to the correct size
+            // instead of resizing every time a system gets added to the configuration
+            world.systems = it.systems.toTypedArray()
+        }
+    }
 }
 
 /**
@@ -216,10 +223,7 @@ fun configureWorld(entityCapacity: Int = 512, cfg: WorldConfiguration.() -> Unit
     CURRENT_WORLD = newWorld
 
     try {
-        val worldCfg = WorldConfiguration(newWorld).apply(cfg)
-        // assign world systems afterwards to resize the systems array only once to the correct size
-        // instead of resizing every time a system gets added to the configuration
-        newWorld.systems = worldCfg.systems.toTypedArray()
+        WorldConfiguration(newWorld).apply(cfg).configure()
     } finally {
         CURRENT_WORLD = null
     }
@@ -360,7 +364,7 @@ class World internal constructor(
     /**
      * Performs the given [action] on each active [entity][Entity].
      */
-    inline fun forEach(action: World.(Entity) -> Unit) {
+    inline fun forEach(noinline action: World.(Entity) -> Unit) {
         entityService.forEach(action)
     }
 
@@ -546,7 +550,6 @@ class World internal constructor(
         // ids to guarantee that the provided snapshot entity ids match the newly created ones.
         with(entityService) {
             val maxId = snapshot.keys.maxOf { it.id }
-            this.nextId = maxId + 1
             repeat(maxId + 1) {
                 val entity = Entity(it)
                 this.recycle(entity)
@@ -574,24 +577,7 @@ class World internal constructor(
 
         if (entity !in entityService) {
             // entity not part of service yet -> create it
-            if (entity.id >= entityService.nextId) {
-                // entity with given id was never created before -> create all missing entities ...
-                repeat(entity.id - entityService.nextId + 1) {
-                    entityService.recycle(Entity(entityService.nextId + it))
-                }
-                // ... and then create the entity to guarantee that it has the correct ID.
-                // The entity is at the end of the recycled list.
-
-                // adjust ID for future entities to be created
-                entityService.nextId = entity.id + 1
-                entityService.create { }
-            } else {
-                // entity with given id was already created before and is part of the recycled entities
-                // -> move it to the end to be used by the next create call
-                entityService.recycledEntities.remove(entity)
-                entityService.recycledEntities.addLast(entity)
-                entityService.create { }
-            }
+            entityService.create(entity.id) { }
         }
 
         // load components for entity

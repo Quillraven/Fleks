@@ -77,6 +77,35 @@ private class WorldTestNamedDependencySystem(
     override fun onTick() = Unit
 }
 
+private class WorldEntityProvider(
+    override val world: World
+) : EntityProvider {
+    private var id = 10
+    private var entities = mutableListOf<Entity>()
+
+    override fun numEntities(): Int = entities.size
+
+    override fun create(): Entity = Entity(id++).also { entities += it }
+
+    override fun create(id: Int): Entity = Entity(id).also { entities += it }
+
+    override fun minusAssign(entity: Entity) {
+        entities -= entity
+    }
+
+    override fun contains(entity: Entity): Boolean = entity in entities
+
+    override fun reset() {
+        id = 10
+        entities.clear()
+    }
+
+    override fun forEach(action: World.(Entity) -> Unit) {
+        entities.forEach { world.action(it) }
+    }
+}
+
+
 internal class WorldTest {
     @Test
     fun createEmptyWorldFor32Entities() {
@@ -706,8 +735,6 @@ internal class WorldTest {
         w.loadSnapshotOf(entity, components)
 
         assertEquals(1, w.numEntities)
-        assertEquals(1, w.entityService.nextId)
-        assertEquals(0, w.entityService.recycledEntities.size)
         assertTrue { with(w) { entity has WorldTestComponent } }
         assertTrue { entity in family }
     }
@@ -723,8 +750,6 @@ internal class WorldTest {
         w.loadSnapshotOf(entity, components)
 
         assertEquals(1, w.numEntities)
-        assertEquals(2, w.entityService.nextId)
-        assertEquals(1, w.entityService.recycledEntities.size)
         assertTrue { with(w) { entity has WorldTestComponent } }
         assertTrue { entity in family }
     }
@@ -759,61 +784,6 @@ internal class WorldTest {
 
         f.forEach {
             assertFailsWith<FleksSnapshotException> { w.loadSnapshotOf(entity, components) }
-        }
-    }
-
-    @Test
-    fun systemsMustBeSpecifiedLast() {
-        // component add hook defined after system
-        assertFailsWith<FleksWrongConfigurationOrderException> {
-            configureWorld {
-                systems {
-                    add(WorldTestInitSystem())
-                }
-
-                components {
-                    onAdd(WorldTestComponent) { _, _ -> }
-                }
-            }
-        }
-
-        // component remove hook defined after system
-        assertFailsWith<FleksWrongConfigurationOrderException> {
-            configureWorld {
-                systems {
-                    add(WorldTestInitSystem())
-                }
-
-                components {
-                    onRemove(WorldTestComponent) { _, _ -> }
-                }
-            }
-        }
-
-        // family add hook defined after system
-        assertFailsWith<FleksWrongConfigurationOrderException> {
-            configureWorld {
-                systems {
-                    add(WorldTestInitSystem())
-                }
-
-                families {
-                    onAdd(family { all(WorldTestComponent) }) { }
-                }
-            }
-        }
-
-        // family remove hook defined after system
-        assertFailsWith<FleksWrongConfigurationOrderException> {
-            configureWorld {
-                systems {
-                    add(WorldTestInitSystem())
-                }
-
-                families {
-                    onRemove(family { all(WorldTestComponent) }) { }
-                }
-            }
         }
     }
 
@@ -923,5 +893,19 @@ internal class WorldTest {
                 onRemoveEntity { }
             }
         }
+    }
+
+    @Test
+    fun testCustomEntityProvider() {
+        val world = configureWorld {
+            systems {
+                add(WorldTestInitSystem())
+            }
+
+            entityProvider { WorldEntityProvider(this) }
+        }
+
+        assertEquals(1, world.numEntities)
+        assertEquals(10, world.asEntityBag().first().id)
     }
 }

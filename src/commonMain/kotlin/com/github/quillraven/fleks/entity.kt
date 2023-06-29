@@ -174,6 +174,172 @@ class EntityUpdateContext(
 }
 
 /**
+ * Interface to describe the functionality needed by an [EntityService]
+ * to create and remove [entities][Entity]. The provider can be specified
+ * via the [WorldConfiguration]. Per default a [DefaultEntityProvider] will be used.
+ */
+interface EntityProvider {
+
+    /**
+     * Reference to the [World] of the [EntityProvider].
+     * It is needed for the [forEach] implementation.
+     */
+    val world: World
+
+    /**
+     * Returns the total amount of active [entities][Entity].
+     */
+    fun numEntities(): Int
+
+    /**
+     * Creates a new [entity][Entity].
+     */
+    fun create(): Entity
+
+    /**
+     * Creates a new [Entity] with a specific [id].
+     * Internally, this is only needed by [World.loadSnapshotOf] and
+     * if that is not used, then this function can be omitted.
+     */
+    fun create(id: Int): Entity
+
+    /**
+     * Removes an [entity][Entity].
+     */
+    operator fun minusAssign(entity: Entity)
+
+    /**
+     * Returns true if and only if the given [entity] is active and part of the provider.
+     */
+    operator fun contains(entity: Entity): Boolean
+
+    /**
+     * Resets the provider by removing all [entities][Entity].
+     */
+    fun reset()
+
+    /**
+     * Performs the given [action] for all active [entities][Entity].
+     */
+    fun forEach(action: World.(Entity) -> Unit)
+}
+
+/**
+ * Default implementation of an [EntityProvider] which uses an [entity][Entity]
+ * recycling mechanism to reuse [entities][Entity] that get removed.
+ * The first [entity][Entity] starts with ID zero.
+ */
+class DefaultEntityProvider(
+    override val world: World,
+    initialEntityCapacity: Int
+) : EntityProvider {
+
+    /**
+     * The id that will be given to a newly created [entity][Entity] if there are no [recycledEntities].
+     */
+    private var nextId = 0
+
+    /**
+     * Separate BitArray to remember if an [entity][Entity] was already removed.
+     * This is faster than looking up the [recycledEntities].
+     */
+    private val removedEntities = BitArray(initialEntityCapacity)
+
+    /**
+     * The already removed [entities][Entity] which can be reused whenever a new entity is needed.
+     */
+    private val recycledEntities = ArrayDeque<Entity>()
+
+    /**
+     * Returns the total amount of active [entities][Entity].
+     */
+    override fun numEntities(): Int = nextId - recycledEntities.size
+
+    /**
+     * Creates a new [entity][Entity]. If there are [recycledEntities] then they will be preferred
+     * over creating new entities.
+     */
+    override fun create(): Entity {
+        return if (recycledEntities.isEmpty()) {
+            Entity(nextId++)
+        } else {
+            val recycled = recycledEntities.removeLast()
+            removedEntities.clear(recycled.id)
+
+            // because of the load snapshot functionality of the world, it is
+            // possible that an entity with an ID higher than nextId gets recycled
+            // and immediately created afterward. In such a case we need to correct the
+            // nextId to avoid creating duplicated entities.
+            if (recycled.id >= nextId) {
+                nextId = recycled.id + 1
+            }
+
+            recycled
+        }
+    }
+
+    /**
+     * Creates a new [Entity] with a specific [id].
+     */
+    override fun create(id: Int): Entity {
+        if (id >= nextId) {
+            // entity with given id was never created before -> create all missing entities ...
+            repeat(id - nextId + 1) {
+                this -= Entity(nextId + it)
+            }
+            // ... and then create the entity to guarantee that it has the correct ID.
+            // The entity is at the end of the recycled list.
+
+            // adjust ID for future entities to be created
+            nextId = id + 1
+            return create()
+        } else {
+            // entity with given id was already created before and is part of the recycled entities
+            // -> move it to the end to be used by the next create call
+            recycledEntities.remove(Entity(id))
+            recycledEntities.addLast(Entity(id))
+            return create()
+        }
+    }
+
+    /**
+     * Removes an [entity][Entity].
+     */
+    override operator fun minusAssign(entity: Entity) {
+        recycledEntities.add(entity)
+        removedEntities.set(entity.id)
+    }
+
+    /**
+     * Returns true if and only if the given [entity] is active and part of the provider.
+     */
+    override fun contains(entity: Entity): Boolean = entity.id in 0 until nextId && !removedEntities[entity.id]
+
+    /**
+     * Resets the provider by removing and recycling all [entities][Entity].
+     * Also, resets the [nextId] to zero.
+     */
+    override fun reset() {
+        nextId = 0
+        recycledEntities.clear()
+        removedEntities.clearAll()
+    }
+
+    /**
+     * Performs the given [action] for all active [entities][Entity].
+     */
+    override fun forEach(action: World.(Entity) -> Unit) {
+        for (id in 0 until nextId) {
+            val entity = Entity(id)
+            if (removedEntities[entity.id]) {
+                continue
+            }
+            world.action(entity)
+        }
+    }
+}
+
+/**
  * A service class that is responsible for creation and removal of [entities][Entity].
  * It also stores the component configuration of each entity as a [BitArray] to have quick access to
  * what kind of components an entity has or doesn't have.
@@ -182,32 +348,16 @@ class EntityService(
     @PublishedApi
     internal val world: World,
     initialEntityCapacity: Int,
+    @PublishedApi
+    internal var entityProvider: EntityProvider = DefaultEntityProvider(world, initialEntityCapacity),
     private val compService: ComponentService = world.componentService,
 ) {
-    /**
-     * The id that will be given to a newly created [entity][Entity] if there are no [recycledEntities].
-     */
-    @PublishedApi
-    internal var nextId = 0
-
-    /**
-     * Separate BitArray to remember if an [entity][Entity] was already removed.
-     * This is faster than looking up the [recycledEntities].
-     */
-    @PublishedApi
-    internal val removedEntities = BitArray(initialEntityCapacity)
-
-    /**
-     * The already removed [entities][Entity] which can be reused whenever a new entity is needed.
-     */
-    @PublishedApi
-    internal val recycledEntities = ArrayDeque<Entity>()
 
     /**
      * Returns the amount of active entities.
      */
     val numEntities: Int
-        get() = nextId - recycledEntities.size
+        get() = entityProvider.numEntities()
 
     /**
      * Returns the maximum capacity of active entities.
@@ -256,32 +406,41 @@ class EntityService(
 
     /**
      * Creates and returns a new [entity][Entity] and applies the given [configuration].
-     * If there are [recycledEntities] then they will be preferred over creating new entities.
      * Notifies all [families][World.allFamilies].
      */
-    inline fun create(configuration: EntityCreateContext.(Entity) -> Unit): Entity {
-        val newEntity = if (recycledEntities.isEmpty()) {
-            Entity(nextId++)
-        } else {
-            val recycled = recycledEntities.removeLast()
-            removedEntities.clear(recycled.id)
-            recycled
-        }
+    inline fun create(configuration: EntityCreateContext.(Entity) -> Unit): Entity =
+        postCreate(entityProvider.create(), configuration)
 
+    /**
+     * Creates and returns a new [entity][Entity] with the given [id] and applies the given [configuration].
+     * Notifies all [families][World.allFamilies].
+     */
+    inline fun create(id: Int, configuration: EntityCreateContext.(Entity) -> Unit): Entity =
+        postCreate(entityProvider.create(id), configuration)
+
+    /**
+     * Applies the given [configuration] to the [entity] and notifies all [families][World.allFamilies].
+     * The [addHook] is invoked at the end, if provided.
+     */
+    @PublishedApi
+    internal inline fun postCreate(
+        entity: Entity,
+        configuration: EntityCreateContext.(Entity) -> Unit
+    ): Entity {
         // add components
-        if (newEntity.id >= compMasks.size) {
-            compMasks[newEntity.id] = BitArray(64)
+        if (entity.id >= compMasks.size) {
+            compMasks[entity.id] = BitArray(64)
         }
-        val compMask = compMasks[newEntity.id]
-        createCtx.configuration(newEntity)
+        val compMask = compMasks[entity.id]
+        createCtx.configuration(entity)
 
         // update families
-        world.allFamilies.forEach { it.onEntityAdded(newEntity, compMask) }
+        world.allFamilies.forEach { it.onEntityAdded(entity, compMask) }
 
         // trigger optional add hook
-        addHook?.invoke(world, newEntity)
+        addHook?.invoke(world, entity)
 
-        return newEntity
+        return entity
     }
 
     /**
@@ -325,26 +484,22 @@ class EntityService(
     }
 
     /**
-     * Recycles the given [entity] by adding it to the [recycledEntities]
-     * and also resetting its component mask with an empty [BitArray].
+     * Recycles the given [entity] and resets its component mask with an empty [BitArray].
      * This function is only used by [World.loadSnapshot].
      */
     internal fun recycle(entity: Entity) {
-        recycledEntities.add(entity)
-        removedEntities.set(entity.id)
+        entityProvider -= entity
         compMasks[entity.id] = BitArray(64)
     }
 
     /**
-     * Removes the given [entity] and adds it to the [recycledEntities] for future use.
-     *
-     * If [delayRemoval] is set then the [entity] is not removed immediately and instead will be cleaned up
-     * within the [cleanupDelays] function.
+     * Removes the given [entity]. If [delayRemoval] is set then the [entity]
+     * is not removed immediately and instead will be cleaned up within the [cleanupDelays] function.
      *
      * Notifies all [families][World.allFamilies] when the [entity] gets removed.
      */
     operator fun minusAssign(entity: Entity) {
-        if (removedEntities[entity.id]) {
+        if (entity !in entityProvider) {
             // entity is already removed
             return
         }
@@ -352,9 +507,8 @@ class EntityService(
         if (delayRemoval) {
             delayedEntities += entity
         } else {
-            removedEntities.set(entity.id)
+            entityProvider -= entity
             val compMask = compMasks[entity.id]
-            recycledEntities.add(entity)
 
             // trigger optional remove hook
             removeHook?.invoke(world, entity)
@@ -371,25 +525,16 @@ class EntityService(
     }
 
     /**
-     * Removes all [entities][Entity] and adds them to the [recycledEntities] for future use.
-     * If [clearRecycled] is true then the recycled entities are cleared and the ids for newly
-     * created entities start at 0 again.
+     * Removes all [entities][Entity]. If [clearRecycled] is true then the
+     * recycled entities are cleared and the ids for newly created entities start at 0 again.
      *
      * Refer to [remove] for more details.
      */
     fun removeAll(clearRecycled: Boolean = false) {
-        for (id in 0 until nextId) {
-            val entity = Entity(id)
-            if (removedEntities[entity.id]) {
-                continue
-            }
-            this -= entity
-        }
+        entityProvider.forEach { this -= it }
 
         if (clearRecycled) {
-            nextId = 0
-            recycledEntities.clear()
-            removedEntities.clearAll()
+            entityProvider.reset()
             compMasks.clear()
         }
     }
@@ -397,21 +542,13 @@ class EntityService(
     /**
      * Returns true if and only if the [entity] is not removed and is part of the [EntityService].
      */
-    operator fun contains(entity: Entity): Boolean {
-        return entity.id in 0 until nextId && !removedEntities[entity.id]
-    }
+    operator fun contains(entity: Entity): Boolean = entity in entityProvider
 
     /**
      * Performs the given [action] on each active [entity][Entity].
      */
-    inline fun forEach(action: World.(Entity) -> Unit) {
-        for (id in 0 until nextId) {
-            val entity = Entity(id)
-            if (removedEntities[entity.id]) {
-                continue
-            }
-            world.action(entity)
-        }
+    inline fun forEach(noinline action: World.(Entity) -> Unit) {
+        entityProvider.forEach(action)
     }
 
     /**
