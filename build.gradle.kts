@@ -3,10 +3,10 @@
 import kotlinx.benchmark.gradle.KotlinJvmBenchmarkTarget
 
 plugins {
-    kotlin("multiplatform") version "1.8.21"
-    kotlin("plugin.serialization") version "1.8.21"
-    id("org.jetbrains.kotlinx.benchmark") version "0.4.8"
-    id("org.jetbrains.dokka") version "1.8.10"
+    kotlin("multiplatform")
+    kotlin("plugin.serialization")
+    id("org.jetbrains.kotlinx.benchmark")
+    id("org.jetbrains.dokka")
     `maven-publish`
     signing
 }
@@ -53,7 +53,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${project.properties["serializationVersion"]}")
             }
         }
         val commonTest by getting {
@@ -65,7 +65,7 @@ kotlin {
         val jvmTest by getting
         val jvmBenchmarks by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:0.4.8")
+                implementation("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:${project.properties["benchmarkVersion"]}")
                 implementation("com.badlogicgames.ashley:ashley:1.7.4")
                 implementation("net.onedaybeard.artemis:artemis-odb:2.3.0")
             }

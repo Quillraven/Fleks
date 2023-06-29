@@ -174,7 +174,7 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
      * This hook gets called whenever an [entity][Entity] gets created and
      * after its [components][Component] are assigned and [families][Family] are updated.
      */
-    inline fun onAddEntity(noinline hook: EntityHook) {
+    fun onAddEntity(hook: EntityHook) {
         world.setEntityAddHook(hook)
     }
 
@@ -183,7 +183,7 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
      * This hook gets called whenever an [entity][Entity] gets removed and
      * before its [components][Component] are removed and [families][Family] are updated.
      */
-    inline fun onRemoveEntity(noinline hook: EntityHook) {
+    fun onRemoveEntity(hook: EntityHook) {
         world.setEntityRemoveHook(hook)
     }
 
@@ -364,7 +364,7 @@ class World internal constructor(
     /**
      * Performs the given [action] on each active [entity][Entity].
      */
-    inline fun forEach(noinline action: World.(Entity) -> Unit) {
+    fun forEach(action: World.(Entity) -> Unit) {
         entityService.forEach(action)
     }
 
@@ -422,7 +422,7 @@ class World internal constructor(
      * @throws FleksHookAlreadyAddedException if the [EntityService] already has an add hook set.
      */
     @PublishedApi
-    internal inline fun setEntityAddHook(noinline hook: EntityHook) {
+    internal fun setEntityAddHook(hook: EntityHook) {
         if (entityService.addHook != null) {
             throw FleksHookAlreadyAddedException("addHook", "Entity")
         }
@@ -435,7 +435,7 @@ class World internal constructor(
      * @throws FleksHookAlreadyAddedException if the [EntityService] already has a remove hook set.
      */
     @PublishedApi
-    internal inline fun setEntityRemoveHook(noinline hook: EntityHook) {
+    internal fun setEntityRemoveHook(hook: EntityHook) {
         if (entityService.removeHook != null) {
             throw FleksHookAlreadyAddedException("removeHook", "Entity")
         }

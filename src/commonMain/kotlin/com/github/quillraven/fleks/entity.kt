@@ -118,7 +118,7 @@ open class EntityCreateContext(
      * already had such a component then it gets called with the previous assigned component before
      * the [addHook][ComponentsHolder.addHook] is called.
      */
-    inline operator fun Entity.plusAssign(components: List<Component<*>>) {
+    operator fun Entity.plusAssign(components: List<Component<*>>) {
         components.forEach { cmp ->
             val compType = cmp.type()
             compMasks[this.id].set(compType.id)
@@ -547,7 +547,7 @@ class EntityService(
     /**
      * Performs the given [action] on each active [entity][Entity].
      */
-    inline fun forEach(noinline action: World.(Entity) -> Unit) {
+    fun forEach(action: World.(Entity) -> Unit) {
         entityProvider.forEach(action)
     }
 
