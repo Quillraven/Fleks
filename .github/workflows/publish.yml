@@ -2,13 +2,15 @@ name: Publish
 on:
   release:
     types: [ created ]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+concurrency:
+  group: "${{ github.workflow }}"
+  cancel-in-progress: false
+
 jobs:
-  publish:
-    runs-on: windows-latest
+  maven-publish:
+    runs-on: macos-latest # macOS supports building all Kotlin targets
 
     permissions:
       contents: read
@@ -20,22 +22,18 @@ jobs:
       - name: Setup JDK 11
         uses: actions/setup-java@v3
         with:
-          distribution: 'temurin'
-          java-version: '11'
-
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
+          distribution: "temurin"
+          java-version: "11"
 
       - name: Validate Gradle wrapper
-        uses: gradle/wrapper-validation-action@e6e38bacfdf1a337459f332974bb2327a31aaf4b
+        uses: gradle/wrapper-validation-action@v1
 
-      - name: Build project
-        run: ./gradlew build
-
-      - name: Publish artifact
-        run: ./gradlew publish
+      - uses: gradle/gradle-build-action@v2
+        with:
+          gradle-home-cache-cleanup: true
+          arguments: publish --no-configuration-cache --no-parallel
         env:
-          OSSRH_USERNAME: ${{secrets.OSSRH_USERNAME}}
-          OSSRH_TOKEN: ${{secrets.OSSRH_TOKEN}}
-          SIGNING_KEY: ${{secrets.SIGNING_KEY}}
-          SIGNING_PASSWORD: ${{secrets.SIGNING_PASSWORD}}
+          ORG_GRADLE_PROJECT_fleks.ossrhUsername: ${{secrets.OSSRH_USERNAME}}
+          ORG_GRADLE_PROJECT_fleks.ossrhPassword: ${{secrets.OSSRH_TOKEN}}
+          ORG_GRADLE_PROJECT_fleks.signing.key: ${{secrets.SIGNING_KEY}}
+          ORG_GRADLE_PROJECT_fleks.signing.password: ${{secrets.SIGNING_PASSWORD}}
