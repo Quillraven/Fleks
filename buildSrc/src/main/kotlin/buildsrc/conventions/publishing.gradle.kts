@@ -23,10 +23,8 @@ plugins {
 val ossrhUsername = providers.gradleProperty("fleks.ossrhUsername")
 val ossrhPassword = providers.gradleProperty("fleks.ossrhPassword")
 
-val signingKey: Provider<String> =
-    providers.gradleProperty("fleks.signing.key")
-val signingPassword: Provider<String> =
-    providers.gradleProperty("fleks.signing.password")
+val signingKey = providers.gradleProperty("fleks.signing.key")
+val signingPassword = providers.gradleProperty("fleks.signing.password")
 
 val isReleaseVersion = provider { version.toString().endsWith("-SNAPSHOT") }
 
