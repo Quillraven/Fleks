@@ -8,11 +8,7 @@ plugins {
 
 kotlin {
 
-    // Native targets all extend commonMain and commonTest.
-    //
-    // Some targets (ios, tvos, watchos) are shortcuts provided by the Kotlin DSL, that
-    // provide additional targets, except for 'simulators' which must be defined manually.
-    // https://kotlinlang.org/docs/multiplatform-share-on-platforms.html#use-target-shortcuts
+    // Native targets all extend commonMain and commonTest
     //
     // common/
     // └── native/
@@ -33,24 +29,31 @@ kotlin {
     //         ├── watchosArm64
     //         ├── watchosX64
     //         └── watchosSimulatorArm64Main
+    //
+    // More specialised targets are disabled. They can be enabled, if there is demand for them - just make sure
+    // to add `dependsOn(nativeMain)` / `dependsOn(nativeTest)` below for any new targets.
 
     linuxX64()
+    linuxArm64()
 
     mingwX64()
 
-    macosX64()
     macosArm64()
+    macosX64()
 
-    // More specialised targets are disabled for now, since I anticipate low demand.
-    // They can be re-enabled, if there is demand for them.
-    // https://kotlinlang.org/docs/multiplatform-share-on-platforms.html#use-target-shortcuts
+
+    // https://kotlinlang.org/docs/multiplatform-hierarchy.html#target-shortcuts
     //ios()     // iosArm64, iosX64
     //watchos() // watchosArm32, watchosArm64, watchosX64
     //tvos()    // tvosArm64, tvosX64
-
     //iosSimulatorArm64()
-    //tvosSimulatorArm64()
     //watchosSimulatorArm64()
+    //tvosSimulatorArm64()
+    //androidNativeArm32()
+    //androidNativeArm64()
+    //androidNativeX86()
+    //androidNativeX64()
+    //watchosDeviceArm64()
 
     @Suppress("UNUSED_VARIABLE")
     sourceSets {
@@ -63,6 +66,8 @@ kotlin {
         // Linux
         val linuxX64Main by getting { dependsOn(nativeMain) }
         val linuxX64Test by getting { dependsOn(nativeTest) }
+        val linuxArm64Main by getting { dependsOn(nativeMain) }
+        val linuxArm64Test by getting { dependsOn(nativeTest) }
 
         // Windows - MinGW
         val mingwX64Main by getting { dependsOn(nativeMain) }
@@ -74,29 +79,5 @@ kotlin {
 
         val macosX64Main by getting { dependsOn(nativeMain) }
         val macosX64Test by getting { dependsOn(nativeTest) }
-
-        //// Apple - iOS
-        //val iosMain by getting { dependsOn(nativeMain) }
-        //val iosTest by getting { dependsOn(nativeTest) }
-
-        //val iosSimulatorArm64Main by getting { dependsOn(iosMain) }
-        //val iosSimulatorArm64Test by getting { dependsOn(iosTest) }
-
-        //// Apple - tvOS
-        //val tvosMain by getting { dependsOn(nativeMain) }
-        //val tvosTest by getting { dependsOn(nativeTest) }
-
-        //val tvosSimulatorArm64Main by getting { dependsOn(tvosMain) }
-        //val tvosSimulatorArm64Test by getting { dependsOn(tvosTest) }
-
-        //// Apple - watchOS
-        //val watchosMain by getting { dependsOn(nativeMain) }
-        //val watchosTest by getting { dependsOn(nativeTest) }
-
-        //val watchosSimulatorArm64Main by getting { dependsOn(watchosMain) }
-        //val watchosSimulatorArm64Test by getting { dependsOn(watchosTest) }
-
-        // val iosArm32Main by getting { dependsOn(desktopMain) }
-        // val iosArm32Test by getting { dependsOn(nativeTest) }
     }
 }
