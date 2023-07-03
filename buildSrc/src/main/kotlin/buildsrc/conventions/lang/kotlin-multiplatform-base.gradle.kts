@@ -15,6 +15,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 plugins {
     id("buildsrc.conventions.base")
     kotlin("multiplatform")
+    kotlin("plugin.serialization")
 }
 
 
