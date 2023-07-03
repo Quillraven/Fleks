@@ -7,8 +7,6 @@ plugins {
     buildsrc.conventions.lang.`kotlin-multiplatform-jvm`
     buildsrc.conventions.lang.`kotlin-multiplatform-native`
     buildsrc.conventions.publishing
-    buildsrc.conventions.`git-branch-publish`
-    kotlin("plugin.serialization")
     id("org.jetbrains.kotlinx.benchmark")
     id("org.jetbrains.dokka")
 }
