@@ -18,7 +18,8 @@ plugins {
 
 
 //region Publication Properties
-// can be set in gradle.properties or environment variables, e.g. ORG_GRADLE_PROJECT_fleks.ossrhUsername
+// can be set in `$GRADLE_USER_HOME/gradle.properties`, e.g. `fleks.ossrhPassword=123`
+// or environment variables, e.g. `ORG_GRADLE_PROJECT_fleks.ossrhUsername=abc`
 val ossrhUsername = providers.gradleProperty("fleks.ossrhUsername")
 val ossrhPassword = providers.gradleProperty("fleks.ossrhPassword")
 

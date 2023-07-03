@@ -20,12 +20,8 @@ tasks.withType<AbstractArchiveTask>().configureEach {
     isReproducibleFileOrder = true
 }
 
-
-tasks.withType<AbstractCopyTask>().configureEach {
-    includeEmptyDirs = false
-}
-
 tasks.withType<Test>().configureEach {
+    // increase logging for all tests
     testLogging {
         events(
             TestLogEvent.FAILED,
