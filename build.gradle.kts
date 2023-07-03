@@ -49,6 +49,5 @@ kotlin {
 }
 
 tasks.javadocJar {
-    // disable Dokka, it's slow less useful than the sources.jar, which is also published
-    //from(tasks.dokkaHtml)
+    from(tasks.dokkaHtml)
 }
