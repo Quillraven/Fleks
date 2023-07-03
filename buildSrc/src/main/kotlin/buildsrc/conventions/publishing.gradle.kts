@@ -84,45 +84,46 @@ val javadocJar by tasks.registering(Jar::class) {
     archiveClassifier.set("javadoc")
 }
 
-if (ossrhUsername.isPresent && ossrhPassword.isPresent) {
-    publishing {
-        repositories {
-            maven(sonatypeReleaseUrl) {
-                name = "SonatypeRelease"
-                credentials {
-                    username = ossrhUsername.get()
-                    password = ossrhPassword.get()
-                }
-            }
-            // Publish to a project-local Maven directory, for verification.
-            // To test, run:
-            // ./gradlew publishAllPublicationsToProjectLocalRepository
-            // and check $rootDir/build/maven-project-local
-            maven(rootProject.layout.buildDirectory.dir("maven-project-local")) {
-                name = "ProjectLocal"
+publishing {
+    repositories {
+        maven(sonatypeReleaseUrl) {
+            name = "SonatypeRelease"
+            credentials {
+                username = ossrhUsername.orNull
+                password = ossrhPassword.orNull
             }
         }
 
-        publications.withType<MavenPublication>().configureEach {
-            // Maven Central requires Javadoc
-            artifact(javadocJar)
+        // Publish to a project-local Maven directory, for verification.
+        // To test, run:
+        // ./gradlew publishAllPublicationsToProjectLocalRepository
+        // and check $rootDir/build/maven-project-local
+        maven(rootProject.layout.buildDirectory.dir("maven-project-local")) {
+            name = "ProjectLocal"
         }
     }
 
-    signing {
+    publications.withType<MavenPublication>().configureEach {
+        // Maven Central requires Javadoc
+        artifact(javadocJar)
+    }
+}
+
+signing {
+    if (ossrhUsername.isPresent && ossrhPassword.isPresent) {
         logger.lifecycle("publishing.gradle.kts enabled signing for ${project.path}")
         if (signingKey.isPresent && signingPassword.isPresent) {
             useInMemoryPgpKeys(signingKey.get(), signingPassword.get())
         } else {
             useGpgCmd()
         }
-    }
 
-    afterEvaluate {
-        // Register signatures in afterEvaluate, otherwise the signing plugin creates
-        // the signing tasks too early, before all the publications are added.
-        signing {
-            sign(publishing.publications)
+        afterEvaluate {
+            // Register signatures in afterEvaluate, otherwise the signing plugin creates
+            // the signing tasks too early, before all the publications are added.
+            signing {
+                sign(publishing.publications)
+            }
         }
     }
 }
