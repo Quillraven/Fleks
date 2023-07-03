@@ -47,20 +47,20 @@ publishing {
         // because otherwise maven will complain again that
         // information like license, developer or url are missing.
         pom {
-            name.set("Fleks")
-            description.set("A lightweight entity component system written in Kotlin.")
-            url.set("https://github.com/Quillraven/Fleks")
+            name.convention("Fleks")
+            description.convention("A lightweight entity component system written in Kotlin.")
+            url.convention("https://github.com/Quillraven/Fleks")
 
             scm {
-                connection.set("scm:git:git@github.com:quillraven/fleks.git")
-                developerConnection.set("scm:git:git@github.com:quillraven/fleks.git")
-                url.set("https://github.com/quillraven/fleks/")
+                connection.convention("scm:git:git@github.com:quillraven/fleks.git")
+                developerConnection.convention("scm:git:git@github.com:quillraven/fleks.git")
+                url.convention("https://github.com/quillraven/fleks/")
             }
 
             licenses {
                 license {
-                    name.set("MIT License")
-                    url.set("https://opensource.org/licenses/MIT")
+                    name.convention("MIT License")
+                    url.convention("https://opensource.org/licenses/MIT")
                 }
             }
 
