@@ -79,9 +79,8 @@ publishing {
 //region Maven Central publishing/signing
 val javadocJar by tasks.registering(Jar::class) {
     group = DOCUMENTATION_GROUP
-    description = "Javadoc Jar (required by Maven Central)"
-    // We need to add the javadocJar to every publication
-    // because otherwise maven is complaining.
+    description = "Javadoc Jar"
+    // We need to add the javadocJar to every publication because otherwise Maven Central complains.
     // It is not sufficient to only have it in the "root" folder.
     archiveClassifier.set("javadoc")
 }
@@ -105,9 +104,8 @@ if (ossrhUsername.isPresent && ossrhPassword.isPresent) {
             }
         }
 
-        // Maven Central requires Javadoc JAR, which our project doesn't
-        // have because it's not Java, so use an empty jar.
         publications.withType<MavenPublication>().configureEach {
+            // Maven Central requires Javadoc
             artifact(javadocJar)
         }
     }
