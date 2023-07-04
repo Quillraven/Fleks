@@ -6,7 +6,7 @@ import kotlin.math.min
 /**
  * Sorting of `int[]` logic taken from: https://github.com/karussell/fastutil/blob/master/src/it/unimi/dsi/fastutil/ints/IntArrays.java
  */
-fun interface EntityComparator : Comparator<Entity>
+typealias EntityComparator = Comparator<Entity>
 
 fun compareEntity(
     world: World = World.CURRENT_WORLD ?: throw FleksWrongConfigurationUsageException(),
