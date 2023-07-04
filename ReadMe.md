@@ -67,8 +67,8 @@ To use Fleks add it as a dependency to your project:
 
 ```xml
 <dependency>
-  <groupId>io.github.quillraven.fleks-jvm</groupId>
-  <artifactId>Fleks</artifactId>
+  <groupId>io.github.quillraven.fleks</groupId>
+  <artifactId>Fleks-jvm</artifactId>
   <version>2.3</version>
 </dependency>
 ```
