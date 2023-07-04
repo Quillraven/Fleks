@@ -20,8 +20,8 @@ functions for it, but I was never fully happy with how it felt because:
 
 - Defining [ComponentMapper](https://github.com/libgdx/ashley/wiki/How-to-use-Ashley#retrieving-components-with-componentmapper)
   for every [Component](https://github.com/libgdx/ashley/wiki/How-to-use-Ashley#components) felt very redundant
-- Ashley is not null-safe and therefore you get e.g. `Entity?` passed in as default to
-  an [IteratingSystem](https://github.com/libgdx/ashley/wiki/Built-in-Entity-Systems#iteratingsystem)
+- Ashley is not null-safe, and therefore you get e.g. `Entity?` passed in as default to
+  an [IteratingSystem](https://github.com/libgdx/ashley/wiki/Built-in-Entity-Systems#iteratingsystem),
   although it will never be null (or at least shouldn't 😉)
 - Creating [Families](https://github.com/libgdx/ashley/wiki/How-to-use-Ashley#entity-families) as constructor arguments
   felt weird to me
@@ -51,7 +51,7 @@ or prefer the other API:
 - [1.6-JVM](https://github.com/Quillraven/Fleks/tree/JVM-1.6)
 - [1.6-KMP](https://github.com/Quillraven/Fleks/tree/KMP-1.6)
 
-I want to make a big shout out to [jobe-m](https://github.com/jobe-m) who helped with the first
+I want to make a big shout-out to [jobe-m](https://github.com/jobe-m) who helped with the first
 Kotlin multiplatform version and who also helped throughout the development of 2.0. Thank you!
 
 With version 2.0 I tried to simplify the API and usage of Fleks for new users. This means that
@@ -65,9 +65,9 @@ To use Fleks add it as a dependency to your project:
 
 #### Apache Maven
 
-```kotlin
+```xml
 <dependency>
-  <groupId>io.github.quillraven.fleks</groupId>
+  <groupId>io.github.quillraven.fleks-jvm</groupId>
   <artifactId>Fleks</artifactId>
   <version>2.3</version>
 </dependency>
@@ -125,20 +125,20 @@ is:
 
 Here is the result (the higher the Score the better):
 
-| Library | Benchmark | Mode | Cnt | Score   | Error      | Units |
-| ------- | --------- | ---- | --- |---------|------------| ----- |
-| |
-| Ashley | AddRemove | thrpt | 3 | 207,007 | ± 39,121   | ops/s |
-| Artemis | AddRemove | thrpt | 3 | 677,231 | ± 473,361 | ops/s |
-| Fleks | AddRemove | thrpt | 3 | 841,916 | ± 75,492  | ops/s |
-| |
-| Ashley | Simple | thrpt | 3 | 3,986   | ± 1,390    | ops/s |
-| Artemis | Simple | thrpt | 3 | 32,830  | ± 2,965    | ops/s |
-| Fleks | Simple | thrpt | 3 | 33,017  | ± 3,089    | ops/s |
-| |
-| Ashley | Complex | thrpt | 3 | 0,056   | ± 0,117    | ops/s |
-| Artemis | Complex | thrpt | 3 | 1,452   | ± 0,452    | ops/s |
-| Fleks | Complex | thrpt | 3 | 1,326   | ± 0,269    | ops/s |
+| Library | Benchmark | Mode  | Cnt | Score   | Error     | Units |
+|---------|-----------|-------|-----|---------|-----------|-------|
+|         |
+| Ashley  | AddRemove | thrpt | 3   | 207,007 | ± 39,121  | ops/s |
+| Artemis | AddRemove | thrpt | 3   | 677,231 | ± 473,361 | ops/s |
+| Fleks   | AddRemove | thrpt | 3   | 841,916 | ± 75,492  | ops/s |
+|         |
+| Ashley  | Simple    | thrpt | 3   | 3,986   | ± 1,390   | ops/s |
+| Artemis | Simple    | thrpt | 3   | 32,830  | ± 2,965   | ops/s |
+| Fleks   | Simple    | thrpt | 3   | 33,017  | ± 3,089   | ops/s |
+|         |
+| Ashley  | Complex   | thrpt | 3   | 0,056   | ± 0,117   | ops/s |
+| Artemis | Complex   | thrpt | 3   | 1,452   | ± 0,452   | ops/s |
+| Fleks   | Complex   | thrpt | 3   | 1,326   | ± 0,269   | ops/s |
 
 I am not an expert for performance measurement, that's why you should take those numbers with a grain of salt but as you
 can see in the table:
