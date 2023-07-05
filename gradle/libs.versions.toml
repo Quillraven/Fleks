@@ -2,10 +2,8 @@
 
 kotlin = "1.8.22"
 kotlinxSerialization = "1.5.1"
-
 kotlinDokka = "1.8.20"
 kotlinxBenchmark = "0.4.8"
-
 
 [libraries]
 
@@ -13,6 +11,10 @@ kotlinxSerialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializat
 
 kotlinxBenchmark-runtime = { module = "org.jetbrains.kotlinx:kotlinx-benchmark-runtime", version.ref = "kotlinxBenchmark" }
 
-
 ashley = { module = "com.badlogicgames.ashley:ashley", version = "1.7.4" }
 artemisOdb = { module = "net.onedaybeard.artemis:artemis-odb", version = "2.3.0" }
+
+gradlePlugin-kotlin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+gradlePlugin-kotlinSerialization = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }
+gradlePlugin-kotlinDokka = { module = "org.jetbrains.dokka:dokka-gradle-plugin", version.ref = "kotlinDokka" }
+gradlePlugin-kotlinxBenchmark = { module = "org.jetbrains.kotlinx:kotlinx-benchmark-plugin", version.ref = "kotlinxBenchmark" }
