@@ -4,34 +4,27 @@ import com.github.quillraven.fleks.*
 import kotlin.math.min
 
 /**
- * Sorting of int[] logic taken from: https://github.com/karussell/fastutil/blob/master/src/it/unimi/dsi/fastutil/ints/IntArrays.java
+ * Sorting of `int[]` logic taken from: https://github.com/karussell/fastutil/blob/master/src/it/unimi/dsi/fastutil/ints/IntArrays.java
  */
-interface EntityComparator {
-    fun compare(entityA: Entity, entityB: Entity): Int
-}
+typealias EntityComparator = Comparator<Entity>
 
 fun compareEntity(
     world: World = World.CURRENT_WORLD ?: throw FleksWrongConfigurationUsageException(),
     compareFun: World.(Entity, Entity) -> Int,
 ): EntityComparator {
-    return object : EntityComparator {
-        override fun compare(entityA: Entity, entityB: Entity): Int {
-            return compareFun(world, entityA, entityB)
-        }
-    }
+    return EntityComparator { entityA, entityB -> compareFun(world, entityA, entityB) }
 }
 
 inline fun <reified T> compareEntityBy(
     componentType: ComponentType<T>,
     world: World = World.CURRENT_WORLD ?: throw FleksWrongConfigurationUsageException(),
-): EntityComparator where T : Component<*>, T : Comparable<*> {
+): EntityComparator where T : Component<T>, T : Comparable<T> {
     return object : EntityComparator {
         private val holder = world.componentService.holder(componentType)
 
-        @Suppress("UNCHECKED_CAST")
-        override fun compare(entityA: Entity, entityB: Entity): Int {
-            val valA: Comparable<T> = holder[entityA] as Comparable<T>
-            val valB = holder[entityB]
+        override fun compare(a: Entity, b: Entity): Int {
+            val valA = holder[a]
+            val valB = holder[b]
             return valA.compareTo(valB)
         }
     }
