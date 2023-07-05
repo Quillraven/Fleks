@@ -1,6 +1,7 @@
-package buildsrc.conventions
+package buildsrc.plugins
 
 import org.gradle.api.plugins.JavaBasePlugin.DOCUMENTATION_GROUP
+import org.gradle.kotlin.dsl.*
 
 /**
  * Conventions for publishing.

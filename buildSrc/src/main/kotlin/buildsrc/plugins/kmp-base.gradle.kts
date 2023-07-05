@@ -1,19 +1,24 @@
-package buildsrc.conventions.lang
+package buildsrc.plugins
 
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
-
 /**
  * Base configuration for all Kotlin/Multiplatform conventions.
  *
- * This plugin does not enable any Kotlin target. To enable a target in a subproject, prefer applying specific Kotlin
- * target convention plugins.
+ * This plugin does not enable any Kotlin target.
+ * To enable targets apply a specific specific Kotlin target convention plugins, e.g.
+ *
+ * ```
+ * plugins {
+ *   id("buildsrc.plugins.kmp-js")
+ * }
+ * ```
  */
 
 plugins {
-    id("buildsrc.conventions.base")
+    id("buildsrc.plugins.base")
     kotlin("multiplatform")
     kotlin("plugin.serialization")
 }

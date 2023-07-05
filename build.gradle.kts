@@ -3,10 +3,10 @@
 import kotlinx.benchmark.gradle.KotlinJvmBenchmarkTarget
 
 plugins {
-    buildsrc.conventions.lang.`kotlin-multiplatform-js`
-    buildsrc.conventions.lang.`kotlin-multiplatform-jvm`
-    buildsrc.conventions.lang.`kotlin-multiplatform-native`
-    buildsrc.conventions.publishing
+    buildsrc.plugins.`kmp-js`
+    buildsrc.plugins.`kmp-jvm`
+    buildsrc.plugins.`kmp-native`
+    buildsrc.plugins.publishing
     id("org.jetbrains.kotlinx.benchmark")
     id("org.jetbrains.dokka")
 }

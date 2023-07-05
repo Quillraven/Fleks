@@ -1,9 +1,9 @@
-package buildsrc.conventions.lang
+package buildsrc.plugins
 
 /** conventions for a Kotlin/JS subproject */
 
 plugins {
-    id("buildsrc.conventions.lang.kotlin-multiplatform-base")
+    id("buildsrc.plugins.kmp-base")
 }
 
 kotlin {
