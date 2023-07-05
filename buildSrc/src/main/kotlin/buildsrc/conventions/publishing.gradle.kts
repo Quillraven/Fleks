@@ -26,7 +26,7 @@ val ossrhPassword = providers.gradleProperty("fleks.ossrhPassword")
 val signingKey = providers.gradleProperty("fleks.signing.key")
 val signingPassword = providers.gradleProperty("fleks.signing.password")
 
-val isReleaseVersion = provider { version.toString().endsWith("-SNAPSHOT") }
+val isReleaseVersion = provider { !version.toString().endsWith("-SNAPSHOT") }
 
 val sonatypeReleaseUrl = isReleaseVersion.map { isRelease ->
     if (isRelease) {
