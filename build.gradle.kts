@@ -12,7 +12,7 @@ plugins {
 }
 
 group = "io.github.quillraven.fleks"
-version = "2.3"
+version = "2.4-SNAPSHOT"
 
 kotlin {
     jvm {
