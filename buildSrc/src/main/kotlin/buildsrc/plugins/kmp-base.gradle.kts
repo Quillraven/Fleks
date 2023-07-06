@@ -8,7 +8,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
  * Base configuration for all Kotlin/Multiplatform conventions.
  *
  * This plugin does not enable any Kotlin target.
- * To enable targets apply a specific specific Kotlin target convention plugins, e.g.
+ * To enable targets apply a specific Kotlin target convention plugin, e.g.
  *
  * ```
  * plugins {
