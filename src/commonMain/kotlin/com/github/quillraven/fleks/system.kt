@@ -11,7 +11,7 @@ import com.github.quillraven.fleks.collection.EntityComparator
  * [Fixed] means that the [IntervalSystem] is updated at a fixed rate given in seconds.
  */
 sealed interface Interval
-object EachFrame : Interval
+data object EachFrame : Interval
 
 /**
  * @param step the time in seconds when an [IntervalSystem] gets updated.
@@ -107,8 +107,8 @@ abstract class IntervalSystem(
  * [Entities][Entity] are then sorted the next time [IteratingSystem.onTick] gets called.
  */
 sealed interface SortingType
-object Automatic : SortingType
-object Manual : SortingType
+data object Automatic : SortingType
+data object Manual : SortingType
 
 /**
  * An [IntervalSystem] of a [world][World] with a context to [entities][Entity].

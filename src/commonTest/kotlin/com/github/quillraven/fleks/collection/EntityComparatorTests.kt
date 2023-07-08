@@ -13,7 +13,7 @@ internal class EntityComparatorTests {
         // create entities, with IDs descending from 10 to 1
         val entities = List(10) { Entity(10 - it) }
 
-        val sorted = entities.sortedWith(EntityComparator { a, b -> a.id.compareTo(b.id) })
+        val sorted = entities.sortedWith { a, b -> a.id.compareTo(b.id) }
 
         assertContentEquals(
             message = "Expect entities are sorted by ascending ID, from 1 to 10",
