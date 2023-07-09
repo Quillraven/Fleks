@@ -1,12 +1,12 @@
 # Fleks
 
-[![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/Quillraven/Fleks/blob/master/LICENSE)
-
 [![LTS](https://img.shields.io/badge/LTS-2.3-orange.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks/2.3/jar)
-[![Snapshot](https://img.shields.io/badge/Snapshot-2.4--SNAPSHOT-orange.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks/2.3/jar)
+[![Snapshot](https://img.shields.io/badge/Snapshot-2.4--SNAPSHOT-orange.svg)](https://s01.oss.sonatype.org/#nexus-search;gav~io.github.quillraven.fleks~~2.4-SNAPSHOT~~)
 
 [![Build Master](https://img.shields.io/github/actions/workflow/status/quillraven/fleks/build.yml?branch=master)](https://github.com/Quillraven/fleks/actions)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.9.0-red.svg)](http://kotlinlang.org/)
+
+[![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/Quillraven/Fleks/blob/master/LICENSE)
 
 A **f**ast, **l**ightweight, **e**ntity component **s**ystem library written in **K**otlin.
 
