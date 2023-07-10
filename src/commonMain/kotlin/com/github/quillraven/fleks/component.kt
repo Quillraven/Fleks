@@ -53,6 +53,16 @@ interface Component<T> {
      * Returns the [ComponentType] of a [Component].
      */
     fun type(): ComponentType<T>
+
+    /**
+     * Lifecycle method that gets called whenever a [component][Component] gets set for an [entity][Entity].
+     */
+    fun World.onAddComponent() = Unit
+
+    /**
+     * Lifecycle method that gets called whenever a [component][Component] gets removed from an [entity][Entity].
+     */
+    fun World.onRemoveComponent() = Unit
 }
 
 /**
