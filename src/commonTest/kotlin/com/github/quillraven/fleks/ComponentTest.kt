@@ -184,39 +184,6 @@ internal class ComponentTest {
     }
 
     @Test
-    fun addComponentWithComponentListenerWhenComponentAlreadyPresent() {
-        var numAddCalls = 0
-        var numRemoveCalls = 0
-        val expectedEntity = Entity(1)
-        val expectedComp1 = ComponentTestComponent()
-        val expectedComp2 = ComponentTestComponent()
-
-        val onAdd: ComponentHook<ComponentTestComponent> = { entity, component ->
-            assertSame(testWorld, this)
-            assertEquals(expectedEntity, entity)
-            assertTrue { expectedComp1 === component || expectedComp2 === component }
-            numAddCalls++
-        }
-
-        val onRemove: ComponentHook<ComponentTestComponent> = { entity, component ->
-            assertSame(testWorld, this)
-            assertEquals(expectedEntity, entity)
-            assertSame(expectedComp1, component)
-            numRemoveCalls++
-        }
-
-        testHolder.addHook = onAdd
-        testHolder.removeHook = onRemove
-
-        testHolder[expectedEntity] = expectedComp1
-        // this should trigger onRemove of the first component
-        testHolder[expectedEntity] = expectedComp2
-
-        assertEquals(2, numAddCalls)
-        assertEquals(1, numRemoveCalls)
-    }
-
-    @Test
     fun cannotRemoveNonExistingEntityFromHolderWithInsufficientCapacity() {
         val holder = testService.holder(ComponentTestComponent)
         val entity = Entity(10_000)

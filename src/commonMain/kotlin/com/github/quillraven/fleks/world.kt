@@ -49,38 +49,6 @@ class InjectableConfiguration(private val world: World) {
 }
 
 /**
- * A DSL class to configure [ComponentHook] for specific [components][Component].
- */
-@WorldCfgMarker
-class ComponentConfiguration(
-    @PublishedApi
-    internal val world: World,
-) {
-
-    /**
-     * Sets the add [hook][ComponentsHolder.addHook] for the given [type].
-     * This hook gets called whenever a [component][Component] of the given [type] gets added to an [entity][Entity].
-     */
-    inline fun <reified T : Component<*>> onAdd(
-        type: ComponentType<T>,
-        noinline hook: ComponentHook<T>
-    ) {
-        world.setComponentAddHook(type, hook)
-    }
-
-    /**
-     * Sets the remove [hook][ComponentsHolder.addHook] for the given [type].
-     * This hook gets called whenever a [component][Component] of the given [type] gets removed from an [entity][Entity].
-     */
-    inline fun <reified T : Component<*>> onRemove(
-        type: ComponentType<T>,
-        noinline hook: ComponentHook<T>
-    ) {
-        world.setComponentRemoveHook(type, hook)
-    }
-}
-
-/**
  * A DSL class to configure [IntervalSystem] of a [WorldConfiguration].
  */
 @WorldCfgMarker
@@ -149,16 +117,11 @@ class FamilyConfiguration(
 class WorldConfiguration(@PublishedApi internal val world: World) {
 
     private var injectableCfg: (InjectableConfiguration.() -> Unit)? = null
-    private var compCfg: (ComponentConfiguration.() -> Unit)? = null
     private var familyCfg: (FamilyConfiguration.() -> Unit)? = null
     private var systemCfg: (SystemConfiguration.() -> Unit)? = null
 
     fun injectables(cfg: InjectableConfiguration.() -> Unit) {
         injectableCfg = cfg
-    }
-
-    fun components(cfg: ComponentConfiguration.() -> Unit) {
-        compCfg = cfg
     }
 
     fun families(cfg: FamilyConfiguration.() -> Unit) {
@@ -197,7 +160,6 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
 
     fun configure() {
         injectableCfg?.invoke(InjectableConfiguration(world))
-        compCfg?.invoke(ComponentConfiguration(world))
         familyCfg?.invoke(FamilyConfiguration(world))
         SystemConfiguration().also {
             systemCfg?.invoke(it)
@@ -216,7 +178,7 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
  * size of some collections and to avoid slow resizing calls.
  *
  * @param cfg the [configuration][WorldConfiguration] of the world containing the [systems][IntervalSystem],
- * [injectables][Injectable], [ComponentHook]s and [FamilyHook]s.
+ * [injectables][Injectable] and [FamilyHook]s.
  */
 fun configureWorld(entityCapacity: Int = 512, cfg: WorldConfiguration.() -> Unit): World {
     val newWorld = World(entityCapacity)
@@ -383,40 +345,6 @@ class World internal constructor(
     }
 
     /**
-     * Sets the [hook] as a [ComponentsHolder.addHook] for the given [type].
-     *
-     * @throws FleksHookAlreadyAddedException if the [ComponentsHolder] already has an add hook set.
-     */
-    @PublishedApi
-    internal inline fun <reified T : Component<*>> setComponentAddHook(
-        type: ComponentType<T>,
-        noinline hook: ComponentHook<T>
-    ) {
-        val holder = componentService.holder(type)
-        if (holder.addHook != null) {
-            throw FleksHookAlreadyAddedException("addHook", "Component ${type::class.simpleName}")
-        }
-        holder.addHook = hook
-    }
-
-    /**
-     * Sets the [hook] as a [ComponentsHolder.removeHook] for the given [type].
-     *
-     * @throws FleksHookAlreadyAddedException if the [ComponentsHolder] already has a remove hook set.
-     */
-    @PublishedApi
-    internal inline fun <reified T : Component<*>> setComponentRemoveHook(
-        type: ComponentType<T>,
-        noinline hook: ComponentHook<T>
-    ) {
-        val holder = componentService.holder(type)
-        if (holder.removeHook != null) {
-            throw FleksHookAlreadyAddedException("removeHook", "Component ${type::class.simpleName}")
-        }
-        holder.removeHook = hook
-    }
-
-    /**
      * Sets the [hook] as an [EntityService.addHook].
      *
      * @throws FleksHookAlreadyAddedException if the [EntityService] already has an add hook set.
@@ -529,7 +457,7 @@ class World internal constructor(
     /**
      * Loads the given [snapshot] of the world. This will first clear any existing
      * entity of the world. After that it will load all provided entities and components.
-     * This will also execute [ComponentHook] or [FamilyHook].
+     * This will also execute [FamilyHook].
      *
      * @throws FleksSnapshotException if a family iteration is currently in process.
      */

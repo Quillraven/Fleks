@@ -7,12 +7,6 @@ import kotlin.native.concurrent.ThreadLocal
 import kotlin.reflect.KClass
 
 /**
- * Type alias for an optional hook function for a [ComponentsHolder].
- * Such a function runs within a [World] and takes the [Entity] and [component][Component] as an argument.
- */
-typealias ComponentHook<T> = World.(Entity, T) -> Unit
-
-/**
  * A class that assigns a unique [id] per type of [Component] starting from 0.
  * This [id] is used internally by Fleks as an index for some arrays.
  * Every [Component] class must have at least one [ComponentType].
@@ -78,18 +72,6 @@ class ComponentsHolder<T : Component<*>>(
     private var components: Array<T?>,
 ) {
     /**
-     * An optional [ComponentHook] that gets called whenever a [component][Component] gets set for an [entity][Entity].
-     */
-    @PublishedApi
-    internal var addHook: ComponentHook<T>? = null
-
-    /**
-     * An optional [ComponentHook] that gets called whenever a [component][Component] gets removed from an [entity][Entity].
-     */
-    @PublishedApi
-    internal var removeHook: ComponentHook<T>? = null
-
-    /**
      * Sets the [component] for the given [entity]. This function is only
      * used by [World.loadSnapshot] where we don't have the correct type information
      * during runtime, and therefore we can only provide 'Any' as a type and need to cast it internally.
@@ -100,8 +82,10 @@ class ComponentsHolder<T : Component<*>>(
 
     /**
      * Sets the [component] for the given [entity].
-     * If a [removeHook] is defined then it gets called if the [entity] already had a component.
-     * If an [addHook] is defined then it gets called after the [component] is assigned to the [entity].
+     * If the [entity] already had a component, the [onRemoveComponent][Component.onRemoveComponent] lifecycle method
+     * will be called.
+     * After the [component] is assigned to the [entity], the [onAddComponent][Component.onAddComponent] lifecycle method
+     * will be called.
      */
     operator fun set(entity: Entity, component: T) {
         if (entity.id >= components.size) {
@@ -109,7 +93,7 @@ class ComponentsHolder<T : Component<*>>(
             components = components.copyOf(max(components.size * 2, entity.id + 1))
         }
 
-        // check if removeHook needs to be called
+        // check if the remove lifecycle method of the previous component needs to be called
         components[entity.id]?.let { existingCmp ->
             // assign current component to null in order for 'contains' calls inside the lifecycle
             // method to correctly return false
@@ -117,7 +101,6 @@ class ComponentsHolder<T : Component<*>>(
             existingCmp.run {
                 world.onRemoveComponent()
             }
-            removeHook?.invoke(world, entity, existingCmp)
         }
 
         // set component and call lifecycle method
@@ -125,12 +108,12 @@ class ComponentsHolder<T : Component<*>>(
         component.run {
             world.onAddComponent()
         }
-        addHook?.invoke(world, entity, component)
     }
 
     /**
      * Removes a component of the specific type from the given [entity].
-     * If a [removeHook] is defined then it gets called if the [entity] has such a component.
+     * If the entity has such a component, its [onRemoveComponent][Component.onRemoveComponent] lifecycle method will
+     * be called.
      *
      * @throws [IndexOutOfBoundsException] if the id of the [entity] exceeds the components' capacity.
      */
@@ -141,7 +124,6 @@ class ComponentsHolder<T : Component<*>>(
         // assign null before running the lifecycle method in order for 'contains' calls to correctly return false
         components[entity.id] = null
         existingCmp?.run {
-            removeHook?.invoke(world, entity, existingCmp)
             world.onRemoveComponent()
         }
     }

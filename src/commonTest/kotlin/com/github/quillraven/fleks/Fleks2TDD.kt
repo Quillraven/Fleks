@@ -20,6 +20,29 @@ private data class Position(
     companion object : ComponentType<Position>()
 }
 
+abstract class ColliderService {
+    abstract fun getId(): String
+}
+
+private data class Collider(
+    val size: Float
+) : Component<Collider> {
+    override fun type(): ComponentType<Collider> = Collider
+
+    var colliderId: String? = null
+
+    override fun World.onAddComponent() {
+        val provider = inject<ColliderService>()
+        colliderId = provider.getId()
+    }
+
+    override fun World.onRemoveComponent() {
+        colliderId = null
+    }
+
+    companion object : ComponentType<Collider>()
+}
+
 private data class Sprite(
     val background: Boolean,
     var path: String = "",
@@ -142,36 +165,28 @@ class Fleks2TDD {
     }
 
     @Test
-    fun testComponentHooks() {
-        val addComponent = Position(0f, 0f)
-        val removeComponent = Position(0f, 0f)
-        lateinit var testWorld: World
-        testWorld = configureWorld {
-            components {
-                onAdd(Position) { entity, component ->
-                    component.x = 1f
-                    assertEquals(testWorld, this)
-                    assertTrue { entity.id in 0..1 }
-                    assertTrue { component in listOf(addComponent, removeComponent) }
-                }
-
-                onRemove(Position) { entity, component ->
-                    component.x = 2f
-                    assertEquals(testWorld, this)
-                    assertEquals(Entity(1), entity)
-                    assertEquals(removeComponent, component)
-                }
+    fun testComponentLifecycleMethods() {
+        val addComponent = Collider(0f)
+        val removeComponent = Collider(2f)
+        val testWorld = configureWorld {
+            injectables {
+                add<ColliderService>(object : ColliderService() {
+                    var nextId = 0
+                    override fun getId() = (nextId++).toString()
+                })
             }
         }
 
-        // entity that triggers onAdd hook
+        // entity that triggers onAddComponent lifecycle method
+        assertEquals(null, addComponent.colliderId)
         testWorld.entity { it += addComponent }
-        // entity that triggers onRemove hook
-        val removeEntity = testWorld.entity { it += removeComponent }
-        with(testWorld) { removeEntity.configure { it -= Position } }
+        assertEquals("0", addComponent.colliderId)
 
-        assertEquals(1f, addComponent.x)
-        assertEquals(2f, removeComponent.x)
+        // entity that triggers onRemoveComponent lifecycle method
+        val removeEntity = testWorld.entity { it += removeComponent }
+        assertEquals("1", removeComponent.colliderId)
+        with(testWorld) { removeEntity.configure { it -= Collider } }
+        assertEquals(null, removeComponent.colliderId)
     }
 
     @Test
