@@ -111,14 +111,20 @@ class ComponentsHolder<T : Component<*>>(
 
         // check if removeHook needs to be called
         components[entity.id]?.let { existingCmp ->
-            // assign current component to null in order for 'contains' calls inside the hook
-            // to correctly return false
+            // assign current component to null in order for 'contains' calls inside the lifecycle
+            // method to correctly return false
             components[entity.id] = null
+            existingCmp.run {
+                world.onRemoveComponent()
+            }
             removeHook?.invoke(world, entity, existingCmp)
         }
 
-        // set component and call addHook if necessary
+        // set component and call lifecycle method
         components[entity.id] = component
+        component.run {
+            world.onAddComponent()
+        }
         addHook?.invoke(world, entity, component)
     }
 
@@ -132,10 +138,11 @@ class ComponentsHolder<T : Component<*>>(
         if (entity.id < 0 || entity.id >= components.size) throw IndexOutOfBoundsException("$entity.id is not valid for components of size ${components.size}")
 
         val existingCmp = components[entity.id]
-        // assign null before running the removeHook in order for 'contains' calls to correctly return false
+        // assign null before running the lifecycle method in order for 'contains' calls to correctly return false
         components[entity.id] = null
-        if (existingCmp != null) {
+        existingCmp?.run {
             removeHook?.invoke(world, entity, existingCmp)
+            world.onRemoveComponent()
         }
     }
 
