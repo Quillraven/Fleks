@@ -58,13 +58,9 @@ private class WorldTestIteratingSystem(
     }
 }
 
-private class WorldTestInitSystem(
-    onCreateComponent: (WorldTestComponent) -> Unit = {}
-) : IteratingSystem(family { all(WorldTestComponent) }) {
+private class WorldTestInitSystem: IteratingSystem(family { all(WorldTestComponent) }) {
     init {
-        val comp = WorldTestComponent()
-        onCreateComponent(comp)
-        world.entity { it += comp }
+        world.entity { it += WorldTestComponent() }
     }
 
     override fun onTickEntity(entity: Entity) = Unit
@@ -448,15 +444,19 @@ internal class WorldTest {
 
     @Test
     fun notifyComponentHooksDuringSystemCreation() {
-        var component: WorldTestComponent? = null
-        configureWorld {
+        val w = configureWorld {
             systems {
-                add(WorldTestInitSystem { component = it })
+                add(WorldTestInitSystem())
             }
         }
 
-        assertEquals(1, component?.numAddCalls)
-        assertEquals(0, component?.numRemoveCalls)
+        val testComp = with(w) {
+            val entity = w.family { all(WorldTestComponent) }.first()
+            return@with entity[WorldTestComponent]
+        }
+
+        assertEquals(1, testComp.numAddCalls)
+        assertEquals(0, testComp.numRemoveCalls)
     }
 
     @Test
