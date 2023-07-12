@@ -18,7 +18,7 @@ value class Entity(val id: Int)
 typealias EntityHook = World.(Entity) -> Unit
 
 /**
- * A class for basic [Entity] extension functions within an add/remove hook of a [Component], [Family],
+ * A class for basic [Entity] extension functions within a [Family],
  * [IntervalSystem], [World] or [compareEntity].
  */
 abstract class EntityComponentContext(
@@ -92,12 +92,12 @@ open class EntityCreateContext(
     /**
      * Adds the [component] to the [entity][Entity].
      *
-     * If a component [addHook][ComponentsHolder.addHook] is defined then it
+     * The [onAddComponent][Component.onAddComponent] lifecycle method
      * gets called after the [component] is assigned to the [entity][Entity].
      *
-     * If a component [removeHook][ComponentsHolder.removeHook] is defined and the [entity][Entity]
-     * already had such a [component] then it gets called with the previous assigned component before
-     * the [addHook][ComponentsHolder.addHook] is called.
+     * If the [entity][Entity] already had such a [component] then the [onRemoveComponent][Component.onRemoveComponent]
+     * lifecycle method gets called on the previously assigned component before the [onAddComponent][Component.onAddComponent]
+     * lifecycle method is called on the new component.
      */
     inline operator fun <reified T : Component<T>> Entity.plusAssign(component: T) {
         val compType: ComponentType<T> = component.type()
@@ -111,12 +111,12 @@ open class EntityCreateContext(
      * in exceptional cases.
      * It is preferred to use the [plusAssign] function whenever possible to have type-safety.
      *
-     * If a component [addHook][ComponentsHolder.addHook] is defined then it
-     * gets called after the component is assigned to the [entity][Entity].
+     * The [onAddComponent][Component.onAddComponent] lifecycle method
+     * gets called after each component is assigned to the [entity][Entity].
      *
-     * If a component [removeHook][ComponentsHolder.removeHook] is defined and the [entity][Entity]
-     * already had such a component then it gets called with the previous assigned component before
-     * the [addHook][ComponentsHolder.addHook] is called.
+     * If the [entity][Entity] already has such a component then the [onRemoveComponent][Component.onRemoveComponent]
+     * lifecycle method gets called on the previously assigned component before the [onAddComponent][Component.onAddComponent]
+     * lifecycle method is called on the new component.
      */
     operator fun Entity.plusAssign(components: List<Component<*>>) {
         components.forEach { cmp ->
@@ -139,8 +139,7 @@ class EntityUpdateContext(
     /**
      * Removes a [component][Component] of the given [type] from the [entity][Entity].
      *
-     * If a component [removeHook][ComponentsHolder.removeHook] is defined then it gets called
-     * if the [entity][Entity] has such a component.
+     * Calls the [onRemoveComponent][Component.onRemoveComponent] lifecycle method on the component being removed.
      *
      * @throws [IndexOutOfBoundsException] if the id of the [entity][Entity] exceeds the internal components' capacity.
      * This can only happen when the [entity][Entity] never had such a component.

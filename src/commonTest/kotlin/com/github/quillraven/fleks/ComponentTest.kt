@@ -21,6 +21,26 @@ internal class ComponentTest {
         }
     }
 
+    private data class ComponentTestWithLifecycleComponent(
+        val expectedWorld: World,
+        var numAddCalls: Int = 0,
+        var numRemoveCalls: Int = 0
+    ) : Component<ComponentTestWithLifecycleComponent> {
+        override fun type() = ComponentTestWithLifecycleComponent
+
+        override fun World.onAddComponent() {
+            assertEquals(expectedWorld, this)
+            numAddCalls++
+        }
+
+        override fun World.onRemoveComponent() {
+            assertEquals(expectedWorld, this)
+            numRemoveCalls++
+        }
+
+        companion object : ComponentType<ComponentTestWithLifecycleComponent>()
+    }
+
     private val testWorld = configureWorld { }
     private val testService = ComponentService().also { it.world = testWorld }
     private val testHolder = testService.holder(ComponentTestComponent)
@@ -127,66 +147,40 @@ internal class ComponentTest {
     }
 
     @Test
-    fun addComponentWithHook() {
-        var numAddCalls = 0
-        var numRemoveCalls = 0
+    fun addAndRemoveComponentWithLifecycleMethod() {
         val expectedEntity = Entity(1)
-        val expectedComp = ComponentTestComponent()
+        val expectedComp = ComponentTestWithLifecycleComponent(testWorld)
 
-        val onAdd: ComponentHook<ComponentTestComponent> = { entity, component ->
-            assertEquals(testWorld, this)
-            assertEquals(expectedEntity, entity)
-            assertEquals(expectedComp, component)
-            numAddCalls++
-        }
+        val testHolderForLifecycleComponent = testService.holder(ComponentTestWithLifecycleComponent)
 
-        val onRemove: ComponentHook<ComponentTestComponent> = { entity, component ->
-            assertEquals(testWorld, this)
-            assertEquals(expectedEntity, entity)
-            assertEquals(expectedComp, component)
-            numRemoveCalls++
-        }
-
-        testHolder.addHook = onAdd
-        testHolder.removeHook = onRemove
-
-        testHolder[expectedEntity] = expectedComp
-
-        assertEquals(1, numAddCalls)
-        assertEquals(0, numRemoveCalls)
+        assertEquals(0, expectedComp.numAddCalls)
+        assertEquals(0, expectedComp.numRemoveCalls)
+        testHolderForLifecycleComponent[expectedEntity] = expectedComp
+        assertEquals(1, expectedComp.numAddCalls)
+        assertEquals(0, expectedComp.numRemoveCalls)
+        testHolderForLifecycleComponent -= expectedEntity
+        assertEquals(1, expectedComp.numAddCalls)
+        assertEquals(1, expectedComp.numRemoveCalls)
     }
 
     @Test
-    fun addComponentWithComponentListenerWhenComponentAlreadyPresent() {
-        var numAddCalls = 0
-        var numRemoveCalls = 0
+    fun addAndReplaceComponentWithLifecycleMethod() {
         val expectedEntity = Entity(1)
-        val expectedComp1 = ComponentTestComponent()
-        val expectedComp2 = ComponentTestComponent()
+        val expectedComp1 = ComponentTestWithLifecycleComponent(testWorld)
+        val expectedComp2 = ComponentTestWithLifecycleComponent(testWorld)
 
-        val onAdd: ComponentHook<ComponentTestComponent> = { entity, component ->
-            assertSame(testWorld, this)
-            assertEquals(expectedEntity, entity)
-            assertTrue { expectedComp1 === component || expectedComp2 === component }
-            numAddCalls++
-        }
+        val testHolderForLifecycleComponent = testService.holder(ComponentTestWithLifecycleComponent)
 
-        val onRemove: ComponentHook<ComponentTestComponent> = { entity, component ->
-            assertSame(testWorld, this)
-            assertEquals(expectedEntity, entity)
-            assertSame(expectedComp1, component)
-            numRemoveCalls++
-        }
+        testHolderForLifecycleComponent[expectedEntity] = expectedComp1
+        assertEquals(1, expectedComp1.numAddCalls)
+        assertEquals(0, expectedComp1.numRemoveCalls)
 
-        testHolder.addHook = onAdd
-        testHolder.removeHook = onRemove
-
-        testHolder[expectedEntity] = expectedComp1
-        // this should trigger onRemove of the first component
-        testHolder[expectedEntity] = expectedComp2
-
-        assertEquals(2, numAddCalls)
-        assertEquals(1, numRemoveCalls)
+        // Should trigger onRemoveComponent on expectedComp1
+        testHolderForLifecycleComponent[expectedEntity] = expectedComp2
+        assertEquals(1, expectedComp1.numAddCalls)
+        assertEquals(1, expectedComp1.numRemoveCalls)
+        assertEquals(1, expectedComp2.numAddCalls)
+        assertEquals(0, expectedComp2.numRemoveCalls)
     }
 
     @Test

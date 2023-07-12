@@ -6,9 +6,17 @@ import com.github.quillraven.fleks.collection.compareEntity
 import com.github.quillraven.fleks.collection.compareEntityBy
 import kotlin.test.*
 
-private data class WorldTestComponent(var x: Float = 0f) : Component<WorldTestComponent>,
+private data class WorldTestComponent(
+    var x: Float = 0f,
+) : Component<WorldTestComponent>,
     Comparable<WorldTestComponent> {
     override fun type(): ComponentType<WorldTestComponent> = WorldTestComponent
+
+    var numAddCalls: Int = 0
+    var numRemoveCalls: Int = 0
+
+    override fun World.onAddComponent() { numAddCalls++ }
+    override fun World.onRemoveComponent() { numAddCalls-- }
 
     companion object : ComponentType<WorldTestComponent>()
 
@@ -50,7 +58,7 @@ private class WorldTestIteratingSystem(
     }
 }
 
-private class WorldTestInitSystem : IteratingSystem(family { all(WorldTestComponent) }) {
+private class WorldTestInitSystem: IteratingSystem(family { all(WorldTestComponent) }) {
     init {
         world.entity { it += WorldTestComponent() }
     }
@@ -435,37 +443,20 @@ internal class WorldTest {
     }
 
     @Test
-    fun createWorldWithComponentHooks() {
-        val w = configureWorld {
-            components {
-                onAdd(WorldTestComponent) { _, _ -> }
-                onRemove(WorldTestComponent) { _, _ -> }
-            }
-        }
-
-        val holder = w.componentService.holder(WorldTestComponent)
-        assertNotNull(holder.addHook)
-        assertNotNull(holder.removeHook)
-    }
-
-    @Test
     fun notifyComponentHooksDuringSystemCreation() {
-        var numAddCalls = 0
-        var numRemoveCalls = 0
-
-        configureWorld {
-            components {
-                onAdd(WorldTestComponent) { _, _ -> ++numAddCalls }
-                onRemove(WorldTestComponent) { _, _ -> ++numRemoveCalls }
-            }
-
+        val w = configureWorld {
             systems {
                 add(WorldTestInitSystem())
             }
         }
 
-        assertEquals(1, numAddCalls)
-        assertEquals(0, numRemoveCalls)
+        val testComp = with(w) {
+            val entity = w.family { all(WorldTestComponent) }.first()
+            return@with entity[WorldTestComponent]
+        }
+
+        assertEquals(1, testComp.numAddCalls)
+        assertEquals(0, testComp.numRemoveCalls)
     }
 
     @Test
@@ -665,25 +656,20 @@ internal class WorldTest {
 
     @Test
     fun testLoadSnapshotWithThreeEntities() {
-        var numAddCalls = 0
-        var numRemoveCalls = 0
         val w = configureWorld {
             injectables {
                 add("42")
-            }
-
-            components {
-                onAdd(WorldTestComponent) { _, _ -> ++numAddCalls }
-                onRemove(WorldTestComponent) { _, _ -> ++numRemoveCalls }
             }
 
             systems {
                 add(WorldTestIteratingSystem())
             }
         }
+        val comp1 = WorldTestComponent()
+        val comp2 = WorldTestComponent()
         val snapshot = mapOf(
-            Entity(3) to listOf(WorldTestComponent(), WorldTestComponent2()),
-            Entity(5) to listOf(WorldTestComponent()),
+            Entity(3) to listOf(comp1, WorldTestComponent2()),
+            Entity(5) to listOf(comp2),
             Entity(7) to listOf()
         )
 
@@ -703,9 +689,12 @@ internal class WorldTest {
         }
         // 2 out of 3 loaded entities should be part of the IteratingSystem family
         assertEquals(2, w.system<WorldTestIteratingSystem>().numCallsEntity)
-        // 2 out of 3 loaded entities should notify the WorldTestComponentListener
-        assertEquals(2, numAddCalls)
-        assertEquals(0, numRemoveCalls)
+        // 2 out of 3 loaded entities have components with lifecycle methods
+        assertEquals(1, comp1.numAddCalls)
+        assertEquals(0, comp1.numRemoveCalls)
+        assertEquals(1, comp2.numAddCalls)
+        assertEquals(0, comp2.numRemoveCalls)
+
         assertEquals(3, actual.size)
     }
 
