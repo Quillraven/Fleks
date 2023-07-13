@@ -28,12 +28,12 @@ internal class ComponentTest {
     ) : Component<ComponentTestWithLifecycleComponent> {
         override fun type() = ComponentTestWithLifecycleComponent
 
-        override fun World.onAddComponent() {
+        override fun World.onAddComponent(entity: Entity) {
             assertEquals(expectedWorld, this)
             numAddCalls++
         }
 
-        override fun World.onRemoveComponent() {
+        override fun World.onRemoveComponent(entity: Entity) {
             assertEquals(expectedWorld, this)
             numRemoveCalls++
         }

@@ -51,12 +51,12 @@ interface Component<T> {
     /**
      * Lifecycle method that gets called whenever a [component][Component] gets set for an [entity][Entity].
      */
-    fun World.onAddComponent() = Unit
+    fun World.onAddComponent(entity: Entity) = Unit
 
     /**
      * Lifecycle method that gets called whenever a [component][Component] gets removed from an [entity][Entity].
      */
-    fun World.onRemoveComponent() = Unit
+    fun World.onRemoveComponent(entity: Entity) = Unit
 }
 
 /**
@@ -99,14 +99,14 @@ class ComponentsHolder<T : Component<*>>(
             // method to correctly return false
             components[entity.id] = null
             existingCmp.run {
-                world.onRemoveComponent()
+                world.onRemoveComponent(entity)
             }
         }
 
         // set component and call lifecycle method
         components[entity.id] = component
         component.run {
-            world.onAddComponent()
+            world.onAddComponent(entity)
         }
     }
 
@@ -124,7 +124,7 @@ class ComponentsHolder<T : Component<*>>(
         // assign null before running the lifecycle method in order for 'contains' calls to correctly return false
         components[entity.id] = null
         existingCmp?.run {
-            world.onRemoveComponent()
+            world.onRemoveComponent(entity)
         }
     }
 

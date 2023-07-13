@@ -15,8 +15,8 @@ private data class WorldTestComponent(
     var numAddCalls: Int = 0
     var numRemoveCalls: Int = 0
 
-    override fun World.onAddComponent() { numAddCalls++ }
-    override fun World.onRemoveComponent() { numAddCalls-- }
+    override fun World.onAddComponent(entity: Entity) { numAddCalls++ }
+    override fun World.onRemoveComponent(entity: Entity) { numAddCalls-- }
 
     companion object : ComponentType<WorldTestComponent>()
 
