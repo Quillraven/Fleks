@@ -31,12 +31,12 @@ private data class Collider(
 
     var colliderId: String? = null
 
-    override fun World.onAddComponent() {
+    override fun World.onAddComponent(entity: Entity) {
         val provider = inject<ColliderService>()
         colliderId = provider.getId()
     }
 
-    override fun World.onRemoveComponent() {
+    override fun World.onRemoveComponent(entity: Entity) {
         colliderId = null
     }
 

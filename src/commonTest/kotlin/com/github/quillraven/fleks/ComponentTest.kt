@@ -23,18 +23,21 @@ internal class ComponentTest {
 
     private data class ComponentTestWithLifecycleComponent(
         val expectedWorld: World,
+        val expectedEntity: Entity,
         var numAddCalls: Int = 0,
         var numRemoveCalls: Int = 0
     ) : Component<ComponentTestWithLifecycleComponent> {
         override fun type() = ComponentTestWithLifecycleComponent
 
-        override fun World.onAddComponent() {
+        override fun World.onAddComponent(entity: Entity) {
             assertEquals(expectedWorld, this)
+            assertEquals(expectedEntity, entity)
             numAddCalls++
         }
 
-        override fun World.onRemoveComponent() {
+        override fun World.onRemoveComponent(entity: Entity) {
             assertEquals(expectedWorld, this)
+            assertEquals(expectedEntity, entity)
             numRemoveCalls++
         }
 
@@ -149,7 +152,7 @@ internal class ComponentTest {
     @Test
     fun addAndRemoveComponentWithLifecycleMethod() {
         val expectedEntity = Entity(1)
-        val expectedComp = ComponentTestWithLifecycleComponent(testWorld)
+        val expectedComp = ComponentTestWithLifecycleComponent(testWorld, expectedEntity)
 
         val testHolderForLifecycleComponent = testService.holder(ComponentTestWithLifecycleComponent)
 
@@ -166,8 +169,8 @@ internal class ComponentTest {
     @Test
     fun addAndReplaceComponentWithLifecycleMethod() {
         val expectedEntity = Entity(1)
-        val expectedComp1 = ComponentTestWithLifecycleComponent(testWorld)
-        val expectedComp2 = ComponentTestWithLifecycleComponent(testWorld)
+        val expectedComp1 = ComponentTestWithLifecycleComponent(testWorld, expectedEntity)
+        val expectedComp2 = ComponentTestWithLifecycleComponent(testWorld, expectedEntity)
 
         val testHolderForLifecycleComponent = testService.holder(ComponentTestWithLifecycleComponent)
 
