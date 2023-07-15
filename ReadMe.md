@@ -93,6 +93,16 @@ implementation("io.github.quillraven.fleks:Fleks:2.3")
 dependencyMulti("io.github.quillraven.fleks:Fleks:2.3", registerPlugin = false)
 ```
 
+If you want to use the Snapshot version then you need to add the snapshot repository as well:
+
+```kotlin
+// Groovy DSL
+maven { url 'https://s01.oss.sonatype.org/content/repositories/snapshots/' }
+
+// Kotlin DSL
+maven { url = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/") }
+```
+
 ## API and examples
 
 The API is documented in the [wiki](https://github.com/Quillraven/Fleks/wiki) that
