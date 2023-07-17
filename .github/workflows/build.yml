@@ -61,3 +61,4 @@ jobs:
     needs: build
     if: github.ref == 'refs/heads/master'
     uses: ./.github/workflows/publish.yml
+    secrets: inherit
