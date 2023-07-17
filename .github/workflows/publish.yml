@@ -12,6 +12,7 @@ concurrency:
 
 jobs:
   maven-publish:
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.ref == 'master' }}
     runs-on: macos-latest # macOS supports building all Kotlin targets
 
     permissions:
