@@ -92,11 +92,11 @@ open class EntityCreateContext(
     /**
      * Adds the [component] to the [entity][Entity].
      *
-     * The [onAddComponent][Component.onAddComponent] lifecycle method
+     * The [onAdd][Component.onAdd] lifecycle method
      * gets called after the [component] is assigned to the [entity][Entity].
      *
-     * If the [entity][Entity] already had such a [component] then the [onRemoveComponent][Component.onRemoveComponent]
-     * lifecycle method gets called on the previously assigned component before the [onAddComponent][Component.onAddComponent]
+     * If the [entity][Entity] already had such a [component] then the [onRemove][Component.onRemove]
+     * lifecycle method gets called on the previously assigned component before the [onAdd][Component.onAdd]
      * lifecycle method is called on the new component.
      */
     inline operator fun <reified T : Component<T>> Entity.plusAssign(component: T) {
@@ -111,11 +111,11 @@ open class EntityCreateContext(
      * in exceptional cases.
      * It is preferred to use the [plusAssign] function whenever possible to have type-safety.
      *
-     * The [onAddComponent][Component.onAddComponent] lifecycle method
+     * The [onAdd][Component.onAdd] lifecycle method
      * gets called after each component is assigned to the [entity][Entity].
      *
-     * If the [entity][Entity] already has such a component then the [onRemoveComponent][Component.onRemoveComponent]
-     * lifecycle method gets called on the previously assigned component before the [onAddComponent][Component.onAddComponent]
+     * If the [entity][Entity] already has such a component then the [onRemove][Component.onRemove]
+     * lifecycle method gets called on the previously assigned component before the [onAdd][Component.onAdd]
      * lifecycle method is called on the new component.
      */
     operator fun Entity.plusAssign(components: List<Component<*>>) {
@@ -139,7 +139,7 @@ class EntityUpdateContext(
     /**
      * Removes a [component][Component] of the given [type] from the [entity][Entity].
      *
-     * Calls the [onRemoveComponent][Component.onRemoveComponent] lifecycle method on the component being removed.
+     * Calls the [onRemove][Component.onRemove] lifecycle method on the component being removed.
      *
      * @throws [IndexOutOfBoundsException] if the id of the [entity][Entity] exceeds the internal components' capacity.
      * This can only happen when the [entity][Entity] never had such a component.

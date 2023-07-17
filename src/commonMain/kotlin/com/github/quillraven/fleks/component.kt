@@ -51,12 +51,12 @@ interface Component<T> {
     /**
      * Lifecycle method that gets called whenever a [component][Component] gets set for an [entity][Entity].
      */
-    fun World.onAddComponent(entity: Entity) = Unit
+    fun World.onAdd(entity: Entity) = Unit
 
     /**
      * Lifecycle method that gets called whenever a [component][Component] gets removed from an [entity][Entity].
      */
-    fun World.onRemoveComponent(entity: Entity) = Unit
+    fun World.onRemove(entity: Entity) = Unit
 }
 
 /**
@@ -82,9 +82,9 @@ class ComponentsHolder<T : Component<*>>(
 
     /**
      * Sets the [component] for the given [entity].
-     * If the [entity] already had a component, the [onRemoveComponent][Component.onRemoveComponent] lifecycle method
+     * If the [entity] already had a component, the [onRemove][Component.onRemove] lifecycle method
      * will be called.
-     * After the [component] is assigned to the [entity], the [onAddComponent][Component.onAddComponent] lifecycle method
+     * After the [component] is assigned to the [entity], the [onAdd][Component.onAdd] lifecycle method
      * will be called.
      */
     operator fun set(entity: Entity, component: T) {
@@ -94,25 +94,21 @@ class ComponentsHolder<T : Component<*>>(
         }
 
         // check if the remove lifecycle method of the previous component needs to be called
-        components[entity.id]?.let { existingCmp ->
+        components[entity.id]?.run {
             // assign current component to null in order for 'contains' calls inside the lifecycle
             // method to correctly return false
             components[entity.id] = null
-            existingCmp.run {
-                world.onRemoveComponent(entity)
-            }
+            world.onRemove(entity)
         }
 
         // set component and call lifecycle method
         components[entity.id] = component
-        component.run {
-            world.onAddComponent(entity)
-        }
+        component.run { world.onAdd(entity) }
     }
 
     /**
      * Removes a component of the specific type from the given [entity].
-     * If the entity has such a component, its [onRemoveComponent][Component.onRemoveComponent] lifecycle method will
+     * If the entity has such a component, its [onRemove][Component.onRemove] lifecycle method will
      * be called.
      *
      * @throws [IndexOutOfBoundsException] if the id of the [entity] exceeds the components' capacity.
@@ -123,9 +119,7 @@ class ComponentsHolder<T : Component<*>>(
         val existingCmp = components[entity.id]
         // assign null before running the lifecycle method in order for 'contains' calls to correctly return false
         components[entity.id] = null
-        existingCmp?.run {
-            world.onRemoveComponent(entity)
-        }
+        existingCmp?.run { world.onRemove(entity) }
     }
 
     /**
