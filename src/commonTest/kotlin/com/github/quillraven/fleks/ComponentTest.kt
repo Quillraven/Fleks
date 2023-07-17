@@ -29,13 +29,13 @@ internal class ComponentTest {
     ) : Component<ComponentTestWithLifecycleComponent> {
         override fun type() = ComponentTestWithLifecycleComponent
 
-        override fun World.onAddComponent(entity: Entity) {
+        override fun World.onAdd(entity: Entity) {
             assertEquals(expectedWorld, this)
             assertEquals(expectedEntity, entity)
             numAddCalls++
         }
 
-        override fun World.onRemoveComponent(entity: Entity) {
+        override fun World.onRemove(entity: Entity) {
             assertEquals(expectedWorld, this)
             assertEquals(expectedEntity, entity)
             numRemoveCalls++
@@ -178,7 +178,7 @@ internal class ComponentTest {
         assertEquals(1, expectedComp1.numAddCalls)
         assertEquals(0, expectedComp1.numRemoveCalls)
 
-        // Should trigger onRemoveComponent on expectedComp1
+        // Should trigger onRemove on expectedComp1
         testHolderForLifecycleComponent[expectedEntity] = expectedComp2
         assertEquals(1, expectedComp1.numAddCalls)
         assertEquals(1, expectedComp1.numRemoveCalls)

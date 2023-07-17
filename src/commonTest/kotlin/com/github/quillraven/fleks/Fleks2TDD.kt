@@ -31,12 +31,12 @@ private data class Collider(
 
     var colliderId: String? = null
 
-    override fun World.onAddComponent(entity: Entity) {
+    override fun World.onAdd(entity: Entity) {
         val provider = inject<ColliderService>()
         colliderId = provider.getId()
     }
 
-    override fun World.onRemoveComponent(entity: Entity) {
+    override fun World.onRemove(entity: Entity) {
         colliderId = null
     }
 
@@ -177,12 +177,12 @@ class Fleks2TDD {
             }
         }
 
-        // entity that triggers onAddComponent lifecycle method
+        // entity that triggers onAdd lifecycle method
         assertEquals(null, addComponent.colliderId)
         testWorld.entity { it += addComponent }
         assertEquals("0", addComponent.colliderId)
 
-        // entity that triggers onRemoveComponent lifecycle method
+        // entity that triggers onRemove lifecycle method
         val removeEntity = testWorld.entity { it += removeComponent }
         assertEquals("1", removeComponent.colliderId)
         with(testWorld) { removeEntity.configure { it -= Collider } }

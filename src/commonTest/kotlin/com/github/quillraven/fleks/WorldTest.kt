@@ -15,8 +15,15 @@ private data class WorldTestComponent(
     var numAddCalls: Int = 0
     var numRemoveCalls: Int = 0
 
-    override fun World.onAddComponent(entity: Entity) { numAddCalls++ }
-    override fun World.onRemoveComponent(entity: Entity) { numAddCalls-- }
+    override fun World.onAdd(entity: Entity) {
+        assertTrue(entity has WorldTestComponent)
+        numAddCalls++
+    }
+
+    override fun World.onRemove(entity: Entity) {
+        assertFalse(entity has WorldTestComponent)
+        numAddCalls--
+    }
 
     companion object : ComponentType<WorldTestComponent>()
 
@@ -58,7 +65,7 @@ private class WorldTestIteratingSystem(
     }
 }
 
-private class WorldTestInitSystem: IteratingSystem(family { all(WorldTestComponent) }) {
+private class WorldTestInitSystem : IteratingSystem(family { all(WorldTestComponent) }) {
     init {
         world.entity { it += WorldTestComponent() }
     }
