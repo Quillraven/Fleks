@@ -64,10 +64,14 @@ abstract class EntityComponentContext(
      * **Attention** Make sure that you only modify the entity of the current scope.
      * Otherwise, you will get wrong behavior for families. E.g. don't do this:
      *
-     *     entity.configure {
-     *         // don't do this
-     *         somOtherEntity += Position()
-     *     }
+     * ```
+     * entity.configure {
+     *     // modifying the current entity is allowed ✅
+     *     it += Position()
+     *     // don't modify other entities ❌
+     *     someOtherEntity += Position()
+     * }
+     * ```
      */
     inline fun Entity.configure(configuration: EntityUpdateContext.(Entity) -> Unit) =
         componentService.world.entityService.configure(this, configuration)

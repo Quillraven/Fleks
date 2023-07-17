@@ -329,10 +329,14 @@ class World internal constructor(
      * **Attention** Make sure that you only modify the entity of the current scope.
      * Otherwise, you will get wrong behavior for families. E.g. don't do this:
      *
-     *     entity {
-     *         // don't do this
-     *         somOtherEntity += Position()
-     *     }
+     * ```
+     * entity {
+     *     // modifying the current entity is allowed ✅
+     *     it += Position()
+     *     // don't modify other entities ❌
+     *     someOtherEntity += Position()
+     * }
+     * ```
      */
     inline fun entity(configuration: EntityCreateContext.(Entity) -> Unit = {}): Entity {
         return entityService.create(configuration)
