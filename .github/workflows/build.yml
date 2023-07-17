@@ -55,3 +55,9 @@ jobs:
         with:
           gradle-home-cache-cleanup: true
           arguments: build --stacktrace
+
+  publish:
+    # only publish after 'build' was successful, and this workflow is running on master branch
+    needs: build
+    if: github.ref == 'refs/heads/master'
+    uses: ./.github/workflows/publish.yml
