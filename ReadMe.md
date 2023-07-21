@@ -71,26 +71,26 @@ To use Fleks add it as a dependency to your project:
 <dependency>
   <groupId>io.github.quillraven.fleks</groupId>
   <artifactId>Fleks-jvm</artifactId>
-  <version>2.3</version>
+  <version>2.4</version>
 </dependency>
 ```
 
 #### Gradle (Groovy)
 
 ```kotlin
-implementation 'io.github.quillraven.fleks:Fleks:2.3'
+implementation 'io.github.quillraven.fleks:Fleks:2.4'
 ```
 
 #### Gradle (Kotlin)
 
 ```kotlin
-implementation("io.github.quillraven.fleks:Fleks:2.3")
+implementation("io.github.quillraven.fleks:Fleks:2.4")
 ```
 
 #### KorGE
 
 ```kotlin
-dependencyMulti("io.github.quillraven.fleks:Fleks:2.3", registerPlugin = false)
+dependencyMulti("io.github.quillraven.fleks:Fleks:2.4", registerPlugin = false)
 ```
 
 If you want to use the Snapshot version then you need to add the snapshot repository as well:
