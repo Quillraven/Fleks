@@ -4,7 +4,6 @@ import com.github.quillraven.fleks.collection.Bag
 import com.github.quillraven.fleks.collection.bag
 import kotlin.math.max
 import kotlin.native.concurrent.ThreadLocal
-import kotlin.reflect.KClass
 
 /**
  * A class that assigns a unique [id] per type of [Component] starting from 0.
@@ -68,7 +67,7 @@ interface Component<T> {
  */
 class ComponentsHolder<T : Component<*>>(
     private val world: World,
-    private val name: String,
+    private val type: ComponentType<*>,
     private var components: Array<T?>,
 ) {
     /**
@@ -128,7 +127,7 @@ class ComponentsHolder<T : Component<*>>(
      * @throws [FleksNoSuchEntityComponentException] if the [entity] does not have such a component.
      */
     operator fun get(entity: Entity): T {
-        return components[entity.id] ?: throw FleksNoSuchEntityComponentException(entity, name)
+        return components[entity.id] ?: throw FleksNoSuchEntityComponentException(entity, componentName())
     }
 
     /**
@@ -143,8 +142,15 @@ class ComponentsHolder<T : Component<*>>(
     operator fun contains(entity: Entity): Boolean =
         components.size > entity.id && components[entity.id] != null
 
+    /**
+     * Returns the simplified component name of a [ComponentType].
+     * The default toString() format is 'package.Component$Companion'.
+     * This method returns 'Component' without package and companion.
+     */
+    private fun componentName(): String = type::class.toString().substringAfterLast(".").substringBefore("$")
+
     override fun toString(): String {
-        return "ComponentsHolder($name)"
+        return "ComponentsHolder(type=${componentName()}, id=${type.id})"
     }
 }
 
@@ -162,11 +168,6 @@ class ComponentService {
     @PublishedApi
     internal val holdersBag = bag<ComponentsHolder<*>>()
 
-    // Format of toString() is package.Component$Companion
-    // This method returns 'Component' which is the short name of the component class.
-    fun KClass<*>.toComponentName(): String =
-        this.toString().substringAfterLast(".").substringBefore("$")
-
     /**
      * Returns a [ComponentsHolder] for the given [componentType]. This function is only
      * used by [World.loadSnapshot] where we don't have the correct type information
@@ -174,11 +175,8 @@ class ComponentService {
      */
     fun wildcardHolder(componentType: ComponentType<*>): ComponentsHolder<*> {
         if (holdersBag.hasNoValueAtIndex(componentType.id)) {
-            // We cannot use simpleName here because it returns "Companion".
-            // Therefore, we do some string manipulation to get the name of the component correctly.
-            // Format of toString() is package.Component$Companion
-            val name = componentType::class.toComponentName()
-            holdersBag[componentType.id] = ComponentsHolder(world, name, Array<Component<*>?>(world.capacity) { null })
+            holdersBag[componentType.id] =
+                ComponentsHolder(world, componentType, Array<Component<*>?>(world.capacity) { null })
         }
         return holdersBag[componentType.id]
     }
@@ -190,8 +188,7 @@ class ComponentService {
     @Suppress("UNCHECKED_CAST")
     inline fun <reified T : Component<*>> holder(componentType: ComponentType<T>): ComponentsHolder<T> {
         if (holdersBag.hasNoValueAtIndex(componentType.id)) {
-            val name = T::class.simpleName ?: T::class.toComponentName()
-            holdersBag[componentType.id] = ComponentsHolder(world, name, Array<T?>(world.capacity) { null })
+            holdersBag[componentType.id] = ComponentsHolder(world, componentType, Array<T?>(world.capacity) { null })
         }
         return holdersBag[componentType.id] as ComponentsHolder<T>
     }
