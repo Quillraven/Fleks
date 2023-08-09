@@ -125,33 +125,42 @@ class BitArray(
     }
 
     inline fun forEachSetBit(action: (Int) -> Unit) {
-        // it is important that we go from right to left because
-        // otherwise some code in toEntityBag will fail with ensureCapacity.
         for (word in bits.size - 1 downTo 0) {
-            val bitsAtWord = bits[word]
+            var bitsAtWord = bits[word]
             if (bitsAtWord != 0L) {
                 val w = word shl 6
-
-                for (bit in 63 downTo 0) {
-                    if ((bitsAtWord and (1L shl bit)) != 0L) {
-                        action(w + bit)
-                    }
+                while (bitsAtWord != 0L) {
+                    // gets the distance from the start of the word to the highest (leftmost) bit
+                    val bit = 63 - bitsAtWord.countLeadingZeroBits()
+                    action(w + bit)
+                    bitsAtWord = (bitsAtWord xor (1L shl bit)) // removes highest bit
                 }
             }
         }
     }
 
     fun toEntityBag(bag: MutableEntityBag) {
+        // this includes manually-inlined code from forEachSetBit(), but not for the typical
+        // reasons that is done. the checkSize condition can be a little more efficient,
+        // checking once per 64-bit word instead of per bit if it was in the action given to
+        // forEachSetBit(). This iterates from high to low so that we only ensure the bag's
+        // capacity once.
         var checkSize = true
-        bag.clear()
-        forEachSetBit { idx ->
-            if (checkSize) {
-                checkSize = false
-                // this is working because forEachSetBit goes
-                // from right to left, so idx is the highest index here
-                bag.ensureCapacity(idx)
+        for (word in bits.size - 1 downTo 0) {
+            var bitsAtWord = bits[word]
+            if (bitsAtWord != 0L) {
+                val w = word shl 6
+                if(checkSize) {
+                    checkSize = false
+                    bag.clearEnsuringCapacity(w + 64 - bitsAtWord.countLeadingZeroBits())
+                }
+                while (bitsAtWord != 0L) {
+                    // gets the distance from the start of the word to the highest (leftmost) bit
+                    val bit = 63 - bitsAtWord.countLeadingZeroBits()
+                    bag += Entity(w + bit)
+                    bitsAtWord = (bitsAtWord xor (1L shl bit)) // removes highest bit
+                }
             }
-            bag += Entity(idx)
         }
     }
 

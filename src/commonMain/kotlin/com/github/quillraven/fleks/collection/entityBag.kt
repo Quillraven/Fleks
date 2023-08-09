@@ -419,6 +419,19 @@ class MutableEntityBag(
     }
 
     /**
+     * Resets [size] to zero, clears any [entity][Entity] of the bag, and if necessary,
+     * resizes the bag to be able to fit the given [capacity] of [entities][Entity].
+     */
+    fun clearEnsuringCapacity(capacity: Int) {
+        if (capacity > values.size) {
+            values = Array(capacity + 1) { Entity(-1) }
+        } else {
+            values.fill(Entity(-1))
+        }
+        size = 0
+    }
+
+    /**
      * Sorts the bag according to the given [comparator].
      */
     fun sort(comparator: EntityComparator) {
