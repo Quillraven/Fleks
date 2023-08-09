@@ -43,11 +43,10 @@ class BitArray(
     fun set(idx: Int) {
         val word = idx ushr 6
         if (word >= bits.size) {
-            // magic.
             // ((word or -word) shr 63) is an idiom that returns 0 if word is 0, or -1 otherwise.
             // Calling inv() on that makes it -1 if word is 0, or 0 otherwise.
-            // With the rest, this makes the copy use twice as many Long items as before, or use
-            // one Long item if word is 0 (and bits.size is currently 0, a precondition).
+            // the rest of the line resizes the bits Array to be twice as large, unless word is
+            // 0 and bits.size is 0; then it uses one Long item.
             bits = bits.copyOf(word + word - ((word or -word) shr 63).inv())
         }
         bits[word] = bits[word] or (1L shl idx)
