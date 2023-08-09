@@ -102,12 +102,7 @@ class BitArray(
             val bitsAtWord = bits[word]
             if (bitsAtWord != 0L) {
                 val w = word shl 6
-
-                for (bit in 63 downTo 0) {
-                    if ((bitsAtWord and (1L shl bit)) != 0L) {
-                        return w + bit + 1
-                    }
-                }
+                return w + (64 - bitsAtWord.countLeadingZeroBits())
             }
         }
         return 0
@@ -119,14 +114,7 @@ class BitArray(
     fun numBits(): Int {
         var sum = 0
         for (word in bits.size - 1 downTo 0) {
-            val bitsAtWord = bits[word]
-            if (bitsAtWord != 0L) {
-                for (bit in 63 downTo 0) {
-                    if ((bitsAtWord and (1L shl bit)) != 0L) {
-                        sum++
-                    }
-                }
-            }
+            sum += bits[word].countOneBits()
         }
         return sum
     }
