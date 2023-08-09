@@ -17,10 +17,10 @@ class BitArray(
     nBits: Int = 0
 ) {
     @PublishedApi
-    internal var bits = LongArray((nBits + 63) / 64)
+    internal var bits = LongArray((nBits + 63) ushr 6)
 
     val capacity: Int
-        get() = bits.size * 64
+        get() = bits.size shl 6
 
     val isNotEmpty: Boolean
         get() {
@@ -36,20 +36,20 @@ class BitArray(
         get() = !isNotEmpty
 
     operator fun get(idx: Int): Boolean {
-        val word = idx / 64
-        return if (word >= bits.size) {
-            false
-        } else {
-            (bits[word] and (1L shl (idx % 64))) != 0L
-        }
+        val word = idx ushr 6
+        return word < bits.size && (bits[word] and (1L shl idx)) != 0L
     }
 
     fun set(idx: Int) {
-        val word = idx / 64
+        val word = idx ushr 6
         if (word >= bits.size) {
-            bits = bits.copyOf(word + 1)
+            // ((word or -word) shr 63) is an idiom that returns 0 if word is 0, or -1 otherwise.
+            // Calling inv() on that makes it -1 if word is 0, or 0 otherwise.
+            // the rest of the line resizes the bits Array to be twice as large, unless word is
+            // 0 and bits.size is 0; then it uses one Long item.
+            bits = bits.copyOf(word + word - ((word or -word) shr 63).inv())
         }
-        bits[word] = bits[word] or (1L shl (idx % 64))
+        bits[word] = bits[word] or (1L shl idx)
     }
 
     fun clearAll() {
@@ -57,9 +57,9 @@ class BitArray(
     }
 
     fun clear(idx: Int) {
-        val word = idx / 64
+        val word = idx ushr 6
         if (word < bits.size) {
-            bits[word] = bits[word] and (1L shl (idx % 64)).inv()
+            bits[word] = bits[word] and (1L shl idx).inv()
         }
     }
 
@@ -106,12 +106,7 @@ class BitArray(
             val bitsAtWord = bits[word]
             if (bitsAtWord != 0L) {
                 val w = word shl 6
-
-                for (bit in 63 downTo 0) {
-                    if ((bitsAtWord and (1L shl bit)) != 0L) {
-                        return w + bit + 1
-                    }
-                }
+                return w + (64 - bitsAtWord.countLeadingZeroBits())
             }
         }
         return 0
@@ -123,46 +118,52 @@ class BitArray(
     fun numBits(): Int {
         var sum = 0
         for (word in bits.size - 1 downTo 0) {
-            val bitsAtWord = bits[word]
-            if (bitsAtWord != 0L) {
-                for (bit in 63 downTo 0) {
-                    if ((bitsAtWord and (1L shl bit)) != 0L) {
-                        sum++
-                    }
-                }
-            }
+            sum += bits[word].countOneBits()
         }
         return sum
     }
 
     inline fun forEachSetBit(action: (Int) -> Unit) {
-        // it is important that we go from right to left because
-        // otherwise some code in toEntityBag will fail with ensureCapacity.
         for (word in bits.size - 1 downTo 0) {
-            val bitsAtWord = bits[word]
+            var bitsAtWord = bits[word]
             if (bitsAtWord != 0L) {
                 val w = word shl 6
-
-                for (bit in 63 downTo 0) {
-                    if ((bitsAtWord and (1L shl bit)) != 0L) {
-                        action(w + bit)
-                    }
+                while (bitsAtWord != 0L) {
+                    // gets the distance from the start of the word to the highest (leftmost) bit
+                    val bit = 63 - bitsAtWord.countLeadingZeroBits()
+                    action(w + bit)
+                    bitsAtWord = (bitsAtWord xor (1L shl bit)) // removes highest bit
                 }
             }
         }
     }
 
     fun toEntityBag(bag: MutableEntityBag) {
+        // this includes manually-inlined code from forEachSetBit(), but not for the typical
+        // reasons that is done. the checkSize condition can be a little more efficient,
+        // checking once per 64-bit word instead of per bit if it was in the action given to
+        // forEachSetBit(). This iterates from high to low so that we only ensure the bag's
+        // capacity once.
         var checkSize = true
-        bag.clear()
-        forEachSetBit { idx ->
-            if (checkSize) {
-                checkSize = false
-                // this is working because forEachSetBit goes
-                // from right to left, so idx is the highest index here
-                bag.ensureCapacity(idx)
+        for (word in bits.size - 1 downTo 0) {
+            var bitsAtWord = bits[word]
+            if (bitsAtWord != 0L) {
+                val w = word shl 6
+                if(checkSize) {
+                    checkSize = false
+                    bag.clearEnsuringCapacity(w + 64 - bitsAtWord.countLeadingZeroBits())
+                }
+                while (bitsAtWord != 0L) {
+                    // gets the distance from the start of the word to the highest (leftmost) bit
+                    val bit = 63 - bitsAtWord.countLeadingZeroBits()
+                    bag += Entity(w + bit)
+                    bitsAtWord = (bitsAtWord xor (1L shl bit)) // removes highest bit
+                }
             }
-            bag += Entity(idx)
+        }
+        if(checkSize) {
+            // the inner checks never ran, so there are no set bits. size still needs to be set.
+            bag.clear()
         }
     }
 
@@ -171,7 +172,7 @@ class BitArray(
             return 0
         }
 
-        val word = length() / 64
+        val word = length() ushr 6
         var hash = 0
         for (i in 0..word) {
             hash = 127 * hash + (bits[i] xor (bits[i] ushr 32)).toInt()
