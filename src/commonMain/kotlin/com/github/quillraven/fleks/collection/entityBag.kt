@@ -7,7 +7,7 @@ import kotlin.random.Random
 
 interface EntityBag {
     /**
-     * Returns the size of the [MutableEntityBag].
+     * Returns the size of the [EntityBag].
      */
     val size: Int
 
@@ -413,7 +413,7 @@ class MutableEntityBag(
      * Resizes the bag to fit in the given [capacity] of [entities][Entity] if necessary.
      */
     fun ensureCapacity(capacity: Int) {
-        if (capacity >= values.size) {
+        if (capacity > values.size) {
             values = values.copyInto(Array(capacity + 1) { Entity(-1) })
         }
     }

@@ -88,6 +88,10 @@ class EntityBagTest {
         bag.ensureCapacity(7)
 
         assertEquals(8, bag.capacity)
+
+        bag.ensureCapacity(8)
+
+        assertEquals(8, bag.capacity)
     }
 
     @Test
