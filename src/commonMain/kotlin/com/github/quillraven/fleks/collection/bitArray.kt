@@ -161,6 +161,10 @@ class BitArray(
                 }
             }
         }
+        if(checkSize) {
+            // the inner checks never ran, so there are no set bits. size still needs to be set.
+            bag.clear()
+        }
     }
 
     override fun hashCode(): Int {
