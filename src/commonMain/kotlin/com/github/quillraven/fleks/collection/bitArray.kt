@@ -17,10 +17,10 @@ class BitArray(
     nBits: Int = 0
 ) {
     @PublishedApi
-    internal var bits = LongArray((nBits + 63) / 64)
+    internal var bits = LongArray((nBits + 63) ushr 6)
 
     val capacity: Int
-        get() = bits.size * 64
+        get() = bits.size shl 6
 
     val isNotEmpty: Boolean
         get() {
@@ -36,20 +36,16 @@ class BitArray(
         get() = !isNotEmpty
 
     operator fun get(idx: Int): Boolean {
-        val word = idx / 64
-        return if (word >= bits.size) {
-            false
-        } else {
-            (bits[word] and (1L shl (idx % 64))) != 0L
-        }
+        val word = idx ushr 6
+        return word < bits.size && (bits[word] and (1L shl idx)) != 0L
     }
 
     fun set(idx: Int) {
-        val word = idx / 64
+        val word = idx ushr 6
         if (word >= bits.size) {
-            bits = bits.copyOf(word + 1)
+            bits = bits.copyOf(max(word + word, 1))
         }
-        bits[word] = bits[word] or (1L shl (idx % 64))
+        bits[word] = bits[word] or (1L shl idx)
     }
 
     fun clearAll() {
@@ -57,9 +53,9 @@ class BitArray(
     }
 
     fun clear(idx: Int) {
-        val word = idx / 64
+        val word = idx ushr 6
         if (word < bits.size) {
-            bits[word] = bits[word] and (1L shl (idx % 64)).inv()
+            bits[word] = bits[word] and (1L shl idx).inv()
         }
     }
 
@@ -171,7 +167,7 @@ class BitArray(
             return 0
         }
 
-        val word = length() / 64
+        val word = length() ushr 6
         var hash = 0
         for (i in 0..word) {
             hash = 127 * hash + (bits[i] xor (bits[i] ushr 32)).toInt()
