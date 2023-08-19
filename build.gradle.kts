@@ -1,6 +1,5 @@
-@file:Suppress("UNUSED_VARIABLE")
-
 import kotlinx.benchmark.gradle.KotlinJvmBenchmarkTarget
+import kotlinx.benchmark.gradle.benchmark
 
 plugins {
     buildsrc.plugins.`kmp-js`
@@ -44,6 +43,25 @@ kotlin {
                 implementation(libs.ashley)
                 implementation(libs.artemisOdb)
             }
+        }
+    }
+}
+
+benchmark {
+    configurations {
+        create("FleksAddRemoveOnly") {
+            include("addRemove")
+            exclude("Artemis|Ashley")
+        }
+
+        create("FleksSimpleOnly") {
+            include("simple")
+            exclude("Artemis|Ashley")
+        }
+
+        create("FleksComplexOnly") {
+            include("complex")
+            exclude("Artemis|Ashley")
         }
     }
 }
