@@ -49,6 +49,11 @@ kotlin {
 
 benchmark {
     configurations {
+        create("FleksOnly") {
+            include("Fleks")
+            exclude("Artemis|Ashley")
+        }
+
         create("FleksAddRemoveOnly") {
             include("addRemove")
             exclude("Artemis|Ashley")
