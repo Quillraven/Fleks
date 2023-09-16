@@ -85,12 +85,12 @@ internal class EntityTest {
 
     @Test
     fun createRecycledEntity() {
-        val expectedEntity = testEntityService.create { }
-        testEntityService -= expectedEntity
+        val initialEntity = testEntityService.create { }
+        testEntityService -= initialEntity
 
         val actualEntity = testEntityService.create { }
 
-        assertEquals(expectedEntity, actualEntity)
+        assertEquals(Entity(initialEntity.id, initialEntity.version + 1), actualEntity)
     }
 
     @Test
@@ -132,7 +132,7 @@ internal class EntityTest {
         val e1 = testEntityService.create { }
         val e2 = testEntityService.create { }
         testEntityService -= e2
-        val e3 = Entity(2)
+        val e3 = Entity(2, version = 0)
 
         assertTrue(e1 in testEntityService)
         assertFalse(e2 in testEntityService)
@@ -141,9 +141,25 @@ internal class EntityTest {
     }
 
     @Test
+    fun testContainsEntityVersion() {
+        testEntityService.create { }
+        val e2 = testEntityService.create { }
+        testEntityService -= e2
+        testEntityService.create { }
+
+        assertTrue { Entity(0, version = 0) in testEntityService }
+        assertTrue { Entity(0, version = 1) !in testEntityService }
+
+        assertTrue { Entity(1, version = 0) !in testEntityService }
+        assertTrue { Entity(1, version = 1) in testEntityService }
+
+        assertEquals(2, testEntityService.numEntities)
+    }
+
+    @Test
     fun testNestedEntityCreation() {
-        var entity1 = Entity(-1)
-        var entity2 = Entity(-1)
+        var entity1 = Entity.NONE
+        var entity2 = Entity.NONE
 
         testEntityService.create { e1 ->
             entity1 = e1

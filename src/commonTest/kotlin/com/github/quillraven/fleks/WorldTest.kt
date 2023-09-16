@@ -100,9 +100,9 @@ private class WorldEntityProvider(
 
     override fun numEntities(): Int = entities.size
 
-    override fun create(): Entity = Entity(id++).also { entities += it }
+    override fun create(): Entity = Entity(id++, version = 0).also { entities += it }
 
-    override fun create(id: Int): Entity = Entity(id).also { entities += it }
+    override fun create(id: Int): Entity = Entity(id, version = 0).also { entities += it }
 
     override fun minusAssign(entity: Entity) {
         entities -= entity
@@ -118,6 +118,8 @@ private class WorldEntityProvider(
     override fun forEach(action: World.(Entity) -> Unit) {
         entities.forEach { world.action(it) }
     }
+
+    override fun getCurrentVersion(id: Int): Entity = Entity(id, version = 0)
 }
 
 
@@ -248,6 +250,16 @@ internal class WorldTest {
         w -= e
 
         assertEquals(0, w.numEntities)
+    }
+
+    @Test
+    fun doNotRemoveEntityWithWrongVersion() {
+        val w = configureWorld {}
+        val e = w.entity()
+
+        w -= Entity(e.id, e.version - 1)
+
+        assertEquals(1, w.numEntities)
     }
 
     @Test
@@ -622,7 +634,7 @@ internal class WorldTest {
 
         assertEquals(expected1, w.snapshotOf(e1))
         assertEquals(expected2, w.snapshotOf(e2))
-        assertEquals(expected2, w.snapshotOf(Entity(42)))
+        assertEquals(expected2, w.snapshotOf(Entity(42, version = 0)))
     }
 
     @Test
@@ -650,7 +662,7 @@ internal class WorldTest {
     @Test
     fun testLoadSnapshotWithOneEntity() {
         val w = configureWorld { }
-        val entity = Entity(0)
+        val entity = w.entity()
         val comps = listOf(WorldTestComponent())
         val snapshot = mapOf(entity to comps)
 
@@ -658,7 +670,28 @@ internal class WorldTest {
         val actual = w.snapshotOf(entity)
 
         assertEquals(1, w.numEntities)
-        assertEquals(actual, comps)
+        assertEquals(comps, actual)
+    }
+
+    @Test
+    fun testLoadSnapshotWithOneRecycledEntity() {
+        val w = configureWorld { }
+        val removedEntities = (1..3).map {
+            w.entity().also { w -= it }
+        }
+        val entity = w.entity()
+        val comps = listOf(WorldTestComponent())
+        val snapshot = mapOf(entity to comps)
+
+        w.loadSnapshot(snapshot)
+        val actual = w.snapshotOf(entity)
+
+        assertEquals(1, w.numEntities)
+        removedEntities.forEach {
+            assertFalse(it in w)
+        }
+        assertTrue(entity in w)
+        assertEquals(comps, actual)
     }
 
     @Test
@@ -675,9 +708,9 @@ internal class WorldTest {
         val comp1 = WorldTestComponent()
         val comp2 = WorldTestComponent()
         val snapshot = mapOf(
-            Entity(3) to listOf(comp1, WorldTestComponent2()),
-            Entity(5) to listOf(comp2),
-            Entity(7) to listOf()
+            Entity(3, version = 0) to listOf(comp1, WorldTestComponent2()),
+            Entity(5, version = 0) to listOf(comp2),
+            Entity(7, version = 0) to listOf()
         )
 
         w.loadSnapshot(snapshot)
@@ -709,22 +742,22 @@ internal class WorldTest {
     fun testCreateEntityAfterSnapshotLoaded() {
         val w = configureWorld { }
         val snapshot = mapOf(
-            Entity(1) to listOf<Component<*>>()
+            Entity(1, version = 0) to listOf<Component<*>>()
         )
 
         w.loadSnapshot(snapshot)
 
         // first created entity should be recycled Entity 0
-        assertEquals(Entity(0), w.entity())
+        assertEquals(Entity(0, version = 0), w.entity())
         // next created entity should be new Entity 2
-        assertEquals(Entity(2), w.entity())
+        assertEquals(Entity(2, version = 0), w.entity())
     }
 
     @Test
     fun testLoadSnapshotOfEmptyWorld() {
         val w = configureWorld { }
         val family = w.family { all(WorldTestComponent) }
-        val entity = Entity(0)
+        val entity = Entity(0, version = 0)
         val components = listOf(WorldTestComponent())
 
         assertFalse { entity in family }
@@ -739,7 +772,7 @@ internal class WorldTest {
     fun testLoadSnapshotOfEmptyWorldWithRecycling() {
         val w = configureWorld { }
         val family = w.family { all(WorldTestComponent) }
-        val entity = Entity(1)
+        val entity = Entity(1, version = 0)
         val components = listOf(WorldTestComponent())
 
         assertFalse { entity in family }
@@ -774,7 +807,7 @@ internal class WorldTest {
     fun testLoadSnapshotOfWhileFamilyIterationInProcess() {
         val w = configureWorld { }
         val f = w.family { all(WorldTestComponent) }
-        val entity = Entity(0)
+        val entity = Entity(0, version = 0)
         val components = listOf(WorldTestComponent())
         w.entity { it += WorldTestComponent() }
 
@@ -835,7 +868,7 @@ internal class WorldTest {
 
     @Test
     fun testEntityHook() {
-        val dummyEntity = Entity(-1)
+        val dummyEntity = Entity.NONE
         var actualAddEntity: Entity
         var actualRemoveEntity: Entity
         lateinit var family: Family

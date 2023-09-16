@@ -28,7 +28,6 @@ internal class FamilyTest {
         }
     }
 
-
     @Test
     fun testContains() {
         val testCases = listOf(
@@ -98,17 +97,18 @@ internal class FamilyTest {
     fun updateActiveEntities() {
         val family = emptyTestFamily
 
-        family.onEntityCfgChanged(Entity(0), BitArray())
+        val entity = testWorld.entity()
+        family.onEntityCfgChanged(entity, BitArray())
 
         // accessing the entities will trigger an internal update
         assertEquals(1, family.mutableEntities.size)
-        assertEquals(Entity(0), family.mutableEntities[0])
+        assertEquals(entity, family.mutableEntities[0])
     }
 
     @Test
     fun callActionForEachEntity() {
         val family = emptyTestFamily
-        family.onEntityCfgChanged(Entity(0), BitArray())
+        family.onEntityCfgChanged(testWorld.entity(), BitArray())
         var processedEntity = -1
         var numExecutions = 0
 
@@ -122,18 +122,46 @@ internal class FamilyTest {
     }
 
     @Test
+    fun callActionForEachEntityWithVersion() {
+        val family = emptyTestFamily
+        fun createRecycledEntity(count: Int): Entity {
+            repeat(count) {
+                testWorld -= testWorld.entity()
+            }
+            return testWorld.entity()
+        }
+        repeat(3) {
+            family.onEntityCfgChanged(createRecycledEntity(it), BitArray())
+        }
+
+        val entities = mutableListOf<Entity>()
+        family.forEach {
+            entities.add(it)
+        }
+
+        assertEquals(entities.toSet(), family.entities.map { it }.toSet())
+        assertEquals(3, entities.size)
+        assertContains(entities, Entity(id = 0, version = 0))
+        assertContains(entities, Entity(id = 1, version = 1))
+        assertContains(entities, Entity(id = 2, version = 2))
+    }
+
+    @Test
     fun sortEntities() {
         val family = emptyTestFamily
-        family.onEntityCfgChanged(Entity(0), BitArray())
-        family.onEntityCfgChanged(Entity(2), BitArray())
-        family.onEntityCfgChanged(Entity(1), BitArray())
+        val e0 = testWorld.entity()
+        val e1 = testWorld.entity()
+        val e2 = testWorld.entity()
+        family.onEntityCfgChanged(e0, BitArray())
+        family.onEntityCfgChanged(e2, BitArray())
+        family.onEntityCfgChanged(e1, BitArray())
 
         // sort descending by entity id
-        family.sort(compareEntity(testWorld) { e1, e2 -> e2.id.compareTo(e1.id) })
+        family.sort(compareEntity(testWorld) { eA, eB -> eB.id.compareTo(eA.id) })
 
-        assertEquals(Entity(2), family.mutableEntities[0])
-        assertEquals(Entity(1), family.mutableEntities[1])
-        assertEquals(Entity(0), family.mutableEntities[2])
+        assertEquals(Entity(2, version = 0), family.mutableEntities[0])
+        assertEquals(Entity(1, version = 0), family.mutableEntities[1])
+        assertEquals(Entity(0, version = 0), family.mutableEntities[2])
     }
 
     @Test
@@ -151,7 +179,7 @@ internal class FamilyTest {
             val family = Family(BitArray().apply { set(1) }, null, null, testWorld)
             val addEntityBeforeCall = it.first
             val addEntityToFamily = it.second
-            val entity = Entity(1)
+            val entity = testWorld.entity()
             if (addEntityBeforeCall) {
                 family.onEntityCfgChanged(entity, BitArray().apply { set(1) })
                 // accessing entities triggers an internal family update
@@ -211,7 +239,7 @@ internal class FamilyTest {
     @Test
     fun testFamilyHook() {
         val requiredComps = BitArray().apply { set(1) }
-        val e = Entity(0)
+        val e = Entity(0, version = 0)
         var numAddCalls = 0
         var numRemoveCalls = 0
         val family = Family(allOf = requiredComps, world = testWorld)

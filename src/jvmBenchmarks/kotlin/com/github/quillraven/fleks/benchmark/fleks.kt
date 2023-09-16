@@ -119,7 +119,7 @@ open class FleksBenchmark {
             }
         }
         repeat(NUM_ENTITIES) {
-            state.world -= Entity(it)
+            state.world -= Entity(it, version = 0)
         }
     }
 

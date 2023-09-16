@@ -2,13 +2,16 @@ package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.*
 import kotlinx.serialization.Serializable
-import kotlin.jvm.JvmInline
 
 /**
  * An entity of a [world][World]. It represents a unique id.
  */
 @Serializable
-data class Entity(val id: Int, val version: Int = 0)
+data class Entity(val id: Int, val version: Long) {
+    companion object {
+        val NONE = Entity(-1, -1)
+    }
+}
 
 /**
  * Type alias for an optional hook function for an [EntityService].
@@ -224,6 +227,11 @@ interface EntityProvider {
      * Performs the given [action] for all active [entities][Entity].
      */
     fun forEach(action: World.(Entity) -> Unit)
+
+    /**
+     * TODO
+     */
+    fun getCurrentVersion(id: Int): Entity
 }
 
 /**
@@ -257,13 +265,16 @@ class DefaultEntityProvider(
      */
     override fun numEntities(): Int = nextId - recycledEntities.size
 
+    private val currentEntityVersions = Bag(Array(initialEntityCapacity) { 0L })
+
     /**
      * Creates a new [entity][Entity]. If there are [recycledEntities] then they will be preferred
      * over creating new entities.
      */
     override fun create(): Entity {
         return if (recycledEntities.isEmpty()) {
-            Entity(nextId++)
+            currentEntityVersions[nextId] = 0
+            Entity(nextId++, version = 0)
         } else {
             val recycled = recycledEntities.removeLast()
             removedEntities.clear(recycled.id)
@@ -276,7 +287,7 @@ class DefaultEntityProvider(
                 nextId = recycled.id + 1
             }
 
-            recycled
+            recycled.copy(version = ++currentEntityVersions[recycled.id])
         }
     }
 
@@ -287,7 +298,7 @@ class DefaultEntityProvider(
         if (id >= nextId) {
             // entity with given id was never created before -> create all missing entities ...
             repeat(id - nextId + 1) {
-                this -= Entity(nextId + it)
+                this -= Entity(nextId + it, version = 0)
             }
             // ... and then create the entity to guarantee that it has the correct ID.
             // The entity is at the end of the recycled list.
@@ -298,8 +309,9 @@ class DefaultEntityProvider(
         } else {
             // entity with given id was already created before and is part of the recycled entities
             // -> move it to the end to be used by the next create call
-            recycledEntities.remove(Entity(id))
-            recycledEntities.addLast(Entity(id))
+            val index = recycledEntities.indexOfFirst { it.id == id }
+            val entity = recycledEntities.removeAt(index)
+            recycledEntities.addLast(entity)
             return create()
         }
     }
@@ -310,12 +322,16 @@ class DefaultEntityProvider(
     override operator fun minusAssign(entity: Entity) {
         recycledEntities.add(entity)
         removedEntities.set(entity.id)
+        currentEntityVersions[entity.id] = entity.version
     }
 
     /**
      * Returns true if and only if the given [entity] is active and part of the provider.
      */
-    override fun contains(entity: Entity): Boolean = entity.id in 0 until nextId && !removedEntities[entity.id]
+    override fun contains(entity: Entity): Boolean =
+        entity.id in 0 until nextId &&
+            !removedEntities[entity.id] &&
+            currentEntityVersions[entity.id] == entity.version
 
     /**
      * Resets the provider by removing and recycling all [entities][Entity].
@@ -325,6 +341,7 @@ class DefaultEntityProvider(
         nextId = 0
         recycledEntities.clear()
         removedEntities.clearAll()
+        currentEntityVersions.clear()
     }
 
     /**
@@ -332,12 +349,19 @@ class DefaultEntityProvider(
      */
     override fun forEach(action: World.(Entity) -> Unit) {
         for (id in 0 until nextId) {
-            val entity = Entity(id)
+            val entity = getCurrentVersion(id)
             if (removedEntities[entity.id]) {
                 continue
             }
             world.action(entity)
         }
+    }
+
+    override fun getCurrentVersion(id: Int): Entity {
+        if(currentEntityVersions.hasNoValueAtIndex(id)){
+            currentEntityVersions[id] = -1
+        }
+        return Entity(id, version = currentEntityVersions[id])
     }
 }
 

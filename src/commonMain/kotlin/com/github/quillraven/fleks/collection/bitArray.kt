@@ -1,6 +1,6 @@
 package com.github.quillraven.fleks.collection
 
-import com.github.quillraven.fleks.Entity
+import com.github.quillraven.fleks.EntityProvider
 import kotlin.math.min
 
 /**
@@ -138,7 +138,7 @@ class BitArray(
         }
     }
 
-    fun toEntityBag(bag: MutableEntityBag) {
+    internal fun toEntityBag(bag: MutableEntityBag, entityProvider: EntityProvider) {
         // this includes manually-inlined code from forEachSetBit(), but not for the typical
         // reasons that is done. the checkSize condition can be a little more efficient,
         // checking once per 64-bit word instead of per bit if it was in the action given to
@@ -156,7 +156,7 @@ class BitArray(
                 while (bitsAtWord != 0L) {
                     // gets the distance from the start of the word to the highest (leftmost) bit
                     val bit = 63 - bitsAtWord.countLeadingZeroBits()
-                    bag += Entity(w + bit)
+                    bag += entityProvider.getCurrentVersion(w + bit)
                     bitsAtWord = (bitsAtWord xor (1L shl bit)) // removes highest bit
                 }
             }

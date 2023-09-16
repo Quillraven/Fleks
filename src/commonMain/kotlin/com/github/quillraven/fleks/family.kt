@@ -108,7 +108,7 @@ data class Family(
             if (isDirty && !isIterating) {
                 // no iteration in process -> update entities if necessary
                 isDirty = false
-                entityBits.toEntityBag(field)
+                entityBits.toEntityBag(field, entityService.entityProvider)
             }
             return field
         }
