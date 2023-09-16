@@ -113,13 +113,13 @@ open class FleksStateComplex {
 open class FleksBenchmark {
     @Benchmark
     fun addRemove(state: FleksStateAddRemove) {
-        repeat(NUM_ENTITIES) {
+        val entities = (0 until NUM_ENTITIES).map {
             state.world.entity {
                 it += FleksPosition()
             }
         }
-        repeat(NUM_ENTITIES) {
-            state.world -= Entity(it, version = 0)
+        entities.forEach {
+            state.world -= it
         }
     }
 
