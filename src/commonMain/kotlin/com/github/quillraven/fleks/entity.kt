@@ -7,8 +7,9 @@ import kotlin.jvm.JvmInline
 /**
  * An entity of a [world][World]. It represents a unique id.
  */
+@JvmInline
 @Serializable
-data class Entity(val id: Int, val version: Int = 0)
+value class Entity(val id: Int)
 
 /**
  * Type alias for an optional hook function for an [EntityService].
