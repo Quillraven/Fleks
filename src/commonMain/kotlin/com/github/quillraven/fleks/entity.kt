@@ -531,6 +531,7 @@ class EntityService(
 
             // invalidate EntityRef
             entityRefs.getOrNull(entity.id)?.valid = false
+            entityRefs.removeIndex(entity.id)
 
             // update families
             world.allFamilies.forEach { it.onEntityRemoved(entity) }

@@ -61,6 +61,15 @@ class Bag<T>(
         return false
     }
 
+    fun removeIndex(index: Int): Boolean {
+        if (values[index] != null) {
+            values[index] = values[--size]
+            values[size] = null
+            return true
+        }
+        return false
+    }
+
     fun clear() {
         values.fill(null)
         size = 0
