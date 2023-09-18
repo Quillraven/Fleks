@@ -42,6 +42,10 @@ class Bag<T>(
         return values[index] ?: throw NoSuchElementException("Bag has no value at index $index")
     }
 
+    inline fun getOrNull(index: Int): T? {
+        return values[index]
+    }
+
     fun hasNoValueAtIndex(index: Int): Boolean {
         return index >= size || values[index] == null
     }

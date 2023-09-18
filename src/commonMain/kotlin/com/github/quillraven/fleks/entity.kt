@@ -11,6 +11,8 @@ import kotlin.jvm.JvmInline
 @Serializable
 value class Entity(val id: Int)
 
+data class EntityRef(val entity: Entity, var valid: Boolean = true)
+
 /**
  * Type alias for an optional hook function for an [EntityService].
  * Such a function runs within a [World] and takes the [Entity] as an argument.
@@ -81,6 +83,8 @@ abstract class EntityComponentContext(
      * future calls to [World.entity].
      */
     fun Entity.remove() = componentService.world.minusAssign(this)
+
+    fun Entity.ref() = componentService.world.entityService.entityRef(this)
 }
 
 /**
@@ -375,6 +379,9 @@ class EntityService(
     internal val compMasks = bag<BitArray>(initialEntityCapacity)
 
     @PublishedApi
+    internal val entityRefs = bag<EntityRef>(initialEntityCapacity)
+
+    @PublishedApi
     internal val createCtx = EntityCreateContext(compService, compMasks)
 
     @PublishedApi
@@ -522,6 +529,9 @@ class EntityService(
             }
             compMask.clearAll()
 
+            // invalidate EntityRef
+            entityRefs.getOrNull(entity.id)?.valid = false
+
             // update families
             world.allFamilies.forEach { it.onEntityRemoved(entity) }
         }
@@ -563,5 +573,15 @@ class EntityService(
             delayedEntities.forEach { this -= it }
             delayedEntities.clear()
         }
+    }
+
+    fun entityRef(entity: Entity): EntityRef {
+        if (entityRefs.hasNoValueAtIndex(entity.id)) {
+            val ref = EntityRef(entity)
+            entityRefs[entity.id] = ref
+            return ref
+        }
+
+        return entityRefs[entity.id]
     }
 }
