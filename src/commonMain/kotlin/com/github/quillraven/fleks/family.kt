@@ -93,7 +93,9 @@ data class Family(
     /**
      * Returns the [entities][Entity] that belong to this family.
      */
-    private val entityBits = BitArray(world.capacity)
+    //private val entityBits = BitArray(world.capacity)
+    private val privateEntities = bag<Entity>(world.capacity)//mutableListOf<Entity>()
+    private var countEntities = 0
 
     /**
      * Returns true if an iteration of this family is currently in process.
@@ -108,7 +110,7 @@ data class Family(
             if (isDirty && !isIterating) {
                 // no iteration in process -> update entities if necessary
                 isDirty = false
-                entityBits.toEntityBag(field, entityService.entityProvider)
+                privateEntities.toEntityBag(field)
             }
             return field
         }
@@ -129,19 +131,19 @@ data class Family(
      * iterates through the entire underlying [BitArray].
      */
     val numEntities: Int
-        get() = entityBits.numBits()
+        get() = countEntities
 
     /**
      * Returns true if and only if this [Family] does not contain any entity.
      */
     val isEmpty: Boolean
-        get() = entityBits.isEmpty
+        get() = countEntities == 0
 
     /**
      * Returns true if and only if this [Family] contains at least one entity.
      */
     val isNotEmpty: Boolean
-        get() = entityBits.isNotEmpty
+        get() = countEntities > 0
 
     /**
      * Flag to indicate if there are changes in the [entityBits].
@@ -163,7 +165,7 @@ data class Family(
     /**
      * Returns true if and only if the given [entity] is part of the family.
      */
-    operator fun contains(entity: Entity): Boolean = entityBits[entity.id]
+    operator fun contains(entity: Entity): Boolean = !privateEntities.hasNoValueAtIndex(entity.id)
 
     /**
      * Updates this family if needed and runs the given [action] for all [entities][Entity].
@@ -219,7 +221,8 @@ data class Family(
     internal fun onEntityAdded(entity: Entity, compMask: BitArray) {
         if (compMask in this) {
             isDirty = true
-            entityBits.set(entity.id)
+            if(privateEntities.hasNoValueAtIndex(entity.id)) countEntities++
+            privateEntities[entity.id] = entity
             addHook?.invoke(world, entity)
         }
     }
@@ -233,15 +236,17 @@ data class Family(
     @PublishedApi
     internal fun onEntityCfgChanged(entity: Entity, compMask: BitArray) {
         val entityInFamily = compMask in this
-        if (entityInFamily && !entityBits[entity.id]) {
+        if (entityInFamily && privateEntities.hasNoValueAtIndex(entity.id)) { // !entityBits[entity.id]
             // new entity gets added
             isDirty = true
-            entityBits.set(entity.id)
+            countEntities++
+            privateEntities[entity.id] = entity
             addHook?.invoke(world, entity)
-        } else if (!entityInFamily && entityBits[entity.id]) {
+        } else if (!entityInFamily && !privateEntities.hasNoValueAtIndex(entity.id)) {
             // existing entity gets removed
             isDirty = true
-            entityBits.clear(entity.id)
+            countEntities--
+            privateEntities.removeAt(entity.id)
             removeHook?.invoke(world, entity)
         }
     }
@@ -251,10 +256,11 @@ data class Family(
      * if the [entity] is already in the family.
      */
     internal fun onEntityRemoved(entity: Entity) {
-        if (entityBits[entity.id]) {
+        if (!privateEntities.hasNoValueAtIndex(entity.id)) {
             // existing entity gets removed
             isDirty = true
-            entityBits.clear(entity.id)
+            privateEntities.removeAt(entity.id)
+            countEntities--
             removeHook?.invoke(world, entity)
         }
     }
@@ -262,4 +268,9 @@ data class Family(
     override fun toString(): String {
         return "Family(allOf=$allOf, noneOf=$noneOf, anyOf=$anyOf, numEntities=$numEntities)"
     }
+}
+
+private fun Bag<Entity>.toEntityBag(entityBag: MutableEntityBag) {
+    entityBag.clearEnsuringCapacity(entityBag.size)
+    forEach { entityBag += it }
 }

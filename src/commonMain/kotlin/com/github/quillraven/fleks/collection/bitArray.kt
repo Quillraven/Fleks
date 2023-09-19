@@ -138,35 +138,6 @@ class BitArray(
         }
     }
 
-    internal fun toEntityBag(bag: MutableEntityBag, entityProvider: EntityProvider) {
-        // this includes manually-inlined code from forEachSetBit(), but not for the typical
-        // reasons that is done. the checkSize condition can be a little more efficient,
-        // checking once per 64-bit word instead of per bit if it was in the action given to
-        // forEachSetBit(). This iterates from high to low so that we only ensure the bag's
-        // capacity once.
-        var checkSize = true
-        for (word in bits.size - 1 downTo 0) {
-            var bitsAtWord = bits[word]
-            if (bitsAtWord != 0L) {
-                val w = word shl 6
-                if(checkSize) {
-                    checkSize = false
-                    bag.clearEnsuringCapacity(w + 64 - bitsAtWord.countLeadingZeroBits())
-                }
-                while (bitsAtWord != 0L) {
-                    // gets the distance from the start of the word to the highest (leftmost) bit
-                    val bit = 63 - bitsAtWord.countLeadingZeroBits()
-                    bag += entityProvider.getCurrentVersion(w + bit)
-                    bitsAtWord = (bitsAtWord xor (1L shl bit)) // removes highest bit
-                }
-            }
-        }
-        if(checkSize) {
-            // the inner checks never ran, so there are no set bits. size still needs to be set.
-            bag.clear()
-        }
-    }
-
     override fun hashCode(): Int {
         if (bits.isEmpty()) {
             return 0

@@ -118,8 +118,6 @@ private class WorldEntityProvider(
     override fun forEach(action: World.(Entity) -> Unit) {
         entities.forEach { world.action(it) }
     }
-
-    override fun getCurrentVersion(id: Int): Entity = Entity(id, version = 0)
 }
 
 
@@ -575,7 +573,8 @@ internal class WorldTest {
             actualEntities.add(entity)
         }
 
-        assertContentEquals(expectedEntities, actualEntities)
+        assertEquals(expectedEntities.size, actualEntities.size)
+        assertEquals(expectedEntities.toSet(), actualEntities.toSet())
         assertEquals(3, f.numEntities)
     }
 

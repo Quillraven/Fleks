@@ -227,11 +227,6 @@ interface EntityProvider {
      * Performs the given [action] for all active [entities][Entity].
      */
     fun forEach(action: World.(Entity) -> Unit)
-
-    /**
-     * TODO
-     */
-    fun getCurrentVersion(id: Int): Entity
 }
 
 /**
@@ -265,15 +260,14 @@ class DefaultEntityProvider(
      */
     override fun numEntities(): Int = nextId - recycledEntities.size
 
-    private val currentEntityVersions = Bag(Array(initialEntityCapacity) { 0L })
+    private val privateEntities = bag<Entity>(initialEntityCapacity)
 
     /**
      * Creates a new [entity][Entity]. If there are [recycledEntities] then they will be preferred
      * over creating new entities.
      */
     override fun create(): Entity {
-        return if (recycledEntities.isEmpty()) {
-            currentEntityVersions[nextId] = 0
+        return (if (recycledEntities.isEmpty()) {
             Entity(nextId++, version = 0)
         } else {
             val recycled = recycledEntities.removeLast()
@@ -287,7 +281,9 @@ class DefaultEntityProvider(
                 nextId = recycled.id + 1
             }
 
-            recycled.copy(version = ++currentEntityVersions[recycled.id])
+            recycled.copy(version = recycled.version + 1)
+        }).also {
+            privateEntities[it.id] = it
         }
     }
 
@@ -322,7 +318,7 @@ class DefaultEntityProvider(
     override operator fun minusAssign(entity: Entity) {
         recycledEntities.add(entity)
         removedEntities.set(entity.id)
-        currentEntityVersions[entity.id] = entity.version
+        privateEntities.removeAt(entity.id)
     }
 
     /**
@@ -331,7 +327,7 @@ class DefaultEntityProvider(
     override fun contains(entity: Entity): Boolean =
         entity.id in 0 until nextId &&
             !removedEntities[entity.id] &&
-            currentEntityVersions[entity.id] == entity.version
+            privateEntities[entity.id].version == entity.version
 
     /**
      * Resets the provider by removing and recycling all [entities][Entity].
@@ -341,7 +337,7 @@ class DefaultEntityProvider(
         nextId = 0
         recycledEntities.clear()
         removedEntities.clearAll()
-        currentEntityVersions.clear()
+        privateEntities.clear()
     }
 
     /**
@@ -349,19 +345,12 @@ class DefaultEntityProvider(
      */
     override fun forEach(action: World.(Entity) -> Unit) {
         for (id in 0 until nextId) {
-            val entity = getCurrentVersion(id)
-            if (removedEntities[entity.id]) {
-                continue
+            privateEntities.getOrNull(id)?.let { entity ->
+                if (!removedEntities[id]) {
+                    world.action(entity)
+                }
             }
-            world.action(entity)
         }
-    }
-
-    override fun getCurrentVersion(id: Int): Entity {
-        if(currentEntityVersions.hasNoValueAtIndex(id)){
-            currentEntityVersions[id] = -1
-        }
-        return Entity(id, version = currentEntityVersions[id])
     }
 }
 

@@ -42,8 +42,17 @@ class Bag<T>(
         return values[index] ?: throw NoSuchElementException("Bag has no value at index $index")
     }
 
+    fun getOrNull(index: Int): T? {
+        if (index < 0 || index >= size) throw IndexOutOfBoundsException("$index is not valid for bag of size $size")
+        return values[index]
+    }
+
     fun hasNoValueAtIndex(index: Int): Boolean {
         return index >= size || values[index] == null
+    }
+
+    fun removeAt(index: Int) {
+        values[index] = null
     }
 
     fun removeValue(value: T): Boolean {
