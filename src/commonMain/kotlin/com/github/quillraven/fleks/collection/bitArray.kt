@@ -1,6 +1,5 @@
 package com.github.quillraven.fleks.collection
 
-import com.github.quillraven.fleks.EntityProvider
 import kotlin.math.min
 
 /**

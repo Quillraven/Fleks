@@ -245,12 +245,6 @@ class DefaultEntityProvider(
     private var nextId = 0
 
     /**
-     * Separate BitArray to remember if an [entity][Entity] was already removed.
-     * This is faster than looking up the [recycledEntities].
-     */
-    private val removedEntities = BitArray(initialEntityCapacity)
-
-    /**
      * The already removed [entities][Entity] which can be reused whenever a new entity is needed.
      */
     private val recycledEntities = ArrayDeque<Entity>()
@@ -260,18 +254,20 @@ class DefaultEntityProvider(
      */
     override fun numEntities(): Int = nextId - recycledEntities.size
 
-    private val privateEntities = bag<Entity>(initialEntityCapacity)
+    /**
+     * Bag of all currently active [entities][Entity].
+     */
+    private val entities = bag<Entity>(initialEntityCapacity)
 
     /**
      * Creates a new [entity][Entity]. If there are [recycledEntities] then they will be preferred
      * over creating new entities.
      */
     override fun create(): Entity {
-        return (if (recycledEntities.isEmpty()) {
+        return if (recycledEntities.isEmpty()) {
             Entity(nextId++, version = 0)
         } else {
             val recycled = recycledEntities.removeLast()
-            removedEntities.clear(recycled.id)
 
             // because of the load snapshot functionality of the world, it is
             // possible that an entity with an ID higher than nextId gets recycled
@@ -282,8 +278,8 @@ class DefaultEntityProvider(
             }
 
             recycled.copy(version = recycled.version + 1)
-        }).also {
-            privateEntities[it.id] = it
+        }.also {
+            entities[it.id] = it
         }
     }
 
@@ -317,8 +313,7 @@ class DefaultEntityProvider(
      */
     override operator fun minusAssign(entity: Entity) {
         recycledEntities.add(entity)
-        removedEntities.set(entity.id)
-        privateEntities.removeAt(entity.id)
+        entities.removeAt(entity.id)
     }
 
     /**
@@ -326,8 +321,7 @@ class DefaultEntityProvider(
      */
     override fun contains(entity: Entity): Boolean =
         entity.id in 0 until nextId &&
-            !removedEntities[entity.id] &&
-            privateEntities[entity.id].version == entity.version
+            entities.getOrNull(entity.id)?.version == entity.version
 
     /**
      * Resets the provider by removing and recycling all [entities][Entity].
@@ -336,8 +330,7 @@ class DefaultEntityProvider(
     override fun reset() {
         nextId = 0
         recycledEntities.clear()
-        removedEntities.clearAll()
-        privateEntities.clear()
+        entities.clear()
     }
 
     /**
@@ -345,10 +338,8 @@ class DefaultEntityProvider(
      */
     override fun forEach(action: World.(Entity) -> Unit) {
         for (id in 0 until nextId) {
-            privateEntities.getOrNull(id)?.let { entity ->
-                if (!removedEntities[id]) {
-                    world.action(entity)
-                }
+            entities.getOrNull(id)?.let { entity ->
+                world.action(entity)
             }
         }
     }
