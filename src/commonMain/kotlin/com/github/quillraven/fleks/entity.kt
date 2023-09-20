@@ -319,9 +319,7 @@ class DefaultEntityProvider(
     /**
      * Returns true if and only if the given [entity] is active and part of the provider.
      */
-    override fun contains(entity: Entity): Boolean =
-        entity.id in 0 until nextId &&
-            entities.getOrNull(entity.id)?.version == entity.version
+    override fun contains(entity: Entity): Boolean = entities.getOrNull(entity.id)?.version == entity.version
 
     /**
      * Resets the provider by removing and recycling all [entities][Entity].
@@ -337,11 +335,7 @@ class DefaultEntityProvider(
      * Performs the given [action] for all active [entities][Entity].
      */
     override fun forEach(action: World.(Entity) -> Unit) {
-        for (id in 0 until nextId) {
-            entities.getOrNull(id)?.let { entity ->
-                world.action(entity)
-            }
-        }
+        entities.forEach { world.action(it) }
     }
 }
 

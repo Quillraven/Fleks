@@ -93,8 +93,7 @@ data class Family(
     /**
      * Returns the [entities][Entity] that belong to this family.
      */
-    //private val entityBits = BitArray(world.capacity)
-    private val privateEntities = bag<Entity>(world.capacity)//mutableListOf<Entity>()
+    private val privateEntities = bag<Entity>(world.capacity)
     private var countEntities = 0
 
     /**
@@ -103,14 +102,16 @@ data class Family(
     @PublishedApi
     internal var isIterating = false
 
-    // This bag is added in addition to the BitArray for better iteration performance.
+    // This bag is added for better iteration performance.
     @PublishedApi
     internal val mutableEntities = MutableEntityBag()
         get() {
             if (isDirty && !isIterating) {
                 // no iteration in process -> update entities if necessary
                 isDirty = false
-                privateEntities.toEntityBag(field)
+                // TODO check if we can just use array copy instead?
+                field.clearEnsuringCapacity(privateEntities.size)
+                privateEntities.forEach { field += it }
             }
             return field
         }
@@ -165,7 +166,7 @@ data class Family(
     /**
      * Returns true if and only if the given [entity] is part of the family.
      */
-    operator fun contains(entity: Entity): Boolean = !privateEntities.hasNoValueAtIndex(entity.id)
+    operator fun contains(entity: Entity): Boolean = privateEntities.hasValueAtIndex(entity.id)
 
     /**
      * Updates this family if needed and runs the given [action] for all [entities][Entity].
@@ -231,18 +232,19 @@ data class Family(
      * Checks if the [entity] is part of the family by analyzing the entity's components.
      * The [compMask] is a [BitArray] that indicates which components the [entity] currently has.
      *
-     * The [entity] gets either added to the [entityBits] or removed and [isDirty] is set when needed.
+     * The [entity] gets either added to the [privateEntities] or removed and [isDirty] is set when needed.
      */
     @PublishedApi
     internal fun onEntityCfgChanged(entity: Entity, compMask: BitArray) {
         val entityInFamily = compMask in this
-        if (entityInFamily && privateEntities.hasNoValueAtIndex(entity.id)) { // !entityBits[entity.id]
+        val currentEntity = privateEntities.getOrNull(entity.id)
+        if (entityInFamily && currentEntity == null) {
             // new entity gets added
             isDirty = true
             countEntities++
             privateEntities[entity.id] = entity
             addHook?.invoke(world, entity)
-        } else if (!entityInFamily && !privateEntities.hasNoValueAtIndex(entity.id)) {
+        } else if (!entityInFamily && currentEntity != null) {
             // existing entity gets removed
             isDirty = true
             countEntities--
@@ -268,9 +270,4 @@ data class Family(
     override fun toString(): String {
         return "Family(allOf=$allOf, noneOf=$noneOf, anyOf=$anyOf, numEntities=$numEntities)"
     }
-}
-
-private fun Bag<Entity>.toEntityBag(entityBag: MutableEntityBag) {
-    entityBag.clearEnsuringCapacity(entityBag.size)
-    forEach { entityBag += it }
 }

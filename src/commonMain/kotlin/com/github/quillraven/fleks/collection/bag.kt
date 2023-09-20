@@ -43,12 +43,15 @@ class Bag<T>(
     }
 
     fun getOrNull(index: Int): T? {
-        if (index < 0 || index >= size) throw IndexOutOfBoundsException("$index is not valid for bag of size $size")
-        return values[index]
+        return if (index < 0 || index >= size) null else values[index]
     }
 
     fun hasNoValueAtIndex(index: Int): Boolean {
-        return index >= size || values[index] == null
+        return index >= size || index < 0 || values[index] == null
+    }
+
+    fun hasValueAtIndex(index: Int): Boolean {
+        return index in 0..<size && values[index] != null
     }
 
     fun removeAt(index: Int) {
