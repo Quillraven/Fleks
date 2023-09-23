@@ -207,7 +207,7 @@ class Fleks2TDD {
                 onRemove(testFamily) { entity ->
                     ++numRemoveCalls
                     assertEquals(testWorld, this)
-                    assertEquals(Entity(1, version = 0), entity)
+                    assertEquals(Entity(1, version = 0u), entity)
                 }
             }
         }

@@ -141,9 +141,9 @@ internal class FamilyTest {
 
         assertEquals(entities.toSet(), family.entities.map { it }.toSet())
         assertEquals(3, entities.size)
-        assertContains(entities, Entity(id = 0, version = 0))
-        assertContains(entities, Entity(id = 1, version = 1))
-        assertContains(entities, Entity(id = 2, version = 2))
+        assertContains(entities, Entity(id = 0, version = 0u))
+        assertContains(entities, Entity(id = 1, version = 1u))
+        assertContains(entities, Entity(id = 2, version = 2u))
     }
 
     @Test
@@ -159,9 +159,9 @@ internal class FamilyTest {
         // sort descending by entity id
         family.sort(compareEntity(testWorld) { eA, eB -> eB.id.compareTo(eA.id) })
 
-        assertEquals(Entity(2, version = 0), family.mutableEntities[0])
-        assertEquals(Entity(1, version = 0), family.mutableEntities[1])
-        assertEquals(Entity(0, version = 0), family.mutableEntities[2])
+        assertEquals(Entity(2, version = 0u), family.mutableEntities[0])
+        assertEquals(Entity(1, version = 0u), family.mutableEntities[1])
+        assertEquals(Entity(0, version = 0u), family.mutableEntities[2])
     }
 
     @Test
@@ -239,7 +239,7 @@ internal class FamilyTest {
     @Test
     fun testFamilyHook() {
         val requiredComps = BitArray().apply { set(1) }
-        val e = Entity(0, version = 0)
+        val e = Entity(0, version = 0u)
         var numAddCalls = 0
         var numRemoveCalls = 0
         val family = Family(allOf = requiredComps, world = testWorld)

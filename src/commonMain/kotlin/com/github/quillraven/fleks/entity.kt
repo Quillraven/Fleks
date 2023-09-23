@@ -7,9 +7,9 @@ import kotlinx.serialization.Serializable
  * An entity of a [world][World]. It represents a unique id.
  */
 @Serializable
-data class Entity(val id: Int, val version: Long) {
+data class Entity(val id: Int, val version: UInt) {
     companion object {
-        val NONE = Entity(-1, -1)
+        val NONE = Entity(-1, 0u)
     }
 }
 
@@ -265,7 +265,7 @@ class DefaultEntityProvider(
      */
     override fun create(): Entity {
         return if (recycledEntities.isEmpty()) {
-            Entity(nextId++, version = 0)
+            Entity(nextId++, version = 0u)
         } else {
             val recycled = recycledEntities.removeLast()
 
@@ -277,7 +277,7 @@ class DefaultEntityProvider(
                 nextId = recycled.id + 1
             }
 
-            recycled.copy(version = recycled.version + 1)
+            recycled.copy(version = recycled.version + 1u)
         }.also {
             entities[it.id] = it
         }
@@ -290,7 +290,7 @@ class DefaultEntityProvider(
         if (id >= nextId) {
             // entity with given id was never created before -> create all missing entities ...
             repeat(id - nextId + 1) {
-                this -= Entity(nextId + it, version = 0)
+                this -= Entity(nextId + it, version = 0u)
             }
             // ... and then create the entity to guarantee that it has the correct ID.
             // The entity is at the end of the recycled list.

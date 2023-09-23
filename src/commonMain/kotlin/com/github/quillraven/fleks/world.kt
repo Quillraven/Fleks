@@ -485,7 +485,7 @@ class World internal constructor(
         with(entityService) {
             val maxId = snapshot.keys.maxOf { it.id }
             repeat(maxId + 1) {
-                val entity = Entity(it, version = (versionLookup[it]?.version ?: 0) - 1)
+                val entity = Entity(it, version = (versionLookup[it]?.version ?: 0u) - 1u)
                 this.recycle(entity)
                 val components = snapshot[versionLookup[it]]
                 if (components != null) {
