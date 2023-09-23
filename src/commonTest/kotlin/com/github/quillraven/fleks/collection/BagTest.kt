@@ -138,7 +138,7 @@ class BagTest {
     @Test
     fun getOrNullReturnsNullForOutOfBoundsIndex(){
         val bag = bag<String>(1)
-        bag[1] = "foo"
+        bag[0] = "foo"
 
         assertNull(bag.getOrNull(-1))
         assertNull(bag.getOrNull(1))

@@ -389,7 +389,7 @@ internal class FamilyTest {
         val f = testWorld.family { all(FamilyTestComponent) }
 
         repeat(3) {
-            testWorld -= testWorld.entity { FamilyTestComponent() }
+            testWorld -= testWorld.entity { it += FamilyTestComponent() }
         }
 
         assertTrue(f.isEmpty)
@@ -399,8 +399,7 @@ internal class FamilyTest {
     @Test
     fun isEmptyForNonEmptyFamily() {
         val f = testWorld.family { all(FamilyTestComponent) }
-
-        testWorld.entity { FamilyTestComponent() }
+        testWorld.entity { it += FamilyTestComponent() }
 
         assertFalse(f.isEmpty)
         assertTrue(f.isNotEmpty)

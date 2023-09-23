@@ -127,8 +127,6 @@ data class Family(
 
     /**
      * Returns the number of [entities][Entity] that belong to this family.
-     * This can be an expensive call if the amount of entities is very high because it
-     * iterates through the entire underlying [BitArray].
      */
     val numEntities: Int
         get() = countEntities
@@ -146,7 +144,7 @@ data class Family(
         get() = countEntities > 0
 
     /**
-     * Flag to indicate if there are changes in the [entityBits].
+     * Flag to indicate if there are changes in the [privateEntities].
      * If it is true then the [mutableEntities] will get updated the next time it is accessed.
      */
     private var isDirty = false
