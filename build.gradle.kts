@@ -50,7 +50,6 @@ kotlin {
 benchmark {
     configurations {
         create("FleksOnly") {
-            include("Fleks")
             exclude("Artemis|Ashley")
         }
 
