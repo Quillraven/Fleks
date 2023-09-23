@@ -367,5 +367,43 @@ internal class FamilyTest {
 
         assertEquals(3, numIterations)
     }
+
+    @Test
+    fun numEntities() {
+        val f = testWorld.family { all(FamilyTestComponent) }
+
+        val entities = (1..5).map {
+            testWorld.entity { it += FamilyTestComponent() }
+        }
+        entities.drop(1).take(3).forEach {
+            testWorld -= it
+        }
+        testWorld.entity { it += FamilyTestComponent() }
+
+        // 0 + 5 - 3 + 1 = 3
+        assertEquals(3, f.numEntities)
+    }
+
+    @Test
+    fun isEmptyForEmptyFamily() {
+        val f = testWorld.family { all(FamilyTestComponent) }
+
+        repeat(3) {
+            testWorld -= testWorld.entity { FamilyTestComponent() }
+        }
+
+        assertTrue(f.isEmpty)
+        assertFalse(f.isNotEmpty)
+    }
+
+    @Test
+    fun isEmptyForNonEmptyFamily() {
+        val f = testWorld.family { all(FamilyTestComponent) }
+
+        testWorld.entity { FamilyTestComponent() }
+
+        assertFalse(f.isEmpty)
+        assertTrue(f.isNotEmpty)
+    }
 }
 

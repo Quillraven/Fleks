@@ -42,6 +42,9 @@ class Bag<T>(
         return values[index] ?: throw NoSuchElementException("Bag has no value at index $index")
     }
 
+    /**
+     * Returns the element at position [index] or null if there is no element or if [index] is out of bounds
+     */
     fun getOrNull(index: Int): T? {
         return if (index < 0 || index >= size) null else values[index]
     }

@@ -109,7 +109,6 @@ data class Family(
             if (isDirty && !isIterating) {
                 // no iteration in process -> update entities if necessary
                 isDirty = false
-                // TODO check if we can just use array copy instead?
                 field.clearEnsuringCapacity(privateEntities.size)
                 privateEntities.forEach { field += it }
             }

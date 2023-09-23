@@ -256,6 +256,7 @@ internal class WorldTest {
         val e = w.entity()
 
         w -= Entity(e.id, e.version - 1)
+        w -= Entity(e.id, e.version + 1)
 
         assertEquals(1, w.numEntities)
     }
@@ -812,6 +813,38 @@ internal class WorldTest {
 
         f.forEach {
             assertFailsWith<FleksSnapshotException> { w.loadSnapshotOf(entity, components) }
+        }
+    }
+
+    data class FollowerComponent(val leader:Entity) : Component<FollowerComponent>{
+        override fun type() = FollowerComponent
+        companion object : ComponentType<FollowerComponent>()
+    }
+
+    @Test
+    fun testLoadSnapshotWithReferenceToEntity(){
+        val w = configureWorld {  }
+        val leaderA = w.entity {  }
+        val followerA = w.entity{
+            it += FollowerComponent(leaderA)
+        }
+        w -= leaderA
+        val leaderB = w.entity {  }
+        val followerB = w.entity{
+            it += FollowerComponent(leaderB)
+        }
+
+        val snapshot = w.snapshot()
+        w.loadSnapshot(snapshot)
+
+        with(w){
+            assertFalse { leaderA in w }
+            assertTrue { followerA in w }
+            assertFalse { followerA[FollowerComponent].leader in w }
+
+            assertTrue { leaderB in w }
+            assertTrue { followerB in w }
+            assertTrue { followerB[FollowerComponent].leader in w }
         }
     }
 
