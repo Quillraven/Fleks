@@ -477,15 +477,17 @@ class World internal constructor(
             return
         }
 
+        val versionLookup = snapshot.keys.associateBy { it.id }
+
         // Set next entity id to the maximum provided id + 1.
         // All ids before that will be either created or added to the recycled
         // ids to guarantee that the provided snapshot entity ids match the newly created ones.
         with(entityService) {
             val maxId = snapshot.keys.maxOf { it.id }
             repeat(maxId + 1) {
-                val entity = Entity(it)
+                val entity = Entity(it, version = (versionLookup[it]?.version ?: 0u) - 1u)
                 this.recycle(entity)
-                val components = snapshot[entity]
+                val components = snapshot[versionLookup[it]]
                 if (components != null) {
                     // components for entity are provided -> create it
                     // note that the id for the entity will be the recycled id from above

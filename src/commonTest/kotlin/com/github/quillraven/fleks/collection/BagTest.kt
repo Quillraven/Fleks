@@ -104,4 +104,43 @@ class BagTest {
 
         assertFailsWith<IndexOutOfBoundsException> { bag[2] }
     }
+
+    @Test
+    fun hasValueAtIndex() {
+        val bag = bag<String>(3)
+        bag[1] = "foo"
+
+        assertFalse { bag.hasValueAtIndex(0) }
+        assertTrue { bag.hasValueAtIndex(1) }
+        assertFalse { bag.hasValueAtIndex(2) }
+    }
+
+    @Test
+    fun hasNoValueAtIndex() {
+        val bag = bag<String>(3)
+        bag[1] = "foo"
+
+        assertTrue { bag.hasNoValueAtIndex(0) }
+        assertFalse { bag.hasNoValueAtIndex(1) }
+        assertTrue { bag.hasNoValueAtIndex(2) }
+    }
+
+    @Test
+    fun getOrNullReturnsValueOrNullForInBoundsIndex(){
+        val bag = bag<String>(3)
+        bag[1] = "foo"
+
+        assertNull(bag.getOrNull(0))
+        assertNotNull(bag.getOrNull(1))
+        assertNull(bag.getOrNull(2))
+    }
+
+    @Test
+    fun getOrNullReturnsNullForOutOfBoundsIndex(){
+        val bag = bag<String>(1)
+        bag[0] = "foo"
+
+        assertNull(bag.getOrNull(-1))
+        assertNull(bag.getOrNull(1))
+    }
 }

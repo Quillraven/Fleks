@@ -118,9 +118,8 @@ open class FleksBenchmark {
                 it += FleksPosition()
             }
         }
-        repeat(NUM_ENTITIES) {
-            state.world -= Entity(it)
-        }
+        
+        state.world.removeAll()
     }
 
     @Benchmark

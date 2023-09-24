@@ -365,7 +365,7 @@ class MutableEntityBag(
     size: Int = 64
 ) : EntityBag {
     @PublishedApi
-    internal var values: Array<Entity> = Array(size) { Entity(-1) }
+    internal var values: Array<Entity> = Array(size) { Entity.NONE }
 
     /**
      * Returns the size of the [MutableEntityBag].
@@ -385,7 +385,7 @@ class MutableEntityBag(
      */
     operator fun plusAssign(entity: Entity) {
         if (size == values.size) {
-            values = values.copyInto(Array(max(1, size * 2)) { Entity(-1) })
+            values = values.copyInto(Array(max(1, size * 2)) { Entity.NONE })
         }
         values[size++] = entity
     }
@@ -397,7 +397,7 @@ class MutableEntityBag(
         for (i in 0 until size) {
             if (values[i] == entity) {
                 values[i] = values[--size]
-                values[size] = Entity(-1)
+                values[size] = Entity.NONE
                 return
             }
         }
@@ -407,7 +407,7 @@ class MutableEntityBag(
      * Resets [size] to zero and clears any [entity][Entity] of the bag.
      */
     fun clear() {
-        values.fill(Entity(-1))
+        values.fill(Entity.NONE)
         size = 0
     }
 
@@ -416,7 +416,7 @@ class MutableEntityBag(
      */
     fun ensureCapacity(capacity: Int) {
         if (capacity > values.size) {
-            values = values.copyInto(Array(capacity + 1) { Entity(-1) })
+            values = values.copyInto(Array(capacity + 1) { Entity.NONE })
         }
     }
 
@@ -426,9 +426,9 @@ class MutableEntityBag(
      */
     fun clearEnsuringCapacity(capacity: Int) {
         if (capacity > values.size) {
-            values = Array(capacity + 1) { Entity(-1) }
+            values = Array(capacity + 1) { Entity.NONE }
         } else {
-            values.fill(Entity(-1))
+            values.fill(Entity.NONE)
         }
         size = 0
     }

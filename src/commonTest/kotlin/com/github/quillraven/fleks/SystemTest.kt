@@ -89,7 +89,7 @@ private class SystemTestIteratingSystemSortAutomatic : IteratingSystem(
     },
 ) {
     var numEntityCalls = 0
-    var lastEntityProcess = Entity(-1)
+    var lastEntityProcess = Entity.NONE
     var entityToRemove: Entity? = null
 
     override fun onTickEntity(entity: Entity) {
@@ -108,7 +108,7 @@ private class SystemTestFixedSystemRemoval : IteratingSystem(
     interval = Fixed(1f)
 ) {
     var numEntityCalls = 0
-    var lastEntityProcess = Entity(-1)
+    var lastEntityProcess = Entity.NONE
     var entityToRemove: Entity? = null
 
     override fun onTickEntity(entity: Entity) {
@@ -133,7 +133,7 @@ private class SystemTestIteratingSystemSortManual : IteratingSystem(
     sortingType = Manual
 ) {
     var numEntityCalls = 0
-    var lastEntityProcess = Entity(-1)
+    var lastEntityProcess = Entity.NONE
 
     override fun onTickEntity(entity: Entity) {
         lastEntityProcess = entity

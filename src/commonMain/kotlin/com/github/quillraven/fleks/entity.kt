@@ -2,14 +2,16 @@ package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.*
 import kotlinx.serialization.Serializable
-import kotlin.jvm.JvmInline
 
 /**
  * An entity of a [world][World]. It represents a unique id.
  */
-@JvmInline
 @Serializable
-value class Entity(val id: Int)
+data class Entity(val id: Int, val version: UInt) {
+    companion object {
+        val NONE = Entity(-1, 0u)
+    }
+}
 
 /**
  * Type alias for an optional hook function for an [EntityService].
@@ -243,12 +245,6 @@ class DefaultEntityProvider(
     private var nextId = 0
 
     /**
-     * Separate BitArray to remember if an [entity][Entity] was already removed.
-     * This is faster than looking up the [recycledEntities].
-     */
-    private val removedEntities = BitArray(initialEntityCapacity)
-
-    /**
      * The already removed [entities][Entity] which can be reused whenever a new entity is needed.
      */
     private val recycledEntities = ArrayDeque<Entity>()
@@ -259,15 +255,19 @@ class DefaultEntityProvider(
     override fun numEntities(): Int = nextId - recycledEntities.size
 
     /**
+     * Bag of all currently active [entities][Entity].
+     */
+    private val entities = bag<Entity>(initialEntityCapacity)
+
+    /**
      * Creates a new [entity][Entity]. If there are [recycledEntities] then they will be preferred
      * over creating new entities.
      */
     override fun create(): Entity {
         return if (recycledEntities.isEmpty()) {
-            Entity(nextId++)
+            Entity(nextId++, version = 0u)
         } else {
             val recycled = recycledEntities.removeLast()
-            removedEntities.clear(recycled.id)
 
             // because of the load snapshot functionality of the world, it is
             // possible that an entity with an ID higher than nextId gets recycled
@@ -277,7 +277,9 @@ class DefaultEntityProvider(
                 nextId = recycled.id + 1
             }
 
-            recycled
+            recycled.copy(version = recycled.version + 1u)
+        }.also {
+            entities[it.id] = it
         }
     }
 
@@ -288,7 +290,7 @@ class DefaultEntityProvider(
         if (id >= nextId) {
             // entity with given id was never created before -> create all missing entities ...
             repeat(id - nextId + 1) {
-                this -= Entity(nextId + it)
+                this -= Entity(nextId + it, version = 0u)
             }
             // ... and then create the entity to guarantee that it has the correct ID.
             // The entity is at the end of the recycled list.
@@ -299,8 +301,9 @@ class DefaultEntityProvider(
         } else {
             // entity with given id was already created before and is part of the recycled entities
             // -> move it to the end to be used by the next create call
-            recycledEntities.remove(Entity(id))
-            recycledEntities.addLast(Entity(id))
+            val index = recycledEntities.indexOfFirst { it.id == id }
+            val entity = recycledEntities.removeAt(index)
+            recycledEntities.addLast(entity)
             return create()
         }
     }
@@ -310,13 +313,13 @@ class DefaultEntityProvider(
      */
     override operator fun minusAssign(entity: Entity) {
         recycledEntities.add(entity)
-        removedEntities.set(entity.id)
+        entities.removeAt(entity.id)
     }
 
     /**
      * Returns true if and only if the given [entity] is active and part of the provider.
      */
-    override fun contains(entity: Entity): Boolean = entity.id in 0 until nextId && !removedEntities[entity.id]
+    override fun contains(entity: Entity): Boolean = entities.getOrNull(entity.id)?.version == entity.version
 
     /**
      * Resets the provider by removing and recycling all [entities][Entity].
@@ -325,20 +328,14 @@ class DefaultEntityProvider(
     override fun reset() {
         nextId = 0
         recycledEntities.clear()
-        removedEntities.clearAll()
+        entities.clear()
     }
 
     /**
      * Performs the given [action] for all active [entities][Entity].
      */
     override fun forEach(action: World.(Entity) -> Unit) {
-        for (id in 0 until nextId) {
-            val entity = Entity(id)
-            if (removedEntities[entity.id]) {
-                continue
-            }
-            world.action(entity)
-        }
+        entities.forEach { world.action(it) }
     }
 }
 
