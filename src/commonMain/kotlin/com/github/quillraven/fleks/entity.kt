@@ -4,7 +4,11 @@ import com.github.quillraven.fleks.collection.*
 import kotlinx.serialization.Serializable
 
 /**
- * An entity of a [world][World]. It represents a unique id.
+ * An entity of a [world][World]. It represents a unique identifier that is the combination
+ * of an index (=[id]) and a [version].
+ *
+ * It is possible to have two entities with the same [id] but different [version] but only
+ * one of these entities is part of the [world][World] at any given time.
  */
 @Serializable
 data class Entity(val id: Int, val version: UInt) {
@@ -232,7 +236,7 @@ interface EntityProvider {
 /**
  * Default implementation of an [EntityProvider] which uses an [entity][Entity]
  * recycling mechanism to reuse [entities][Entity] that get removed.
- * The first [entity][Entity] starts with ID zero.
+ * The first [entity][Entity] starts with [id][Entity.id] zero and [version][Entity.version] zero.
  */
 class DefaultEntityProvider(
     override val world: World,
@@ -257,7 +261,7 @@ class DefaultEntityProvider(
     /**
      * Bag of all currently active [entities][Entity].
      */
-    private val entities = bag<Entity>(initialEntityCapacity)
+    private val activeEntities = bag<Entity>(initialEntityCapacity)
 
     /**
      * Creates a new [entity][Entity]. If there are [recycledEntities] then they will be preferred
@@ -279,7 +283,7 @@ class DefaultEntityProvider(
 
             recycled.copy(version = recycled.version + 1u)
         }.also {
-            entities[it.id] = it
+            activeEntities[it.id] = it
         }
     }
 
@@ -313,13 +317,13 @@ class DefaultEntityProvider(
      */
     override operator fun minusAssign(entity: Entity) {
         recycledEntities.add(entity)
-        entities.removeAt(entity.id)
+        activeEntities.removeAt(entity.id)
     }
 
     /**
      * Returns true if and only if the given [entity] is active and part of the provider.
      */
-    override fun contains(entity: Entity): Boolean = entities.getOrNull(entity.id)?.version == entity.version
+    override fun contains(entity: Entity): Boolean = activeEntities.getOrNull(entity.id)?.version == entity.version
 
     /**
      * Resets the provider by removing and recycling all [entities][Entity].
@@ -328,14 +332,14 @@ class DefaultEntityProvider(
     override fun reset() {
         nextId = 0
         recycledEntities.clear()
-        entities.clear()
+        activeEntities.clear()
     }
 
     /**
      * Performs the given [action] for all active [entities][Entity].
      */
     override fun forEach(action: World.(Entity) -> Unit) {
-        entities.forEach { world.action(it) }
+        activeEntities.forEach { world.action(it) }
     }
 }
 

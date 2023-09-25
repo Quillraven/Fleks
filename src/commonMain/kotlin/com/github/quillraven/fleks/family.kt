@@ -93,7 +93,7 @@ data class Family(
     /**
      * Returns the [entities][Entity] that belong to this family.
      */
-    private val privateEntities = bag<Entity>(world.capacity)
+    private val activeEntities = bag<Entity>(world.capacity)
     private var countEntities = 0
 
     /**
@@ -109,8 +109,8 @@ data class Family(
             if (isDirty && !isIterating) {
                 // no iteration in process -> update entities if necessary
                 isDirty = false
-                field.clearEnsuringCapacity(privateEntities.size)
-                privateEntities.forEach { field += it }
+                field.clearEnsuringCapacity(activeEntities.size)
+                activeEntities.forEach { field += it }
             }
             return field
         }
@@ -144,7 +144,7 @@ data class Family(
         get() = countEntities > 0
 
     /**
-     * Flag to indicate if there are changes in the [privateEntities].
+     * Flag to indicate if there are changes in the [activeEntities].
      * If it is true then the [mutableEntities] will get updated the next time it is accessed.
      */
     private var isDirty = false
@@ -163,7 +163,7 @@ data class Family(
     /**
      * Returns true if and only if the given [entity] is part of the family.
      */
-    operator fun contains(entity: Entity): Boolean = privateEntities.hasValueAtIndex(entity.id)
+    operator fun contains(entity: Entity): Boolean = activeEntities.hasValueAtIndex(entity.id)
 
     /**
      * Updates this family if needed and runs the given [action] for all [entities][Entity].
@@ -219,8 +219,8 @@ data class Family(
     internal fun onEntityAdded(entity: Entity, compMask: BitArray) {
         if (compMask in this) {
             isDirty = true
-            if(privateEntities.hasNoValueAtIndex(entity.id)) countEntities++
-            privateEntities[entity.id] = entity
+            if (activeEntities.hasNoValueAtIndex(entity.id)) countEntities++
+            activeEntities[entity.id] = entity
             addHook?.invoke(world, entity)
         }
     }
@@ -229,23 +229,23 @@ data class Family(
      * Checks if the [entity] is part of the family by analyzing the entity's components.
      * The [compMask] is a [BitArray] that indicates which components the [entity] currently has.
      *
-     * The [entity] gets either added to the [privateEntities] or removed and [isDirty] is set when needed.
+     * The [entity] gets either added to the [activeEntities] or removed and [isDirty] is set when needed.
      */
     @PublishedApi
     internal fun onEntityCfgChanged(entity: Entity, compMask: BitArray) {
         val entityInFamily = compMask in this
-        val currentEntity = privateEntities.getOrNull(entity.id)
+        val currentEntity = activeEntities.getOrNull(entity.id)
         if (entityInFamily && currentEntity == null) {
             // new entity gets added
             isDirty = true
             countEntities++
-            privateEntities[entity.id] = entity
+            activeEntities[entity.id] = entity
             addHook?.invoke(world, entity)
         } else if (!entityInFamily && currentEntity != null) {
             // existing entity gets removed
             isDirty = true
             countEntities--
-            privateEntities.removeAt(entity.id)
+            activeEntities.removeAt(entity.id)
             removeHook?.invoke(world, entity)
         }
     }
@@ -255,10 +255,10 @@ data class Family(
      * if the [entity] is already in the family.
      */
     internal fun onEntityRemoved(entity: Entity) {
-        if (!privateEntities.hasNoValueAtIndex(entity.id)) {
+        if (!activeEntities.hasNoValueAtIndex(entity.id)) {
             // existing entity gets removed
             isDirty = true
-            privateEntities.removeAt(entity.id)
+            activeEntities.removeAt(entity.id)
             countEntities--
             removeHook?.invoke(world, entity)
         }

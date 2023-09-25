@@ -158,6 +158,14 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
         world.entityService.entityProvider = world.run(factory)
     }
 
+    /**
+     * Configures the world in following sequence:
+     * - injectables
+     * - family
+     * - system
+     *
+     * The order is important to correctly trigger [FamilyHook]s and [EntityHook]s.
+     */
     fun configure() {
         injectableCfg?.invoke(InjectableConfiguration(world))
         familyCfg?.invoke(FamilyConfiguration(world))
