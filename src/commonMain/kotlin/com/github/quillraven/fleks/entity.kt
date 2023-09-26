@@ -39,6 +39,9 @@ abstract class EntityComponentContext(
     inline operator fun <reified T : Component<*>> Entity.get(type: ComponentType<T>): T =
         componentService.holder(type)[this]
 
+    inline operator fun Entity.get(tag: ComponentType<*>): Boolean =
+        componentService.world.entityService.compMasks[this.id][tag.id]
+
     /**
      * Returns a [component][Component] of the given [type] for the [entity][Entity]
      * or null if the [entity][Entity] does not have such a [component][Component].
@@ -134,6 +137,14 @@ open class EntityCreateContext(
             compMasks[this.id].set(compType.id)
             val holder = componentService.wildcardHolder(compType)
             holder.setWildcard(this, cmp)
+        }
+    }
+
+    operator fun Entity.set(tag: ComponentType<*>, value: Boolean) {
+        if (value) {
+            compMasks[this.id].set(tag.id)
+        } else {
+            compMasks[this.id].clear(tag.id)
         }
     }
 }
