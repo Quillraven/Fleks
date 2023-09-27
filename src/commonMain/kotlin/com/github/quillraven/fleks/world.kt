@@ -202,6 +202,11 @@ fun configureWorld(entityCapacity: Int = 512, cfg: WorldConfiguration.() -> Unit
 }
 
 /**
+ * Snapshot for an [entity][Entity] that contains its [components][Component] and [tags][EntityTag].
+ */
+data class Snapshot(val components: List<Component<*>>, val tags: List<UniqueId<*>>)
+
+/**
  * A world to handle [entities][Entity] and [systems][IntervalSystem].
  *
  * @param entityCapacity the initial maximum capacity of entities.
@@ -247,6 +252,12 @@ class World internal constructor(
      */
     var systems = emptyArray<IntervalSystem>()
         internal set
+
+    /**
+     * Cache of used [EntityTag] instances. Needed for snapshot functionality.
+     */
+    @PublishedApi
+    internal val tagCache = mutableMapOf<Int, UniqueId<*>>()
 
     init {
         /**
@@ -435,35 +446,35 @@ class World internal constructor(
      * The values are a list of components that a specific entity has. If the entity
      * does not have any components then the value is an empty list.
      */
-    fun snapshot(): Map<Entity, List<Component<*>>> {
-        val entityComps = mutableMapOf<Entity, List<Component<*>>>()
+    fun snapshot(): Map<Entity, Snapshot> {
+        val result = mutableMapOf<Entity, Snapshot>()
 
-        entityService.forEach { entity ->
-            val components = mutableListOf<Component<*>>()
-            val compMask = entityService.compMasks[entity.id]
-            compMask.forEachSetBit { cmpId ->
-                components += componentService.holderByIndex(cmpId)[entity]
-            }
-            entityComps[entity] = components
-        }
+        entityService.forEach { result[it] = snapshotOf(it) }
 
-        return entityComps
+        return result
     }
 
     /**
      * Returns a list that contains all components of the given [entity] of this world.
      * If the entity does not have any components then an empty list is returned.
      */
-    fun snapshotOf(entity: Entity): List<Component<*>> {
+    fun snapshotOf(entity: Entity): Snapshot {
         val comps = mutableListOf<Component<*>>()
+        val tags = mutableListOf<UniqueId<*>>()
 
         if (entity in entityService) {
             entityService.compMasks[entity.id].forEachSetBit { cmpId ->
-                comps += componentService.holderByIndex(cmpId)[entity]
+                val holder = componentService.holderByIndexOrNull(cmpId)
+                if (holder == null) {
+                    // tag instead of component
+                    tags += tagCache[cmpId] ?: throw FleksSnapshotException("Tag with id $cmpId was never assigned")
+                } else {
+                    comps += holder[entity]
+                }
             }
         }
 
-        return comps
+        return Snapshot(comps, tags)
     }
 
     /**
@@ -473,7 +484,7 @@ class World internal constructor(
      *
      * @throws FleksSnapshotException if a family iteration is currently in process.
      */
-    fun loadSnapshot(snapshot: Map<Entity, List<Component<*>>>) {
+    fun loadSnapshot(snapshot: Map<Entity, Snapshot>) {
         if (entityService.delayRemoval) {
             throw FleksSnapshotException("Snapshots cannot be loaded while a family iteration is in process")
         }
@@ -495,24 +506,24 @@ class World internal constructor(
             repeat(maxId + 1) {
                 val entity = Entity(it, version = (versionLookup[it]?.version ?: 0u) - 1u)
                 this.recycle(entity)
-                val components = snapshot[versionLookup[it]]
-                if (components != null) {
-                    // components for entity are provided -> create it
+                val entitySnapshot = snapshot[versionLookup[it]]
+                if (entitySnapshot != null) {
+                    // snapshot for entity is provided -> create it
                     // note that the id for the entity will be the recycled id from above
-                    this.configure(this.create { }, components)
+                    this.configure(this.create { }, entitySnapshot)
                 }
             }
         }
     }
 
     /**
-     * Loads the given [entity] and its [components].
+     * Loads the given [entity] and its [snapshot][Snapshot].
      * If the entity does not exist yet, it will be created.
      * If the entity already exists it will be updated with the given components.
      *
      * @throws FleksSnapshotException if a family iteration is currently in process.
      */
-    fun loadSnapshotOf(entity: Entity, components: List<Component<*>>) {
+    fun loadSnapshotOf(entity: Entity, snapshot: Snapshot) {
         if (entityService.delayRemoval) {
             throw FleksSnapshotException("Snapshots cannot be loaded while a family iteration is in process")
         }
@@ -523,7 +534,7 @@ class World internal constructor(
         }
 
         // load components for entity
-        entityService.configure(entity, components)
+        entityService.configure(entity, snapshot)
     }
 
     /**

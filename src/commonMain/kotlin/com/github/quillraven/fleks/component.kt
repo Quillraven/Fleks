@@ -9,6 +9,8 @@ import kotlin.native.concurrent.ThreadLocal
  * An interface that specifies a unique [id].
  * This [id] is used internally by Fleks as an index for some arrays.
  */
+// interface was necessary for (#118) to support enum classes as entity tags
+// because enum classes can only inherit from an interface and not from an abstract class.
 interface UniqueId<T> {
     val id: Int
 
@@ -228,14 +230,12 @@ class ComponentService {
     }
 
     /**
-     * Returns the [ComponentsHolder] of the given [index] inside the [holdersBag]. The index
-     * is linked to the id of a [ComponentType].
+     * Returns the [ComponentsHolder] of the given [index] inside the [holdersBag] or null.
+     * The index is linked to the id of a [ComponentType].
      * This function is only used internally at safe areas to speed up certain processes like
      * removing an [entity][Entity] or creating a snapshot via [World.snapshot].
-     *
-     * @throws [IndexOutOfBoundsException] if the [index] exceeds the bag's capacity.
      */
-    internal fun holderByIndex(index: Int): ComponentsHolder<*> {
-        return holdersBag[index]
+    internal fun holderByIndexOrNull(index: Int): ComponentsHolder<*>? {
+        return holdersBag.getOrNull(index)
     }
 }

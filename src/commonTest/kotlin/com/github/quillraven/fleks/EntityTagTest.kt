@@ -15,6 +15,12 @@ enum class TestTags : EntityTags by entityTagOf() {
     PLAYER, COLLISION
 }
 
+class TestTagComponent : Component<TestTagComponent> {
+    override fun type() = TestTagComponent
+
+    companion object : ComponentType<TestTagComponent>()
+}
+
 class EntityTagTest {
 
     @Test
@@ -65,6 +71,59 @@ class EntityTagTest {
             entity.configure { it -= TestTags.PLAYER }
 
             assertTrue(entity hasNo TestTags.PLAYER)
+        }
+    }
+
+    @Test
+    fun testRemoveEntityWithTag() {
+        val world = configureWorld {}
+        val entity = world.entity { it += TestTags.PLAYER }
+
+        with(world) {
+            entity.remove()
+
+            assertFalse(entity in world)
+        }
+    }
+
+    @Test
+    fun testSnapshotWithTag() {
+        val world = configureWorld {}
+        val entity = world.entity { it += TestTags.PLAYER }
+
+        val snapshot = world.snapshotOf(entity)
+        assertEquals(TestTags.PLAYER, snapshot.tags[0])
+
+        world.removeAll(true)
+        with(world) {
+            assertFalse(entity has TestTags.PLAYER)
+            world.loadSnapshot(mapOf(entity to snapshot))
+            assertTrue(entity has TestTags.PLAYER)
+        }
+    }
+
+    @Test
+    fun testSnapshotWithTagAndComponent() {
+        val world = configureWorld {}
+        val component = TestTagComponent()
+        val entity = world.entity {
+            it += TestTags.PLAYER
+            it += component
+        }
+
+        val snapshot = world.snapshotOf(entity)
+        assertEquals(TestTags.PLAYER, snapshot.tags[0])
+        assertEquals(component, snapshot.components[0])
+
+        world.removeAll(true)
+        with(world) {
+            assertFalse(entity has TestTags.PLAYER)
+            assertFalse(entity has TestTagComponent)
+
+            world.loadSnapshot(mapOf(entity to snapshot))
+
+            assertTrue(entity has TestTags.PLAYER)
+            assertTrue(entity has TestTagComponent)
         }
     }
 }
