@@ -27,7 +27,7 @@ typealias EntityTag = ComponentType<Any>
 
 typealias EntityTags = UniqueId<Any>
 
-inline fun entityTagsOf(): EntityTag = object : EntityTag() {}
+inline fun entityTagOf(): EntityTag = object : EntityTag() {}
 
 
 /**

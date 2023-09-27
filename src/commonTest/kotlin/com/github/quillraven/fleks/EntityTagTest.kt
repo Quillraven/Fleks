@@ -11,7 +11,7 @@ class TestTagSystem(var ticks: Int = 0) : IteratingSystem(family { all(Visible) 
     }
 }
 
-enum class TestTags : EntityTags by entityTagsOf() {
+enum class TestTags : EntityTags by entityTagOf() {
     PLAYER, COLLISION
 }
 
