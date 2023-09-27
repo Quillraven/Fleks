@@ -20,7 +20,7 @@ class EntityTagTest {
     @Test
     fun testTagAssignment() {
         val world = configureWorld {}
-        val entity = world.entity { it[Visible] = true }
+        val entity = world.entity { it += Visible }
 
         with(world) {
             assertTrue(entity[Visible])
@@ -30,7 +30,9 @@ class EntityTagTest {
 //             assertTrue(entity has Visible) // <- compile error because Visible does not extend Component
 //             assertTrue(entity hasNo  Visible) // <- compile error because Visible does not extend Component
 
-            entity.configure { it[Visible] = false }
+            entity.configure {
+                it -= Visible
+            }
 
             assertFalse(entity[Visible])
         }
@@ -44,13 +46,13 @@ class EntityTagTest {
                 add(TestTagSystem().also { testSystem = it })
             }
         }
-        val entity = world.entity { it[Visible] = true }
+        val entity = world.entity { it += Visible }
 
         world.update(1f)
         assertEquals(1, testSystem.ticks)
 
         testSystem.ticks = 0
-        with(world) { entity.configure { it[Visible] = false } }
+        with(world) { entity.configure { it -= Visible } }
         world.update(1f)
         assertEquals(0, testSystem.ticks)
     }
@@ -62,12 +64,12 @@ class EntityTagTest {
         assertNotEquals(Visible.id, TestTags.COLLISION.id)
 
         val world = configureWorld {}
-        val entity = world.entity { it[TestTags.PLAYER] = true }
+        val entity = world.entity { it += TestTags.PLAYER }
 
         with(world) {
             assertTrue(entity[TestTags.PLAYER])
 
-            entity.configure { it[TestTags.PLAYER] = false }
+            entity.configure { it -= TestTags.PLAYER }
 
             assertFalse(entity[TestTags.PLAYER])
         }

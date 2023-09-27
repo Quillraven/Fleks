@@ -140,13 +140,8 @@ open class EntityCreateContext(
         }
     }
 
-    operator fun Entity.set(tag: UniqueId<*>, value: Boolean) {
-        if (value) {
-            compMasks[this.id].set(tag.id)
-        } else {
-            compMasks[this.id].clear(tag.id)
-        }
-    }
+    inline operator fun Entity.plusAssign(tag: UniqueId<*>) = compMasks[this.id].set(tag.id)
+
 }
 
 /**
@@ -191,6 +186,8 @@ class EntityUpdateContext(
         holder[this] = newCmp
         return newCmp
     }
+
+    inline operator fun Entity.minusAssign(tag: UniqueId<*>) = compMasks[this.id].clear(tag.id)
 }
 
 /**
