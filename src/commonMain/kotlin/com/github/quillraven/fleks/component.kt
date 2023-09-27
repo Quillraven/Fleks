@@ -5,21 +5,30 @@ import com.github.quillraven.fleks.collection.bag
 import kotlin.math.max
 import kotlin.native.concurrent.ThreadLocal
 
+interface UniqueId<T> {
+    val id: Int
+
+    @ThreadLocal
+    companion object {
+        internal var nextId = 0
+    }
+}
+
 /**
  * A class that assigns a unique [id] per type of [Component] starting from 0.
  * This [id] is used internally by Fleks as an index for some arrays.
  * Every [Component] class must have at least one [ComponentType].
  */
-abstract class ComponentType<T> {
-    val id: Int = nextId++
-
-    @ThreadLocal
-    companion object {
-        private var nextId = 0
-    }
+abstract class ComponentType<T> : UniqueId<T> {
+    override val id: Int = UniqueId.nextId++
 }
 
 typealias EntityTag = ComponentType<Any>
+
+typealias EntityTags = UniqueId<Any>
+
+inline fun entityTagsOf(): EntityTag = object : EntityTag() {}
+
 
 /**
  * Function to create an object for a [ComponentType] of type T.

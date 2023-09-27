@@ -39,7 +39,7 @@ abstract class EntityComponentContext(
     inline operator fun <reified T : Component<*>> Entity.get(type: ComponentType<T>): T =
         componentService.holder(type)[this]
 
-    inline operator fun Entity.get(tag: ComponentType<*>): Boolean =
+    inline operator fun Entity.get(tag: UniqueId<*>): Boolean =
         componentService.world.entityService.compMasks[this.id][tag.id]
 
     /**
@@ -140,7 +140,7 @@ open class EntityCreateContext(
         }
     }
 
-    operator fun Entity.set(tag: ComponentType<*>, value: Boolean) {
+    operator fun Entity.set(tag: UniqueId<*>, value: Boolean) {
         if (value) {
             compMasks[this.id].set(tag.id)
         } else {
