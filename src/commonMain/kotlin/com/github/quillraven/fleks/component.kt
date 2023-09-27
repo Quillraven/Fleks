@@ -5,6 +5,10 @@ import com.github.quillraven.fleks.collection.bag
 import kotlin.math.max
 import kotlin.native.concurrent.ThreadLocal
 
+/**
+ * An interface that specifies a unique [id].
+ * This [id] is used internally by Fleks as an index for some arrays.
+ */
 interface UniqueId<T> {
     val id: Int
 
@@ -15,26 +19,45 @@ interface UniqueId<T> {
 }
 
 /**
- * A class that assigns a unique [id] per type of [Component] starting from 0.
- * This [id] is used internally by Fleks as an index for some arrays.
- * Every [Component] class must have at least one [ComponentType].
+ * An abstract class that assigns a unique [id] per type of [Component] starting from 0.
+ * Every [Component] class must have at least one [ComponentType] which serves
+ * as a [UniqueId].
  */
 abstract class ComponentType<T> : UniqueId<T> {
     override val id: Int = UniqueId.nextId++
 }
-
-typealias EntityTag = ComponentType<Any>
-
-typealias EntityTags = UniqueId<Any>
-
-fun entityTagOf(): EntityTag = object : EntityTag() {}
-
 
 /**
  * Function to create an object for a [ComponentType] of type T.
  * This is a convenience function for [components][Component] that have more than one [ComponentType].
  */
 inline fun <reified T> componentTypeOf(): ComponentType<T> = object : ComponentType<T>() {}
+
+/**
+ * Type alias for a special type of [ComponentType] that is used to tag [entities][Entity].
+ * A tag is a special form of a [Component] that does not have any data. It is stored
+ * more efficiently when compared to an empty [Component] and should therefore be preferred
+ * in those cases.
+ */
+typealias EntityTag = ComponentType<Any>
+
+/**
+ * Type alias for a special type of [UniqueId]. It can be used to make values of an enum
+ * class an [EntityTag].
+ *
+ * ```
+ * enum class MyTags : EntityTags by entityTagOf() {
+ *     TAG_A, TAG_B
+ * }
+ * ```
+ */
+typealias EntityTags = UniqueId<Any>
+
+/**
+ * Function to create an object for an [EntityTag].
+ * It can be used to make values of an enum class an [EntityTag]. Refer to [EntityTags].
+ */
+fun entityTagOf(): EntityTag = object : EntityTag() {}
 
 /**
  * An interface that must be implemented by any component that is used for Fleks.

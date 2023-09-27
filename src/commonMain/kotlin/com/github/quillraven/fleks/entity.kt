@@ -46,12 +46,21 @@ abstract class EntityComponentContext(
     inline fun <reified T : Component<*>> Entity.getOrNull(type: ComponentType<T>): T? =
         componentService.holder(type).getOrNull(this)
 
+    /**
+     * Returns true if and only if the [entity][Entity] has a [component][Component] or [tag][EntityTag] of the given [type].
+     */
     operator fun Entity.contains(type: UniqueId<*>): Boolean =
         componentService.world.entityService.compMasks[this.id][type.id]
 
+    /**
+     * Returns true if and only if the [entity][Entity] has a [component][Component] or [tag][EntityTag] of the given [type].
+     */
     infix fun Entity.has(type: UniqueId<*>): Boolean =
         componentService.world.entityService.compMasks[this.id][type.id]
 
+    /**
+     * Returns true if and only if the [entity][Entity] doesn't have a [component][Component] or [tag][EntityTag] of the given [type].
+     */
     infix fun Entity.hasNo(type: UniqueId<*>): Boolean =
         !componentService.world.entityService.compMasks[this.id][type.id]
 
@@ -128,6 +137,9 @@ open class EntityCreateContext(
         }
     }
 
+    /**
+     * Sets the [tag][EntityTag] to the [entity][Entity].
+     */
     operator fun Entity.plusAssign(tag: UniqueId<*>) = compMasks[this.id].set(tag.id)
 
 }
@@ -140,6 +152,7 @@ class EntityUpdateContext(
     compService: ComponentService,
     compMasks: Bag<BitArray>,
 ) : EntityCreateContext(compService, compMasks) {
+
     /**
      * Removes a [component][Component] of the given [type] from the [entity][Entity].
      *
@@ -159,10 +172,7 @@ class EntityUpdateContext(
      * If the [entity][Entity] does not have such a [component][Component] then [add] is called
      * to assign it to the [entity][Entity] and return it.
      */
-    inline fun <reified T : Component<T>> Entity.getOrAdd(
-        type: ComponentType<T>,
-        add: () -> T,
-    ): T {
+    inline fun <reified T : Component<T>> Entity.getOrAdd(type: ComponentType<T>, add: () -> T): T {
         val holder: ComponentsHolder<T> = componentService.holder(type)
         val existingCmp = holder.getOrNull(this)
         if (existingCmp != null) {
@@ -175,6 +185,9 @@ class EntityUpdateContext(
         return newCmp
     }
 
+    /**
+     * Removes the [tag][EntityTag] from the [entity][Entity].
+     */
     operator fun Entity.minusAssign(tag: UniqueId<*>) = compMasks[this.id].clear(tag.id)
 }
 
@@ -463,14 +476,13 @@ class EntityService(
         val compMask = compMasks[entity.id]
 
         // remove any existing components that are not part of the new components to set
-        compMask.forEachSetBit { cmpId ->
-            if (components.any { it.type().id == cmpId }) return@forEachSetBit
+        compMask.clearAndForEachSetBit { cmpId ->
+            if (components.any { it.type().id == cmpId }) return@clearAndForEachSetBit
 
             // we can use holderByIndex because we can be sure that the holder already exists
             // because otherwise the entity would not even have the component
             compService.holderByIndex(cmpId) -= entity
         }
-        compMask.clearAll()
 
         // set new components
         components.forEach { cmp ->
