@@ -5,7 +5,7 @@ import kotlin.test.*
 
 data object Visible : EntityTag()
 
-class TestTagSystem(var ticks: Int = 0) : IteratingSystem(family { all(Visible) }) {
+class TestTagSystem(var ticks: Int = 0) : IteratingSystem(family { all(Visible, TestTags.PLAYER) }) {
     override fun onTickEntity(entity: Entity) {
         ++ticks
     }
@@ -45,7 +45,10 @@ class EntityTagTest {
                 add(TestTagSystem().also { testSystem = it })
             }
         }
-        val entity = world.entity { it += Visible }
+        val entity = world.entity {
+            it += Visible
+            it += TestTags.PLAYER
+        }
 
         world.update(1f)
         assertEquals(1, testSystem.ticks)

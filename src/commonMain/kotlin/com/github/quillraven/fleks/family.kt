@@ -26,7 +26,7 @@ data class FamilyDefinition(
     /**
      * Any [entity][Entity] must have all given [types] to be part of the [family][Family].
      */
-    fun all(vararg types: ComponentType<*>): FamilyDefinition {
+    fun all(vararg types: UniqueId<*>): FamilyDefinition {
         allOf = BitArray(types.size).also { bits ->
             types.forEach { bits.set(it.id) }
         }
@@ -36,7 +36,7 @@ data class FamilyDefinition(
     /**
      * Any [entity][Entity] must not have any of the given [types] to be part of the [family][Family].
      */
-    fun none(vararg types: ComponentType<*>): FamilyDefinition {
+    fun none(vararg types: UniqueId<*>): FamilyDefinition {
         noneOf = BitArray(types.size).also { bits ->
             types.forEach { bits.set(it.id) }
         }
@@ -46,7 +46,7 @@ data class FamilyDefinition(
     /**
      * Any [entity][Entity] must have at least one of the given [types] to be part of the [family][Family].
      */
-    fun any(vararg types: ComponentType<*>): FamilyDefinition {
+    fun any(vararg types: UniqueId<*>): FamilyDefinition {
         anyOf = BitArray(types.size).also { bits ->
             types.forEach { bits.set(it.id) }
         }
