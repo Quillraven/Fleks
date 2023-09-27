@@ -39,9 +39,6 @@ abstract class EntityComponentContext(
     inline operator fun <reified T : Component<*>> Entity.get(type: ComponentType<T>): T =
         componentService.holder(type)[this]
 
-    inline operator fun Entity.get(tag: UniqueId<*>): Boolean =
-        componentService.world.entityService.compMasks[this.id][tag.id]
-
     /**
      * Returns a [component][Component] of the given [type] for the [entity][Entity]
      * or null if the [entity][Entity] does not have such a [component][Component].
@@ -49,23 +46,14 @@ abstract class EntityComponentContext(
     inline fun <reified T : Component<*>> Entity.getOrNull(type: ComponentType<T>): T? =
         componentService.holder(type).getOrNull(this)
 
-    /**
-     * Returns true if and only if the [entity][Entity] has a [component][Component] of the given [type].
-     */
-    inline operator fun <reified T : Component<*>> Entity.contains(type: ComponentType<T>): Boolean =
-        this in componentService.holder(type)
+    operator fun Entity.contains(type: UniqueId<*>): Boolean =
+        componentService.world.entityService.compMasks[this.id][type.id]
 
-    /**
-     * Returns true if and only if the [entity][Entity] has a [component][Component] of the given [type].
-     */
-    inline infix fun <reified T : Component<*>> Entity.has(type: ComponentType<T>): Boolean =
-        this in componentService.holder(type)
+    infix fun Entity.has(type: UniqueId<*>): Boolean =
+        componentService.world.entityService.compMasks[this.id][type.id]
 
-    /**
-     * Returns true if and only if the [entity][Entity] doesn't have a [component][Component] of the given [type].
-     */
-    inline infix fun <reified T : Component<*>> Entity.hasNo(type: ComponentType<T>): Boolean =
-        this !in componentService.holder(type)
+    infix fun Entity.hasNo(type: UniqueId<*>): Boolean =
+        !componentService.world.entityService.compMasks[this.id][type.id]
 
     /**
      * Updates the [entity][Entity] using the given [configuration] to add and remove [components][Component].
@@ -140,7 +128,7 @@ open class EntityCreateContext(
         }
     }
 
-    inline operator fun Entity.plusAssign(tag: UniqueId<*>) = compMasks[this.id].set(tag.id)
+    operator fun Entity.plusAssign(tag: UniqueId<*>) = compMasks[this.id].set(tag.id)
 
 }
 
@@ -187,7 +175,7 @@ class EntityUpdateContext(
         return newCmp
     }
 
-    inline operator fun Entity.minusAssign(tag: UniqueId<*>) = compMasks[this.id].clear(tag.id)
+    operator fun Entity.minusAssign(tag: UniqueId<*>) = compMasks[this.id].clear(tag.id)
 }
 
 /**
@@ -487,8 +475,8 @@ class EntityService(
         // set new components
         components.forEach { cmp ->
             val holder = compService.wildcardHolder(cmp.type())
-            holder.setWildcard(entity, cmp)
             compMask.set(cmp.type().id)
+            holder.setWildcard(entity, cmp)
         }
 
         // notify families
@@ -526,10 +514,9 @@ class EntityService(
             removeHook?.invoke(world, entity)
 
             // remove components
-            compMask.forEachSetBit { compId ->
+            compMask.clearAndForEachSetBit { compId ->
                 compService.holderByIndex(compId) -= entity
             }
-            compMask.clearAll()
 
             // update families
             world.allFamilies.forEach { it.onEntityRemoved(entity) }

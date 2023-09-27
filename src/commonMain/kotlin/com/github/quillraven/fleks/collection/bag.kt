@@ -45,7 +45,7 @@ class Bag<T>(
     /**
      * Returns the element at position [index] or null if there is no element or if [index] is out of bounds
      */
-    inline fun getOrNull(index: Int): T? = values.getOrNull(index)
+    fun getOrNull(index: Int): T? = values.getOrNull(index)
 
     fun hasNoValueAtIndex(index: Int): Boolean {
         return index >= size || index < 0 || values[index] == null

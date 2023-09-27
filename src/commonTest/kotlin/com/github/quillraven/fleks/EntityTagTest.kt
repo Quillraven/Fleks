@@ -23,18 +23,11 @@ class EntityTagTest {
         val entity = world.entity { it += Visible }
 
         with(world) {
-            assertTrue(entity[Visible])
-//             entity.getOrNull(Visible) // <- compile error because Visible does not extend Component
-//             val cmp : Visible = entity[Visible] // <- compile error because Visible does not extend Component and therefore 'cmp' must be of type Boolean
-//             assertTrue(Visible in entity) // <- compile error because Visible does not extend Component
-//             assertTrue(entity has Visible) // <- compile error because Visible does not extend Component
-//             assertTrue(entity hasNo  Visible) // <- compile error because Visible does not extend Component
+            assertTrue(Visible in entity)
 
-            entity.configure {
-                it -= Visible
-            }
+            entity.configure { it -= Visible }
 
-            assertFalse(entity[Visible])
+            assertFalse(Visible in entity)
         }
     }
 
@@ -67,11 +60,11 @@ class EntityTagTest {
         val entity = world.entity { it += TestTags.PLAYER }
 
         with(world) {
-            assertTrue(entity[TestTags.PLAYER])
+            assertTrue(entity has TestTags.PLAYER)
 
             entity.configure { it -= TestTags.PLAYER }
 
-            assertFalse(entity[TestTags.PLAYER])
+            assertTrue(entity hasNo TestTags.PLAYER)
         }
     }
 }
