@@ -19,6 +19,8 @@ abstract class ComponentType<T> {
     }
 }
 
+typealias EntityTag = ComponentType<Any>
+
 /**
  * Function to create an object for a [ComponentType] of type T.
  * This is a convenience function for [components][Component] that have more than one [ComponentType].

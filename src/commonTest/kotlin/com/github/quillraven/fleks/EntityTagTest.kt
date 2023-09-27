@@ -6,7 +6,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-data object Visible : ComponentType<Visible>()
+data object Visible : EntityTag()
 
 class TestTagSystem(var ticks: Int = 0) : IteratingSystem(family { all(Visible) }) {
     override fun onTickEntity(entity: Entity) {
@@ -23,6 +23,11 @@ class EntityTagTest {
 
         with(world) {
             assertTrue(entity[Visible])
+            // entity.getOrNull(Visible) // <- compile error because Visible does not extend Component
+            // val cmp : Visible = entity[Visible] // <- compile error because Visible does not extend Component and therefore 'cmp' must be of type Boolean
+            // assertTrue(Visible in entity) // <- compile error because Visible does not extend Component
+            // assertTrue(entity has Visible) // <- compile error because Visible does not extend Component
+            // assertTrue(entity hasNo  Visible) // <- compile error because Visible does not extend Component
 
             entity.configure { it[Visible] = false }
 
