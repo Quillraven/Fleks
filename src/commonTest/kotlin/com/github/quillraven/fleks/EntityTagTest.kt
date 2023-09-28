@@ -129,4 +129,29 @@ class EntityTagTest {
             assertTrue(entity has TestTagComponent)
         }
     }
+
+    @Test
+    fun testLoadSnapshotOfTag() {
+        val world = configureWorld {}
+        val entity = world.entity { }
+
+        world.loadSnapshot(mapOf(entity to Snapshot(emptyList(), listOf(TestTags.PLAYER))))
+
+        with(world) {
+            assertTrue(entity has TestTags.PLAYER)
+            assertTrue(TestTags.PLAYER.id in world.tagCache)
+        }
+    }
+
+    @Test
+    fun testSetListOfTags() {
+        val world = configureWorld {}
+        val entity = world.entity { it += TestTags.entries }
+
+        with(world) {
+            TestTags.entries.forEach {
+                assertTrue(it in entity)
+            }
+        }
+    }
 }
