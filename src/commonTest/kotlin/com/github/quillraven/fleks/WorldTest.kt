@@ -616,7 +616,7 @@ internal class WorldTest {
 
         assertEquals(expected.size, actual.size)
         expected.forEach { (entity, expectedComps) ->
-            val actualComps = actual[entity]
+            val actualComps = actual[entity]?.components
             assertNotNull(actualComps)
             assertEquals(expectedComps.size, actualComps.size)
             assertTrue(expectedComps.containsAll(actualComps) && actualComps.containsAll(expectedComps))
@@ -629,8 +629,8 @@ internal class WorldTest {
         val comp1 = WorldTestComponent()
         val e1 = w.entity { it += comp1 }
         val e2 = w.entity { }
-        val expected1 = listOf<Any>(comp1)
-        val expected2 = emptyList<Any>()
+        val expected1 = Snapshot(listOf(comp1), emptyList())
+        val expected2 = Snapshot(emptyList(), emptyList())
 
         assertEquals(expected1, w.snapshotOf(e1))
         assertEquals(expected2, w.snapshotOf(e2))
@@ -664,13 +664,13 @@ internal class WorldTest {
         val w = configureWorld { }
         val entity = w.entity()
         val comps = listOf(WorldTestComponent())
-        val snapshot = mapOf(entity to comps)
+        val snapshot = mapOf(entity to Snapshot(comps, emptyList()))
 
         w.loadSnapshot(snapshot)
         val actual = w.snapshotOf(entity)
 
         assertEquals(1, w.numEntities)
-        assertEquals(comps, actual)
+        assertEquals(comps, actual.components)
     }
 
     @Test
@@ -681,7 +681,7 @@ internal class WorldTest {
         }
         val entity = w.entity()
         val comps = listOf(WorldTestComponent())
-        val snapshot = mapOf(entity to comps)
+        val snapshot = mapOf(entity to Snapshot(comps, emptyList()))
 
         w.loadSnapshot(snapshot)
         val actual = w.snapshotOf(entity)
@@ -691,7 +691,7 @@ internal class WorldTest {
             assertFalse(it in w)
         }
         assertTrue(entity in w)
-        assertEquals(comps, actual)
+        assertEquals(comps, actual.components)
     }
 
     @Test
@@ -708,9 +708,9 @@ internal class WorldTest {
         val comp1 = WorldTestComponent()
         val comp2 = WorldTestComponent()
         val snapshot = mapOf(
-            Entity(3, version = 0u) to listOf(comp1, WorldTestComponent2()),
-            Entity(5, version = 0u) to listOf(comp2),
-            Entity(7, version = 0u) to listOf()
+            Entity(3, version = 0u) to Snapshot(listOf(comp1, WorldTestComponent2()), emptyList()),
+            Entity(5, version = 0u) to Snapshot(listOf(comp2), emptyList()),
+            Entity(7, version = 0u) to Snapshot(listOf(), emptyList())
         )
 
         w.loadSnapshot(snapshot)
@@ -721,11 +721,15 @@ internal class WorldTest {
         assertEquals(3, w.numEntities)
         // actual snapshot after loading the test snapshot is loaded should match
         assertEquals(snapshot.size, actual.size)
-        snapshot.forEach { (entity, expectedComps) ->
-            val actualComps = actual[entity]
-            assertNotNull(actualComps)
-            assertEquals(expectedComps.size, actualComps.size)
-            assertTrue(expectedComps.containsAll(actualComps) && actualComps.containsAll(expectedComps))
+        snapshot.forEach { (entity, entitySnapshot) ->
+            val actualSnapshot = actual[entity]
+            assertNotNull(actualSnapshot)
+            assertEquals(entitySnapshot.components.size, actualSnapshot.components.size)
+            assertTrue(
+                entitySnapshot.components.containsAll(actualSnapshot.components) && actualSnapshot.components.containsAll(
+                    entitySnapshot.components
+                )
+            )
         }
         // 2 out of 3 loaded entities should be part of the IteratingSystem family
         assertEquals(2, w.system<WorldTestIteratingSystem>().numCallsEntity)
@@ -742,7 +746,7 @@ internal class WorldTest {
     fun testCreateEntityAfterSnapshotLoaded() {
         val w = configureWorld { }
         val snapshot = mapOf(
-            Entity(1, version = 0u) to listOf<Component<*>>()
+            Entity(1, version = 0u) to Snapshot(listOf(), emptyList())
         )
 
         w.loadSnapshot(snapshot)
@@ -761,7 +765,7 @@ internal class WorldTest {
         val components = listOf(WorldTestComponent())
 
         assertFalse { entity in family }
-        w.loadSnapshotOf(entity, components)
+        w.loadSnapshotOf(entity, Snapshot(components, emptyList()))
 
         assertEquals(1, w.numEntities)
         assertTrue { with(w) { entity has WorldTestComponent } }
@@ -776,7 +780,7 @@ internal class WorldTest {
         val components = listOf(WorldTestComponent())
 
         assertFalse { entity in family }
-        w.loadSnapshotOf(entity, components)
+        w.loadSnapshotOf(entity, Snapshot(components, emptyList()))
 
         assertEquals(1, w.numEntities)
         assertTrue { with(w) { entity has WorldTestComponent } }
@@ -795,7 +799,7 @@ internal class WorldTest {
 
         assertTrue { entity in family2 }
         assertFalse { entity in family }
-        w.loadSnapshotOf(entity, components)
+        w.loadSnapshotOf(entity, Snapshot(components, emptyList()))
 
         assertTrue { with(w) { entity has WorldTestComponent } }
         assertTrue { with(w) { entity hasNo WorldTestComponent2 } }
@@ -812,32 +816,33 @@ internal class WorldTest {
         w.entity { it += WorldTestComponent() }
 
         f.forEach {
-            assertFailsWith<FleksSnapshotException> { w.loadSnapshotOf(entity, components) }
+            assertFailsWith<FleksSnapshotException> { w.loadSnapshotOf(entity, Snapshot(components, emptyList())) }
         }
     }
 
-    data class FollowerComponent(val leader:Entity) : Component<FollowerComponent>{
+    data class FollowerComponent(val leader: Entity) : Component<FollowerComponent> {
         override fun type() = FollowerComponent
+
         companion object : ComponentType<FollowerComponent>()
     }
 
     @Test
-    fun testLoadSnapshotWithReferenceToEntity(){
-        val w = configureWorld {  }
-        val leaderA = w.entity {  }
-        val followerA = w.entity{
+    fun testLoadSnapshotWithReferenceToEntity() {
+        val w = configureWorld { }
+        val leaderA = w.entity { }
+        val followerA = w.entity {
             it += FollowerComponent(leaderA)
         }
         w -= leaderA
-        val leaderB = w.entity {  }
-        val followerB = w.entity{
+        val leaderB = w.entity { }
+        val followerB = w.entity {
             it += FollowerComponent(leaderB)
         }
 
         val snapshot = w.snapshot()
         w.loadSnapshot(snapshot)
 
-        with(w){
+        with(w) {
             assertFalse { leaderA in w }
             assertTrue { followerA in w }
             assertFalse { followerA[FollowerComponent].leader in w }

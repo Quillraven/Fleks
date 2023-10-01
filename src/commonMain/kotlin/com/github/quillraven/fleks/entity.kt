@@ -2,6 +2,7 @@ package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.*
 import kotlinx.serialization.Serializable
+import kotlin.jvm.JvmName
 
 /**
  * An entity of a [world][World]. It represents a unique identifier that is the combination
@@ -47,22 +48,22 @@ abstract class EntityComponentContext(
         componentService.holder(type).getOrNull(this)
 
     /**
-     * Returns true if and only if the [entity][Entity] has a [component][Component] of the given [type].
+     * Returns true if and only if the [entity][Entity] has a [component][Component] or [tag][EntityTag] of the given [type].
      */
-    inline operator fun <reified T : Component<*>> Entity.contains(type: ComponentType<T>): Boolean =
-        this in componentService.holder(type)
+    operator fun Entity.contains(type: UniqueId<*>): Boolean =
+        componentService.world.entityService.compMasks.getOrNull(this.id)?.get(type.id) ?: false
 
     /**
-     * Returns true if and only if the [entity][Entity] has a [component][Component] of the given [type].
+     * Returns true if and only if the [entity][Entity] has a [component][Component] or [tag][EntityTag] of the given [type].
      */
-    inline infix fun <reified T : Component<*>> Entity.has(type: ComponentType<T>): Boolean =
-        this in componentService.holder(type)
+    infix fun Entity.has(type: UniqueId<*>): Boolean =
+        componentService.world.entityService.compMasks.getOrNull(this.id)?.get(type.id) ?: false
 
     /**
-     * Returns true if and only if the [entity][Entity] doesn't have a [component][Component] of the given [type].
+     * Returns true if and only if the [entity][Entity] doesn't have a [component][Component] or [tag][EntityTag] of the given [type].
      */
-    inline infix fun <reified T : Component<*>> Entity.hasNo(type: ComponentType<T>): Boolean =
-        this !in componentService.holder(type)
+    infix fun Entity.hasNo(type: UniqueId<*>): Boolean =
+        componentService.world.entityService.compMasks.getOrNull(this.id)?.get(type.id)?.not() ?: true
 
     /**
      * Updates the [entity][Entity] using the given [configuration] to add and remove [components][Component].
@@ -136,6 +137,27 @@ open class EntityCreateContext(
             holder.setWildcard(this, cmp)
         }
     }
+
+    /**
+     * Sets the [tag][EntityTag] to the [entity][Entity].
+     */
+    operator fun Entity.plusAssign(tag: UniqueId<*>) {
+        compMasks[this.id].set(tag.id)
+        // We need to remember used tags in order to correctly return and load them using
+        // the snapshot functionality, because tags are not managed via ComponentHolder and
+        // the entity's component mask just knows about the tag's id.
+        // However, a snapshot should contain the real object instances related to an entity.
+        componentService.world.tagCache[tag.id] = tag
+    }
+
+    /**
+     * Sets all [tags][EntityTag] on the given [entity][Entity].
+     */
+    @JvmName("plusAssignTags")
+    operator fun Entity.plusAssign(tags: List<UniqueId<*>>) {
+        tags.forEach { this += it }
+    }
+
 }
 
 /**
@@ -146,6 +168,7 @@ class EntityUpdateContext(
     compService: ComponentService,
     compMasks: Bag<BitArray>,
 ) : EntityCreateContext(compService, compMasks) {
+
     /**
      * Removes a [component][Component] of the given [type] from the [entity][Entity].
      *
@@ -165,10 +188,7 @@ class EntityUpdateContext(
      * If the [entity][Entity] does not have such a [component][Component] then [add] is called
      * to assign it to the [entity][Entity] and return it.
      */
-    inline fun <reified T : Component<T>> Entity.getOrAdd(
-        type: ComponentType<T>,
-        add: () -> T,
-    ): T {
+    inline fun <reified T : Component<T>> Entity.getOrAdd(type: ComponentType<T>, add: () -> T): T {
         val holder: ComponentsHolder<T> = componentService.holder(type)
         val existingCmp = holder.getOrNull(this)
         if (existingCmp != null) {
@@ -180,6 +200,11 @@ class EntityUpdateContext(
         holder[this] = newCmp
         return newCmp
     }
+
+    /**
+     * Removes the [tag][EntityTag] from the [entity][Entity].
+     */
+    operator fun Entity.minusAssign(tag: UniqueId<*>) = compMasks[this.id].clear(tag.id)
 }
 
 /**
@@ -458,29 +483,35 @@ class EntityService(
     }
 
     /**
-     * Updates an [entity] with the given [components].
+     * Updates an [entity] with the given [snapshot][Snapshot].
      * Notifies all [families][World.allFamilies].
      * This function is only used by [World.loadSnapshot] and [World.loadSnapshotOf],
      * and is therefore working with unsafe wildcards ('*').
      */
-    internal fun configure(entity: Entity, components: List<Component<*>>) {
+    internal fun configure(entity: Entity, snapshot: Snapshot) {
         val compMask = compMasks[entity.id]
+        val components = snapshot.components
 
         // remove any existing components that are not part of the new components to set
-        compMask.forEachSetBit { cmpId ->
-            if (components.any { it.type().id == cmpId }) return@forEachSetBit
+        compMask.clearAndForEachSetBit { cmpId ->
+            if (components.any { it.type().id == cmpId }) return@clearAndForEachSetBit
 
             // we can use holderByIndex because we can be sure that the holder already exists
             // because otherwise the entity would not even have the component
-            compService.holderByIndex(cmpId) -= entity
+            compService.holderByIndexOrNull(cmpId)?.minusAssign(entity)
         }
-        compMask.clearAll()
 
         // set new components
         components.forEach { cmp ->
+            compMask.set(cmp.type().id)
             val holder = compService.wildcardHolder(cmp.type())
             holder.setWildcard(entity, cmp)
-            compMask.set(cmp.type().id)
+        }
+
+        // set new tags
+        snapshot.tags.forEach {
+            compMask.set(it.id)
+            world.tagCache[it.id] = it
         }
 
         // notify families
@@ -518,10 +549,9 @@ class EntityService(
             removeHook?.invoke(world, entity)
 
             // remove components
-            compMask.forEachSetBit { compId ->
-                compService.holderByIndex(compId) -= entity
+            compMask.clearAndForEachSetBit { compId ->
+                compService.holderByIndexOrNull(compId)?.minusAssign(entity)
             }
-            compMask.clearAll()
 
             // update families
             world.allFamilies.forEach { it.onEntityRemoved(entity) }

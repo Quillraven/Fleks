@@ -6,17 +6,27 @@ import kotlin.math.max
 import kotlin.native.concurrent.ThreadLocal
 
 /**
- * A class that assigns a unique [id] per type of [Component] starting from 0.
+ * An interface that specifies a unique [id].
  * This [id] is used internally by Fleks as an index for some arrays.
- * Every [Component] class must have at least one [ComponentType].
  */
-abstract class ComponentType<T> {
-    val id: Int = nextId++
+// interface was necessary for (#118) to support enum classes as entity tags
+// because enum classes can only inherit from an interface and not from an abstract class.
+interface UniqueId<T> {
+    val id: Int
 
     @ThreadLocal
     companion object {
-        private var nextId = 0
+        internal var nextId = 0
     }
+}
+
+/**
+ * An abstract class that assigns a unique [id] per type of [Component] starting from 0.
+ * Every [Component] class must have at least one [ComponentType] which serves
+ * as a [UniqueId].
+ */
+abstract class ComponentType<T> : UniqueId<T> {
+    override val id: Int = UniqueId.nextId++
 }
 
 /**
@@ -24,6 +34,32 @@ abstract class ComponentType<T> {
  * This is a convenience function for [components][Component] that have more than one [ComponentType].
  */
 inline fun <reified T> componentTypeOf(): ComponentType<T> = object : ComponentType<T>() {}
+
+/**
+ * Type alias for a special type of [ComponentType] that is used to tag [entities][Entity].
+ * A tag is a special form of a [Component] that does not have any data. It is stored
+ * more efficiently when compared to an empty [Component] and should therefore be preferred
+ * in those cases.
+ */
+typealias EntityTag = ComponentType<Any>
+
+/**
+ * Type alias for a special type of [UniqueId]. It can be used to make values of an enum
+ * class an [EntityTag].
+ *
+ * ```
+ * enum class MyTags : EntityTags by entityTagOf() {
+ *     TAG_A, TAG_B
+ * }
+ * ```
+ */
+typealias EntityTags = UniqueId<Any>
+
+/**
+ * Function to create an object for an [EntityTag].
+ * It can be used to make values of an enum class an [EntityTag]. Refer to [EntityTags].
+ */
+fun entityTagOf(): EntityTag = object : EntityTag() {}
 
 /**
  * An interface that must be implemented by any component that is used for Fleks.
@@ -194,14 +230,12 @@ class ComponentService {
     }
 
     /**
-     * Returns the [ComponentsHolder] of the given [index] inside the [holdersBag]. The index
-     * is linked to the id of a [ComponentType].
+     * Returns the [ComponentsHolder] of the given [index] inside the [holdersBag] or null.
+     * The index is linked to the id of a [ComponentType].
      * This function is only used internally at safe areas to speed up certain processes like
      * removing an [entity][Entity] or creating a snapshot via [World.snapshot].
-     *
-     * @throws [IndexOutOfBoundsException] if the [index] exceeds the bag's capacity.
      */
-    internal fun holderByIndex(index: Int): ComponentsHolder<*> {
-        return holdersBag[index]
+    internal fun holderByIndexOrNull(index: Int): ComponentsHolder<*>? {
+        return holdersBag.getOrNull(index)
     }
 }

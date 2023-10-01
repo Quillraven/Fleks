@@ -137,6 +137,22 @@ class BitArray(
         }
     }
 
+    inline fun clearAndForEachSetBit(action: (Int) -> Unit) {
+        for (word in bits.size - 1 downTo 0) {
+            var bitsAtWord = bits[word]
+            if (bitsAtWord != 0L) {
+                val w = word shl 6
+                while (bitsAtWord != 0L) {
+                    bits[word] = 0L // clear
+                    // gets the distance from the start of the word to the highest (leftmost) bit
+                    val bit = 63 - bitsAtWord.countLeadingZeroBits()
+                    action(w + bit)
+                    bitsAtWord = (bitsAtWord xor (1L shl bit)) // removes highest bit
+                }
+            }
+        }
+    }
+
     override fun hashCode(): Int {
         if (bits.isEmpty()) {
             return 0
