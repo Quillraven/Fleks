@@ -201,12 +201,10 @@ internal class FamilyTest {
     @Test
     fun testNestedIteration() {
         // delayRemoval and cleanup should only get called once for the first iteration
-        val f1 = Family(world = testWorld)
-        val f2 = Family(world = testWorld)
-        testWorld.allFamilies += f1
-        testWorld.allFamilies += f2
-        val e1 = testWorld.entity { }
-        testWorld.entity { }
+        val f1 = testWorld.family { all(FamilyTestComponent) }
+        val f2 = testWorld.family { all(FamilyTestComponent) }
+        val e1 = testWorld.entity { it += FamilyTestComponent() }
+        testWorld.entity { it += FamilyTestComponent() }
         var remove = true
 
         var numOuterIterations = 0
@@ -218,18 +216,21 @@ internal class FamilyTest {
                 assertTrue { this.entityService.delayRemoval }
                 if (remove) {
                     remove = false
-                    entityService -= e1
+                    e1.remove()
                 }
                 ++numInnerIterations
             }
             ++numOuterIterations
 
+            // check that inner iteration is not clearing iteration flag
+            assertTrue(f1.isIterating)
             // check that inner iteration is not clearing the delayRemoval flag
             assertTrue(this.entityService.delayRemoval)
             // check that inner iteration is not cleaning up the delayed removals
             assertTrue(e1 in this.entityService)
         }
 
+        assertFalse(f1.isIterating)
         assertFalse(f1.entityService.delayRemoval)
         assertFalse(e1 in f1.entityService)
         assertEquals(2, numOuterIterations)
@@ -338,13 +339,16 @@ internal class FamilyTest {
             // f2 should get updated immediately because there is no iteration of this family happening.
             // f1 should NOT get updated because an iteration is currently in progress.
             f2.forEach { }
+            assertTrue(f1.isIterating)
             assertTrue(f1.entities.isNotEmpty())
+            assertFalse(f2.isIterating)
             assertTrue(f2.entities.isEmpty())
         }
 
         // f1 should get updated when 'entities' is accessed outside an iteration
         assertTrue(f1.entities.isEmpty())
         assertTrue(f2.entities.isEmpty())
+        assertFalse(f1.isIterating)
     }
 
     @Test

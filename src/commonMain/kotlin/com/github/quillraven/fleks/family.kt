@@ -189,9 +189,10 @@ data class Family(
             isIterating = false
             entityService.cleanupDelays()
         } else {
+            val origIterating = isIterating
             isIterating = true
             entitiesForIteration.forEach { this.action(it) }
-            isIterating = false
+            isIterating = origIterating
         }
     }
 
