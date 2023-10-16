@@ -13,6 +13,9 @@ import kotlin.jvm.JvmName
  */
 @Serializable
 data class Entity(val id: Int, val version: UInt) {
+
+    constructor() : this(-1, 0u)
+
     companion object {
         val NONE = Entity(-1, 0u)
     }
