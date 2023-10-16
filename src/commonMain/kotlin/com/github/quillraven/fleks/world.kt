@@ -3,6 +3,8 @@ package com.github.quillraven.fleks
 import com.github.quillraven.fleks.World.Companion.CURRENT_WORLD
 import com.github.quillraven.fleks.collection.EntityBag
 import com.github.quillraven.fleks.collection.MutableEntityBag
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
 import kotlin.native.concurrent.ThreadLocal
 import kotlin.reflect.KClass
 
@@ -204,10 +206,21 @@ fun configureWorld(entityCapacity: Int = 512, cfg: WorldConfiguration.() -> Unit
 /**
  * Snapshot for an [entity][Entity] that contains its [components][Component] and [tags][EntityTag].
  */
+@Serializable
 data class Snapshot(
-    val components: List<Component<*>> = listOf(),
-    val tags: List<UniqueId<*>> = listOf(),
-)
+    val components: List<Component<out @Contextual Any>>,
+    val tags: List<UniqueId<out @Contextual Any>>,
+) {
+    constructor() : this(listOf(), listOf())
+}
+
+/**
+ * Utility function to manually create a [Snapshot].
+ */
+@Suppress("UNCHECKED_CAST")
+internal fun wildcardSnapshotOf(components: List<Component<*>>, tags: List<UniqueId<*>>): Snapshot {
+    return Snapshot(components as List<Component<out Any>>, tags as List<UniqueId<out Any>>)
+}
 
 /**
  * A world to handle [entities][Entity] and [systems][IntervalSystem].
@@ -461,6 +474,7 @@ class World internal constructor(
      * Returns a list that contains all components of the given [entity] of this world.
      * If the entity does not have any components then an empty list is returned.
      */
+    @Suppress("UNCHECKED_CAST")
     fun snapshotOf(entity: Entity): Snapshot {
         val comps = mutableListOf<Component<*>>()
         val tags = mutableListOf<UniqueId<*>>()
@@ -477,7 +491,7 @@ class World internal constructor(
             }
         }
 
-        return Snapshot(comps, tags)
+        return Snapshot(comps as List<Component<out Any>>, tags as List<UniqueId<out Any>>)
     }
 
     /**

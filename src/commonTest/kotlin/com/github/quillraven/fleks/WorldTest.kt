@@ -708,9 +708,9 @@ internal class WorldTest {
         val comp1 = WorldTestComponent()
         val comp2 = WorldTestComponent()
         val snapshot = mapOf(
-            Entity(3, version = 0u) to Snapshot(listOf(comp1, WorldTestComponent2()), emptyList()),
-            Entity(5, version = 0u) to Snapshot(listOf(comp2), emptyList()),
-            Entity(7, version = 0u) to Snapshot(listOf(), emptyList())
+            Entity(3, version = 0u) to wildcardSnapshotOf(listOf(comp1, WorldTestComponent2()), emptyList()),
+            Entity(5, version = 0u) to wildcardSnapshotOf(listOf(comp2), emptyList()),
+            Entity(7, version = 0u) to wildcardSnapshotOf(listOf(), emptyList())
         )
 
         w.loadSnapshot(snapshot)
