@@ -204,7 +204,10 @@ fun configureWorld(entityCapacity: Int = 512, cfg: WorldConfiguration.() -> Unit
 /**
  * Snapshot for an [entity][Entity] that contains its [components][Component] and [tags][EntityTag].
  */
-data class Snapshot(val components: List<Component<*>>, val tags: List<UniqueId<*>>)
+data class Snapshot(
+    val components: List<Component<*>> = listOf(),
+    val tags: List<UniqueId<*>> = listOf(),
+)
 
 /**
  * A world to handle [entities][Entity] and [systems][IntervalSystem].
