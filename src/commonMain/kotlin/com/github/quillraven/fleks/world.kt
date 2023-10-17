@@ -210,9 +210,7 @@ fun configureWorld(entityCapacity: Int = 512, cfg: WorldConfiguration.() -> Unit
 data class Snapshot(
     val components: List<Component<out @Contextual Any>>,
     val tags: List<UniqueId<out @Contextual Any>>,
-) {
-    constructor() : this(listOf(), listOf())
-}
+)
 
 /**
  * Utility function to manually create a [Snapshot].

@@ -2,6 +2,7 @@ package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.Bag
 import com.github.quillraven.fleks.collection.bag
+import kotlinx.serialization.Serializable
 import kotlin.math.max
 import kotlin.native.concurrent.ThreadLocal
 
@@ -25,6 +26,7 @@ interface UniqueId<T> {
  * Every [Component] class must have at least one [ComponentType] which serves
  * as a [UniqueId].
  */
+@Serializable
 abstract class ComponentType<T> : UniqueId<T> {
     override val id: Int = UniqueId.nextId++
 }
