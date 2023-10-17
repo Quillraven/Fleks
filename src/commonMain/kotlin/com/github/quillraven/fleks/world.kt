@@ -216,7 +216,7 @@ data class Snapshot(
  * Utility function to manually create a [Snapshot].
  */
 @Suppress("UNCHECKED_CAST")
-internal fun wildcardSnapshotOf(components: List<Component<*>>, tags: List<UniqueId<*>>): Snapshot {
+fun wildcardSnapshotOf(components: List<Component<*>>, tags: List<UniqueId<*>>): Snapshot {
     return Snapshot(components as List<Component<out Any>>, tags as List<UniqueId<out Any>>)
 }
 
