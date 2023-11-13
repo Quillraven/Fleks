@@ -1,8 +1,5 @@
 package buildsrc.plugins
 
-import org.gradle.kotlin.dsl.creating
-import org.gradle.kotlin.dsl.getting
-
 /** conventions for a Kotlin/Native subproject */
 
 plugins {
@@ -33,8 +30,7 @@ kotlin {
     //         ├── watchosX64
     //         └── watchosSimulatorArm64Main
     //
-    // More specialised targets are disabled. They can be enabled, if there is demand for them - just make sure
-    // to add `dependsOn(nativeMain)` / `dependsOn(nativeTest)` below for any new targets.
+    // More specialised targets are disabled. They can be enabled, if there is demand for them.
 
     linuxX64()
     linuxArm64()
@@ -57,30 +53,4 @@ kotlin {
     //androidNativeX86()
     //androidNativeX64()
     //watchosDeviceArm64()
-
-    @Suppress("UNUSED_VARIABLE")
-    sourceSets {
-        val commonMain by getting {}
-        val commonTest by getting {}
-
-        val nativeMain by creating { dependsOn(commonMain) }
-        val nativeTest by creating { dependsOn(commonTest) }
-
-        // Linux
-        val linuxX64Main by getting { dependsOn(nativeMain) }
-        val linuxX64Test by getting { dependsOn(nativeTest) }
-        val linuxArm64Main by getting { dependsOn(nativeMain) }
-        val linuxArm64Test by getting { dependsOn(nativeTest) }
-
-        // Windows - MinGW
-        val mingwX64Main by getting { dependsOn(nativeMain) }
-        val mingwX64Test by getting { dependsOn(nativeTest) }
-
-        // Apple - macOS
-        val macosArm64Main by getting { dependsOn(nativeMain) }
-        val macosArm64Test by getting { dependsOn(nativeTest) }
-
-        val macosX64Main by getting { dependsOn(nativeMain) }
-        val macosX64Test by getting { dependsOn(nativeTest) }
-    }
 }

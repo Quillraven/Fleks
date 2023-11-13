@@ -1,6 +1,6 @@
 [versions]
 
-kotlin = "1.9.10"
+kotlin = "1.9.20"
 kotlinxSerialization = "1.6.0"
 kotlinDokka = "1.9.10"
 kotlinxBenchmark = "0.4.9"
