@@ -21,15 +21,15 @@ plugins {
 //region Publication Properties
 // can be set in `$GRADLE_USER_HOME/gradle.properties`, e.g. `fleks.ossrhPassword=123`
 // or environment variables, e.g. `ORG_GRADLE_PROJECT_fleks.ossrhUsername=abc`
-val ossrhUsername = providers.gradleProperty("fleks.ossrhUsername")
-val ossrhPassword = providers.gradleProperty("fleks.ossrhPassword")
+val ossrhUsername: Provider<String> = providers.gradleProperty("fleks.ossrhUsername")
+val ossrhPassword: Provider<String> = providers.gradleProperty("fleks.ossrhPassword")
 
-val signingKey = providers.gradleProperty("fleks.signing.key")
-val signingPassword = providers.gradleProperty("fleks.signing.password")
+val signingKey: Provider<String> = providers.gradleProperty("fleks.signing.key")
+val signingPassword: Provider<String> = providers.gradleProperty("fleks.signing.password")
 
 val isReleaseVersion = provider { !version.toString().endsWith("-SNAPSHOT") }
 
-val sonatypeReleaseUrl = isReleaseVersion.map { isRelease ->
+val sonatypeReleaseUrl: Provider<String> = isReleaseVersion.map { isRelease ->
     if (isRelease) {
         "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
     } else {
