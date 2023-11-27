@@ -129,6 +129,7 @@ abstract class IteratingSystem(
     val family: Family,
     private val comparator: EntityComparator = EMPTY_COMPARATOR,
     private val sortingType: SortingType = Automatic,
+    internal val familyHooks: Boolean = false,
     interval: Interval = EachFrame,
     enabled: Boolean = true
 ) : IntervalSystem(interval, enabled) {
@@ -175,6 +176,10 @@ abstract class IteratingSystem(
      * @param alpha a value between 0 (inclusive) and 1 (exclusive) that describes the progress between two ticks.
      */
     open fun onAlphaEntity(entity: Entity, alpha: Float) = Unit
+
+    open fun onAddEntity(entity: Entity) = Unit
+
+    open fun onRemoveEntity(entity: Entity) = Unit
 
     companion object {
         private val EMPTY_COMPARATOR = EntityComparator { _, _ -> 0 }
