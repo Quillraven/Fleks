@@ -30,12 +30,22 @@ data class Fixed(val step: Float) : Interval
  */
 abstract class IntervalSystem(
     val interval: Interval = EachFrame,
-    var enabled: Boolean = true,
+    enabled: Boolean = true,
     /**
      * Returns the [world][World] to which this system belongs.
      */
     val world: World = World.CURRENT_WORLD ?: throw FleksWrongConfigurationUsageException()
 ) : EntityComponentContext(world.componentService) {
+
+    var enabled: Boolean = enabled
+        set(value) {
+            if (value) {
+                onEnabled()
+            } else {
+                onDisabled()
+            }
+            field = value
+        }
 
     private var accumulator: Float = 0.0f
 
@@ -48,6 +58,16 @@ abstract class IntervalSystem(
      */
     val deltaTime: Float
         get() = if (interval is Fixed) interval.step else world.deltaTime
+
+    /**
+     * This function gets called whenever the system gets [enabled].
+     */
+    open fun onEnabled() = Unit
+
+    /**
+     * This function gets called whenever the system gets [disabled][enabled].
+     */
+    open fun onDisabled() = Unit
 
     /**
      * Updates the system according to its [interval]. This function gets called from [World.update] when

@@ -156,6 +156,21 @@ private class SystemTestIteratingSystemQualifiedInjectable(
     override fun onTickEntity(entity: Entity) = Unit
 }
 
+private class SystemTestEnable(enabled: Boolean) : IntervalSystem(enabled = enabled) {
+    var enabledCall = false
+    var disabledCall = false
+
+    override fun onEnabled() {
+        enabledCall = true
+    }
+
+    override fun onDisabled() {
+        disabledCall = true
+    }
+
+    override fun onTick() = Unit
+}
+
 internal class SystemTest {
     @Test
     fun systemWithIntervalEachFrameGetsCalledEveryTime() {
@@ -430,5 +445,27 @@ internal class SystemTest {
 
         val system = world.system<SystemTestEntityCreation>()
         assertEquals(1, system.numTicks)
+    }
+
+    @Test
+    fun testOnEnabledDisabled() {
+        val world = configureWorld {
+            systems {
+                add(SystemTestEnable(false))
+            }
+        }
+        val system = world.system<SystemTestEnable>()
+
+        assertFalse(system.enabledCall)
+        assertFalse(system.disabledCall)
+
+        system.enabled = true
+        assertTrue(system.enabledCall)
+        assertFalse(system.disabledCall)
+        system.enabledCall = false
+
+        system.enabled = false
+        assertFalse(system.enabledCall)
+        assertTrue(system.disabledCall)
     }
 }
