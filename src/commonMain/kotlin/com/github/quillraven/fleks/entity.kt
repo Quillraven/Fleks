@@ -2,6 +2,7 @@ package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.*
 import kotlinx.serialization.Serializable
+import kotlin.jvm.JvmName
 
 /**
  * An entity of a [world][World]. It represents a unique identifier that is the combination
@@ -152,6 +153,7 @@ open class EntityCreateContext(
     /**
      * Sets all [tags][EntityTag] on the given [entity][Entity].
      */
+    @JvmName("plusAssignTags")
     operator fun Entity.plusAssign(tags: List<EntityTags>) {
         tags.forEach { this += it }
     }
