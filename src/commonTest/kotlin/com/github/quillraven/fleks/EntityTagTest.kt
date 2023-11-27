@@ -154,4 +154,22 @@ class EntityTagTest {
             }
         }
     }
+
+    /*
+    fun syntaxCheck() {
+        val world = configureWorld {}
+        world.entity {
+            it += TestTags.PLAYER
+            it += Visible
+            it += listOf(Visible)
+            it += TestTags.entries
+            it += listOf(Visible, TestTags.PLAYER)
+
+            it += TestTagComponent()
+            it += listOf(TestTagComponent())
+
+            it += TestTagComponent // <-- should not compile
+        }
+    }
+     */
 }
