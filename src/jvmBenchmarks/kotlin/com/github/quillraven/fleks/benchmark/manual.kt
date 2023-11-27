@@ -11,8 +11,8 @@ fun main() {
 
 /*
 ADD_REMOVE:
-Artemis: max(17)    min(6)  avg(11.666666666666666)
-Fleks:   max(18)    min(7)  avg(11.666666666666666)
+Artemis: max(12)    min(7)  avg(10.0)
+Fleks:   max(19)    min(4)  avg(9.0)
  */
 private fun compareArtemisFleksAddRemove() {
     val artemisTimes = mutableListOf<Long>()
@@ -45,8 +45,8 @@ private fun compareArtemisFleksAddRemove() {
 
 /*
 SIMPLE:
-Artemis: max(32)    min(30)  avg(31.0)
-Fleks:   max(21)    min(15)  avg(17.333333333333332)
+Artemis: max(7)     min(7)  avg(7.0)
+Fleks:   max(10)    min(9)  avg(9.666666666666666)
  */
 private fun compareArtemisFleksSimple() {
     val artemisTimes = mutableListOf<Long>()
@@ -83,8 +83,8 @@ private fun compareArtemisFleksSimple() {
 
 /*
 COMPLEX:
-Artemis: max(744)    min(731)  avg(737.0)
-Fleks:   max(924)    min(888)  avg(901.0)
+Artemis: max(335)    min(295)  avg(310.0)
+Fleks:   max(442)    min(433)  avg(436.6666666666667)
  */
 private fun compareArtemisFleksComplex() {
     val artemisTimes = mutableListOf<Long>()
