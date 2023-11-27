@@ -2,7 +2,6 @@ package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.*
 import kotlinx.serialization.Serializable
-import kotlin.jvm.JvmName
 
 /**
  * An entity of a [world][World]. It represents a unique identifier that is the combination
@@ -141,7 +140,7 @@ open class EntityCreateContext(
     /**
      * Sets the [tag][EntityTag] to the [entity][Entity].
      */
-    operator fun Entity.plusAssign(tag: UniqueId<*>) {
+    operator fun Entity.plusAssign(tag: EntityTags) {
         compMasks[this.id].set(tag.id)
         // We need to remember used tags in order to correctly return and load them using
         // the snapshot functionality, because tags are not managed via ComponentHolder and
@@ -153,8 +152,7 @@ open class EntityCreateContext(
     /**
      * Sets all [tags][EntityTag] on the given [entity][Entity].
      */
-    @JvmName("plusAssignTags")
-    operator fun Entity.plusAssign(tags: List<UniqueId<*>>) {
+    operator fun Entity.plusAssign(tags: List<EntityTags>) {
         tags.forEach { this += it }
     }
 
