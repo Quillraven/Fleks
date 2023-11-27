@@ -548,13 +548,14 @@ class EntityService(
             // trigger optional remove hook
             removeHook?.invoke(world, entity)
 
+            // update families
+            world.allFamilies.forEach { it.onEntityRemoved(entity) }
+
             // remove components
             compMask.clearAndForEachSetBit { compId ->
                 compService.holderByIndexOrNull(compId)?.minusAssign(entity)
             }
 
-            // update families
-            world.allFamilies.forEach { it.onEntityRemoved(entity) }
         }
     }
 

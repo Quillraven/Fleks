@@ -256,7 +256,7 @@ data class Family(
      * if the [entity] is already in the family.
      */
     internal fun onEntityRemoved(entity: Entity) {
-        if (!activeEntities.hasNoValueAtIndex(entity.id)) {
+        if (activeEntities.hasValueAtIndex(entity.id)) {
             // existing entity gets removed
             isDirty = true
             activeEntities.removeAt(entity.id)
