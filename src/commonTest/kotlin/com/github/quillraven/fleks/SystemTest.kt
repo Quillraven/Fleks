@@ -48,6 +48,13 @@ private data class SystemTestComponent(
     companion object : ComponentType<SystemTestComponent>()
 }
 
+private data class NameComponent(
+    val name: String
+) : Component<NameComponent> {
+    companion object : ComponentType<NameComponent>()
+    override fun type() = NameComponent
+}
+
 private class SystemTestIteratingSystem : IteratingSystem(
     family = family { all(SystemTestComponent) },
     interval = Fixed(0.25f)
@@ -430,5 +437,98 @@ internal class SystemTest {
 
         val system = world.system<SystemTestEntityCreation>()
         assertEquals(1, system.numTicks)
+    }
+
+
+    @Test
+    fun iterationSystemFamilyHookFlow() {
+        // this verifies that IterationSystems properly subscribe to their family's onAdd/onRemove hooks
+        // and that the order of hook calls is correct
+
+        var check: Int = 0
+
+        val world = configureWorld {
+            families {
+                val family = family { all(NameComponent) }
+                onAdd(family) { entity ->
+                    assertEquals(0, check++) // First, we expect the global add hook to be called.
+                    println("$check. Global family onAdd() called with: entity = ${entity[NameComponent].name}")
+                }
+                onRemove(family) { entity ->
+                    assertEquals(5, check++) // The global hook gets called before the systems.
+                    println("$check. Global family onRemove() called with: entity = ${entity[NameComponent].name}")
+                }
+            }
+
+            systems {
+                add(object : IteratingSystem(family { all(NameComponent) }), IteratingSystem.FamilyOnAdd, IteratingSystem.FamilyOnRemove {
+                    val sysName = "System0"
+
+                    override fun onAddEntity(entity: Entity) {
+                        assertEquals(1, check++) // onAdd hooks called in forward system order. Thus, "System0" gets called first.
+                        println("$check. $sysName onAddEntity() called with: entity = ${entity[NameComponent].name}")
+                    }
+
+                    override fun onTickEntity(entity: Entity) {
+                        assertEquals(3, check++)
+                        println("$check. $sysName onTickEntity() called with: entity = ${entity[NameComponent].name}")
+                    }
+
+                    override fun onRemoveEntity(entity: Entity) {
+                        assertEquals(6, check++)
+                        println("$check. $sysName onRemoveEntity() called with: entity = ${entity[NameComponent].name}")
+                    }
+                })
+                add(object : IteratingSystem(family { all(NameComponent) }), IteratingSystem.FamilyOnAdd, IteratingSystem.FamilyOnRemove {
+                    val sysName = "System1"
+
+                    override fun onAddEntity(entity: Entity) {
+                        assertEquals(2, check++)
+                        println("$check. $sysName onAddEntity() called with: entity = ${entity[NameComponent].name}")
+                    }
+
+                    override fun onTickEntity(entity: Entity) {
+                        assertEquals(4, check++)
+                        println("$check. $sysName onTickEntity() called with: entity = ${entity[NameComponent].name}")
+                    }
+
+                    override fun onRemoveEntity(entity: Entity) {
+                        assertEquals(7, check++) // Lastly, the system with the highest order receives the hook call.
+                        println("$check. $sysName onRemoveEntity() called with: entity = ${entity[NameComponent].name}")
+                    }
+                })
+            }
+        }
+        val entity = world.entity { it += NameComponent("Entity0") }
+        world.update(0f)
+        world -= entity
+    }
+
+    @Test
+    fun illegalFamilyOnAddInterfaceOnIntervalSystem() {
+        assertFailsWith<FleksWrongSystemInterfaceException> {
+            configureWorld {
+                systems {
+                    add(object : IntervalSystem(), IteratingSystem.FamilyOnAdd {
+                        override fun onTick() = Unit
+                        override fun onAddEntity(entity: Entity) = Unit
+                    })
+                }
+            }
+        }
+    }
+
+    @Test
+    fun illegalFamilyOnRemoveInterfaceOnIntervalSystem() {
+        assertFailsWith<FleksWrongSystemInterfaceException> {
+            configureWorld {
+                systems {
+                    add(object : IntervalSystem(), IteratingSystem.FamilyOnRemove {
+                        override fun onTick() = Unit
+                        override fun onRemoveEntity(entity: Entity) = Unit
+                    })
+                }
+            }
+        }
     }
 }

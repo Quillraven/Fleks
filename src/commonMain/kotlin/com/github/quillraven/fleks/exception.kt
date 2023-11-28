@@ -35,3 +35,6 @@ class FleksWrongConfigurationUsageException :
         "The global functions 'inject' and 'family' must be used inside a WorldConfiguration scope." +
             "The same applies for 'compareEntityBy' and 'compareEntity' unless you specify the world parameter explicitly."
     )
+
+class FleksWrongSystemInterfaceException(system: KClass<*>, `interface`: KClass<*>) :
+    FleksException("System ${system.simpleName} cannot have interface ${`interface`.simpleName}")
