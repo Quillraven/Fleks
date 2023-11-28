@@ -181,49 +181,43 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
         setUpAggregatedFamilyHooks()
     }
 
+    /**
+     * Extend [Family.addHook] and [Family.removeHook] with
+     * other objects that needed to triggered by the hooks.
+     */
     private fun setUpAggregatedFamilyHooks() {
-        // Find all iterating systems that require family hooks.
-        val hookedIteratingSystems = mutableMapOf<Family, MutableList<IteratingSystem>>()
-        val allSystems = world.systems
-        for (system in allSystems) {
-            if (system is IteratingSystem && system.familyHooks) {
-                val family = system.family
-                val hookedSystems = hookedIteratingSystems.getOrPut(family) { mutableListOf() }
-                hookedSystems += system
-            }
-        }
-        if (hookedIteratingSystems.isEmpty())
-            return
 
-        // Wrap existing family hooks into an aggregated hooks that also trigger the systems.
-        for (entry in hookedIteratingSystems) {
-            val family = entry.key
-            val hookedSystems = entry.value.toTypedArray()
-
-            val ownAddHook = family.addHook
-            val ownRemoveHook = family.removeHook
-
-            family.addHook = {entity ->
-                // First, call the global family's hook.
-                if (ownAddHook != null) {
-                    ownAddHook(entity)
+        // Register family hooks for IteratingSystem.FamilyOnAdd containing systems.
+        world.systems
+            .mapNotNull { system -> if (system is IteratingSystem && system is IteratingSystem.FamilyOnAdd) system else null }
+            .groupBy { system -> system.family }
+            .forEach { entry ->
+                val (family, systems) = entry
+                val ownHook = family.addHook
+                family.addHook = if (ownHook != null) { entity ->
+                    ownHook(world, entity)
+                    systems.forEach { system -> system.onAddEntity(entity) }
                 }
-                // Call hooked systems in forward order.
-                for (i in 0 until hookedSystems.size) {
-                    hookedSystems[i].onAddEntity(entity)
+                else { entity ->
+                    systems.forEach { system -> system.onAddEntity(entity) }
                 }
             }
-            family.removeHook = {entity ->
-                // Call hooked systems in reverse order.
-                for (i in hookedSystems.size - 1 downTo 0) {
-                    hookedSystems[i].onRemoveEntity(entity)
+
+        // Register family hooks for IteratingSystem.FamilyOnRemove containing systems.
+        world.systems
+            .mapNotNull { system -> if (system is IteratingSystem && system is IteratingSystem.FamilyOnRemove) system else null }
+            .groupBy { system -> system.family }
+            .forEach { entry ->
+                val (family, systems) = entry
+                val ownHook = family.removeHook
+                family.removeHook = if (ownHook != null) { entity ->
+                    ownHook(world, entity)
+                    systems.forEach { system -> system.onRemoveEntity(entity) }
                 }
-                // Lastly, call the global family's hook.
-                if (ownRemoveHook != null) {
-                    ownRemoveHook(entity)
+                else { entity ->
+                    systems.forEach { system -> system.onRemoveEntity(entity) }
                 }
             }
-        }
     }
 }
 

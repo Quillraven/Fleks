@@ -129,7 +129,6 @@ abstract class IteratingSystem(
     val family: Family,
     private val comparator: EntityComparator = EMPTY_COMPARATOR,
     private val sortingType: SortingType = Automatic,
-    internal val familyHooks: Boolean = false,
     interval: Interval = EachFrame,
     enabled: Boolean = true
 ) : IntervalSystem(interval, enabled) {
@@ -177,11 +176,31 @@ abstract class IteratingSystem(
      */
     open fun onAlphaEntity(entity: Entity, alpha: Float) = Unit
 
-    open fun onAddEntity(entity: Entity) = Unit
-
-    open fun onRemoveEntity(entity: Entity) = Unit
-
     companion object {
         private val EMPTY_COMPARATOR = EntityComparator { _, _ -> 0 }
+    }
+
+    /**
+     * Any [IteratingSystem] having this interface will be triggered
+     * by own [Family] similarly to [Family.addHook].
+     */
+    interface FamilyOnAdd {
+        /**
+         * Gets called whenever an [entity][Entity] gets created and
+         * after its [components][Component] are assigned and [families][Family] are updated.
+         */
+        fun onAddEntity(entity: Entity)
+    }
+
+    /**
+     * Any [IteratingSystem] having this interface will be triggered
+     * by own [Family] similarly to [Family.removeHook].
+     */
+    interface FamilyOnRemove {
+        /**
+         * Gets called whenever an [entity][Entity] gets removed and
+         * before its [components][Component] are removed and [families][Family] are updated.
+         */
+        fun onRemoveEntity(entity: Entity)
     }
 }

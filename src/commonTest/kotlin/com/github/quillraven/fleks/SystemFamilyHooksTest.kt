@@ -23,13 +23,13 @@ private class SystemFamilyHooksTest {
                     println("$check. Global family onAdd() called with: entity = ${entity[NameComponent].name}")
                 }
                 onRemove(family) { entity ->
-                    assertEquals(7, check++) // Lastly, the global hook gets called after all the systems.
+                    assertEquals(5, check++) // The global hook gets called before the systems.
                     println("$check. Global family onRemove() called with: entity = ${entity[NameComponent].name}")
                 }
             }
 
             systems {
-                add(object : IteratingSystem(family { all(NameComponent) }, familyHooks = true) {
+                add(object : IteratingSystem(family { all(NameComponent) }), IteratingSystem.FamilyOnAdd, IteratingSystem.FamilyOnRemove {
                     val sysName = "System0"
 
                     override fun onAddEntity(entity: Entity) {
@@ -47,7 +47,7 @@ private class SystemFamilyHooksTest {
                         println("$check. $sysName onRemoveEntity() called with: entity = ${entity[NameComponent].name}")
                     }
                 })
-                add(object : IteratingSystem(family { all(NameComponent) }, familyHooks = true) {
+                add(object : IteratingSystem(family { all(NameComponent) }), IteratingSystem.FamilyOnAdd, IteratingSystem.FamilyOnRemove {
                     val sysName = "System1"
 
                     override fun onAddEntity(entity: Entity) {
@@ -61,7 +61,7 @@ private class SystemFamilyHooksTest {
                     }
 
                     override fun onRemoveEntity(entity: Entity) {
-                        assertEquals(5, check++) // onRemove hooks called in reverse system order. Thus, "System1" gets called first.
+                        assertEquals(6, check++)
                         println("$check. $sysName onRemoveEntity() called with: entity = ${entity[NameComponent].name}")
                     }
                 })
