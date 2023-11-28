@@ -160,11 +160,11 @@ private class SystemTestEnable(enabled: Boolean) : IntervalSystem(enabled = enab
     var enabledCall = false
     var disabledCall = false
 
-    override fun onEnabled() {
+    override fun onEnable() {
         enabledCall = true
     }
 
-    override fun onDisabled() {
+    override fun onDisable() {
         disabledCall = true
     }
 
@@ -460,12 +460,27 @@ internal class SystemTest {
         assertFalse(system.disabledCall)
 
         system.enabled = true
+        assertTrue(system.enabled)
         assertTrue(system.enabledCall)
         assertFalse(system.disabledCall)
         system.enabledCall = false
 
         system.enabled = false
+        assertFalse(system.enabled)
         assertFalse(system.enabledCall)
         assertTrue(system.disabledCall)
+        system.disabledCall = false
+
+        // should not call methods when value does not change
+        system.enabled = false
+        assertFalse(system.enabledCall)
+        assertFalse(system.disabledCall)
+
+        system.enabled = true
+        system.enabledCall = false
+        system.disabledCall = false
+        system.enabled = true
+        assertFalse(system.enabledCall)
+        assertFalse(system.disabledCall)
     }
 }

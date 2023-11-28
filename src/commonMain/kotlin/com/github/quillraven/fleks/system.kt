@@ -39,12 +39,16 @@ abstract class IntervalSystem(
 
     var enabled: Boolean = enabled
         set(value) {
-            if (value) {
-                onEnabled()
-            } else {
-                onDisabled()
+            if (value == field) {
+                return
             }
+
             field = value
+            if (value) {
+                onEnable()
+            } else {
+                onDisable()
+            }
         }
 
     private var accumulator: Float = 0.0f
@@ -62,12 +66,12 @@ abstract class IntervalSystem(
     /**
      * This function gets called whenever the system gets [enabled].
      */
-    open fun onEnabled() = Unit
+    open fun onEnable() = Unit
 
     /**
      * This function gets called whenever the system gets [disabled][enabled].
      */
-    open fun onDisabled() = Unit
+    open fun onDisable() = Unit
 
     /**
      * Updates the system according to its [interval]. This function gets called from [World.update] when
