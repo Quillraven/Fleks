@@ -192,17 +192,19 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
             // FamilyOnAdd and FamilyOnRemove interfaces are only meant to be used by IteratingSystem.
             if (system !is IteratingSystem) {
 
-                if (system is IteratingSystem.FamilyOnAdd)
-                    throw FleksWrongSystemInterfaceException(system::class, IteratingSystem.FamilyOnAdd::class)
+                if (system is FamilyOnAdd) {
+                    throw FleksWrongSystemInterfaceException(system::class, FamilyOnAdd::class)
+                }
 
-                if (system is IteratingSystem.FamilyOnRemove)
-                    throw FleksWrongSystemInterfaceException(system::class, IteratingSystem.FamilyOnRemove::class)
+                if (system is FamilyOnRemove) {
+                    throw FleksWrongSystemInterfaceException(system::class, FamilyOnRemove::class)
+                }
             }
         }
 
         // Register family hooks for IteratingSystem.FamilyOnAdd containing systems.
         world.systems
-            .mapNotNull { system -> if (system is IteratingSystem && system is IteratingSystem.FamilyOnAdd) system else null }
+            .mapNotNull { system -> if (system is IteratingSystem && system is FamilyOnAdd) system else null }
             .groupBy { system -> system.family }
             .forEach { entry ->
                 val (family, systems) = entry
@@ -210,15 +212,14 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
                 family.addHook = if (ownHook != null) { entity ->
                     ownHook(world, entity)
                     systems.forEach { system -> system.onAddEntity(entity) }
-                }
-                else { entity ->
+                } else { entity ->
                     systems.forEach { system -> system.onAddEntity(entity) }
                 }
             }
 
         // Register family hooks for IteratingSystem.FamilyOnRemove containing systems.
         world.systems
-            .mapNotNull { system -> if (system is IteratingSystem && system is IteratingSystem.FamilyOnRemove) system else null }
+            .mapNotNull { system -> if (system is IteratingSystem && system is FamilyOnRemove) system else null }
             .groupBy { system -> system.family }
             .forEach { entry ->
                 val (family, systems) = entry
@@ -226,8 +227,7 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
                 family.removeHook = if (ownHook != null) { entity ->
                     ownHook(world, entity)
                     systems.forEach { system -> system.onRemoveEntity(entity) }
-                }
-                else { entity ->
+                } else { entity ->
                     systems.forEach { system -> system.onRemoveEntity(entity) }
                 }
             }

@@ -179,28 +179,28 @@ abstract class IteratingSystem(
     companion object {
         private val EMPTY_COMPARATOR = EntityComparator { _, _ -> 0 }
     }
+}
 
+/**
+ * Any [IteratingSystem] having this interface will be triggered
+ * by own [Family] similarly to [Family.addHook].
+ */
+interface FamilyOnAdd {
     /**
-     * Any [IteratingSystem] having this interface will be triggered
-     * by own [Family] similarly to [Family.addHook].
+     * Gets called whenever an [entity][Entity] gets created and
+     * after its [components][Component] are assigned and [families][Family] are updated.
      */
-    interface FamilyOnAdd {
-        /**
-         * Gets called whenever an [entity][Entity] gets created and
-         * after its [components][Component] are assigned and [families][Family] are updated.
-         */
-        fun onAddEntity(entity: Entity)
-    }
+    fun onAddEntity(entity: Entity)
+}
 
+/**
+ * Any [IteratingSystem] having this interface will be triggered
+ * by own [Family] similarly to [Family.removeHook].
+ */
+interface FamilyOnRemove {
     /**
-     * Any [IteratingSystem] having this interface will be triggered
-     * by own [Family] similarly to [Family.removeHook].
+     * Gets called whenever an [entity][Entity] gets removed and
+     * before its [components][Component] are removed and [families][Family] are updated.
      */
-    interface FamilyOnRemove {
-        /**
-         * Gets called whenever an [entity][Entity] gets removed and
-         * before its [components][Component] are removed and [families][Family] are updated.
-         */
-        fun onRemoveEntity(entity: Entity)
-    }
+    fun onRemoveEntity(entity: Entity)
 }
