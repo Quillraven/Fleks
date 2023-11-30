@@ -216,8 +216,7 @@ abstract class IteratingSystem(
  */
 interface FamilyOnAdd {
     /**
-     * Gets called whenever an [entity][Entity] gets created and
-     * after its [components][Component] are assigned and [families][Family] are updated.
+     * Gets called whenever an [entity][Entity] enters the family.
      */
     fun onAddEntity(entity: Entity)
 }
@@ -228,8 +227,7 @@ interface FamilyOnAdd {
  */
 interface FamilyOnRemove {
     /**
-     * Gets called whenever an [entity][Entity] gets removed and
-     * before its [components][Component] are removed and [families][Family] are updated.
+     * Gets called whenever an [entity][Entity] leaves the family.
      */
     fun onRemoveEntity(entity: Entity)
 }
