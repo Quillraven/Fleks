@@ -3,7 +3,6 @@ package com.github.quillraven.fleks
 import com.github.quillraven.fleks.World.Companion.family
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 private class SimpleTestComponent : Component<SimpleTestComponent> {

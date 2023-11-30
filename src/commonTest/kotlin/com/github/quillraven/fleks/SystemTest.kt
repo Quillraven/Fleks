@@ -9,8 +9,13 @@ import kotlin.test.*
 private class SystemTestIntervalSystemEachFrame : IntervalSystem(
     interval = EachFrame
 ) {
+    var numInits = 0
     var numDisposes = 0
     var numCalls = 0
+
+    override fun onInit() {
+        numInits++
+    }
 
     override fun onTick() {
         ++numCalls
@@ -416,6 +421,17 @@ internal class SystemTest {
         world.update(1f)
 
         assertEquals(4, system.numEntityCalls)
+    }
+
+    @Test
+    fun initService() {
+        val world = configureWorld {
+            systems {
+                add(SystemTestIntervalSystemEachFrame())
+            }
+        }
+
+        assertEquals(1, world.system<SystemTestIntervalSystemEachFrame>().numInits)
     }
 
     @Test

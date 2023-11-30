@@ -64,6 +64,11 @@ abstract class IntervalSystem(
         get() = if (interval is Fixed) interval.step else world.deltaTime
 
     /**
+     * This function gets called when the [world configuration][WorldConfiguration.configure] is completed.
+     */
+    open fun onInit() = Unit
+
+    /**
      * This function gets called whenever the system gets [enabled].
      */
     open fun onEnable() = Unit
