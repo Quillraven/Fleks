@@ -38,3 +38,6 @@ class FleksWrongConfigurationUsageException :
 
 class FleksWrongSystemInterfaceException(system: KClass<*>, `interface`: KClass<*>) :
     FleksException("System ${system.simpleName} cannot have interface ${`interface`.simpleName}")
+
+class FleksWorldModificationDuringConfigurationException :
+    FleksException("Entities were added during world configuration.")

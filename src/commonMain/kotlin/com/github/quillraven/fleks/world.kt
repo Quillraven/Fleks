@@ -178,6 +178,10 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
             world.systems = it.systems.toTypedArray()
         }
 
+        if (world.numEntities > 0) {
+            throw FleksWorldModificationDuringConfigurationException()
+        }
+
         setUpAggregatedFamilyHooks()
 
         world.systems.forEach { it.onInit() }
