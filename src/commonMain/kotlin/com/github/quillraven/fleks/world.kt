@@ -187,9 +187,9 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
      */
     private fun setUpAggregatedFamilyHooks() {
 
-        // Validate systems against illegal interfaces.
+        // validate systems against illegal interfaces
         world.systems.forEach { system ->
-            // FamilyOnAdd and FamilyOnRemove interfaces are only meant to be used by IteratingSystem.
+            // FamilyOnAdd and FamilyOnRemove interfaces are only meant to be used by IteratingSystem
             if (system !is IteratingSystem) {
 
                 if (system is FamilyOnAdd) {
@@ -202,7 +202,7 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
             }
         }
 
-        // Register family hooks for IteratingSystem.FamilyOnAdd containing systems.
+        // register family hooks for IteratingSystem.FamilyOnAdd containing systems
         world.systems
             .mapNotNull { system -> if (system is IteratingSystem && system is FamilyOnAdd) system else null }
             .groupBy { system -> system.family }
@@ -217,7 +217,7 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
                 }
             }
 
-        // Register family hooks for IteratingSystem.FamilyOnRemove containing systems.
+        // register family hooks for IteratingSystem.FamilyOnRemove containing systems
         world.systems
             .mapNotNull { system -> if (system is IteratingSystem && system is FamilyOnRemove) system else null }
             .groupBy { system -> system.family }
