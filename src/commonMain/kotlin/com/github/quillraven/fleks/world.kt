@@ -210,31 +210,33 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
 
         // register family hooks for IteratingSystem.FamilyOnAdd containing systems
         world.systems
-            .mapNotNull { system -> if (system is IteratingSystem && system is FamilyOnAdd) system else null }
-            .groupBy { system -> system.family }
+            .mapNotNull { if (it is IteratingSystem && it is FamilyOnAdd) it else null }
+            .groupBy { it.family }
             .forEach { entry ->
-                val (family, systems) = entry
+                val (family, systemList) = entry
                 val ownHook = family.addHook
+                val systemArray = systemList.toTypedArray()
                 family.addHook = if (ownHook != null) { entity ->
                     ownHook(world, entity)
-                    systems.forEach { system -> system.onAddEntity(entity) }
+                    systemArray.forEach { it.onAddEntity(entity) }
                 } else { entity ->
-                    systems.forEach { system -> system.onAddEntity(entity) }
+                    systemArray.forEach { it.onAddEntity(entity) }
                 }
             }
 
         // register family hooks for IteratingSystem.FamilyOnRemove containing systems
         world.systems
-            .mapNotNull { system -> if (system is IteratingSystem && system is FamilyOnRemove) system else null }
-            .groupBy { system -> system.family }
+            .mapNotNull { if (it is IteratingSystem && it is FamilyOnRemove) it else null }
+            .groupBy { it.family }
             .forEach { entry ->
-                val (family, systems) = entry
+                val (family, systemList) = entry
                 val ownHook = family.removeHook
+                val systemArray = systemList.toTypedArray()
                 family.removeHook = if (ownHook != null) { entity ->
                     ownHook(world, entity)
-                    systems.forEach { system -> system.onRemoveEntity(entity) }
+                    systemArray.forEach { it.onRemoveEntity(entity) }
                 } else { entity ->
-                    systems.forEach { system -> system.onRemoveEntity(entity) }
+                    systemArray.forEach { it.onRemoveEntity(entity) }
                 }
             }
     }
