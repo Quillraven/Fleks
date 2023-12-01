@@ -177,6 +177,68 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
             // instead of resizing every time a system gets added to the configuration
             world.systems = it.systems.toTypedArray()
         }
+
+        if (world.numEntities > 0) {
+            throw FleksWorldModificationDuringConfigurationException()
+        }
+
+        setUpAggregatedFamilyHooks()
+
+        world.systems.forEach { it.onInit() }
+    }
+
+    /**
+     * Extend [Family.addHook] and [Family.removeHook] with
+     * other objects that needed to triggered by the hooks.
+     */
+    private fun setUpAggregatedFamilyHooks() {
+
+        // validate systems against illegal interfaces
+        world.systems.forEach { system ->
+            // FamilyOnAdd and FamilyOnRemove interfaces are only meant to be used by IteratingSystem
+            if (system !is IteratingSystem) {
+
+                if (system is FamilyOnAdd) {
+                    throw FleksWrongSystemInterfaceException(system::class, FamilyOnAdd::class)
+                }
+
+                if (system is FamilyOnRemove) {
+                    throw FleksWrongSystemInterfaceException(system::class, FamilyOnRemove::class)
+                }
+            }
+        }
+
+        // register family hooks for IteratingSystem.FamilyOnAdd containing systems
+        world.systems
+            .mapNotNull { if (it is IteratingSystem && it is FamilyOnAdd) it else null }
+            .groupBy { it.family }
+            .forEach { entry ->
+                val (family, systemList) = entry
+                val ownHook = family.addHook
+                val systemArray = systemList.toTypedArray()
+                family.addHook = if (ownHook != null) { entity ->
+                    ownHook(world, entity)
+                    systemArray.forEach { it.onAddEntity(entity) }
+                } else { entity ->
+                    systemArray.forEach { it.onAddEntity(entity) }
+                }
+            }
+
+        // register family hooks for IteratingSystem.FamilyOnRemove containing systems
+        world.systems
+            .mapNotNull { if (it is IteratingSystem && it is FamilyOnRemove) it else null }
+            .groupBy { it.family }
+            .forEach { entry ->
+                val (family, systemList) = entry
+                val ownHook = family.removeHook
+                val systemArray = systemList.toTypedArray()
+                family.removeHook = if (ownHook != null) { entity ->
+                    ownHook(world, entity)
+                    systemArray.forEach { it.onRemoveEntity(entity) }
+                } else { entity ->
+                    systemArray.forEach { it.onRemoveEntity(entity) }
+                }
+            }
     }
 }
 

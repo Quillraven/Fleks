@@ -66,7 +66,8 @@ private class WorldTestIteratingSystem(
 }
 
 private class WorldTestInitSystem : IteratingSystem(family { all(WorldTestComponent) }) {
-    init {
+    override fun onInit() {
+        super.onInit()
         world.entity { it += WorldTestComponent() }
     }
 
@@ -76,7 +77,8 @@ private class WorldTestInitSystem : IteratingSystem(family { all(WorldTestCompon
 private class WorldTestInitSystemExtraFamily : IteratingSystem(family { all(WorldTestComponent) }) {
     val extraFamily = world.family { any(WorldTestComponent2).none(WorldTestComponent) }
 
-    init {
+    override fun onInit() {
+        super.onInit()
         world.entity { it += WorldTestComponent2() }
     }
 

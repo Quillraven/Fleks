@@ -9,8 +9,13 @@ import kotlin.test.*
 private class SystemTestIntervalSystemEachFrame : IntervalSystem(
     interval = EachFrame
 ) {
+    var numInits = 0
     var numDisposes = 0
     var numCalls = 0
+
+    override fun onInit() {
+        numInits++
+    }
 
     override fun onTick() {
         ++numCalls
@@ -73,7 +78,8 @@ private class SystemTestIteratingSystem : IteratingSystem(
 private class SystemTestEntityCreation : IteratingSystem(family { any(SystemTestComponent) }) {
     var numTicks = 0
 
-    init {
+    override fun onInit() {
+        super.onInit()
         world.entity { it += SystemTestComponent() }
     }
 
@@ -166,6 +172,15 @@ private class SystemTestEnable(enabled: Boolean) : IntervalSystem(enabled = enab
 
     override fun onDisable() {
         disabledCall = true
+    }
+
+    override fun onTick() = Unit
+}
+
+private class AddEntityInConstructorSystem() : IntervalSystem() {
+
+    init {
+        world.entity { }
     }
 
     override fun onTick() = Unit
@@ -419,6 +434,17 @@ internal class SystemTest {
     }
 
     @Test
+    fun initService() {
+        val world = configureWorld {
+            systems {
+                add(SystemTestIntervalSystemEachFrame())
+            }
+        }
+
+        assertEquals(1, world.system<SystemTestIntervalSystemEachFrame>().numInits)
+    }
+
+    @Test
     fun disposeService() {
         val world = configureWorld {
             systems {
@@ -482,5 +508,16 @@ internal class SystemTest {
         system.enabled = true
         assertFalse(system.enabledCall)
         assertFalse(system.disabledCall)
+    }
+
+    @Test
+    fun testWorldModificationDuringConfiguration() {
+        assertFailsWith<FleksWorldModificationDuringConfigurationException> {
+            configureWorld {
+                systems {
+                    add(AddEntityInConstructorSystem())
+                }
+            }
+        }
     }
 }

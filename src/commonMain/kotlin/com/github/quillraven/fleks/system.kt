@@ -64,6 +64,11 @@ abstract class IntervalSystem(
         get() = if (interval is Fixed) interval.step else world.deltaTime
 
     /**
+     * This function gets called when the [world configuration][WorldConfiguration.configure] is completed.
+     */
+    open fun onInit() = Unit
+
+    /**
      * This function gets called whenever the system gets [enabled].
      */
     open fun onEnable() = Unit
@@ -203,4 +208,26 @@ abstract class IteratingSystem(
     companion object {
         private val EMPTY_COMPARATOR = EntityComparator { _, _ -> 0 }
     }
+}
+
+/**
+ * Any [IteratingSystem] having this interface will be triggered
+ * by own [Family] similarly to [Family.addHook].
+ */
+interface FamilyOnAdd {
+    /**
+     * Gets called whenever an [entity][Entity] enters the family.
+     */
+    fun onAddEntity(entity: Entity)
+}
+
+/**
+ * Any [IteratingSystem] having this interface will be triggered
+ * by own [Family] similarly to [Family.removeHook].
+ */
+interface FamilyOnRemove {
+    /**
+     * Gets called whenever an [entity][Entity] leaves the family.
+     */
+    fun onRemoveEntity(entity: Entity)
 }
