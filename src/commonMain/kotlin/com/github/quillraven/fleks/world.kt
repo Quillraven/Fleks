@@ -234,9 +234,9 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
                 val systemArray = systemList.toTypedArray()
                 family.removeHook = if (ownHook != null) { entity ->
                     ownHook(world, entity)
-                    systemArray.forEach { it.onRemoveEntity(entity) }
+                    systemArray.forEachReverse { it.onRemoveEntity(entity) }
                 } else { entity ->
-                    systemArray.forEach { it.onRemoveEntity(entity) }
+                    systemArray.forEachReverse { it.onRemoveEntity(entity) }
                 }
             }
     }
@@ -633,7 +633,7 @@ class World internal constructor(
      */
     fun dispose() {
         entityService.removeAll()
-        systems.forEach { it.onDispose() }
+        systems.forEachReverse { it.onDispose() }
     }
 
 
@@ -667,5 +667,12 @@ class World internal constructor(
          */
         fun family(cfg: FamilyDefinition.() -> Unit): Family =
             CURRENT_WORLD?.family(cfg) ?: throw FleksWrongConfigurationUsageException()
+    }
+}
+
+private inline fun <T> Array<T>.forEachReverse(action: (T) -> Unit) {
+    val lastIndex = this.lastIndex
+    for (i in lastIndex downTo 0) {
+        action(this[i])
     }
 }
