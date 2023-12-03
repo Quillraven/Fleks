@@ -133,7 +133,7 @@ abstract class IntervalSystem(
  * [Automatic] means that the sorting of [entities][Entity] is happening automatically each time
  * [IteratingSystem.onTick] gets called.
  *
- * [Manual] means that sorting must be called programmatically by setting [IteratingSystem.doSort] to true.
+ * [Manual] means that sorting must be called programmatically by setting [IteratingSystem.onSort] to true.
  * [Entities][Entity] are then sorted the next time [IteratingSystem.onTick] gets called.
  */
 sealed interface SortingType
@@ -172,14 +172,21 @@ abstract class IteratingSystem(
     var doSort = sortingType == Automatic && comparator != EMPTY_COMPARATOR
 
     /**
-     * Updates the [family] if needed and calls [onTickEntity] for each [entity][Entity] of the [family].
      * If [doSort] is true then [entities][Entity] are sorted using the [comparator] before calling [onTickEntity].
      */
-    override fun onTick() {
+    open fun onSort() {
         if (doSort) {
             doSort = sortingType == Automatic
             family.sort(comparator)
         }
+    }
+
+    /**
+     * Updates the [family] if needed and calls [onTickEntity] for each [entity][Entity] of the [family].
+     * Does entity sorting using [onSort] before calling [onTickEntity].
+     */
+    override fun onTick() {
+        onSort()
 
         family.forEach { onTickEntity(it) }
     }
