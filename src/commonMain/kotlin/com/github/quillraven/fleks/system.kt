@@ -157,8 +157,8 @@ data object Manual : SortingType
  */
 abstract class IteratingSystem(
     val family: Family,
-    private val comparator: EntityComparator = EMPTY_COMPARATOR,
-    private val sortingType: SortingType = Automatic,
+    protected val comparator: EntityComparator = EMPTY_COMPARATOR,
+    protected val sortingType: SortingType = Automatic,
     interval: Interval = EachFrame,
     enabled: Boolean = true
 ) : IntervalSystem(interval, enabled) {
@@ -172,14 +172,21 @@ abstract class IteratingSystem(
     var doSort = sortingType == Automatic && comparator != EMPTY_COMPARATOR
 
     /**
-     * Updates the [family] if needed and calls [onTickEntity] for each [entity][Entity] of the [family].
      * If [doSort] is true then [entities][Entity] are sorted using the [comparator] before calling [onTickEntity].
      */
-    override fun onTick() {
+    open fun onSort() {
         if (doSort) {
             doSort = sortingType == Automatic
             family.sort(comparator)
         }
+    }
+
+    /**
+     * Updates the [family] if needed and calls [onTickEntity] for each [entity][Entity] of the [family].
+     * Does entity sorting using [onSort] before calling [onTickEntity].
+     */
+    override fun onTick() {
+        onSort()
 
         family.forEach { onTickEntity(it) }
     }
