@@ -233,8 +233,8 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
                 val ownHook = family.removeHook
                 val systemArray = systemList.toTypedArray()
                 family.removeHook = if (ownHook != null) { entity ->
-                    ownHook(world, entity)
                     systemArray.forEachReverse { it.onRemoveEntity(entity) }
+                    ownHook(world, entity)
                 } else { entity ->
                     systemArray.forEachReverse { it.onRemoveEntity(entity) }
                 }
