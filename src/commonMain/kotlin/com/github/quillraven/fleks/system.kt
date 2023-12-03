@@ -157,8 +157,8 @@ data object Manual : SortingType
  */
 abstract class IteratingSystem(
     val family: Family,
-    private val comparator: EntityComparator = EMPTY_COMPARATOR,
-    private val sortingType: SortingType = Automatic,
+    protected val comparator: EntityComparator = EMPTY_COMPARATOR,
+    protected val sortingType: SortingType = Automatic,
     interval: Interval = EachFrame,
     enabled: Boolean = true
 ) : IntervalSystem(interval, enabled) {
