@@ -550,7 +550,10 @@ class MutableEntityBag(
      * Populates and returns the [destination] mutable map containing key-value pairs
      * provided by the [transform] function applied to each [entity][Entity] of the bag.
      */
-    override inline fun <K, V, M : MutableMap<in K, in V>> associateTo(destination: M, transform: (Entity) -> Pair<K, V>): M {
+    override inline fun <K, V, M : MutableMap<in K, in V>> associateTo(
+        destination: M,
+        transform: (Entity) -> Pair<K, V>
+    ): M {
         for (i in 0 until size) {
             destination += transform(values[i])
         }
@@ -907,7 +910,10 @@ class MutableEntityBag(
      * applied to each [entity][Entity] and puts to the [destination] map each group key associated with
      * an [EntityBag] of corresponding elements.
      */
-    override inline fun <K, M : MutableMap<in K, MutableEntityBag>> groupByTo(destination: M, keySelector: (Entity) -> K): M {
+    override inline fun <K, M : MutableMap<in K, MutableEntityBag>> groupByTo(
+        destination: M,
+        keySelector: (Entity) -> K
+    ): M {
         for (i in 0 until size) {
             val entity = values[i]
             val key = keySelector(entity)
