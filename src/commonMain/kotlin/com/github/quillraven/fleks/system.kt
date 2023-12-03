@@ -133,7 +133,7 @@ abstract class IntervalSystem(
  * [Automatic] means that the sorting of [entities][Entity] is happening automatically each time
  * [IteratingSystem.onTick] gets called.
  *
- * [Manual] means that sorting must be called programmatically by setting [IteratingSystem.onSort] to true.
+ * [Manual] means that sorting must be called programmatically by setting [IteratingSystem.doSort] to true.
  * [Entities][Entity] are then sorted the next time [IteratingSystem.onTick] gets called.
  */
 sealed interface SortingType
