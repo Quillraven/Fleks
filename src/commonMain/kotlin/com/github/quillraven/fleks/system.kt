@@ -118,8 +118,9 @@ abstract class IntervalSystem(
     open fun onAlpha(alpha: Float) = Unit
 
     /**
-     * Optional function to dispose any resources of the system if needed. Gets called when the world's [dispose][World.dispose]
-     * function is called.
+     * Optional function to dispose any resources of the system if needed.
+     * Gets called in reversed world's [systems][World.systems] order when the
+     * world's [dispose][World.dispose] function is called.
      */
     open fun onDispose() = Unit
 }
@@ -228,6 +229,7 @@ interface FamilyOnAdd {
 interface FamilyOnRemove {
     /**
      * Gets called whenever an [entity][Entity] leaves the family.
+     * This function gets called in reversed world's [systems][World.systems] order.
      */
     fun onRemoveEntity(entity: Entity)
 }
