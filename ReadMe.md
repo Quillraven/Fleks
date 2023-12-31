@@ -1,10 +1,12 @@
+![IMG_20231220_205745](https://github.com/Quillraven/Fleks/assets/93260/effbfdd7-0059-483e-9a89-fc01445b6e1a)
+
 # Fleks
 
 [![LTS](https://img.shields.io/badge/LTS-2.6-orange.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks/2.6/jar)
-[![Snapshot](https://img.shields.io/badge/Snapshot-2.6--SNAPSHOT-orange.svg)](https://s01.oss.sonatype.org/#nexus-search;gav~io.github.quillraven.fleks~~2.6-SNAPSHOT~~)
+[![Snapshot](https://img.shields.io/badge/Snapshot-2.7--SNAPSHOT-orange.svg)](https://s01.oss.sonatype.org/#nexus-search;gav~io.github.quillraven.fleks~~2.7-SNAPSHOT~~)
 
 [![Build Master](https://img.shields.io/github/actions/workflow/status/quillraven/fleks/build.yml?branch=master)](https://github.com/Quillraven/fleks/actions)
-[![Kotlin](https://img.shields.io/badge/Kotlin-1.9.21-red.svg)](http://kotlinlang.org/)
+[![Kotlin](https://img.shields.io/badge/Kotlin-1.9.22-red.svg)](http://kotlinlang.org/)
 
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/Quillraven/Fleks/blob/master/LICENSE)
 
