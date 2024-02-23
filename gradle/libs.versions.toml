@@ -1,9 +1,9 @@
 [versions]
 
 kotlin = "1.9.22"
-kotlinxSerialization = "1.6.2"
+kotlinxSerialization = "1.6.3"
 kotlinDokka = "1.9.10"
-kotlinxBenchmark = "0.4.9"
+kotlinxBenchmark = "0.4.10"
 
 [libraries]
 
