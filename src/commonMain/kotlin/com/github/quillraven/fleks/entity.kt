@@ -404,7 +404,13 @@ class EntityService(
     internal val createCtx = EntityCreateContext(compService, compMasks)
 
     @PublishedApi
+    internal var createId = -1
+
+    @PublishedApi
     internal val updateCtx = EntityUpdateContext(compService, compMasks)
+
+    @PublishedApi
+    internal var updateId = -1
 
     /**
      * Flag that indicates if an iteration of an [IteratingSystem] is currently in progress.
@@ -460,10 +466,14 @@ class EntityService(
         if (entity.id >= compMasks.size) {
             compMasks[entity.id] = BitArray(64)
         }
-        val compMask = compMasks[entity.id]
+
+        val prevCreateId = createId
+        createId = entity.id
         createCtx.configuration(entity)
+        createId = prevCreateId
 
         // update families
+        val compMask = compMasks[entity.id]
         world.allFamilies.forEach { it.onEntityAdded(entity, compMask) }
 
         // trigger optional add hook
@@ -477,8 +487,18 @@ class EntityService(
      * Notifies all [families][World.allFamilies].
      */
     inline fun configure(entity: Entity, configuration: EntityUpdateContext.(Entity) -> Unit) {
-        val compMask = compMasks[entity.id]
+        val skipFamilyNotify = updateId == entity.id || createId == entity.id
+
+        val prevUpdateId = updateId
+        updateId = entity.id
         updateCtx.configuration(entity)
+        updateId = prevUpdateId
+
+        // notify families
+        if (skipFamilyNotify) {
+            return
+        }
+        val compMask = compMasks[entity.id]
         world.allFamilies.forEach { it.onEntityCfgChanged(entity, compMask) }
     }
 
