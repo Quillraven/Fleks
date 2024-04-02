@@ -976,4 +976,54 @@ internal class WorldTest {
         assertEquals(1, world.numEntities)
         assertEquals(10, world.asEntityBag().first().id)
     }
+
+    @Test
+    fun testNestedFamilyNotificationCreate() {
+        var numAdd = 0
+        val world = configureWorld {
+            val family = world.family { all(WorldTestComponent2) }
+            families {
+                onAdd(family) { entity ->
+                    ++numAdd
+                    assertEquals(entity, Entity(0, 0u))
+                }
+            }
+        }
+
+        // verify that family notification is only called once at the end of world.entity
+        world.entity { entity ->
+            entity += WorldTestComponent2()
+            entity.configure {
+                it += WorldTestComponent2()
+            }
+            assertEquals(0, numAdd)
+        }
+        assertEquals(1, numAdd)
+    }
+
+    @Test
+    fun testNestedFamilyNotificationConfigure() {
+        var numAdd = 0
+        val world = configureWorld {
+            val family = world.family { all(WorldTestComponent2) }
+            families {
+                onAdd(family) { entity ->
+                    ++numAdd
+                    assertEquals(entity, Entity(0, 0u))
+                }
+            }
+        }
+        val entity = world.entity {}
+
+        // verify that notification is called only once at the end of the outer configure call
+        with(world) {
+            entity.configure {
+                entity.configure {
+                    it += WorldTestComponent2()
+                }
+                assertEquals(0, numAdd)
+            }
+            assertEquals(1, numAdd)
+        }
+    }
 }
