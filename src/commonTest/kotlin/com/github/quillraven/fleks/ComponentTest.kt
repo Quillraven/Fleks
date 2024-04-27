@@ -144,7 +144,7 @@ internal class ComponentTest {
 
     @Test
     fun getHolderByComponentId() {
-        val actual = testService.holderByIndexOrNull(0)
+        val actual = testService.holderByIndexOrNull(ComponentTestComponent.id)
 
         assertSame(testHolder, actual)
     }
