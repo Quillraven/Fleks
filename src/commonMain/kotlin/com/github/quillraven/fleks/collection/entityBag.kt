@@ -63,9 +63,7 @@ interface EntityBag {
      * Returns a [Map] containing the [entities][Entity] of the bag indexed by the key
      * returned from [keySelector] function applied to each [entity][Entity] of the bag.
      */
-    fun <K> associateBy(
-        keySelector: (Entity) -> K
-    ): Map<K, Entity>
+    fun <K> associateBy(keySelector: (Entity) -> K): Map<K, Entity>
 
     /**
      * Returns a [Map] containing the values provided by [valueTransform] and indexed by the
@@ -143,14 +141,16 @@ interface EntityBag {
      * Appends all [entities][Entity] not matching the given [predicate] to the given [destination].
      */
     fun filterNotTo(
-        destination: MutableEntityBag, predicate: (Entity) -> Boolean
+        destination: MutableEntityBag,
+        predicate: (Entity) -> Boolean
     ): MutableEntityBag
 
     /**
      * Appends all [entities][Entity] matching the given [predicate] to the given [destination].
      */
     fun filterIndexedTo(
-        destination: MutableEntityBag, predicate: (index: Int, Entity) -> Boolean
+        destination: MutableEntityBag,
+        predicate: (index: Int, Entity) -> Boolean
     ): MutableEntityBag
 
     /**
@@ -338,6 +338,24 @@ interface EntityBag {
         destination: C,
         transform: (Entity) -> R?
     ): C
+
+    /**
+     * Splits the original bag into a pair of bags,
+     * where the first bag contains elements for which predicate yielded true,
+     * while the second bag contains elements for which predicate yielded false.
+     */
+    fun partition(predicate: (Entity) -> Boolean): Pair<EntityBag, EntityBag>
+
+    /**
+     * Splits the original bag into two bags,
+     * where [first] contains elements for which predicate yielded true,
+     * while [second] contains elements for which predicate yielded false.
+     */
+    fun partitionTo(
+        first: MutableEntityBag,
+        second: MutableEntityBag,
+        predicate: (Entity) -> Boolean
+    )
 
     /**
      * Returns a random [entity][Entity] of the bag.
@@ -537,7 +555,10 @@ class MutableEntityBag(
      * Returns a [Map] containing the values provided by [valueTransform] and indexed by the
      * [keySelector] function applied to each [entity][Entity] of the bag.
      */
-    override inline fun <K, V> associateBy(keySelector: (Entity) -> K, valueTransform: (Entity) -> V): Map<K, V> {
+    override inline fun <K, V> associateBy(
+        keySelector: (Entity) -> K,
+        valueTransform: (Entity) -> V
+    ): Map<K, V> {
         val result = mutableMapOf<K, V>()
         for (i in 0 until size) {
             val entity = values[i]
@@ -565,7 +586,10 @@ class MutableEntityBag(
      * of the bag indexed by the key returned from [keySelector] function applied to
      * each [entity][Entity] of the bag.
      */
-    override inline fun <K, M : MutableMap<in K, Entity>> associateByTo(destination: M, keySelector: (Entity) -> K): M {
+    override inline fun <K, M : MutableMap<in K, Entity>> associateByTo(
+        destination: M,
+        keySelector: (Entity) -> K
+    ): M {
         for (i in 0 until size) {
             val entity = values[i]
             destination[keySelector(entity)] = entity
@@ -653,7 +677,10 @@ class MutableEntityBag(
     /**
      * Appends all [entities][Entity] matching the given [predicate] to the given [destination].
      */
-    override inline fun filterTo(destination: MutableEntityBag, predicate: (Entity) -> Boolean): MutableEntityBag {
+    override inline fun filterTo(
+        destination: MutableEntityBag,
+        predicate: (Entity) -> Boolean
+    ): MutableEntityBag {
         for (i in 0 until size) {
             val entity = values[i]
             if (predicate(entity)) {
@@ -666,7 +693,10 @@ class MutableEntityBag(
     /**
      * Appends all [entities][Entity] not matching the given [predicate] to the given [destination].
      */
-    override inline fun filterNotTo(destination: MutableEntityBag, predicate: (Entity) -> Boolean): MutableEntityBag {
+    override inline fun filterNotTo(
+        destination: MutableEntityBag,
+        predicate: (Entity) -> Boolean
+    ): MutableEntityBag {
         for (i in 0 until size) {
             val entity = values[i]
             if (!predicate(entity)) {
@@ -826,7 +856,10 @@ class MutableEntityBag(
      * Accumulates value starting with [initial] value and applying [operation] from left to right to
      * current accumulator value and each [entity][Entity].
      */
-    override inline fun <R> fold(initial: R, operation: (acc: R, entity: Entity) -> R): R {
+    override inline fun <R> fold(
+        initial: R,
+        operation: (acc: R, entity: Entity) -> R
+    ): R {
         var accumulator = initial
         for (i in 0 until size) {
             accumulator = operation(accumulator, values[i])
@@ -838,7 +871,10 @@ class MutableEntityBag(
      * Accumulates value starting with [initial] value and applying [operation] from left to right to
      * current accumulator value and each [entity][Entity] with its index in the original bag.
      */
-    override inline fun <R> foldIndexed(initial: R, operation: (index: Int, acc: R, entity: Entity) -> R): R {
+    override inline fun <R> foldIndexed(
+        initial: R,
+        operation: (index: Int, acc: R, entity: Entity) -> R
+    ): R {
         var accumulator = initial
         for (i in 0 until size) {
             accumulator = operation(i, accumulator, values[i])
@@ -895,7 +931,10 @@ class MutableEntityBag(
      * by the key returned by the given [keySelector] function applied to the [entity][Entity] and returns
      * a map where each group key is associated with a list of corresponding values.
      */
-    override inline fun <K, V> groupBy(keySelector: (Entity) -> K, valueTransform: (Entity) -> V): Map<K, List<V>> {
+    override inline fun <K, V> groupBy(
+        keySelector: (Entity) -> K,
+        valueTransform: (Entity) -> V
+    ): Map<K, List<V>> {
         val result = mutableMapOf<K, MutableList<V>>()
         for (i in 0 until size) {
             val entity = values[i]
@@ -968,7 +1007,10 @@ class MutableEntityBag(
      * Applies the given [transform] function to each [entity][Entity] of the bag and appends
      * the results to the given [destination].
      */
-    override inline fun <R, C : MutableCollection<in R>> mapTo(destination: C, transform: (Entity) -> R): C {
+    override inline fun <R, C : MutableCollection<in R>> mapTo(
+        destination: C,
+        transform: (Entity) -> R
+    ): C {
         for (i in 0 until size) {
             destination += transform(values[i])
         }
@@ -1006,12 +1048,56 @@ class MutableEntityBag(
      * Applies the given [transform] function to each [entity][Entity] of the bag and appends only
      * the non-null results to the given [destination].
      */
-    override inline fun <R, C : MutableCollection<in R>> mapNotNullTo(destination: C, transform: (Entity) -> R?): C {
+    override inline fun <R, C : MutableCollection<in R>> mapNotNullTo(
+        destination: C,
+        transform: (Entity) -> R?
+    ): C {
         for (i in 0 until size) {
             val transformVal = transform(values[i]) ?: continue
             destination += transformVal
         }
         return destination
+    }
+
+    /**
+     * Splits the original bag into a pair of lists,
+     * where first list contains elements for which predicate yielded true,
+     * while second list contains elements for which predicate yielded false.
+     */
+    override inline fun partition(predicate: (Entity) -> Boolean): Pair<EntityBag, EntityBag> {
+        val first = MutableEntityBag()
+        val second = MutableEntityBag()
+        for (i in 0 until size) {
+            val entity = values[i]
+            if (predicate(entity)) {
+                first += entity
+            } else {
+                second += entity
+            }
+        }
+        return Pair(first, second)
+    }
+
+    /**
+     * Splits the original bag into two lists,
+     * where [first] contains elements for which predicate yielded true,
+     * while [second] contains elements for which predicate yielded false.
+     */
+    override inline fun partitionTo(
+        first: MutableEntityBag,
+        second: MutableEntityBag,
+        predicate: (Entity) -> Boolean
+    ) {
+        first.clear()
+        second.clear()
+        for (i in 0 until size) {
+            val entity = values[i]
+            if (predicate(entity)) {
+                first += entity
+            } else {
+                second += entity
+            }
+        }
     }
 
     /**
