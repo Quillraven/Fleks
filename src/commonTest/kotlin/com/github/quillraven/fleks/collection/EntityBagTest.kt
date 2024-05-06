@@ -557,6 +557,29 @@ class EntityBagTest {
     }
 
     @Test
+    fun testPartition() {
+        val (first, second) = testBag.partition { it.id <= 0 }
+
+        assertEquals(1, first.size)
+        assertEquals(1, second.size)
+        assertTrue(testEntity1 in first)
+        assertTrue(testEntity2 in second)
+    }
+
+    @Test
+    fun testPartitionTo() {
+        val first = MutableEntityBag()
+        val second = MutableEntityBag()
+
+        testBag.partitionTo(first, second) { it.id <= 0 }
+
+        assertEquals(1, first.size)
+        assertEquals(1, second.size)
+        assertTrue(testEntity1 in first)
+        assertTrue(testEntity2 in second)
+    }
+
+    @Test
     fun testRandom() {
         val actual = testBag.random()
 

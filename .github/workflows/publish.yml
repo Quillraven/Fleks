@@ -36,10 +36,13 @@ jobs:
             ~/.konan/**/*
           key: kotlin-konan-${{ runner.os }}
 
-      - uses: gradle/gradle-build-action@v3
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
         with:
           gradle-home-cache-cleanup: true
-          arguments: publish --no-configuration-cache --no-parallel
+
+      - name: Publish project
+        run: ./gradlew publish --no-configuration-cache --no-parallel
         env:
           ORG_GRADLE_PROJECT_fleks.ossrhUsername: ${{secrets.OSSRH_USERNAME}}
           ORG_GRADLE_PROJECT_fleks.ossrhPassword: ${{secrets.OSSRH_TOKEN}}
