@@ -51,10 +51,13 @@ jobs:
             ~/.konan/**/*
           key: kotlin-konan-${{ runner.os }}
 
-      - uses: gradle/actions/setup-gradle@v3
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
         with:
           gradle-home-cache-cleanup: true
-          arguments: build --stacktrace
+
+      - name: Build project
+        run: ./gradlew build --stacktrace
 
   publish:
     # only publish after 'build' was successful, and this workflow is running on master branch
