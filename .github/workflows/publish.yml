@@ -40,11 +40,11 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-home-cache-cleanup: true
+
+      - name: Publish project
+        run: ./gradlew publish --no-configuration-cache --no-parallel
         env:
           ORG_GRADLE_PROJECT_fleks.ossrhUsername: ${{secrets.OSSRH_USERNAME}}
           ORG_GRADLE_PROJECT_fleks.ossrhPassword: ${{secrets.OSSRH_TOKEN}}
           ORG_GRADLE_PROJECT_fleks.signing.key: ${{secrets.SIGNING_KEY}}
           ORG_GRADLE_PROJECT_fleks.signing.password: ${{secrets.SIGNING_PASSWORD}}
-
-      - name: Publish project
-        run: ./gradlew publish --no-configuration-cache --no-parallel
