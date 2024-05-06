@@ -1060,9 +1060,9 @@ class MutableEntityBag(
     }
 
     /**
-     * Splits the original bag into a pair of lists,
-     * where first list contains elements for which predicate yielded true,
-     * while second list contains elements for which predicate yielded false.
+     * Splits the original bag into a pair of bags,
+     * where the first bag contains elements for which predicate yielded true,
+     * while the second bag contains elements for which predicate yielded false.
      */
     override inline fun partition(predicate: (Entity) -> Boolean): Pair<EntityBag, EntityBag> {
         val first = MutableEntityBag()
@@ -1079,7 +1079,7 @@ class MutableEntityBag(
     }
 
     /**
-     * Splits the original bag into two lists,
+     * Splits the original bag into two bags,
      * where [first] contains elements for which predicate yielded true,
      * while [second] contains elements for which predicate yielded false.
      */
