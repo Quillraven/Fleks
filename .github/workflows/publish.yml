@@ -36,7 +36,7 @@ jobs:
             ~/.konan/**/*
           key: kotlin-konan-${{ runner.os }}
 
-      - uses: gradle/gradle-build-action@v3
+      - uses: gradle/actions/setup-gradle@v3
         with:
           gradle-home-cache-cleanup: true
           arguments: publish --no-configuration-cache --no-parallel
