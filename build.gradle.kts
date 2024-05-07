@@ -27,6 +27,11 @@ kotlin {
     }
 
     sourceSets {
+        all {
+            // WASM: for bitArray.kt Long::countLeadingZeroBits
+            languageSettings.optIn("kotlin.ExperimentalStdlibApi")
+        }
+
         commonMain {
             dependencies {
                 implementation(libs.kotlinxSerialization.json)
