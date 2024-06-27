@@ -2,8 +2,8 @@
 
 # Fleks
 
-[![LTS](https://img.shields.io/badge/LTS-2.7-orange.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks/2.7/jar)
-[![Snapshot](https://img.shields.io/badge/Snapshot-2.8--SNAPSHOT-orange.svg)](https://s01.oss.sonatype.org/#nexus-search;gav~io.github.quillraven.fleks~~2.8-SNAPSHOT~~)
+[![LTS](https://img.shields.io/badge/LTS-2.8-orange.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks/2.8/jar)
+[![Snapshot](https://img.shields.io/badge/Snapshot-2.9--SNAPSHOT-orange.svg)](https://s01.oss.sonatype.org/#nexus-search;gav~io.github.quillraven.fleks~~2.9-SNAPSHOT~~)
 
 [![Build Master](https://img.shields.io/github/actions/workflow/status/quillraven/fleks/build.yml?branch=master)](https://github.com/Quillraven/fleks/actions)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.0.0-red.svg)](http://kotlinlang.org/)
@@ -31,7 +31,7 @@ functions for it, but I was never fully happy with how it felt because:
   felt weird to me
 - The creator seems to not work on this project anymore or at least reacts super slowly to change requests, bugs or
   improvement ideas
-- Although for me it was never a problem, I heard from other people that the performance is sometimes bad especially
+- Although for me, it was never a problem, I heard from other people that the performance is sometimes bad especially
   with a lot of [entities](https://github.com/libgdx/ashley/wiki/How-to-use-Ashley#entities) that get their components
   updated each frame
 
@@ -73,31 +73,31 @@ To use Fleks add it as a dependency to your project:
 <dependency>
   <groupId>io.github.quillraven.fleks</groupId>
   <artifactId>Fleks-jvm</artifactId>
-  <version>2.7</version>
+  <version>2.8</version>
 </dependency>
 ```
 
 #### Gradle (Groovy)
 
-```kotlin
-implementation 'io.github.quillraven.fleks:Fleks:2.7'
+```gradle
+implementation 'io.github.quillraven.fleks:Fleks:2.8'
 ```
 
 #### Gradle (Kotlin)
 
-```kotlin
-implementation("io.github.quillraven.fleks:Fleks:2.7")
+```gradle
+implementation("io.github.quillraven.fleks:Fleks:2.8")
 ```
 
 #### KorGE
 
-```kotlin
-dependencyMulti("io.github.quillraven.fleks:Fleks:2.7", registerPlugin = false)
+```gradle
+dependencyMulti("io.github.quillraven.fleks:Fleks:2.8", registerPlugin = false)
 ```
 
 If you want to use the Snapshot version then you need to add the snapshot repository as well:
 
-```kotlin
+```gradle
 // Groovy DSL
 maven { url 'https://s01.oss.sonatype.org/content/repositories/snapshots/' }
 
