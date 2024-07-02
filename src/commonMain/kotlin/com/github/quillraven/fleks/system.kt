@@ -160,8 +160,18 @@ abstract class IteratingSystem(
     protected val comparator: EntityComparator = EMPTY_COMPARATOR,
     protected val sortingType: SortingType = Automatic,
     interval: Interval = EachFrame,
-    enabled: Boolean = true
-) : IntervalSystem(interval, enabled) {
+    enabled: Boolean = true,
+    world: World
+) : IntervalSystem(interval, enabled, world) {
+
+    constructor(
+        family: Family,
+        comparator: EntityComparator = EMPTY_COMPARATOR,
+        sortingType: SortingType = Automatic,
+        interval: Interval = EachFrame,
+        enabled: Boolean = true,
+    ) : this(family, comparator, sortingType, interval, enabled, World.CURRENT_WORLD ?: throw FleksWrongConfigurationUsageException())
+
     /**
      * Flag that defines if sorting of [entities][Entity] will be performed the next time [onTick] is called.
      *

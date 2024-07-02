@@ -10,8 +10,8 @@ private class SimpleTestComponent : Component<SimpleTestComponent> {
     override fun type() = SimpleTestComponent
 }
 
-private class OnAddHookSystem : IteratingSystem(
-    family = family { all(SimpleTestComponent) }
+private class OnAddHookSystem(world: World? = null) : IteratingSystem(
+    world = world ?: World.CURRENT_WORLD!!, family = world?.family { all(SimpleTestComponent) } ?: family { all(SimpleTestComponent) }
 ), FamilyOnAdd {
 
     var addEntityHandled = false
@@ -23,8 +23,8 @@ private class OnAddHookSystem : IteratingSystem(
     override fun onTickEntity(entity: Entity) = Unit
 }
 
-private class OnRemoveHookSystem : IteratingSystem(
-    family = family { all(SimpleTestComponent) }
+private class OnRemoveHookSystem(world: World? = null) : IteratingSystem(
+    world = world ?: World.CURRENT_WORLD!!, family = world?.family { all(SimpleTestComponent) } ?: family { all(SimpleTestComponent) }
 ), FamilyOnRemove {
 
     var removeEntityHandled = false
@@ -63,11 +63,36 @@ internal class FamilySystemHookTest {
     }
 
     @Test
+    fun onAddHookSystemPostConfiguration() {
+        val world = configureWorld {}.also {
+            it.add(OnAddHookSystem(world = it))
+        }
+
+        world.entity { it += SimpleTestComponent() }
+
+        val system = world.system<OnAddHookSystem>()
+        assertTrue { system.addEntityHandled }
+    }
+
+    @Test
     fun onRemoveHookSystem() {
         val world = configureWorld {
             systems {
                 add(OnRemoveHookSystem())
             }
+        }
+
+        val entity = world.entity { it += SimpleTestComponent() }
+        world -= entity
+
+        val system = world.system<OnRemoveHookSystem>()
+        assertTrue { system.removeEntityHandled }
+    }
+
+    @Test
+    fun onRemoveHookSystemPostConfiguration() {
+        val world = configureWorld {}.also {
+            it.add(OnRemoveHookSystem(world = it))
         }
 
         val entity = world.entity { it += SimpleTestComponent() }
