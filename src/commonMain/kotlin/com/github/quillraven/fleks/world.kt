@@ -175,7 +175,7 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
             systemCfg?.invoke(it)
             // assign world systems afterward to resize the systems array only once to the correct size
             // instead of resizing every time a system gets added to the configuration
-            world.systems = it.systems.toTypedArray()
+            world.systems = it.systems
         }
 
         if (world.numEntities > 0) {
@@ -191,55 +191,7 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
      * Extend [Family.addHook] and [Family.removeHook] with
      * other objects that needed to triggered by the hooks.
      */
-    private fun setUpAggregatedFamilyHooks() {
-
-        // validate systems against illegal interfaces
-        world.systems.forEach { system ->
-            // FamilyOnAdd and FamilyOnRemove interfaces are only meant to be used by IteratingSystem
-            if (system !is IteratingSystem) {
-
-                if (system is FamilyOnAdd) {
-                    throw FleksWrongSystemInterfaceException(system::class, FamilyOnAdd::class)
-                }
-
-                if (system is FamilyOnRemove) {
-                    throw FleksWrongSystemInterfaceException(system::class, FamilyOnRemove::class)
-                }
-            }
-        }
-
-        // register family hooks for IteratingSystem.FamilyOnAdd containing systems
-        world.systems
-            .mapNotNull { if (it is IteratingSystem && it is FamilyOnAdd) it else null }
-            .groupBy { it.family }
-            .forEach { entry ->
-                val (family, systemList) = entry
-                val ownHook = family.addHook
-                val systemArray = systemList.toTypedArray()
-                family.addHook = if (ownHook != null) { entity ->
-                    ownHook(world, entity)
-                    systemArray.forEach { it.onAddEntity(entity) }
-                } else { entity ->
-                    systemArray.forEach { it.onAddEntity(entity) }
-                }
-            }
-
-        // register family hooks for IteratingSystem.FamilyOnRemove containing systems
-        world.systems
-            .mapNotNull { if (it is IteratingSystem && it is FamilyOnRemove) it else null }
-            .groupBy { it.family }
-            .forEach { entry ->
-                val (family, systemList) = entry
-                val ownHook = family.removeHook
-                val systemArray = systemList.toTypedArray()
-                family.removeHook = if (ownHook != null) { entity ->
-                    systemArray.forEachReverse { it.onRemoveEntity(entity) }
-                    ownHook(world, entity)
-                } else { entity ->
-                    systemArray.forEachReverse { it.onRemoveEntity(entity) }
-                }
-            }
-    }
+    private fun setUpAggregatedFamilyHooks() = world.setUpAggregatedFamilyHooks(world.systems)
 }
 
 /**
@@ -326,8 +278,55 @@ class World internal constructor(
     /**
      * Returns the world's systems.
      */
-    var systems = emptyArray<IntervalSystem>()
-        internal set
+    private var _systems = mutableListOf<IntervalSystem>()
+    var systems: List<IntervalSystem>
+        get() = _systems
+        internal set(value) {
+            _systems = value.toMutableList()
+        }
+
+    /**
+     * Adds a new system to the world.
+     *
+     * @param system The system to be added to the world. This should be an instance of a class that extends IntervalSystem.
+     * @param index The position at which the system should be inserted in the list of systems. If null, the system is added at the end of the list.
+     * This parameter is optional and defaults to null.
+     *
+     * @throws FleksSystemAlreadyAddedException if the system was already added before.
+     */
+    fun add(system: IntervalSystem, index: Int? = null) {
+        if (systems.any { it::class == system::class }) {
+            throw FleksSystemAlreadyAddedException(system::class)
+        }
+
+        setUpAggregatedFamilyHooks(listOf(system))
+
+        _systems.add(index ?: _systems.size, system)
+    }
+
+    /**
+     * Removes the specified system from the world.
+     *
+     * @param system The system to be removed from the world. This should be an instance of a class that extends IntervalSystem.
+     * @return True if the system was successfully removed, false otherwise.
+     */
+    fun remove(system: IntervalSystem) = _systems.remove(system)
+
+    /**
+     * Adds a new system to the world using the '+=' operator.
+     *
+     * @param system The system to be added to the world. This should be an instance of a class that extends IntervalSystem.
+     *
+     * @throws FleksSystemAlreadyAddedException if the system was already added before.
+     */
+    operator fun plusAssign(system: IntervalSystem) = add(system)
+
+    /**
+     * Removes the specified system from the world using the '-=' operator.
+     *
+     * @param system The system to be removed from the world. This should be an instance of a class that extends IntervalSystem.
+     */
+    operator fun minusAssign(system: IntervalSystem) { remove(system) }
 
     /**
      * Cache of used [EntityTag] instances. Needed for snapshot functionality.
@@ -633,7 +632,50 @@ class World internal constructor(
      */
     fun dispose() {
         entityService.removeAll()
-        systems.forEachReverse { it.onDispose() }
+        systems.reversed().forEach { it.onDispose() }
+    }
+
+    internal fun setUpAggregatedFamilyHooks(systems: List<IntervalSystem>) {
+        // validate systems against illegal interfaces
+        systems.forEach { system ->
+            // FamilyOnAdd and FamilyOnRemove interfaces are only meant to be used by IteratingSystem
+            if (system !is IteratingSystem) {
+
+                if (system is FamilyOnAdd) {
+                    throw FleksWrongSystemInterfaceException(system::class, FamilyOnAdd::class)
+                }
+
+                if (system is FamilyOnRemove) {
+                    throw FleksWrongSystemInterfaceException(system::class, FamilyOnRemove::class)
+                }
+            }
+        }
+
+        // register family hooks for IteratingSystem.FamilyOnAdd containing systems
+        systems
+            .mapNotNull { if (it is IteratingSystem && it is FamilyOnAdd) it else null }
+            .groupBy { it.family }
+            .forEach { (family, systemList) ->
+                val ownHook = family.addHook
+                val systemArray = systemList.toTypedArray()
+                family.addHook = { entity ->
+                    ownHook?.invoke(this, entity)
+                    systemArray.forEach { it.onAddEntity(entity) }
+                }
+            }
+
+        // register family hooks for IteratingSystem.FamilyOnRemove containing systems
+        systems
+            .mapNotNull { if (it is IteratingSystem && it is FamilyOnRemove) it else null }
+            .groupBy { it.family }
+            .forEach { (family, systemList) ->
+                val ownHook = family.removeHook
+                val systemArray = systemList.toTypedArray()
+                family.removeHook = { entity ->
+                    systemArray.forEachReverse { it.onRemoveEntity(entity) }
+                    ownHook?.invoke(this, entity)
+                }
+            }
     }
 
 
