@@ -281,21 +281,28 @@ class World internal constructor(
     /**
      * Adds a new system to the world.
      *
-     * @param system The system to be added to the world. This should be an instance of a class that extends IntervalSystem.
      * @param index The position at which the system should be inserted in the list of systems. If null, the system is added at the end of the list.
      * This parameter is optional and defaults to null.
+     * @param system The system to be added to the world. This should be an instance of a class that extends IntervalSystem.
      *
      * @throws FleksSystemAlreadyAddedException if the system was already added before.
      */
-    fun add(system: IntervalSystem, index: Int? = null) {
+    fun add(index: Int, system: IntervalSystem) {
         if (systems.any { it::class == system::class }) {
             throw FleksSystemAlreadyAddedException(system::class)
         }
 
         setUpAggregatedFamilyHooks(listOf(system))
 
-        mutableSystems.add(index ?: mutableSystems.size, system)
+        mutableSystems.add(index, system)
     }
+
+    /**
+     * Adds a new system to the world.
+     *
+     * @param system The system to be added to the world. This should be an instance of a class that extends IntervalSystem.
+     */
+    fun add(system: IntervalSystem) = add(systems.size, system)
 
     /**
      * Removes the specified system from the world.

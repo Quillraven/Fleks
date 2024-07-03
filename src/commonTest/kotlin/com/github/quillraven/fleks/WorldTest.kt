@@ -1052,7 +1052,7 @@ internal class WorldTest {
             }
         }
         val system = WorldTestIteratingSystem(world = world)
-        world.add(system, 0)
+        world.add(0, system)
 
         assertEquals(system, world.systems[0])
     }
