@@ -81,6 +81,16 @@ data class Family(
     internal val entityService: EntityService = world.entityService,
 ) : EntityComponentContext(world.componentService) {
     /**
+     * Optional [FamilyHook] that can be defined during world configuration.
+     */
+    internal var ownAddHook: FamilyHook? = null
+
+    /**
+     * Optional [FamilyHook] that can be defined during world configuration.
+     */
+    internal var ownRemoveHook: FamilyHook? = null
+
+    /**
      * An optional [FamilyHook] that gets called whenever an [entity][Entity] enters the family.
      */
     internal var addHook: FamilyHook? = null
@@ -222,6 +232,7 @@ data class Family(
             isDirty = true
             if (activeEntities.hasNoValueAtIndex(entity.id)) countEntities++
             activeEntities[entity.id] = entity
+            ownAddHook?.invoke(world, entity)
             addHook?.invoke(world, entity)
         }
     }
@@ -241,6 +252,7 @@ data class Family(
             isDirty = true
             countEntities++
             activeEntities[entity.id] = entity
+            ownAddHook?.invoke(world, entity)
             addHook?.invoke(world, entity)
         } else if (!entityInFamily && currentEntity != null) {
             // existing entity gets removed
@@ -248,6 +260,7 @@ data class Family(
             countEntities--
             activeEntities.removeAt(entity.id)
             removeHook?.invoke(world, entity)
+            ownRemoveHook?.invoke(world, entity)
         }
     }
 
@@ -262,6 +275,7 @@ data class Family(
             activeEntities.removeAt(entity.id)
             countEntities--
             removeHook?.invoke(world, entity)
+            ownRemoveHook?.invoke(world, entity)
         }
     }
 

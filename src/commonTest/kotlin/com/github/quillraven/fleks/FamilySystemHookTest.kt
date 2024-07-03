@@ -141,6 +141,57 @@ internal class FamilySystemHookTest {
         assertEquals(2, system.removeEntityHandledCount)
     }
 
+
+    @Test
+    fun onHooksConfigureAndSystemHooksConfiguration() {
+        var onAddCount = 0
+        var onRemoveCount = 0
+        val world = configureWorld {
+            families {
+                // hook that reacts on entities that have a MoveComponent and do not have a DeadComponent
+                val family = family { all(SimpleTestComponent) }
+                onAdd(family) { _ ->
+                    onAddCount++
+                }
+                onRemove(family) { _ ->
+                    onRemoveCount++
+                }
+            }
+        }.also {
+            it.add(OnAddHookSystem(world = it))
+        }
+        val systemAddedAfterConfigure = world.system<OnAddHookSystem>()
+
+        // add an entity after the system is added, should trigger the onAddEntity hook
+        world.entity { it += SimpleTestComponent() }
+        assertEquals(1, systemAddedAfterConfigure.addEntityHandledCount)
+        assertEquals(1, onAddCount)
+
+        // remove system, there should be no hooks
+        world -= systemAddedAfterConfigure
+        assertNull(systemAddedAfterConfigure.family.addHook)
+
+        // add an entity after the system is removed, should not trigger the onAddEntity hook
+        val addedEntity = world.entity { it += SimpleTestComponent() }
+        assertEquals(1, systemAddedAfterConfigure.addEntityHandledCount)
+        assertEquals(2, onAddCount)
+
+        // add the system back, existing entities don't trigger the hook
+        world += systemAddedAfterConfigure
+        assertNotNull(systemAddedAfterConfigure.family.addHook)
+        assertEquals(1, systemAddedAfterConfigure.addEntityHandledCount)
+        assertEquals(2, onAddCount)
+
+        // add an entity after the system is added back, should trigger the onAddEntity hook
+        world.entity { it += SimpleTestComponent() }
+        assertEquals(2, systemAddedAfterConfigure.addEntityHandledCount)
+        assertEquals(3, onAddCount)
+
+        // let's test the onRemove hook
+        world -= addedEntity
+        assertEquals(1, onRemoveCount)
+    }
+
     @Test
     fun illegalOnAddHookSystem() {
         assertFailsWith<FleksWrongSystemInterfaceException> {

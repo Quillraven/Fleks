@@ -88,10 +88,10 @@ class FamilyConfiguration(
         family: Family,
         hook: FamilyHook
     ) {
-        if (family.addHook != null) {
+        if (family.ownAddHook != null) {
             throw FleksHookAlreadyAddedException("addHook", "Family $family")
         }
-        family.addHook = hook
+        family.ownAddHook = hook
     }
 
     /**
@@ -102,10 +102,10 @@ class FamilyConfiguration(
         family: Family,
         hook: FamilyHook
     ) {
-        if (family.removeHook != null) {
+        if (family.ownRemoveHook != null) {
             throw FleksHookAlreadyAddedException("removeHook", "Family $family")
         }
-        family.removeHook = hook
+        family.ownRemoveHook = hook
     }
 }
 
@@ -663,10 +663,8 @@ class World internal constructor(
             .mapNotNull { if (it is IteratingSystem && it is FamilyOnAdd) it else null }
             .groupBy { it.family }
             .forEach { (family, systemList) ->
-                val ownHook = family.addHook
                 val systemArray = systemList.toTypedArray()
                 family.addHook = { entity ->
-                    ownHook?.invoke(this, entity)
                     systemArray.forEach { it.onAddEntity(entity) }
                 }
             }
@@ -676,11 +674,9 @@ class World internal constructor(
             .mapNotNull { if (it is IteratingSystem && it is FamilyOnRemove) it else null }
             .groupBy { it.family }
             .forEach { (family, systemList) ->
-                val ownHook = family.removeHook
                 val systemArray = systemList.toTypedArray()
                 family.removeHook = { entity ->
                     systemArray.forEachReverse { it.onRemoveEntity(entity) }
-                    ownHook?.invoke(this, entity)
                 }
             }
     }
