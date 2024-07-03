@@ -55,7 +55,7 @@ class InjectableConfiguration(private val world: World) {
  */
 @WorldCfgMarker
 class SystemConfiguration(
-    internal val systems: MutableList<IntervalSystem> = mutableListOf()
+    private val systems: MutableList<IntervalSystem>
 ) {
     /**
      * Adds the [system] to the [world][World].
@@ -171,11 +171,8 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
     fun configure() {
         injectableCfg?.invoke(InjectableConfiguration(world))
         familyCfg?.invoke(FamilyConfiguration(world))
-        SystemConfiguration().also {
+        SystemConfiguration(world.mutableSystems).also {
             systemCfg?.invoke(it)
-            // assign world systems afterward to resize the systems array only once to the correct size
-            // instead of resizing every time a system gets added to the configuration
-            world.systems = it.systems
         }
 
         if (world.numEntities > 0) {
@@ -278,12 +275,8 @@ class World internal constructor(
     /**
      * Returns the world's systems.
      */
-    private var _systems = mutableListOf<IntervalSystem>()
-    var systems: List<IntervalSystem>
-        get() = _systems
-        internal set(value) {
-            _systems = value.toMutableList()
-        }
+    internal val mutableSystems = mutableListOf<IntervalSystem>()
+    val systems: List<IntervalSystem> = mutableSystems
 
     /**
      * Adds a new system to the world.
@@ -301,7 +294,7 @@ class World internal constructor(
 
         setUpAggregatedFamilyHooks(listOf(system))
 
-        _systems.add(index ?: _systems.size, system)
+        mutableSystems.add(index ?: mutableSystems.size, system)
     }
 
     /**
@@ -310,7 +303,14 @@ class World internal constructor(
      * @param system The system to be removed from the world. This should be an instance of a class that extends IntervalSystem.
      * @return True if the system was successfully removed, false otherwise.
      */
-    fun remove(system: IntervalSystem) = _systems.remove(system)
+    fun remove(system: IntervalSystem) {
+        mutableSystems.remove(system)
+
+        if (system is IteratingSystem) {
+            system.family.addHook = null
+            system.family.removeHook = null
+        }
+    }
 
     /**
      * Adds a new system to the world using the '+=' operator.
