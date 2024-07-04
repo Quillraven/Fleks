@@ -88,10 +88,10 @@ class FamilyConfiguration(
         family: Family,
         hook: FamilyHook
     ) {
-        if (family.ownAddHook != null) {
+        if (family.addHook != null) {
             throw FleksHookAlreadyAddedException("addHook", "Family $family")
         }
-        family.ownAddHook = hook
+        family.addHook = hook
     }
 
     /**
@@ -102,10 +102,10 @@ class FamilyConfiguration(
         family: Family,
         hook: FamilyHook
     ) {
-        if (family.ownRemoveHook != null) {
+        if (family.removeHook != null) {
             throw FleksHookAlreadyAddedException("removeHook", "Family $family")
         }
-        family.ownRemoveHook = hook
+        family.removeHook = hook
     }
 }
 
@@ -179,16 +179,17 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
             throw FleksWorldModificationDuringConfigurationException()
         }
 
-        setUpAggregatedFamilyHooks()
+        // add all the configured family hooks to the cache
+        world.allFamilies.forEach {
+            world.worldCfgFamilyAddHooks[it] = it.addHook
+            world.worldCfgFamilyRemoveHooks[it] = it.removeHook
+        }
+
+        world.initAggregatedFamilyHooks()
 
         world.systems.forEach { it.onInit() }
     }
 
-    /**
-     * Extend [Family.addHook] and [Family.removeHook] with
-     * other objects that needed to triggered by the hooks.
-     */
-    private fun setUpAggregatedFamilyHooks() = world.setUpAggregatedFamilyHooks(world.systems)
 }
 
 /**
@@ -275,8 +276,23 @@ class World internal constructor(
     /**
      * Returns the world's systems.
      */
-    internal val mutableSystems = mutableListOf<IntervalSystem>()
-    val systems: List<IntervalSystem> = mutableSystems
+    internal val mutableSystems = arrayListOf<IntervalSystem>()
+    val systems: List<IntervalSystem>
+        get() = mutableSystems
+
+    /**
+     * Map of add [FamilyHook] out of the [WorldConfiguration].
+     * Only used if there are also aggregated system hooks for the family to remember
+     * its original world configuration hook (see [initAggregatedFamilyHooks] and [updateAggregatedFamilyHooks]).
+     */
+    val worldCfgFamilyAddHooks = mutableMapOf<Family, FamilyHook?>()
+
+    /**
+     * Map of remove [FamilyHook] out of the [WorldConfiguration].
+     * Only used if there are also aggregated system hooks for the family to remember
+     * its original world configuration hook (see [initAggregatedFamilyHooks] and [updateAggregatedFamilyHooks]).
+     */
+    val worldCfgFamilyRemoveHooks = mutableMapOf<Family, FamilyHook?>()
 
     /**
      * Adds a new system to the world.
@@ -292,9 +308,11 @@ class World internal constructor(
             throw FleksSystemAlreadyAddedException(system::class)
         }
 
-        setUpAggregatedFamilyHooks(listOf(system))
-
         mutableSystems.add(index, system)
+
+        if (system is IteratingSystem && (system is FamilyOnAdd || system is FamilyOnRemove)) {
+            updateAggregatedFamilyHooks(system.family)
+        }
     }
 
     /**
@@ -312,10 +330,8 @@ class World internal constructor(
      */
     fun remove(system: IntervalSystem) {
         mutableSystems.remove(system)
-
-        if (system is IteratingSystem) {
-            system.family.addHook = null
-            system.family.removeHook = null
+        if (system is IteratingSystem && (system is FamilyOnAdd || system is FamilyOnRemove)) {
+            updateAggregatedFamilyHooks(system.family)
         }
     }
 
@@ -333,7 +349,9 @@ class World internal constructor(
      *
      * @param system The system to be removed from the world. This should be an instance of a class that extends IntervalSystem.
      */
-    operator fun minusAssign(system: IntervalSystem) { remove(system) }
+    operator fun minusAssign(system: IntervalSystem) {
+        remove(system)
+    }
 
     /**
      * Cache of used [EntityTag] instances. Needed for snapshot functionality.
@@ -642,45 +660,56 @@ class World internal constructor(
         systems.reversed().forEach { it.onDispose() }
     }
 
-    internal fun setUpAggregatedFamilyHooks(systems: List<IntervalSystem>) {
+    /**
+     * Extend [Family.addHook] and [Family.removeHook] for all
+     * [systems][IteratingSystem] that implement [FamilyOnAdd] and/or [FamilyOnRemove].
+     */
+    internal fun initAggregatedFamilyHooks() {
         // validate systems against illegal interfaces
         systems.forEach { system ->
             // FamilyOnAdd and FamilyOnRemove interfaces are only meant to be used by IteratingSystem
             if (system !is IteratingSystem) {
-
                 if (system is FamilyOnAdd) {
                     throw FleksWrongSystemInterfaceException(system::class, FamilyOnAdd::class)
                 }
-
                 if (system is FamilyOnRemove) {
                     throw FleksWrongSystemInterfaceException(system::class, FamilyOnRemove::class)
                 }
             }
         }
 
-        // register family hooks for IteratingSystem.FamilyOnAdd containing systems
-        systems
-            .mapNotNull { if (it is IteratingSystem && it is FamilyOnAdd) it else null }
-            .groupBy { it.family }
-            .forEach { (family, systemList) ->
-                val systemArray = systemList.toTypedArray()
-                family.addHook = { entity ->
-                    systemArray.forEach { it.onAddEntity(entity) }
-                }
-            }
-
-        // register family hooks for IteratingSystem.FamilyOnRemove containing systems
-        systems
-            .mapNotNull { if (it is IteratingSystem && it is FamilyOnRemove) it else null }
-            .groupBy { it.family }
-            .forEach { (family, systemList) ->
-                val systemArray = systemList.toTypedArray()
-                family.removeHook = { entity ->
-                    systemArray.forEachReverse { it.onRemoveEntity(entity) }
-                }
-            }
+        allFamilies.forEach { updateAggregatedFamilyHooks(it) }
     }
 
+    /**
+     * Update [Family.addHook] and [Family.removeHook] for all
+     * [systems][IteratingSystem] that implement [FamilyOnAdd] and/or [FamilyOnRemove]
+     * and iterate over the given [family].
+     */
+    private fun updateAggregatedFamilyHooks(family: Family) {
+        // system validation like in initAggregatedFamilyHooks is not necessary
+        // because it is already validated before (in initAggregatedFamilyHooks and in add/remove system)
+
+        // update family add hook by adding systems' onAddEntity calls after its original world cfg hook
+        val ownAddHook = worldCfgFamilyAddHooks[family]
+        val addSystems = systems.filter { it is IteratingSystem && it is FamilyOnAdd && it.family == family }
+        family.addHook = if (ownAddHook != null) { entity ->
+            ownAddHook(this, entity)
+            addSystems.forEach { (it as FamilyOnAdd).onAddEntity(entity) }
+        } else { entity ->
+            addSystems.forEach { (it as FamilyOnAdd).onAddEntity(entity) }
+        }
+
+        // update family remove hook by adding systems' onRemoveEntity calls before its original world cfg hook
+        val ownRemoveHook = worldCfgFamilyRemoveHooks[family]
+        val removeSystems = systems.filter { it is IteratingSystem && it is FamilyOnRemove && it.family == family }
+        family.removeHook = if (ownRemoveHook != null) { entity ->
+            removeSystems.forEachReverse { (it as FamilyOnRemove).onRemoveEntity(entity) }
+            ownRemoveHook(this, entity)
+        } else { entity ->
+            removeSystems.forEachReverse { (it as FamilyOnRemove).onRemoveEntity(entity) }
+        }
+    }
 
     @ThreadLocal
     companion object {
@@ -715,7 +744,7 @@ class World internal constructor(
     }
 }
 
-private inline fun <T> Array<T>.forEachReverse(action: (T) -> Unit) {
+private inline fun <T> List<T>.forEachReverse(action: (T) -> Unit) {
     val lastIndex = this.lastIndex
     for (i in lastIndex downTo 0) {
         action(this[i])

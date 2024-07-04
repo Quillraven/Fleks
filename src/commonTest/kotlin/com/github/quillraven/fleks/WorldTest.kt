@@ -491,8 +491,8 @@ internal class WorldTest {
             }
         }
 
-        assertNotNull(testFamily.ownAddHook)
-        assertNotNull(testFamily.ownRemoveHook)
+        assertNotNull(testFamily.addHook)
+        assertNotNull(testFamily.removeHook)
     }
 
     @Test

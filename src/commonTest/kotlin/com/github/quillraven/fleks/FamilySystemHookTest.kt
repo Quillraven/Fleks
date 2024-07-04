@@ -23,6 +23,32 @@ private class OnAddHookSystem(world: World? = null) : IteratingSystem(
     override fun onTickEntity(entity: Entity) = Unit
 }
 
+private class OnAddHookSystem2(world: World? = null) : IteratingSystem(
+    world = world ?: World.CURRENT_WORLD!!, family = world?.family { all(SimpleTestComponent) } ?: family { all(SimpleTestComponent) }
+), FamilyOnAdd {
+
+    var addEntityHandledCount = 0
+
+    override fun onAddEntity(entity: Entity) {
+        addEntityHandledCount++
+    }
+
+    override fun onTickEntity(entity: Entity) = Unit
+}
+
+private class OnAddHookSystem3(world: World? = null) : IteratingSystem(
+    world = world ?: World.CURRENT_WORLD!!, family = world?.family { all(SimpleTestComponent) } ?: family { all(SimpleTestComponent) }
+), FamilyOnAdd {
+
+    var addEntityHandledCount = 0
+
+    override fun onAddEntity(entity: Entity) {
+        addEntityHandledCount++
+    }
+
+    override fun onTickEntity(entity: Entity) = Unit
+}
+
 private class OnRemoveHookSystem(world: World? = null) : IteratingSystem(
     world = world ?: World.CURRENT_WORLD!!, family = world?.family { all(SimpleTestComponent) } ?: family { all(SimpleTestComponent) }
 ), FamilyOnRemove {
@@ -75,9 +101,8 @@ internal class FamilySystemHookTest {
         world.entity { it += SimpleTestComponent() }
         assertEquals(1, system.addEntityHandledCount)
 
-        // remove system, there should be no hooks
+        // remove system
         world -= system
-        assertNull(system.family.addHook)
 
         // add an entity after the system is removed, should not trigger the onAddEntity hook
         world.entity { it += SimpleTestComponent() }
@@ -121,11 +146,10 @@ internal class FamilySystemHookTest {
 
         // remove entity after the system is added, should trigger the onRemoveEntity hook
         world -= entity1
-        assertTrue { system.removeEntityHandled }
+        assertEquals(1, system.removeEntityHandledCount)
 
-        // remove system, there should be no hooks
+        // remove system
         world -= system
-        assertNull(system.family.removeHook)
 
         // remove an entity after the system is removed, should not trigger the onRemoveEntity hook
         world -= entity2
@@ -167,9 +191,8 @@ internal class FamilySystemHookTest {
         assertEquals(1, systemAddedAfterConfigure.addEntityHandledCount)
         assertEquals(1, onAddCount)
 
-        // remove system, there should be no hooks
+        // remove system
         world -= systemAddedAfterConfigure
-        assertNull(systemAddedAfterConfigure.family.addHook)
 
         // add an entity after the system is removed, should not trigger the onAddEntity hook
         val addedEntity = world.entity { it += SimpleTestComponent() }
@@ -178,7 +201,6 @@ internal class FamilySystemHookTest {
 
         // add the system back, existing entities don't trigger the hook
         world += systemAddedAfterConfigure
-        assertNotNull(systemAddedAfterConfigure.family.addHook)
         assertEquals(1, systemAddedAfterConfigure.addEntityHandledCount)
         assertEquals(2, onAddCount)
 
@@ -190,6 +212,74 @@ internal class FamilySystemHookTest {
         // let's test the onRemove hook
         world -= addedEntity
         assertEquals(1, onRemoveCount)
+    }
+
+    @Test
+    fun testWorldAndSystemHooksScenario() {
+        // add a family hook during world configuration
+        var worldOnAddCount = 0
+        val world = configureWorld {
+            families {
+                onAdd(family { all(SimpleTestComponent) }) { _ ->
+                    worldOnAddCount++
+                }
+            }
+            systems {
+                add(OnAddHookSystem3())
+            }
+        }
+
+        // add a FamilyOnAdd interface to system A that iterates over the same family of the previous step.
+        val systemA = OnAddHookSystem(world).also {
+            world += it
+        }
+
+        // do the same thing again for system B and call it systemBHook
+        val systemB = OnAddHookSystem2(world).also {
+            world += it
+        }
+
+        val systemC = world.system<OnAddHookSystem3>()
+
+        // remove system A
+        world -= systemA
+
+        // trigger an update and confirm that the onAdd is called for all systems except system A
+        world.entity { it += SimpleTestComponent() }
+        assertEquals(1, worldOnAddCount)
+        assertEquals(0, systemA.addEntityHandledCount)
+        assertEquals(1, systemB.addEntityHandledCount)
+        assertEquals(1, systemC.addEntityHandledCount)
+
+        // put system A back in
+        world += systemA
+
+        // trigger an update and confirm that the onAdd is called for all systems
+        world.entity { it += SimpleTestComponent() }
+        assertEquals(2, worldOnAddCount)
+        assertEquals(1, systemA.addEntityHandledCount)
+        assertEquals(2, systemB.addEntityHandledCount)
+        assertEquals(2, systemC.addEntityHandledCount)
+
+        // remove system C
+        world -= systemC
+
+        // trigger an update and confirm that the onAdd is called for all systems except system C
+        world.entity { it += SimpleTestComponent() }
+        assertEquals(3, worldOnAddCount)
+        assertEquals(2, systemA.addEntityHandledCount)
+        assertEquals(3, systemB.addEntityHandledCount)
+        assertEquals(2, systemC.addEntityHandledCount)
+
+        // put system C back in
+        world += systemC
+
+        // trigger an update and confirm that the onAdd is called for all systems
+        world.entity { it += SimpleTestComponent() }
+        assertEquals(4, worldOnAddCount)
+        assertEquals(3, systemA.addEntityHandledCount)
+        assertEquals(4, systemB.addEntityHandledCount)
+        assertEquals(3, systemC.addEntityHandledCount)
     }
 
     @Test
