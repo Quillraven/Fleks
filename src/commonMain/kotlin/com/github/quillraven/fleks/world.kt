@@ -657,7 +657,7 @@ class World internal constructor(
      */
     fun dispose() {
         entityService.removeAll()
-        systems.reversed().forEach { it.onDispose() }
+        systems.forEachReverse { it.onDispose() }
     }
 
     /**
