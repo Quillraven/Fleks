@@ -644,7 +644,8 @@ class World internal constructor(
      */
     fun update(deltaTime: Float) {
         this.deltaTime = deltaTime
-        systems.forEach { system ->
+        for (i in systems.indices) {
+            val system = systems[i]
             if (system.enabled) {
                 system.onUpdate()
             }
