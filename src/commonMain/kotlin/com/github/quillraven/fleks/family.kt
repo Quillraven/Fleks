@@ -80,7 +80,6 @@ data class Family(
     @PublishedApi
     internal val entityService: EntityService = world.entityService,
 ) : EntityComponentContext(world.componentService) {
-
     /**
      * An optional [FamilyHook] that gets called whenever an [entity][Entity] enters the family.
      */
