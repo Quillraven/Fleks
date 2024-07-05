@@ -157,8 +157,8 @@ data object Manual : SortingType
  */
 abstract class IteratingSystem(
     val family: Family,
-    protected val comparator: EntityComparator = EMPTY_COMPARATOR,
-    protected val sortingType: SortingType = Automatic,
+    private val comparator: EntityComparator = EMPTY_COMPARATOR,
+    private val sortingType: SortingType = Automatic,
     interval: Interval = EachFrame,
     enabled: Boolean = true,
     world: World
@@ -170,7 +170,14 @@ abstract class IteratingSystem(
         sortingType: SortingType = Automatic,
         interval: Interval = EachFrame,
         enabled: Boolean = true,
-    ) : this(family, comparator, sortingType, interval, enabled, World.CURRENT_WORLD ?: throw FleksWrongConfigurationUsageException())
+    ) : this(
+        family,
+        comparator,
+        sortingType,
+        interval,
+        enabled,
+        World.CURRENT_WORLD ?: throw FleksWrongConfigurationUsageException()
+    )
 
     /**
      * Flag that defines if sorting of [entities][Entity] will be performed the next time [onTick] is called.
