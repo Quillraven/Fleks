@@ -36,7 +36,7 @@ private class WorldTestComponent2 : Component<WorldTestComponent2> {
     companion object : ComponentType<WorldTestComponent2>()
 }
 
-private class WorldTestIntervalSystem : IntervalSystem() {
+private class WorldTestIntervalSystem(world: World = World.CURRENT_WORLD!!) : IntervalSystem(world = world) {
     var numCalls = 0
     var disposed = false
 
@@ -50,8 +50,9 @@ private class WorldTestIntervalSystem : IntervalSystem() {
 }
 
 private class WorldTestIteratingSystem(
-    val testInject: String = inject()
-) : IteratingSystem(family { all(WorldTestComponent) }) {
+    world: World = World.CURRENT_WORLD!!,
+    val testInject: String = world.inject()
+) : IteratingSystem(world = world, family = world.family { all(WorldTestComponent) }) {
     var numCalls = 0
     var numCallsEntity = 0
 
@@ -1025,5 +1026,71 @@ internal class WorldTest {
             }
             assertEquals(1, numAdd)
         }
+    }
+
+    @Test
+    fun addingASystemAfterWorldConfiguration() {
+        val world = configureWorld {
+            injectables {
+                add("42")
+            }
+        }
+        world.add(WorldTestIteratingSystem(world = world))
+
+        assertNotNull(world.system<WorldTestIteratingSystem>())
+    }
+
+    @Test
+    fun addingASystemAtIndexAfterWorldConfiguration() {
+        val world = configureWorld {
+            injectables {
+                add("42")
+            }
+
+            systems {
+                add(WorldTestIntervalSystem())
+            }
+        }
+        val system = WorldTestIteratingSystem(world = world)
+        world.add(0, system)
+
+        assertEquals(system, world.systems[0])
+    }
+
+    @Test
+    fun addingASystemPlusAssignAfterWorldConfiguration() {
+        val world = configureWorld {
+            injectables {
+                add("42")
+            }
+        }
+        world += WorldTestIteratingSystem(world = world)
+
+        assertNotNull(world.system<WorldTestIteratingSystem>())
+    }
+
+    @Test
+    fun removingASystemAfterWorldConfiguration() {
+        val world = configureWorld {
+            injectables {
+                add("42")
+            }
+        }
+
+        // add 2 systems
+        val system1 = WorldTestIteratingSystem(world = world)
+        val system2 = WorldTestIntervalSystem(world = world)
+        world.add(system1)
+        world.add(system2)
+        assertEquals(2, world.systems.size)
+
+        // remove using remove function
+        world.remove(system2)
+        assertEquals(1, world.systems.size)
+        assertEquals(system1, world.systems[0])
+
+        // remove using minusAssign operator
+        world -= system1
+        assertEquals(0, world.systems.size)
     }
 }
