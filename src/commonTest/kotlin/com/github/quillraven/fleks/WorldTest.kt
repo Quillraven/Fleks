@@ -200,6 +200,30 @@ internal class WorldTest {
     }
 
     @Test
+    fun testSystemOrNull() {
+        val world = configureWorld {
+            systems {
+                add(WorldTestIntervalSystem())
+            }
+        }
+
+        assertNotNull(world.systemOrNull<WorldTestIntervalSystem>())
+        assertNull(world.systemOrNull<WorldTestIteratingSystem>())
+    }
+
+    @Test
+    fun testSystemContains() {
+        val world = configureWorld {
+            systems {
+                add(WorldTestIntervalSystem())
+            }
+        }
+
+        assertTrue(world.contains<WorldTestIntervalSystem>())
+        assertFalse(world.contains<WorldTestIteratingSystem>())
+    }
+
+    @Test
     fun cannotCreateSystemWhenInjectablesAreMissing() {
         assertFailsWith<FleksNoSuchInjectableException> {
             configureWorld {
