@@ -203,7 +203,7 @@ class World internal constructor(
     }
 
     /**
-     * Returns true if and only if the given [system] is part of the world.
+     * Returns true if and only if the given [system][IntervalSystem] is part of the world.
      */
     inline fun <reified T : IntervalSystem> contains(): Boolean {
         return systems.any { it is T }
