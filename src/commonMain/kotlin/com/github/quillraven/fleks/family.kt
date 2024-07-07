@@ -203,9 +203,21 @@ data class Family(
     fun first(): Entity = mutableEntities.first()
 
     /**
+     * Updates this family if needed and returns its first [Entity] matching the given [predicate].
+     * @throws [NoSuchElementException] if the family has no such entity.
+     */
+    fun first(predicate: (Entity) -> Boolean): Entity = mutableEntities.first(predicate)
+
+    /**
      * Updates this family if needed and returns its first [Entity] or null if the family has no entities.
      */
     fun firstOrNull(): Entity? = mutableEntities.firstOrNull()
+
+    /**
+     * Updates this family if needed and returns its first [Entity] matching the given [predicate],
+     * or null if the family has no such entity.
+     */
+    fun firstOrNull(predicate: (Entity) -> Boolean): Entity? = mutableEntities.firstOrNull(predicate)
 
     /**
      * Sorts the [entities][Entity] of this family by the given [comparator].
