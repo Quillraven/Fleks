@@ -254,6 +254,7 @@ class World internal constructor(
         if (system is IteratingSystem && (system is FamilyOnAdd || system is FamilyOnRemove)) {
             updateAggregatedFamilyHooks(system.family)
         }
+        system.onDispose()
     }
 
     /**

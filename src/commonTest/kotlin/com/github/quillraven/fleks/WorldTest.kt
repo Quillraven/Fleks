@@ -55,6 +55,7 @@ private class WorldTestIteratingSystem(
 ) : IteratingSystem(world = world, family = world.family { all(WorldTestComponent) }) {
     var numCalls = 0
     var numCallsEntity = 0
+    var disposed = false
 
     override fun onTick() {
         ++numCalls
@@ -63,6 +64,10 @@ private class WorldTestIteratingSystem(
 
     override fun onTickEntity(entity: Entity) {
         ++numCallsEntity
+    }
+
+    override fun onDispose() {
+        disposed = true
     }
 }
 
@@ -1107,14 +1112,18 @@ internal class WorldTest {
         world.add(system1)
         world.add(system2)
         assertEquals(2, world.systems.size)
+        assertFalse(system1.disposed)
+        assertFalse(system2.disposed)
 
         // remove using remove function
         world.remove(system2)
         assertEquals(1, world.systems.size)
         assertEquals(system1, world.systems[0])
+        assertTrue(system2.disposed)
 
         // remove using minusAssign operator
         world -= system1
         assertEquals(0, world.systems.size)
+        assertTrue(system1.disposed)
     }
 }
