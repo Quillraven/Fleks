@@ -71,7 +71,8 @@ private class WorldTestIteratingSystem(
     }
 }
 
-private class WorldTestInitSystem : IteratingSystem(family { all(WorldTestComponent) }) {
+private class WorldTestInitSystem(world: World = World.CURRENT_WORLD!!) :
+    IteratingSystem(world.family { all(WorldTestComponent) }, world = world) {
     override fun onInit() {
         super.onInit()
         world.entity { it += WorldTestComponent() }
@@ -80,7 +81,8 @@ private class WorldTestInitSystem : IteratingSystem(family { all(WorldTestCompon
     override fun onTickEntity(entity: Entity) = Unit
 }
 
-private class WorldTestInitSystemExtraFamily : IteratingSystem(family { all(WorldTestComponent) }) {
+private class WorldTestInitSystemExtraFamily(world: World = World.CURRENT_WORLD!!) :
+    IteratingSystem(world.family { all(WorldTestComponent) }, world = world) {
     val extraFamily = world.family { any(WorldTestComponent2).none(WorldTestComponent) }
 
     override fun onInit() {
@@ -1125,5 +1127,34 @@ internal class WorldTest {
         world -= system1
         assertEquals(0, world.systems.size)
         assertTrue(system1.disposed)
+    }
+
+    @Test
+    fun getFamilyAfterWorldCreationSystemAddedAfterWorldCreation() {
+        // WorldTestInitSystem creates an entity in its init block
+        // -> family must be dirty and has a size of 1
+        val w = configureWorld {}
+
+        w += WorldTestInitSystem(w)
+
+        val wFamily = w.family { all(WorldTestComponent) }
+
+        assertEquals(1, wFamily.mutableEntities.size)
+        assertEquals(1, wFamily.numEntities)
+    }
+
+    @Test
+    fun getFamilyWithinSystemConstructorSystemAddedAfterWorldCreation() {
+        // WorldTestInitSystemExtraFamily creates an entity in its init block and
+        // also a family with a different configuration that the system itself
+        // -> system family is empty and extra family contains 1 entity
+        val w = configureWorld {}
+
+        w += WorldTestInitSystemExtraFamily(w)
+
+        val s = w.system<WorldTestInitSystemExtraFamily>()
+
+        assertEquals(1, s.extraFamily.numEntities)
+        assertEquals(0, s.family.numEntities)
     }
 }
