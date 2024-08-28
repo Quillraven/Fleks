@@ -6,7 +6,7 @@
 [![Snapshot](https://img.shields.io/badge/Snapshot-2.9--SNAPSHOT-orange.svg)](https://s01.oss.sonatype.org/#nexus-search;gav~io.github.quillraven.fleks~~2.9-SNAPSHOT~~)
 
 [![Build Master](https://img.shields.io/github/actions/workflow/status/quillraven/fleks/build.yml?branch=master)](https://github.com/Quillraven/fleks/actions)
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.0.10-red.svg)](http://kotlinlang.org/)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.0.20-red.svg)](http://kotlinlang.org/)
 
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/Quillraven/Fleks/blob/master/LICENSE)
 
