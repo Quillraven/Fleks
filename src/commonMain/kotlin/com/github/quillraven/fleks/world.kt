@@ -6,6 +6,7 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlin.native.concurrent.ThreadLocal
 import kotlin.time.Duration
+import kotlin.time.DurationUnit
 
 /**
  * Snapshot for an [entity][Entity] that contains its [components][Component] and [tags][EntityTag].
@@ -454,7 +455,7 @@ class World internal constructor(
      * using the given [deltaTime].
      */
     fun update(deltaTime: Duration) {
-        update(deltaTime.inWholeNanoseconds / 1_000_000_000f)
+        update(deltaTime.toDouble(DurationUnit.MILLISECONDS).toFloat())
     }
 
     /**
