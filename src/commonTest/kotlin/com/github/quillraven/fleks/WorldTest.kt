@@ -5,6 +5,7 @@ import com.github.quillraven.fleks.World.Companion.inject
 import com.github.quillraven.fleks.collection.compareEntity
 import com.github.quillraven.fleks.collection.compareEntityBy
 import kotlin.test.*
+import kotlin.time.Duration.Companion.milliseconds
 
 private data class WorldTestComponent(
     var x: Float = 0f,
@@ -310,6 +311,27 @@ internal class WorldTest {
         w.system<WorldTestIteratingSystem>().enabled = false
 
         w.update(1f)
+
+        assertEquals(1f, w.deltaTime)
+        assertEquals(1, w.system<WorldTestIntervalSystem>().numCalls)
+        assertEquals(0, w.system<WorldTestIteratingSystem>().numCalls)
+    }
+
+    @Test
+    fun updateWorldWithDurationOf1() {
+        val w = configureWorld {
+            injectables {
+                add("42")
+            }
+
+            systems {
+                add(WorldTestIntervalSystem())
+                add(WorldTestIteratingSystem())
+            }
+        }
+        w.system<WorldTestIteratingSystem>().enabled = false
+
+        w.update(1.milliseconds)
 
         assertEquals(1f, w.deltaTime)
         assertEquals(1, w.system<WorldTestIntervalSystem>().numCalls)
