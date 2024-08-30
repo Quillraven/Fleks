@@ -88,6 +88,12 @@ abstract class EntityComponentContext(
      * future calls to [World.entity].
      */
     fun Entity.remove() = componentService.world.minusAssign(this)
+
+    /**
+     * Returns true, if and only if an [entity][Entity] will be removed at the end of the current [IteratingSystem].
+     * This is the case, if it gets [removed][remove] during the system's iteration.
+     */
+    fun Entity.isMarkedForRemoval() = this in componentService.world.entityService.delayedEntities
 }
 
 /**
@@ -423,7 +429,7 @@ class EntityService(
     /**
      * The entities that get removed at the end of an [IteratingSystem] iteration.
      */
-    private val delayedEntities = MutableEntityBag()
+    internal val delayedEntities = MutableEntityBag()
 
     /**
      * An optional [EntityHook] that gets called whenever an [entity][Entity] gets created and

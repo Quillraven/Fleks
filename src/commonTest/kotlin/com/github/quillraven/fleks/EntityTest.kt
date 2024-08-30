@@ -98,9 +98,11 @@ internal class EntityTest {
         val entity = testEntityService.create { }
         testEntityService.delayRemoval = true
 
+        with(testEntityService.world) { assertFalse(entity.isMarkedForRemoval()) }
         testEntityService -= entity
 
         assertEquals(1, testEntityService.numEntities)
+        with(testEntityService.world) { assertTrue(entity.isMarkedForRemoval()) }
     }
 
     @Test
