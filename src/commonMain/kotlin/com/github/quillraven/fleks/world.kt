@@ -438,7 +438,7 @@ class World internal constructor(
 
     /**
      * Updates all [enabled][IntervalSystem.enabled] [systems][IntervalSystem] of the world
-     * using the given [deltaTime].
+     * using the given [deltaTime] in seconds.
      */
     fun update(deltaTime: Float) {
         this.deltaTime = deltaTime
@@ -452,10 +452,10 @@ class World internal constructor(
 
     /**
      * Updates all [enabled][IntervalSystem.enabled] [systems][IntervalSystem] of the world
-     * using the given [deltaTime].
+     * using the given [duration]. The duration is converted to seconds.
      */
-    fun update(deltaTime: Duration) {
-        update(deltaTime.toDouble(DurationUnit.MILLISECONDS).toFloat())
+    fun update(duration: Duration) {
+        update(duration.toLong(DurationUnit.NANOSECONDS) * 0.000000001f)
     }
 
     /**

@@ -6,6 +6,7 @@ import com.github.quillraven.fleks.collection.compareEntity
 import com.github.quillraven.fleks.collection.compareEntityBy
 import kotlin.test.*
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 private data class WorldTestComponent(
     var x: Float = 0f,
@@ -336,6 +337,20 @@ internal class WorldTest {
         assertEquals(1f, w.deltaTime)
         assertEquals(1, w.system<WorldTestIntervalSystem>().numCalls)
         assertEquals(0, w.system<WorldTestIteratingSystem>().numCalls)
+    }
+
+    @Test
+    fun verifyUpdateAndUpdateDurationIsSame() {
+        val world = configureWorld { }
+
+        world.update(0.5f)
+        assertEquals(0.5f, world.deltaTime)
+
+        world.update(0.5.seconds)
+        assertEquals(0.5f, world.deltaTime)
+
+        world.update(500.milliseconds)
+        assertEquals(0.5f, world.deltaTime)
     }
 
     @Test
