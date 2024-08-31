@@ -332,7 +332,7 @@ internal class WorldTest {
         }
         w.system<WorldTestIteratingSystem>().enabled = false
 
-        w.update(1.milliseconds)
+        w.update(1.seconds)
 
         assertEquals(1f, w.deltaTime)
         assertEquals(1, w.system<WorldTestIntervalSystem>().numCalls)
