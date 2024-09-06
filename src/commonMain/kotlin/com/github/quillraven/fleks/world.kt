@@ -2,7 +2,6 @@ package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.ArrayMutableEntityBag
 import com.github.quillraven.fleks.collection.EntityBag
-import com.github.quillraven.fleks.collection.MutableEntityBag
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlin.native.concurrent.ThreadLocal

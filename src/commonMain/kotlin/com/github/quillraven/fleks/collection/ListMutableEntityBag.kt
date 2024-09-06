@@ -8,31 +8,31 @@ import kotlin.math.min
 
 class ListMutableEntityBag(
     @PublishedApi
-    internal val list: MutableList<Entity>
+    internal val values: MutableList<Entity>
 ) : MutableEntityBag {
 
     override val size: Int
-        get() = list.size
+        get() = values.size
 
     /**
      * Adds the [entity] to the bag. If the [capacity] is not sufficient then a resize is happening.
      */
     override operator fun plusAssign(entity: Entity) {
-        list.add(entity)
+        values.add(entity)
     }
 
     /**
      * Removes the [entity] of the bag.
      */
     override operator fun minusAssign(entity: Entity) {
-        list.remove(entity)
+        values.remove(entity)
     }
 
     /**
      * Resets [size] to zero and clears any [entity][Entity] of the bag.
      */
     override fun clear() {
-        list.clear()
+        values.clear()
     }
 
     /**
@@ -54,14 +54,14 @@ class ListMutableEntityBag(
      * Sorts the bag according to the given [comparator].
      */
     override fun sort(comparator: EntityComparator) {
-        list.sortWith(comparator)
+        values.sortWith(comparator)
     }
 
     /**
      * Returns true if and only if the given [entity] is part of the bag.
      */
     override fun contains(entity: Entity): Boolean {
-        return list.contains(entity)
+        return values.contains(entity)
     }
 
     /**
@@ -88,21 +88,21 @@ class ListMutableEntityBag(
      * Returns true if all [entities][Entity] of the bag match the given [predicate].
      */
     override inline fun all(crossinline predicate: (Entity) -> Boolean): Boolean {
-        return list.all(predicate)
+        return values.all(predicate)
     }
 
     /**
      * Returns true if at least one [entity][Entity] of the bag matches the given [predicate].
      */
     override inline fun any(predicate: (Entity) -> Boolean): Boolean {
-        return list.any(predicate)
+        return values.any(predicate)
     }
 
     /**
      * Returns true if no [entity][Entity] of the bag matches the given [predicate].
      */
     override inline fun none(predicate: (Entity) -> Boolean): Boolean {
-        return list.none(predicate)
+        return values.none(predicate)
     }
 
     /**
@@ -110,7 +110,7 @@ class ListMutableEntityBag(
      * each [entity][Entity] of the bag.
      */
     override inline fun <K, V> associate(transform: (Entity) -> Pair<K, V>): Map<K, V> {
-        return list.associate(transform)
+        return values.associate(transform)
     }
 
     /**
@@ -118,7 +118,7 @@ class ListMutableEntityBag(
      * returned from [keySelector] function applied to each [entity][Entity] of the bag.
      */
     override inline fun <K> associateBy(keySelector: (Entity) -> K): Map<K, Entity> {
-        return list.associateBy(keySelector)
+        return values.associateBy(keySelector)
     }
 
     /**
@@ -129,7 +129,7 @@ class ListMutableEntityBag(
         keySelector: (Entity) -> K,
         valueTransform: (Entity) -> V
     ): Map<K, V> {
-        return list.associateBy(keySelector, valueTransform)
+        return values.associateBy(keySelector, valueTransform)
     }
 
     /**
@@ -140,7 +140,7 @@ class ListMutableEntityBag(
         destination: M,
         transform: (Entity) -> Pair<K, V>
     ): M {
-        return list.associateTo(destination, transform)
+        return values.associateTo(destination, transform)
     }
 
     /**
@@ -152,7 +152,7 @@ class ListMutableEntityBag(
         destination: M,
         keySelector: (Entity) -> K
     ): M {
-        return list.associateByTo(destination, keySelector)
+        return values.associateByTo(destination, keySelector)
     }
 
     /**
@@ -165,7 +165,7 @@ class ListMutableEntityBag(
         keySelector: (Entity) -> K,
         valueTransform: (Entity) -> V
     ): M {
-        return list.associateByTo(destination, keySelector, valueTransform)
+        return values.associateByTo(destination, keySelector, valueTransform)
     }
 
     /**
@@ -177,7 +177,7 @@ class ListMutableEntityBag(
      * Returns the number of [entities][Entity] matching the given [predicate].
      */
     override inline fun count(predicate: (Entity) -> Boolean): Int {
-        return list.count(predicate)
+        return values.count(predicate)
     }
 
     /**
@@ -186,7 +186,7 @@ class ListMutableEntityBag(
     override inline fun filter(predicate: (Entity) -> Boolean): EntityBag {
         val result = ArrayMutableEntityBag((size * 0.25f).toInt())
         for (i in 0 until size) {
-            val entity = list[i]
+            val entity = values[i]
             if (predicate(entity)) {
                 result += entity
             }
@@ -200,7 +200,7 @@ class ListMutableEntityBag(
     override inline fun filterNot(predicate: (Entity) -> Boolean): EntityBag {
         val result = ArrayMutableEntityBag((size * 0.25f).toInt())
         for (i in 0 until size) {
-            val entity = list[i]
+            val entity = values[i]
             if (!predicate(entity)) {
                 result += entity
             }
@@ -214,7 +214,7 @@ class ListMutableEntityBag(
     override inline fun filterIndexed(predicate: (index: Int, entity: Entity) -> Boolean): EntityBag {
         val result = ArrayMutableEntityBag((size * 0.25f).toInt())
         for (i in 0 until size) {
-            val entity = list[i]
+            val entity = values[i]
             if (predicate(i, entity)) {
                 result += entity
             }
@@ -230,7 +230,7 @@ class ListMutableEntityBag(
         predicate: (Entity) -> Boolean
     ): MutableEntityBag {
         for (i in 0 until size) {
-            val entity = list[i]
+            val entity = values[i]
             if (predicate(entity)) {
                 destination += entity
             }
@@ -246,7 +246,7 @@ class ListMutableEntityBag(
         predicate: (Entity) -> Boolean
     ): MutableEntityBag {
         for (i in 0 until size) {
-            val entity = list[i]
+            val entity = values[i]
             if (!predicate(entity)) {
                 destination += entity
             }
@@ -262,7 +262,7 @@ class ListMutableEntityBag(
         predicate: (index: Int, Entity) -> Boolean
     ): MutableEntityBag {
         for (i in 0 until size) {
-            val entity = list[i]
+            val entity = values[i]
             if (predicate(i, entity)) {
                 destination += entity
             }
@@ -276,7 +276,7 @@ class ListMutableEntityBag(
      */
     override inline fun find(predicate: (Entity) -> Boolean): Entity? {
         for (i in 0 until size) {
-            val entity = list[i]
+            val entity = values[i]
             if (predicate(entity)) {
                 return entity
             }
@@ -290,7 +290,7 @@ class ListMutableEntityBag(
      * @throws [NoSuchElementException] if the bag is empty.
      */
     override fun first(): Entity {
-        return list.first()
+        return values.first()
     }
 
     /**
@@ -306,7 +306,7 @@ class ListMutableEntityBag(
      * Returns the first [entity][Entity], or null if the bag is empty.
      */
     override fun firstOrNull(): Entity? {
-        return list.firstOrNull()
+        return values.firstOrNull()
     }
 
     /**
@@ -320,7 +320,7 @@ class ListMutableEntityBag(
      * being invoked on each [entity][Entity] of the bag.
      */
     override inline fun <R> flatMap(transform: (Entity) -> Iterable<R>): List<R> {
-        return list.flatMap(transform)
+        return values.flatMap(transform)
     }
 
     /**
@@ -330,7 +330,7 @@ class ListMutableEntityBag(
     override inline fun <R> flatMapSequence(transform: (Entity) -> Sequence<R>): List<R> {
         val result = mutableListOf<R>()
         for (i in 0 until size) {
-            result.addAll(transform(list[i]))
+            result.addAll(transform(values[i]))
         }
         return result
     }
@@ -342,7 +342,7 @@ class ListMutableEntityBag(
     override inline fun flatMapBag(transform: (Entity) -> EntityBag): EntityBag {
         val result = ArrayMutableEntityBag(size)
         for (i in 0 until size) {
-            transform(list[i]).forEach { result += it }
+            transform(values[i]).forEach { result += it }
         }
         return result
     }
@@ -354,7 +354,7 @@ class ListMutableEntityBag(
     override inline fun <R> flatMapNotNull(transform: (Entity) -> Iterable<R?>?): List<R> {
         val result = mutableListOf<R>()
         for (i in 0 until size) {
-            transform(list[i])?.forEach {
+            transform(values[i])?.forEach {
                 if (it == null) return@forEach
                 result += it
             }
@@ -369,7 +369,7 @@ class ListMutableEntityBag(
     override inline fun <R> flatMapSequenceNotNull(transform: (Entity) -> Sequence<R?>?): List<R> {
         val result = mutableListOf<R>()
         for (i in 0 until size) {
-            transform(list[i])?.forEach {
+            transform(values[i])?.forEach {
                 if (it == null) return@forEach
                 result += it
             }
@@ -384,7 +384,7 @@ class ListMutableEntityBag(
     override inline fun flatMapBagNotNull(transform: (Entity) -> EntityBag?): EntityBag {
         val result = ArrayMutableEntityBag(size)
         for (i in 0 until size) {
-            val transformVal = transform(list[i]) ?: continue
+            val transformVal = transform(values[i]) ?: continue
             transformVal.forEach { result += it }
         }
         return result
@@ -398,7 +398,7 @@ class ListMutableEntityBag(
         initial: R,
         operation: (acc: R, entity: Entity) -> R
     ): R {
-        return list.fold(initial, operation)
+        return values.fold(initial, operation)
     }
 
     /**
@@ -409,7 +409,7 @@ class ListMutableEntityBag(
         initial: R,
         operation: (index: Int, acc: R, entity: Entity) -> R
     ): R {
-        return list.foldIndexed(initial, operation)
+        return values.foldIndexed(initial, operation)
     }
 
     /**
@@ -417,7 +417,7 @@ class ListMutableEntityBag(
      */
     override inline fun forEach(action: (Entity) -> Unit) {
         for (i in 0 until size) {
-            action(list[i])
+            action(values[i])
         }
     }
 
@@ -427,7 +427,7 @@ class ListMutableEntityBag(
      */
     override inline fun forEachIndexed(action: (index: Int, entity: Entity) -> Unit) {
         for (i in 0 until size) {
-            action(i, list[i])
+            action(i, values[i])
         }
     }
 
@@ -439,7 +439,7 @@ class ListMutableEntityBag(
     override inline fun <K> groupBy(keySelector: (Entity) -> K): Map<K, MutableEntityBag> {
         val result = mutableMapOf<K, MutableEntityBag>()
         for (i in 0 until size) {
-            val entity = list[i]
+            val entity = values[i]
             val key = keySelector(entity)
             result.getOrPut(key) { ArrayMutableEntityBag() } += entity
         }
@@ -452,7 +452,7 @@ class ListMutableEntityBag(
      * @throws [IndexOutOfBoundsException] if [index] is less than zero or greater equal [size].
      */
     override operator fun get(index: Int): Entity {
-        return list.get(index)
+        return values.get(index)
     }
 
     /**
@@ -464,7 +464,7 @@ class ListMutableEntityBag(
         keySelector: (Entity) -> K,
         valueTransform: (Entity) -> V
     ): Map<K, List<V>> {
-        return list.groupBy(keySelector, valueTransform)
+        return values.groupBy(keySelector, valueTransform)
     }
 
     /**
@@ -477,7 +477,7 @@ class ListMutableEntityBag(
         keySelector: (Entity) -> K
     ): M {
         for (i in 0 until size) {
-            val entity = list[i]
+            val entity = values[i]
             val key = keySelector(entity)
             destination.getOrPut(key) { ArrayMutableEntityBag() } += entity
         }
@@ -494,7 +494,7 @@ class ListMutableEntityBag(
         keySelector: (Entity) -> K,
         valueTransform: (Entity) -> V
     ): M {
-        return list.groupByTo(destination, keySelector, valueTransform)
+        return values.groupByTo(destination, keySelector, valueTransform)
     }
 
     /**
@@ -502,7 +502,7 @@ class ListMutableEntityBag(
      * to each [entity][Entity] of the bag.
      */
     override inline fun <R> map(transform: (Entity) -> R): List<R> {
-        return list.map(transform)
+        return values.map(transform)
     }
 
     /**
@@ -510,7 +510,7 @@ class ListMutableEntityBag(
      * to each [entity][Entity] and its index of the bag.
      */
     override inline fun <R> mapIndexed(transform: (index: Int, entity: Entity) -> R): List<R> {
-        return list.mapIndexed(transform)
+        return values.mapIndexed(transform)
     }
 
     /**
@@ -522,7 +522,7 @@ class ListMutableEntityBag(
         transform: (Entity) -> R
     ): C {
         for (i in 0 until size) {
-            destination += transform(list[i])
+            destination += transform(values[i])
         }
         return destination
     }
@@ -536,7 +536,7 @@ class ListMutableEntityBag(
         transform: (index: Int, Entity) -> R
     ): C {
         for (i in 0 until size) {
-            destination += transform(i, list[i])
+            destination += transform(i, values[i])
         }
         return destination
     }
@@ -548,7 +548,7 @@ class ListMutableEntityBag(
     override inline fun <R> mapNotNull(transform: (Entity) -> R?): List<R> {
         val result = mutableListOf<R>()
         for (i in 0 until size) {
-            val transformVal = transform(list[i]) ?: continue
+            val transformVal = transform(values[i]) ?: continue
             result += transformVal
         }
         return result
@@ -563,7 +563,7 @@ class ListMutableEntityBag(
         transform: (Entity) -> R?
     ): C {
         for (i in 0 until size) {
-            val transformVal = transform(list[i]) ?: continue
+            val transformVal = transform(values[i]) ?: continue
             destination += transformVal
         }
         return destination
@@ -578,7 +578,7 @@ class ListMutableEntityBag(
         val first = ArrayMutableEntityBag()
         val second = ArrayMutableEntityBag()
         for (i in 0 until size) {
-            val entity = list[i]
+            val entity = values[i]
             if (predicate(entity)) {
                 first += entity
             } else {
@@ -601,7 +601,7 @@ class ListMutableEntityBag(
         first.clear()
         second.clear()
         for (i in 0 until size) {
-            val entity = list[i]
+            val entity = values[i]
             if (predicate(entity)) {
                 first += entity
             } else {
@@ -616,14 +616,14 @@ class ListMutableEntityBag(
      * @throws [NoSuchElementException] if the bag is empty.
      */
     override fun random(): Entity {
-        return list.random()
+        return values.random()
     }
 
     /**
      * Returns a random [entity][Entity] of the bag, or null if the bag is empty.
      */
     override fun randomOrNull(): Entity? {
-        return list.randomOrNull()
+        return values.randomOrNull()
     }
 
     /**
@@ -632,7 +632,7 @@ class ListMutableEntityBag(
     override fun take(n: Int): EntityBag {
         val result = ArrayMutableEntityBag(max(min(n, size), 0))
         for (i in 0 until min(n, size)) {
-            result += list[i]
+            result += values[i]
         }
         return result
     }
@@ -648,6 +648,6 @@ class ListMutableEntityBag(
     }
 
     override fun hashCode(): Int {
-        return list.hashCode()
+        return values.hashCode()
     }
 }
