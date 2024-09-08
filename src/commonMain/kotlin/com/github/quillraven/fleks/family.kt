@@ -104,7 +104,7 @@ data class Family(
 
     // This bag is added for better iteration performance.
     @PublishedApi
-    internal val mutableEntities: MutableEntityBag = ArrayMutableEntityBag()
+    internal val mutableEntities = ArrayEntityBag()
         get() {
             if (isDirty && !isIterating) {
                 // no iteration in process -> update entities if necessary

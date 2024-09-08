@@ -4,36 +4,35 @@ import com.github.quillraven.fleks.Entity
 import com.github.quillraven.fleks.configureWorld
 import kotlin.test.*
 
-class ListMutableEntityBagTest {
+class ArrayEntityBagTest {
 
     private val testEntity1 = Entity(0, version = 0u)
     private val testEntity2 = Entity(1, version = 0u)
-    private val testBag = ListMutableEntityBag(ArrayList(2)).apply {
+    private val testBag = ArrayEntityBag(2).apply {
         this += testEntity1
         this += testEntity2
     }
 
-    private fun bagOf(entity: Entity) = ListMutableEntityBag(ArrayList(1)).apply {
+    private fun bagOf(entity: Entity) = ArrayEntityBag(1).apply {
         this += entity
     }
 
-    private fun bagOf(entity1: Entity, entity2: Entity) = ListMutableEntityBag(ArrayList(2)).apply {
-        this += entity1
-        this += entity2
-    }
-
-    private fun arrayBagOf(entity: Entity) = ArrayMutableEntityBag(1).apply {
-        this += entity
-    }
-
-    private fun arrayBagOf(entity1: Entity, entity2: Entity) = ArrayMutableEntityBag(2).apply {
+    private fun bagOf(entity1: Entity, entity2: Entity) = ArrayEntityBag(2).apply {
         this += entity1
         this += entity2
     }
 
     @Test
+    fun createEmptyBagOfSize32() {
+        val bag = ArrayEntityBag(32)
+
+        assertEquals(32, bag.capacity)
+        assertEquals(0, bag.size)
+    }
+
+    @Test
     fun addValueToBag() {
-        val bag = ListMutableEntityBag(ArrayList())
+        val bag = ArrayEntityBag()
 
         bag += Entity(42, version = 0u)
 
@@ -44,7 +43,7 @@ class ListMutableEntityBagTest {
 
     @Test
     fun removeValueFromBag() {
-        val bag = ListMutableEntityBag(ArrayList(2))
+        val bag = ArrayEntityBag(2)
         val e1 = Entity(0, version = 0u)
         val e2 = Entity(1, version = 0u)
         bag += e1
@@ -60,7 +59,7 @@ class ListMutableEntityBagTest {
 
     @Test
     fun clearAllValuesFromBag() {
-        val bag = ListMutableEntityBag(ArrayList())
+        val bag = ArrayEntityBag()
         bag += Entity(42, version = 0u)
         bag += Entity(43, version = 0u)
 
@@ -72,8 +71,41 @@ class ListMutableEntityBagTest {
     }
 
     @Test
+    fun addValueToBagWithInsufficientCapacity() {
+        val bag = ArrayEntityBag(0)
+
+        bag += Entity(42, version = 0u)
+
+        assertEquals(1, bag.size)
+        assertEquals(Entity(42, version = 0u), bag[0])
+        assertEquals(1, bag.capacity)
+    }
+
+    @Test
+    fun doNotResizeWhenBagHasSufficientCapacity() {
+        val bag = ArrayEntityBag(8)
+
+        bag.ensureCapacity(7)
+
+        assertEquals(8, bag.capacity)
+
+        bag.ensureCapacity(8)
+
+        assertEquals(8, bag.capacity)
+    }
+
+    @Test
+    fun resizeWhenBagHasInsufficientCapacity() {
+        val bag = ArrayEntityBag(8)
+
+        bag.ensureCapacity(9)
+
+        assertEquals(10, bag.capacity)
+    }
+
+    @Test
     fun executeActionForEachValueOfBag() {
-        val bag = ListMutableEntityBag(ArrayList(4))
+        val bag = ArrayEntityBag(4)
         bag += Entity(42, version = 0u)
         bag += Entity(43, version = 0u)
         var numCalls = 0
@@ -91,7 +123,7 @@ class ListMutableEntityBagTest {
 
     @Test
     fun executeActionForEachValueOfBagIndexed() {
-        val bag = ListMutableEntityBag(ArrayList(4))
+        val bag = ArrayEntityBag(4)
         bag += Entity(42, version = 0u)
         bag += Entity(43, version = 0u)
         var numCalls = 0
@@ -113,7 +145,7 @@ class ListMutableEntityBagTest {
 
     @Test
     fun sortValuesByNormalEntityComparisonWithSizeLessThan7() {
-        val bag = ListMutableEntityBag(ArrayList())
+        val bag = ArrayEntityBag()
         repeat(6) { bag += Entity(6 - it, version = 0u) }
 
         bag.sort(compareEntity(configureWorld { }) { e1, e2 -> e1.id.compareTo(e2.id) })
@@ -125,7 +157,7 @@ class ListMutableEntityBagTest {
 
     @Test
     fun sortValuesByNormalEntityComparisonWithSizeLessThan50ButGreater7() {
-        val bag = ListMutableEntityBag(ArrayList())
+        val bag = ArrayEntityBag()
         repeat(8) { bag += Entity(8 - it, version = 0u) }
 
         bag.sort(compareEntity(configureWorld { }) { e1, e2 -> e1.id.compareTo(e2.id) })
@@ -137,7 +169,7 @@ class ListMutableEntityBagTest {
 
     @Test
     fun sortValuesByNormalEntityComparisonWithSizeGreater50() {
-        val bag = ListMutableEntityBag(ArrayList())
+        val bag = ArrayEntityBag()
         repeat(51) { bag += Entity(51 - it, version = 0u) }
 
         bag.sort(compareEntity(configureWorld { }) { e1, e2 -> e1.id.compareTo(e2.id) })
@@ -149,7 +181,7 @@ class ListMutableEntityBagTest {
 
     @Test
     fun cannotGetValueOfOutOfBoundsIndex() {
-        val bag = ListMutableEntityBag(ArrayList(2))
+        val bag = ArrayEntityBag(2)
 
         assertFailsWith<IndexOutOfBoundsException> { bag[-1] }
         assertFailsWith<IndexOutOfBoundsException> { bag[2] }
@@ -166,7 +198,7 @@ class ListMutableEntityBagTest {
 
     @Test
     fun testIsEmpty() {
-        val testBag = ListMutableEntityBag(ArrayList(1))
+        val testBag = ArrayEntityBag(1)
         assertTrue(testBag.isEmpty())
         assertFalse(testBag.isNotEmpty())
 
@@ -290,14 +322,14 @@ class ListMutableEntityBagTest {
 
     @Test
     fun testCount() {
-        assertEquals(0, ListMutableEntityBag(ArrayList()).count())
+        assertEquals(0, ArrayEntityBag().count())
         assertEquals(2, testBag.count())
         assertEquals(1, testBag.count { it.id == 0 })
     }
 
     @Test
     fun testFilter() {
-        val expected = arrayBagOf(testEntity1)
+        val expected = bagOf(testEntity1)
         val expectedIndices = listOf(0, 1)
 
         val actual1 = testBag.filter { it == testEntity1 }
@@ -314,7 +346,7 @@ class ListMutableEntityBagTest {
 
     @Test
     fun testFilterNot() {
-        val expected = arrayBagOf(testEntity2)
+        val expected = bagOf(testEntity2)
 
         val actual = testBag.filterNot { it == testEntity1 }
 
@@ -362,7 +394,7 @@ class ListMutableEntityBagTest {
     fun testFirst() {
         assertEquals(testEntity1, testBag.first())
         assertEquals(testEntity2, testBag.first { it == testEntity2 })
-        assertFailsWith<NoSuchElementException> { ListMutableEntityBag(ArrayList()).first() }
+        assertFailsWith<NoSuchElementException> { ArrayEntityBag().first() }
         assertFailsWith<NoSuchElementException> { testBag.first { it.id == 3 } }
     }
 
@@ -370,14 +402,14 @@ class ListMutableEntityBagTest {
     fun testFirstOrNull() {
         assertEquals(testEntity1, testBag.firstOrNull())
         assertEquals(testEntity2, testBag.firstOrNull { it == testEntity2 })
-        assertNull(ListMutableEntityBag(ArrayList()).firstOrNull())
+        assertNull(ArrayEntityBag().firstOrNull())
         assertNull(testBag.firstOrNull { it.id == 3 })
     }
 
     @Test
     fun testFlatMap() {
         val expectedInts = listOf(0, 0, 1, 2)
-        val expectedEntities = arrayBagOf(testEntity1, testEntity1)
+        val expectedEntities = bagOf(testEntity1, testEntity1)
 
         val actualIntsIter = testBag.flatMap { listOf(it.id, it.id * 2) }
         val actualIntsSeq = testBag.flatMapSequence { listOf(it.id, it.id * 2).asSequence() }
@@ -391,7 +423,7 @@ class ListMutableEntityBagTest {
     @Test
     fun testFlatMapNotNull() {
         val expectedInts = listOf(0, 2)
-        val expectedEntities = arrayBagOf(testEntity1)
+        val expectedEntities = bagOf(testEntity1)
 
         val actualIntsIter = testBag.flatMapNotNull { listOf(null, it.id * 2) }
         val actualIntsSeq = testBag.flatMapSequenceNotNull { listOf(null, it.id * 2).asSequence() }
@@ -427,7 +459,7 @@ class ListMutableEntityBagTest {
 
     @Test
     fun testGroupBy() {
-        val expected1 = mapOf(0 to arrayBagOf(testEntity1), 1 to arrayBagOf(testEntity2))
+        val expected1 = mapOf(0 to bagOf(testEntity1), 1 to bagOf(testEntity2))
         val expected2 = mapOf(0 to listOf(3), 1 to listOf(3))
 
         val actual1 = testBag.groupBy { it.id }
@@ -450,10 +482,10 @@ class ListMutableEntityBagTest {
 
     @Test
     fun testGroupByTo() {
-        val expected1 = mapOf(0 to arrayBagOf(testEntity1), 1 to arrayBagOf(testEntity2), 2 to arrayBagOf(Entity(2, version = 0u)))
+        val expected1 = mapOf(0 to bagOf(testEntity1), 1 to bagOf(testEntity2), 2 to bagOf(Entity(2, version = 0u)))
         val expected2 = mapOf(0 to listOf(3), 1 to listOf(3), 2 to listOf(3))
 
-        val actual = testBag.groupByTo(mutableMapOf(2 to arrayBagOf(Entity(2, version = 0u)))) { it.id }
+        val actual = testBag.groupByTo(mutableMapOf(2 to bagOf(Entity(2, version = 0u)))) { it.id }
         val actual2 = testBag.groupByTo(
             mutableMapOf(2 to mutableListOf(3)),
             { it.id },
@@ -536,8 +568,8 @@ class ListMutableEntityBagTest {
 
     @Test
     fun testPartitionTo() {
-        val first = ListMutableEntityBag(ArrayList())
-        val second = ListMutableEntityBag(ArrayList())
+        val first = ArrayEntityBag()
+        val second = ArrayEntityBag()
 
         testBag.partitionTo(first, second) { it.id <= 0 }
 
@@ -551,7 +583,7 @@ class ListMutableEntityBagTest {
     fun testRandom() {
         val actual = testBag.random()
 
-        assertFailsWith<NoSuchElementException> { ListMutableEntityBag(ArrayList()).random() }
+        assertFailsWith<NoSuchElementException> { ArrayEntityBag().random() }
         assertTrue(actual == testEntity1 || actual == testEntity2)
     }
 
@@ -559,7 +591,7 @@ class ListMutableEntityBagTest {
     fun testRandomOrNull() {
         val actual = testBag.randomOrNull()
 
-        assertNull(ListMutableEntityBag(ArrayList()).randomOrNull())
+        assertNull(ArrayEntityBag().randomOrNull())
         assertTrue(actual == testEntity1 || actual == testEntity2)
     }
 
@@ -567,8 +599,8 @@ class ListMutableEntityBagTest {
     fun testTake() {
         assertTrue(testBag.take(-1).isEmpty())
         assertTrue(testBag.take(0).isEmpty())
-        assertEquals(arrayBagOf(testEntity1), testBag.take(1))
-        assertEquals(arrayBagOf(testEntity1, testEntity2), testBag.take(2))
-        assertEquals(arrayBagOf(testEntity1, testEntity2), testBag.take(3))
+        assertEquals(bagOf(testEntity1), testBag.take(1))
+        assertEquals(bagOf(testEntity1, testEntity2), testBag.take(2))
+        assertEquals(bagOf(testEntity1, testEntity2), testBag.take(3))
     }
 }

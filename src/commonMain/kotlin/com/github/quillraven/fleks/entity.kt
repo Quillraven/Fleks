@@ -429,7 +429,7 @@ class EntityService(
     /**
      * The entities that get removed at the end of an [IteratingSystem] iteration.
      */
-    internal val delayedEntities: MutableEntityBag = ArrayMutableEntityBag()
+    internal val delayedEntities: MutableEntityBag = ArrayEntityBag()
 
     /**
      * An optional [EntityHook] that gets called whenever an [entity][Entity] gets created and

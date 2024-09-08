@@ -2,10 +2,10 @@ package com.github.quillraven.fleks.collection
 
 import com.github.quillraven.fleks.Entity
 
-interface MutableEntityBag : EntityBag {
+interface MutableEntityBag : EntityBag, MutableCollection<Entity> {
 
     /**
-     * Adds the [entity] to the bag. If the [capacity] is not sufficient then a resize is happening.
+     * Adds the [entity] to the bag.
      */
     operator fun plusAssign(entity: Entity)
 
@@ -14,21 +14,9 @@ interface MutableEntityBag : EntityBag {
      */
     operator fun minusAssign(entity: Entity)
 
-    /**
-     * Resets [size] to zero and clears any [entity][Entity] of the bag.
-     */
-    fun clear()
 
-    /**
-     * Resizes the bag to fit in the given [capacity] of [entities][Entity] if necessary.
-     */
-    fun ensureCapacity(capacity: Int)
-
-    /**
-     * Resets [size] to zero, clears any [entity][Entity] of the bag, and if necessary,
-     * resizes the bag to be able to fit the given [capacity] of [entities][Entity].
-     */
-    fun clearEnsuringCapacity(capacity: Int)
+    /** Removes and returns the [Entity] at the specified index. */
+    fun removeAt(index: Int): Entity
 
     /**
      * Sorts the bag according to the given [comparator].

@@ -1,6 +1,6 @@
 package com.github.quillraven.fleks
 
-import com.github.quillraven.fleks.collection.ArrayMutableEntityBag
+import com.github.quillraven.fleks.collection.ArrayEntityBag
 import com.github.quillraven.fleks.collection.EntityBag
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
@@ -133,7 +133,7 @@ class World internal constructor(
      * For frequent entity operations on specific entities, use [families][Family].
      */
     fun asEntityBag(): EntityBag {
-        val result = ArrayMutableEntityBag(numEntities)
+        val result = ArrayEntityBag(numEntities)
         entityService.forEach {
             result += it
         }
