@@ -12,6 +12,9 @@ class EntityBagTest {
         this += testEntity1
         this += testEntity2
     }
+    private val testBagSingle = MutableEntityBag(2).apply {
+        this += testEntity1
+    }
 
     private fun bagOf(entity: Entity) = MutableEntityBag(1).apply {
         this += entity
@@ -593,6 +596,26 @@ class EntityBagTest {
 
         assertNull(MutableEntityBag().randomOrNull())
         assertTrue(actual == testEntity1 || actual == testEntity2)
+    }
+
+    @Test
+    fun testSingle() {
+        assertEquals(testEntity1, testBagSingle.single())
+        assertEquals(testEntity1, testBagSingle.single { it == testEntity1 })
+        assertFailsWith<IllegalArgumentException> { testBag.single() }
+        assertFailsWith<IllegalArgumentException> { bagOf(testEntity1, testEntity1).single { it == testEntity1 } }
+        assertFailsWith<NoSuchElementException> { MutableEntityBag().single() }
+        assertFailsWith<NoSuchElementException> { testBag.single { it.id == 3 } }
+    }
+
+    @Test
+    fun testSingleOrNull() {
+        assertEquals(testEntity1, testBagSingle.singleOrNull())
+        assertEquals(testEntity1, testBagSingle.singleOrNull { it == testEntity1 })
+        assertNull(testBag.singleOrNull())
+        assertNull(bagOf(testEntity1, testEntity1).singleOrNull { it == testEntity1 })
+        assertNull(MutableEntityBag().singleOrNull())
+        assertNull(testBag.singleOrNull { it.id == 3 })
     }
 
     @Test

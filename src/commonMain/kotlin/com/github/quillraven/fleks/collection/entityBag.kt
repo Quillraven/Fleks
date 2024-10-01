@@ -370,6 +370,30 @@ interface EntityBag {
     fun randomOrNull(): Entity?
 
     /**
+     * Returns the single [entity][Entity] of the bag, or throws an exception
+     * if the bag is empty or has more than one [entity][Entity].
+     */
+    fun single(): Entity
+
+    /**
+     * Returns the single [entity][Entity] of the bag matching the given [predicate],
+     * or throws an exception if the bag is empty or has more than one [entity][Entity].
+     */
+    fun single(predicate: (Entity) -> Boolean): Entity
+
+    /**
+     * Returns single [entity][Entity] of the bag, or null
+     * if the bag is empty or has more than one [entity][Entity].
+     */
+    fun singleOrNull(): Entity?
+
+    /**
+     * Returns the single [entity][Entity] of the bag matching the given [predicate],
+     * or null if the bag is empty or has more than one [entity][Entity].
+     */
+    fun singleOrNull(predicate: (Entity) -> Boolean): Entity?
+
+    /**
      * Returns a [List] containing the first [n] [entities][Entity].
      */
     fun take(n: Int): EntityBag
@@ -1120,6 +1144,68 @@ class MutableEntityBag(
             return null
         }
         return values[Random.Default.nextInt(size)]
+    }
+
+    /**
+     * Returns the single [entity][Entity] of the bag, or throws an exception
+     * if the bag is empty or has more than one [entity][Entity].
+     */
+    override fun single(): Entity {
+        return when (size) {
+            0 -> throw NoSuchElementException("Bag is empty.")
+            1 -> values[0]
+            else -> throw IllegalArgumentException("Bag has more than one element.")
+        }
+    }
+
+    /**
+     * Returns the single [entity][Entity] of the bag matching the given [predicate],
+     * or throws an exception if the bag is empty or has more than one [entity][Entity].
+     */
+    override fun single(predicate: (Entity) -> Boolean): Entity {
+        var single: Entity? = null
+        for (i in 0 until size) {
+            val entity = values[i]
+            if (predicate(entity)) {
+                if (single != null) {
+                    throw IllegalArgumentException("Bag contains more than one matching element.")
+                }
+                single = entity
+            }
+        }
+        if (single == null) {
+            throw NoSuchElementException("Bag contains no element matching the predicate.")
+        }
+        return single
+    }
+
+    /**
+     * Returns single [entity][Entity] of the bag, or null
+     * if the bag is empty or has more than one [entity][Entity].
+     */
+    override fun singleOrNull(): Entity? {
+        return when (size) {
+            1 -> values[0]
+            else -> null
+        }
+    }
+
+    /**
+     * Returns the single [entity][Entity] of the bag matching the given [predicate],
+     * or null if the bag is empty or has more than one [entity][Entity].
+     */
+    override fun singleOrNull(predicate: (Entity) -> Boolean): Entity? {
+        var single: Entity? = null
+        for (i in 0 until size) {
+            val entity = values[i]
+            if (predicate(entity)) {
+                if (single != null) {
+                    return null
+                }
+                single = entity
+            }
+        }
+        return single
     }
 
     /**
