@@ -1,11 +1,17 @@
 package com.github.quillraven.fleks.collection
 
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 internal class BitArrayTest {
+
+    @Test
+    fun testBitAt63HashcodeFunction() {
+        val bits = BitArray(1)
+        bits.set(63)
+        bits.hashCode()
+    }
+
+
     @Test
     fun createEmptyBitArray() {
         val bits = BitArray(0)

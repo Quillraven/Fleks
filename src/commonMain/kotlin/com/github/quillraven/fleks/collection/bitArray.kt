@@ -160,7 +160,7 @@ class BitArray(
 
         val word = length() ushr 6
         var hash = 0
-        for (i in 0..word) {
+        for (i in 0..< word) {
             hash = 127 * hash + (bits[i] xor (bits[i] ushr 32)).toInt()
         }
         return hash
