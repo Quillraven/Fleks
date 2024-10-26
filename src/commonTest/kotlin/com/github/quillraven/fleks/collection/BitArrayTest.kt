@@ -189,4 +189,33 @@ internal class BitArrayTest {
         assertEquals(expected3, bits3.toString())
         assertEquals(expected4, bits4.toString())
     }
+
+    @Test
+    fun testHashCode() {
+        // empty BitArray
+        val bits = BitArray()
+        bits.hashCode()
+
+        // test for single long
+        bits.set(0)
+        bits.hashCode()
+        bits.set(1)
+        bits.hashCode()
+        bits.set(63)
+        bits.hashCode()
+
+        // BitArray resizes to two longs in the LongArray
+        bits.set(64)
+        bits.hashCode()
+        bits.set(65)
+        bits.hashCode()
+        bits.set(127)
+        bits.hashCode()
+
+        // BitArray resizes to more than two longs
+        bits.set(128)
+        bits.hashCode()
+        bits.set(129)
+        bits.hashCode()
+    }
 }

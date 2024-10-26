@@ -154,16 +154,12 @@ class BitArray(
     }
 
     override fun hashCode(): Int {
-        if (bits.isEmpty()) {
-            return 0
+        var result = 1
+        for (i in bits.size - 1 downTo 0) {
+            val word = bits[i]
+            result = 31 * result + (word xor (word ushr 32)).toInt()
         }
-
-        val word = length() ushr 6
-        var hash = 0
-        for (i in 0..word) {
-            hash = 127 * hash + (bits[i] xor (bits[i] ushr 32)).toInt()
-        }
-        return hash
+        return result
     }
 
     override fun equals(other: Any?): Boolean {
