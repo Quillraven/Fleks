@@ -11,7 +11,7 @@ plugins {
 }
 
 group = "io.github.quillraven.fleks"
-version = "2.10-SNAPSHOT"
+version = "2.10"
 
 kotlin {
     jvm {

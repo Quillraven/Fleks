@@ -2,7 +2,7 @@
 
 # Fleks
 
-[![LTS](https://img.shields.io/badge/LTS-2.9-orange.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks/2.9/jar)
+[![LTS](https://img.shields.io/badge/LTS-2.10-orange.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks/2.9/jar)
 [![Snapshot](https://img.shields.io/badge/Snapshot-2.10--SNAPSHOT-orange.svg)](https://s01.oss.sonatype.org/#nexus-search;gav~io.github.quillraven.fleks~~2.9-SNAPSHOT~~)
 
 [![Build Master](https://img.shields.io/github/actions/workflow/status/quillraven/fleks/build.yml?branch=master)](https://github.com/Quillraven/fleks/actions)
@@ -73,26 +73,26 @@ To use Fleks add it as a dependency to your project:
 <dependency>
   <groupId>io.github.quillraven.fleks</groupId>
   <artifactId>Fleks-jvm</artifactId>
-  <version>2.9</version>
+  <version>2.10</version>
 </dependency>
 ```
 
 #### Gradle (Groovy)
 
 ```gradle
-implementation 'io.github.quillraven.fleks:Fleks:2.9'
+implementation 'io.github.quillraven.fleks:Fleks:2.10'
 ```
 
 #### Gradle (Kotlin)
 
 ```gradle
-implementation("io.github.quillraven.fleks:Fleks:2.9")
+implementation("io.github.quillraven.fleks:Fleks:2.10")
 ```
 
 #### KorGE
 
 ```gradle
-dependencyMulti("io.github.quillraven.fleks:Fleks:2.9", registerPlugin = false)
+dependencyMulti("io.github.quillraven.fleks:Fleks:2.10", registerPlugin = false)
 ```
 
 If you want to use the Snapshot version then you need to add the snapshot repository as well:
