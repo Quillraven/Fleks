@@ -3,7 +3,7 @@
 kotlin = "2.0.21"
 kotlinxSerialization = "1.7.3"
 kotlinDokka = "1.9.20"
-kotlinxBenchmark = "0.4.11"
+kotlinxBenchmark = "0.4.12"
 
 [libraries]
 
