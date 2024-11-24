@@ -7,6 +7,24 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
 
+/**
+ * Returns a new read-only [EntityBag] of given [entities].
+ */
+fun entityBagOf(vararg entities: Entity): EntityBag {
+    return MutableEntityBag(entities.size).apply {
+        entities.forEach { this += it }
+    }
+}
+
+/**
+ * Returns a new [MutableEntityBag] with the given [entities].
+ */
+fun mutableEntityBagOf(vararg entities: Entity): MutableEntityBag {
+    return MutableEntityBag(entities.size).apply {
+        entities.forEach { this += it }
+    }
+}
+
 interface EntityBag {
     /**
      * Returns the size of the [EntityBag].

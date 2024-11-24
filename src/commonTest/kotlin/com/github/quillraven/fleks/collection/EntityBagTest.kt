@@ -626,4 +626,26 @@ class EntityBagTest {
         assertEquals(bagOf(testEntity1, testEntity2), testBag.take(2))
         assertEquals(bagOf(testEntity1, testEntity2), testBag.take(3))
     }
+
+    @Test
+    fun testEntityBagOf() {
+        var bag = entityBagOf(testEntity1, testEntity2)
+        assertEquals(2, bag.size)
+        assertTrue { testEntity1 in bag }
+        assertTrue { testEntity2 in bag }
+
+        bag = entityBagOf()
+        assertEquals(0, bag.size)
+    }
+
+    @Test
+    fun testMutableEntityBagOf() {
+        var bag = mutableEntityBagOf(testEntity1, testEntity2)
+        assertEquals(2, bag.size)
+        assertTrue { testEntity1 in bag }
+        assertTrue { testEntity2 in bag }
+
+        bag = mutableEntityBagOf()
+        assertEquals(0, bag.size)
+    }
 }
