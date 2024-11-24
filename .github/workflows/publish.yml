@@ -26,7 +26,7 @@ jobs:
           java-version: "11"
 
       - name: Validate Gradle wrapper
-        uses: gradle/wrapper-validation-action@v2
+        uses: gradle/actions/wrapper-validation@v4
 
       - name: Cache Kotlin Konan
         id: cache-kotlin-konan
@@ -37,7 +37,7 @@ jobs:
           key: kotlin-konan-${{ runner.os }}
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v4
         with:
           gradle-home-cache-cleanup: true
 
