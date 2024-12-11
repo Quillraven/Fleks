@@ -464,6 +464,20 @@ class MutableEntityBag(
     }
 
     /**
+     * Adds all [entities] to the bag. If the [capacity] is not sufficient then a resize is happening.
+     */
+    operator fun plusAssign(entities: EntityBag) {
+        entities.forEach { plusAssign(it) }
+    }
+
+    /**
+     * Removes all [entities] of the bag.
+     */
+    operator fun minusAssign(entities: EntityBag) {
+        entities.forEach { minusAssign(it) }
+    }
+
+    /**
      * Resets [size] to zero and clears any [entity][Entity] of the bag.
      */
     fun clear() {

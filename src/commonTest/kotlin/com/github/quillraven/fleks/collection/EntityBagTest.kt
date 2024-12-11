@@ -648,4 +648,34 @@ class EntityBagTest {
         bag = mutableEntityBagOf()
         assertEquals(0, bag.size)
     }
+
+    @Test
+    fun `test plusAssign of an EntityBag`() {
+        val bag = mutableEntityBagOf()
+        val toAdd = entityBagOf(testEntity1, testEntity2)
+
+        bag += toAdd
+
+        assertEquals(2, bag.size)
+        assertTrue { testEntity1 in bag }
+        assertTrue { testEntity2 in bag }
+    }
+
+    @Test
+    fun `test minusAssign of an EntityBag`() {
+        val bag = mutableEntityBagOf()
+        val toRemove = entityBagOf(testEntity1, testEntity2)
+
+        // remove of empty bag does nothing
+        bag -= toRemove
+        assertEquals(0, bag.size)
+
+        bag += testEntity2
+        bag += testEntity1
+        assertEquals(2, bag.size)
+        bag -= toRemove
+        assertEquals(0, bag.size)
+        assertFalse { testEntity1 in bag }
+        assertFalse { testEntity2 in bag }
+    }
 }
