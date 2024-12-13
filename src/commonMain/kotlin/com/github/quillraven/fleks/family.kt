@@ -166,6 +166,21 @@ data class Family(
     operator fun contains(entity: Entity): Boolean = activeEntities.hasValueAtIndex(entity.id)
 
     /**
+     * Returns true if and only if all given [entities] are part of the family.
+     */
+    fun containsAll(entities: Collection<Entity>): Boolean = mutableEntities.containsAll(entities)
+
+    /**
+     * Returns true if and only if all given [entities] are part of the family.
+     */
+    fun containsAll(entities: EntityBag): Boolean = mutableEntities.containsAll(entities)
+
+    /**
+     * Returns true if and only if all entities of the given [family] are part of this family.
+     */
+    fun containsAll(family: Family): Boolean = mutableEntities.containsAll(family.entities)
+
+    /**
      * Updates this family if needed and runs the given [action] for all [entities][Entity].
      *
      * **Important note**: There is a potential risk when iterating over entities and one of those entities
@@ -223,6 +238,191 @@ data class Family(
      * Sorts the [entities][Entity] of this family by the given [comparator].
      */
     fun sort(comparator: EntityComparator) = mutableEntities.sort(comparator)
+
+    /**
+     * Returns true if all [entities][Entity] of the family match the given [predicate].
+     */
+    fun all(predicate: (Entity) -> Boolean): Boolean = mutableEntities.all(predicate)
+
+    /**
+     * Returns true if at least one [entity][Entity] of the family matches the given [predicate].
+     */
+    fun any(predicate: (Entity) -> Boolean): Boolean = mutableEntities.any(predicate)
+
+    /**
+     * Returns true if no [entity][Entity] of the family matches the given [predicate].
+     */
+    fun none(predicate: (Entity) -> Boolean): Boolean = mutableEntities.none(predicate)
+
+    /**
+     * Returns a [List] containing only [entities][Entity] matching the given [predicate].
+     */
+    fun filter(predicate: (Entity) -> Boolean): EntityBag = mutableEntities.filter(predicate)
+
+    /**
+     * Returns a [List] containing all [entities][Entity] not matching the given [predicate].
+     */
+    fun filterNot(predicate: (Entity) -> Boolean): EntityBag = mutableEntities.filterNot(predicate)
+
+    /**
+     * Returns a [List] containing only [entities][Entity] matching the given [predicate].
+     */
+    fun filterIndexed(predicate: (index: Int, Entity) -> Boolean): EntityBag = mutableEntities.filterIndexed(predicate)
+
+    /**
+     * Appends all [entities][Entity] matching the given [predicate] to the given [destination].
+     */
+    fun filterTo(destination: MutableEntityBag, predicate: (Entity) -> Boolean): MutableEntityBag =
+        mutableEntities.filterTo(destination, predicate)
+
+    /**
+     * Appends all [entities][Entity] not matching the given [predicate] to the given [destination].
+     */
+    fun filterNotTo(destination: MutableEntityBag, predicate: (Entity) -> Boolean): MutableEntityBag =
+        mutableEntities.filterNotTo(destination, predicate)
+
+    /**
+     * Appends all [entities][Entity] matching the given [predicate] to the given [destination].
+     */
+    fun filterIndexedTo(
+        destination: MutableEntityBag,
+        predicate: (index: Int, Entity) -> Boolean
+    ): MutableEntityBag = mutableEntities.filterIndexedTo(destination, predicate)
+
+    /**
+     * Returns the first [entity][Entity] matching the given [predicate], or null if no such
+     * [entity][Entity] was found.
+     */
+    fun find(predicate: (Entity) -> Boolean): Entity? = mutableEntities.find(predicate)
+
+    /**
+     * Groups [entities][Entity] by the key returned by the given [keySelector] function
+     * applied to each [entity][Entity] and returns a map where each group key is associated with an [EntityBag]
+     * of corresponding [entities][Entity].
+     */
+    fun <K> groupBy(keySelector: (Entity) -> K): Map<K, MutableEntityBag> = mutableEntities.groupBy(keySelector)
+
+    /**
+     * Groups values returned by the [valueTransform] function applied to each [entity][Entity] of the family
+     * by the key returned by the given [keySelector] function applied to the [entity][Entity] and returns
+     * a map where each group key is associated with a list of corresponding values.
+     */
+    fun <K, V> groupBy(keySelector: (Entity) -> K, valueTransform: (Entity) -> V): Map<K, List<V>> =
+        mutableEntities.groupBy(keySelector, valueTransform)
+
+    /**
+     * Groups [entities][Entity] by the key returned by the given [keySelector] function
+     * applied to each [entity][Entity] and puts to the [destination] map each group key associated with
+     * an [EntityBag] of corresponding elements.
+     */
+    fun <K, M : MutableMap<in K, MutableEntityBag>> groupByTo(destination: M, keySelector: (Entity) -> K): M =
+        mutableEntities.groupByTo(destination, keySelector)
+
+    /**
+     * Groups values returned by the [valueTransform] function applied to each [entity][Entity] of the family
+     * by the key returned by the given [keySelector] function applied to the [entity][Entity] and puts
+     * to the [destination] map each group key associated with a list of corresponding values.
+     */
+    fun <K, V, M : MutableMap<in K, MutableList<V>>> groupByTo(
+        destination: M,
+        keySelector: (Entity) -> K,
+        valueTransform: (Entity) -> V
+    ): M = mutableEntities.groupByTo(destination, keySelector, valueTransform)
+
+    /**
+     * Returns a [List] containing the results of applying the given [transform] function
+     * to each [entity][Entity] of the family.
+     */
+    fun <R> map(transform: (Entity) -> R): List<R> = mutableEntities.map(transform)
+
+    /**
+     * Returns a [List] containing the results of applying the given [transform] function
+     * to each [entity][Entity] and its index of the family.
+     */
+    fun <R> mapIndexed(transform: (index: Int, Entity) -> R): List<R> = mutableEntities.mapIndexed(transform)
+
+    /**
+     * Applies the given [transform] function to each [entity][Entity] of the family and appends
+     * the results to the given [destination].
+     */
+    fun <R, C : MutableCollection<in R>> mapTo(destination: C, transform: (Entity) -> R): C =
+        mutableEntities.mapTo(destination, transform)
+
+    /**
+     * Applies the given [transform] function to each [entity][Entity] and its index of the family and appends
+     * the results to the given [destination].
+     */
+    fun <R, C : MutableCollection<in R>> mapIndexedTo(destination: C, transform: (index: Int, Entity) -> R): C =
+        mutableEntities.mapIndexedTo(destination, transform)
+
+    /**
+     * Returns a list containing only the non-null results of applying the given [transform] function
+     * to each [entity][Entity] of the family.
+     */
+    fun <R> mapNotNull(transform: (Entity) -> R?): List<R> = mutableEntities.mapNotNull(transform)
+
+    /**
+     * Applies the given [transform] function to each [entity][Entity] of the family and appends only
+     * the non-null results to the given [destination].
+     */
+    fun <R, C : MutableCollection<in R>> mapNotNullTo(destination: C, transform: (Entity) -> R?): C =
+        mutableEntities.mapNotNullTo(destination, transform)
+
+    /**
+     * Splits the original family into a pair of bags,
+     * where the first bag contains elements for which predicate yielded true,
+     * while the second bag contains elements for which predicate yielded false.
+     */
+    fun partition(predicate: (Entity) -> Boolean): Pair<EntityBag, EntityBag> = mutableEntities.partition(predicate)
+
+    /**
+     * Splits the original family into two bags,
+     * where [first] contains elements for which predicate yielded true,
+     * while [second] contains elements for which predicate yielded false.
+     */
+    fun partitionTo(first: MutableEntityBag, second: MutableEntityBag, predicate: (Entity) -> Boolean) =
+        mutableEntities.partitionTo(first, second, predicate)
+
+    /**
+     * Returns a random [entity][Entity] of the family.
+     *
+     * @throws [NoSuchElementException] if the family is empty.
+     */
+    fun random(): Entity = mutableEntities.random()
+
+    /**
+     * Returns a random [entity][Entity] of the family, or null if the family is empty.
+     */
+    fun randomOrNull(): Entity? = mutableEntities.randomOrNull()
+
+    /**
+     * Returns the single [entity][Entity] of the family, or throws an exception
+     * if the family is empty or has more than one [entity][Entity].
+     */
+    fun single(): Entity = mutableEntities.single()
+
+    /**
+     * Returns the single [entity][Entity] of the family matching the given [predicate],
+     * or throws an exception if the family is empty or has more than one [entity][Entity].
+     */
+    fun single(predicate: (Entity) -> Boolean): Entity = mutableEntities.single(predicate)
+
+    /**
+     * Returns single [entity][Entity] of the family, or null
+     * if the family is empty or has more than one [entity][Entity].
+     */
+    fun singleOrNull(): Entity? = mutableEntities.singleOrNull()
+
+    /**
+     * Returns the single [entity][Entity] of the family matching the given [predicate],
+     * or null if the family is empty or has more than one [entity][Entity].
+     */
+    fun singleOrNull(predicate: (Entity) -> Boolean): Entity? = mutableEntities.singleOrNull(predicate)
+
+    /**
+     * Returns a [List] containing the first [n] [entities][Entity].
+     */
+    fun take(n: Int): EntityBag = mutableEntities.take(n)
 
     /**
      * Adds the [entity] to the family and sets the [isDirty] flag if and only
