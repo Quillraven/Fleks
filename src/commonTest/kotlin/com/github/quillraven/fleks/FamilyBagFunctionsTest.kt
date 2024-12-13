@@ -24,6 +24,7 @@ class FamilyBagFunctionsTest {
     fun testContainsAll() {
         assertTrue(testFamily.containsAll(listOf(testEntity2, testEntity1)))
         assertTrue(testFamily.containsAll(testFamily))
+        assertTrue(testFamily.containsAll(entityBagOf(testEntity1, testEntity2)))
         assertFalse(testFamily.containsAll(listOf(Entity(2, version = 0u))))
         assertTrue(testFamily.containsAll(listOf(Entity(1, version = 0u))))
         assertTrue(testFamily.containsAll(emptyList()))
