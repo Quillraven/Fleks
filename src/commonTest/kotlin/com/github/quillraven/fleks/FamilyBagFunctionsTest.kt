@@ -49,6 +49,101 @@ class FamilyBagFunctionsTest {
     }
 
     @Test
+    fun testAssociate() {
+        val expected = mapOf(testEntity1 to 0, testEntity2 to 1)
+
+        val actual = testFamily.associate { it to it.id }
+
+        assertEquals(expected.keys.size, actual.keys.size)
+        assertTrue(expected.keys.containsAll(actual.keys))
+        assertTrue(actual.keys.containsAll(expected.keys))
+        expected.forEach { (entity, id) ->
+            assertEquals(id, actual[entity])
+        }
+    }
+
+    @Test
+    fun testAssociateByKeySelector() {
+        val expected = mapOf(0 to testEntity1, 1 to testEntity2)
+
+        val actual = testFamily.associateBy { it.id }
+
+        assertEquals(expected.keys.size, actual.keys.size)
+        assertTrue(expected.keys.containsAll(actual.keys))
+        assertTrue(actual.keys.containsAll(expected.keys))
+        expected.forEach { (id, entity) ->
+            assertEquals(entity, actual[id])
+        }
+    }
+
+    @Test
+    fun testAssociateByKeyAndValueSelector() {
+        val expected = mapOf(Entity(2, version = 0u) to 2, Entity(3, version = 0u) to 3)
+
+        val actual = testFamily.associateBy(
+            { Entity(it.id + 2, version = 0u) },
+            { it.id + 2 }
+        )
+
+        assertEquals(expected.keys.size, actual.keys.size)
+        assertTrue(expected.keys.containsAll(actual.keys))
+        assertTrue(actual.keys.containsAll(expected.keys))
+        expected.forEach { (id, entity) ->
+            assertEquals(entity, actual[id])
+        }
+    }
+
+    @Test
+    fun testAssociateTo() {
+        val expected = mapOf(testEntity1 to 0, testEntity2 to 1, Entity(2, version = 0u) to 2)
+        val destination = mutableMapOf(Entity(2, version = 0u) to 2)
+
+        val actual = testFamily.associateTo(destination) { it to it.id }
+
+        assertEquals(expected.keys.size, actual.keys.size)
+        assertTrue(expected.keys.containsAll(actual.keys))
+        assertTrue(actual.keys.containsAll(expected.keys))
+        expected.forEach { (entity, id) ->
+            assertEquals(id, actual[entity])
+        }
+    }
+
+    @Test
+    fun testAssociateByToKeySelector() {
+        val expected = mapOf(0 to testEntity1, 1 to testEntity2, 2 to Entity(2, version = 0u))
+        val destination = mutableMapOf(2 to Entity(2, version = 0u))
+
+        val actual = testFamily.associateByTo(destination) { it.id }
+
+        assertEquals(expected.keys.size, actual.keys.size)
+        assertTrue(expected.keys.containsAll(actual.keys))
+        assertTrue(actual.keys.containsAll(expected.keys))
+        expected.forEach { (id, entity) ->
+            assertEquals(entity, actual[id])
+        }
+    }
+
+    @Test
+    fun testAssociateByToKeyAndValueSelector() {
+        val expected = mapOf(Entity(2, version = 0u) to 2, Entity(3, version = 0u) to 3, Entity(4, version = 0u) to 4)
+        val destination = mutableMapOf(Entity(4, version = 0u) to 4)
+
+
+        val actual = testFamily.associateByTo(
+            destination,
+            { Entity(it.id + 2, version = 0u) },
+            { it.id + 2 }
+        )
+
+        assertEquals(expected.keys.size, actual.keys.size)
+        assertTrue(expected.keys.containsAll(actual.keys))
+        assertTrue(actual.keys.containsAll(expected.keys))
+        expected.forEach { (id, entity) ->
+            assertEquals(entity, actual[id])
+        }
+    }
+
+    @Test
     fun testFilter() {
         val expected = entityBagOf(testEntity1)
         val expectedIndices = listOf(0, 1)
@@ -125,6 +220,58 @@ class FamilyBagFunctionsTest {
         assertEquals(testEntity2, testFamily.firstOrNull { it == testEntity2 })
         assertNull(MutableEntityBag().firstOrNull())
         assertNull(testFamily.firstOrNull { it.id == 3 })
+    }
+
+    @Test
+    fun testFlatMap() {
+        val expectedInts = listOf(0, 0, 1, 2)
+        val expectedEntities = entityBagOf(testEntity1, testEntity1)
+
+        val actualIntsIter = testFamily.flatMap { listOf(it.id, it.id * 2) }
+        val actualIntsSeq = testFamily.flatMapSequence { listOf(it.id, it.id * 2).asSequence() }
+        val actualEntities = testFamily.flatMapBag { testFamily.filter { it.id == 0 } }
+
+        assertContentEquals(expectedInts, actualIntsIter)
+        assertContentEquals(expectedInts, actualIntsSeq)
+        assertEquals(expectedEntities, actualEntities)
+    }
+
+    @Test
+    fun testFlatMapNotNull() {
+        val expectedInts = listOf(0, 2)
+        val expectedEntities = entityBagOf(testEntity1)
+
+        val actualIntsIter = testFamily.flatMapNotNull { listOf(null, it.id * 2) }
+        val actualIntsSeq = testFamily.flatMapSequenceNotNull { listOf(null, it.id * 2).asSequence() }
+        val actualEntities =
+            testFamily.flatMapBagNotNull { e -> if (e.id == 0) testFamily.filter { it.id == 0 } else null }
+        val actual1: List<String> = testFamily.flatMapNotNull { null }
+        val actual2: List<String> = testFamily.flatMapSequenceNotNull { null }
+
+        assertContentEquals(expectedInts, actualIntsIter)
+        assertContentEquals(expectedInts, actualIntsSeq)
+        assertEquals(expectedEntities, actualEntities)
+        assertTrue(actual1.isEmpty())
+        assertTrue(actual2.isEmpty())
+    }
+
+    @Test
+    fun testFold() {
+        val expectedIndices = listOf(0, 1)
+
+        val actual1 = testFamily.fold(3) { acc, entity ->
+            acc + entity.id
+        }
+        val actualIndices = mutableListOf<Int>()
+        val actual2 = testFamily.foldIndexed(3) { index, acc, entity ->
+            actualIndices += index
+            acc + entity.id
+        }
+
+        // initial 3 + id 0 + id 1 = 1
+        assertEquals(4, actual1)
+        assertEquals(4, actual2)
+        assertContentEquals(expectedIndices, actualIndices)
     }
 
     @Test

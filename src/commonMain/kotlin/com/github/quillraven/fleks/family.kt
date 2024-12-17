@@ -255,6 +255,57 @@ data class Family(
     fun none(predicate: (Entity) -> Boolean): Boolean = mutableEntities.none(predicate)
 
     /**
+     * Returns a [Map] containing key-value pairs provided by the [transform] function applied to
+     * each [entity][Entity] of the family.
+     */
+    inline fun <K, V> associate(transform: (Entity) -> Pair<K, V>): Map<K, V> = mutableEntities.associate(transform)
+
+    /**
+     * Returns a [Map] containing the [entities][Entity] of the family indexed by the key
+     * returned from [keySelector] function applied to each [entity][Entity] of the family.
+     */
+    inline fun <K> associateBy(keySelector: (Entity) -> K): Map<K, Entity> = mutableEntities.associateBy(keySelector)
+
+    /**
+     * Returns a [Map] containing the values provided by [valueTransform] and indexed by the
+     * [keySelector] function applied to each [entity][Entity] of the family.
+     */
+    inline fun <K, V> associateBy(
+        keySelector: (Entity) -> K,
+        valueTransform: (Entity) -> V
+    ): Map<K, V> = mutableEntities.associateBy(keySelector, valueTransform)
+
+    /**
+     * Populates and returns the [destination] mutable map containing key-value pairs
+     * provided by the [transform] function applied to each [entity][Entity] of the family.
+     */
+    inline fun <K, V, M : MutableMap<in K, in V>> associateTo(
+        destination: M,
+        transform: (Entity) -> Pair<K, V>
+    ): M = mutableEntities.associateTo(destination, transform)
+
+    /**
+     * Populates and returns the [destination] mutable map containing the [entities][Entity]
+     * of the family indexed by the key returned from [keySelector] function applied to
+     * each [entity][Entity] of the family.
+     */
+    inline fun <K, M : MutableMap<in K, Entity>> associateByTo(
+        destination: M,
+        keySelector: (Entity) -> K
+    ): M = mutableEntities.associateByTo(destination, keySelector)
+
+    /**
+     * Populates and returns the [destination] mutable map containing the values
+     * provided by [valueTransform] and indexed by the [keySelector] function applied
+     * to each [entity][Entity] of the family.
+     */
+    inline fun <K, V, M : MutableMap<in K, in V>> associateByTo(
+        destination: M,
+        keySelector: (Entity) -> K,
+        valueTransform: (Entity) -> V
+    ): M = mutableEntities.associateByTo(destination, keySelector, valueTransform)
+
+    /**
      * Returns a [List] containing only [entities][Entity] matching the given [predicate].
      */
     fun filter(predicate: (Entity) -> Boolean): EntityBag = mutableEntities.filter(predicate)
@@ -294,6 +345,61 @@ data class Family(
      * [entity][Entity] was found.
      */
     fun find(predicate: (Entity) -> Boolean): Entity? = mutableEntities.find(predicate)
+
+    /**
+     * Returns a single [List] of all elements yielded from the results of [transform] function
+     * being invoked on each [entity][Entity] of the family.
+     */
+    inline fun <R> flatMap(transform: (Entity) -> Iterable<R>) = mutableEntities.flatMap(transform)
+
+    /**
+     * Returns a single [List] of all elements yielded from the results of [transform] function
+     * being invoked on each [entity][Entity] of the family.
+     */
+    inline fun <R> flatMapSequence(transform: (Entity) -> Sequence<R>) = mutableEntities.flatMapSequence(transform)
+
+    /**
+     * Returns a new bag of all elements yielded from the results of [transform] function
+     * being invoked on each [entity][Entity] of the family.
+     */
+    inline fun flatMapBag(transform: (Entity) -> EntityBag) = mutableEntities.flatMapBag(transform)
+
+    /**
+     * Returns a single [List] of all non-null elements yielded from the results of [transform] function
+     * being invoked on each [entity][Entity] of the family.
+     */
+    inline fun <R> flatMapNotNull(transform: (Entity) -> Iterable<R?>?) = mutableEntities.flatMapNotNull(transform)
+
+    /**
+     * Returns a single [List] of all non-null elements yielded from the results of [transform] function
+     * being invoked on each [entity][Entity] of the family.
+     */
+    inline fun <R> flatMapSequenceNotNull(transform: (Entity) -> Sequence<R?>?) =
+        mutableEntities.flatMapSequenceNotNull(transform)
+
+    /**
+     * Returns a new bag of all non-null elements yielded from the results of [transform] function
+     * being invoked on each [entity][Entity] of the family.
+     */
+    inline fun flatMapBagNotNull(transform: (Entity) -> EntityBag?) = mutableEntities.flatMapBagNotNull(transform)
+
+    /**
+     * Accumulates value starting with [initial] value and applying [operation] from left to right to
+     * current accumulator value and each [entity][Entity].
+     */
+    inline fun <R> fold(
+        initial: R,
+        operation: (acc: R, entity: Entity) -> R
+    ): R = mutableEntities.fold(initial, operation)
+
+    /**
+     * Accumulates value starting with [initial] value and applying [operation] from left to right to
+     * current accumulator value and each [entity][Entity] with its index in the original family.
+     */
+    inline fun <R> foldIndexed(
+        initial: R,
+        operation: (index: Int, acc: R, entity: Entity) -> R
+    ): R = mutableEntities.foldIndexed(initial, operation)
 
     /**
      * Groups [entities][Entity] by the key returned by the given [keySelector] function
