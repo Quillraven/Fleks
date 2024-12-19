@@ -3,6 +3,7 @@
 package com.github.quillraven.fleks.collection
 
 import com.github.quillraven.fleks.Entity
+import com.github.quillraven.fleks.Family
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
@@ -468,6 +469,13 @@ class MutableEntityBag(
      */
     operator fun plusAssign(entities: EntityBag) {
         entities.forEach { plusAssign(it) }
+    }
+
+    /**
+     * Adds all entities of the [family] to the bag. If the [capacity] is not sufficient then a resize is happening.
+     */
+    operator fun plusAssign(family: Family) {
+        family.entities.forEach { plusAssign(it) }
     }
 
     /**

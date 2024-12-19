@@ -1,6 +1,7 @@
 package com.github.quillraven.fleks.collection
 
 import com.github.quillraven.fleks.Entity
+import com.github.quillraven.fleks.Family
 import com.github.quillraven.fleks.configureWorld
 import kotlin.test.*
 
@@ -653,6 +654,22 @@ class EntityBagTest {
     fun `test plusAssign of an EntityBag`() {
         val bag = mutableEntityBagOf()
         val toAdd = entityBagOf(testEntity1, testEntity2)
+
+        bag += toAdd
+
+        assertEquals(2, bag.size)
+        assertTrue { testEntity1 in bag }
+        assertTrue { testEntity2 in bag }
+    }
+
+    @Test
+    fun `test plusAssign of a family`() {
+        val bag = mutableEntityBagOf()
+        val testWorld = configureWorld { }
+        val toAdd = Family(world = testWorld).apply {
+            onEntityAdded(testEntity1, BitArray())
+            onEntityAdded(testEntity2, BitArray())
+        }
 
         bag += toAdd
 
