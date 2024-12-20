@@ -526,7 +526,7 @@ data class Family(
     fun singleOrNull(predicate: (Entity) -> Boolean): Entity? = mutableEntities.singleOrNull(predicate)
 
     /**
-     * Returns a [List] containing the first [n] [entities][Entity].
+     * Returns a [List] containing the first [n][] [entities][Entity].
      */
     fun take(n: Int): EntityBag = mutableEntities.take(n)
 

@@ -413,7 +413,7 @@ interface EntityBag {
     fun singleOrNull(predicate: (Entity) -> Boolean): Entity?
 
     /**
-     * Returns a [List] containing the first [n] [entities][Entity].
+     * Returns a [List] containing the first [n][] [entities][Entity].
      */
     fun take(n: Int): EntityBag
 }
@@ -1249,7 +1249,7 @@ class MutableEntityBag(
     }
 
     /**
-     * Returns a [List] containing the first [n] [entities][Entity].
+     * Returns a [List] containing the first [n][] [entities][Entity].
      */
     override fun take(n: Int): EntityBag {
         val result = MutableEntityBag(max(min(n, size), 0))
