@@ -1274,4 +1274,9 @@ class MutableEntityBag(
         result = 31 * result + size
         return result
     }
+
+    override fun toString(): String {
+        return "MutableEntityBag(size=$size, values=${values.contentToString()})"
+    }
+
 }
