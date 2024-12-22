@@ -49,6 +49,11 @@ class FamilyBagFunctionsTest {
     }
 
     @Test
+    fun testCount() {
+        assertEquals(1, testFamily.count { it.id == 0 })
+    }
+
+    @Test
     fun testAssociate() {
         val expected = mapOf(testEntity1 to 0, testEntity2 to 1)
 

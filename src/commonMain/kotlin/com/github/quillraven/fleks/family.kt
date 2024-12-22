@@ -255,6 +255,11 @@ data class Family(
     fun none(predicate: (Entity) -> Boolean): Boolean = mutableEntities.none(predicate)
 
     /**
+     * Returns the number of [entities][Entity] matching the given [predicate].
+     */
+    fun count(predicate: (Entity) -> Boolean): Int = mutableEntities.count(predicate)
+
+    /**
      * Returns a [Map] containing key-value pairs provided by the [transform] function applied to
      * each [entity][Entity] of the family.
      */
