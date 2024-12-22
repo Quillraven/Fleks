@@ -89,5 +89,10 @@ class Bag<T>(
             values[i]?.let(action)
         }
     }
+
+    override fun toString(): String {
+        return "Bag(size=$size, values=${values.contentToString()})"
+    }
+
 }
 
