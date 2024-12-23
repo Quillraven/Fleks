@@ -31,7 +31,7 @@ data class EntityBagIterator(private val bag: EntityBag) {
 
         loop && bag.isNotEmpty() -> {
             currentIdx = 0
-            bag[currentIdx]
+            bag[currentIdx++]
         }
 
         else -> Entity.NONE
@@ -47,7 +47,11 @@ data class EntityBagIterator(private val bag: EntityBag) {
      * If [loop] is true then the iterator starts again at the end if it is at the beginning.
      */
     fun previous(loop: Boolean = false): Entity = when {
-        hasPrevious() -> bag[--currentIdx]
+        hasPrevious() -> {
+            // if iterator was at the end of the bag then return the second to last element instead
+            currentIdx = if (currentIdx == bag.size) bag.size - 2 else currentIdx - 1
+            bag[currentIdx]
+        }
 
         loop && bag.isNotEmpty() -> {
             currentIdx = bag.size - 1
