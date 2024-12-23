@@ -63,4 +63,32 @@ data class EntityBagIterator(private val bag: EntityBag) {
     fun reset() {
         currentIdx = 0
     }
+
+    /**
+     * Moves the iterator to the first [Entity] matching the given [predicate] and returns it.
+     * If there is no such [Entity] then the iterator is reset and [Entity.NONE] is returned instead.
+     */
+    fun goToFirst(predicate: (Entity) -> Boolean): Entity {
+        currentIdx = bag.indexOfFirst(predicate)
+        if (currentIdx == -1) {
+            reset()
+            return Entity.NONE
+        }
+
+        return bag[currentIdx]
+    }
+
+    /**
+     * Moves the iterator to the last [Entity] matching the given [predicate] and returns it.
+     * If there is no such [Entity] then the iterator is reset and [Entity.NONE] is returned instead.
+     */
+    fun goToLast(predicate: (Entity) -> Boolean): Entity {
+        currentIdx = bag.indexOfLast(predicate)
+        if (currentIdx == -1) {
+            reset()
+            return Entity.NONE
+        }
+
+        return bag[currentIdx]
+    }
 }

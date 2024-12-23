@@ -296,6 +296,34 @@ class MutableEntityBag(
     }
 
     /**
+     * Returns the index of the first [Entity] matching the given [predicate],
+     * or -1 if the bag does not contain such an [Entity].
+     */
+    override inline fun indexOfFirst(predicate: (Entity) -> Boolean): Int {
+        for (i in 0 until size) {
+            val entity = values[i]
+            if (predicate(entity)) {
+                return i
+            }
+        }
+        return -1
+    }
+
+    /**
+     * Returns the index of the last [Entity] matching the given [predicate],
+     * or -1 if the bag does not contain such an [Entity].
+     */
+    override inline fun indexOfLast(predicate: (Entity) -> Boolean): Int {
+        for (i in size - 1 downTo 0) {
+            val entity = values[i]
+            if (predicate(entity)) {
+                return i
+            }
+        }
+        return -1
+    }
+
+    /**
      * Returns a [List] containing only [entities][Entity] matching the given [predicate].
      */
     override inline fun filter(predicate: (Entity) -> Boolean): EntityBag {

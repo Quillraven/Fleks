@@ -119,6 +119,18 @@ interface EntityBag {
     fun count(predicate: (Entity) -> Boolean): Int
 
     /**
+     * Returns the index of the first [Entity] matching the given [predicate],
+     * or -1 if the bag does not contain such an [Entity].
+     */
+    fun indexOfFirst(predicate: (Entity) -> Boolean): Int
+
+    /**
+     * Returns the index of the last [Entity] matching the given [predicate],
+     * or -1 if the bag does not contain such an [Entity].
+     */
+    fun indexOfLast(predicate: (Entity) -> Boolean): Int
+
+    /**
      * Returns a [List] containing only [entities][Entity] matching the given [predicate].
      */
     fun filter(predicate: (Entity) -> Boolean): EntityBag

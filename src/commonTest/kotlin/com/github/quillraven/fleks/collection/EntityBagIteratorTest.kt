@@ -25,9 +25,9 @@ class EntityBagIteratorTest {
     @Test
     fun `test iterator on bag with single entity`() {
         val entity = Entity(1, 0u)
-        val emptyBag = mutableEntityBagOf(entity)
+        val testBag = mutableEntityBagOf(entity)
 
-        val iterator = emptyBag.iterator()
+        val iterator = testBag.iterator()
 
         assertTrue(iterator.hasNext())
         assertFalse(iterator.hasPrevious())
@@ -49,9 +49,9 @@ class EntityBagIteratorTest {
     fun `test iterator on bag with two entities`() {
         val entity1 = Entity(1, 0u)
         val entity2 = Entity(2, 0u)
-        val emptyBag = mutableEntityBagOf(entity1, entity2)
+        val testBag = mutableEntityBagOf(entity1, entity2)
 
-        val iterator = emptyBag.iterator()
+        val iterator = testBag.iterator()
 
         assertTrue(iterator.hasNext())
         assertFalse(iterator.hasPrevious())
@@ -70,6 +70,36 @@ class EntityBagIteratorTest {
         assertEquals(entity2, iterator.previous(loop = true))
         assertEquals(entity1, iterator.previous(loop = true))
         assertEquals(entity2, iterator.previous(loop = true))
+    }
+
+    @Test
+    fun `test goToFirst`() {
+        val entity1 = Entity(1, 0u)
+        val entity2 = Entity(2, 0u)
+        val entity3 = Entity(2, 1u) // same id on purpose to check that goTo stops at first entity
+        val testBag = mutableEntityBagOf(entity1, entity2, entity3)
+
+        val iterator = testBag.iterator()
+
+        assertEquals(entity2, iterator.goToFirst { e -> e.id == 2 })
+        assertEquals(entity1, iterator.previous())
+        assertEquals(Entity.NONE, iterator.goToFirst { e -> e.id == 3 })
+        assertEquals(entity1, iterator.next())
+    }
+
+    @Test
+    fun `test goToLast`() {
+        val entity1 = Entity(1, 0u)
+        val entity2 = Entity(2, 0u)
+        val entity3 = Entity(2, 1u) // same id on purpose to check that goTo stops at first entity
+        val testBag = mutableEntityBagOf(entity1, entity2, entity3)
+
+        val iterator = testBag.iterator()
+
+        assertEquals(entity3, iterator.goToLast { e -> e.id == 2 })
+        assertEquals(entity2, iterator.previous())
+        assertEquals(Entity.NONE, iterator.goToLast { e -> e.id == 3 })
+        assertEquals(entity1, iterator.next())
     }
 
 }

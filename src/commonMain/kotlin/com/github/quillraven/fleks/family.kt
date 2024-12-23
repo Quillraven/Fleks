@@ -260,6 +260,24 @@ data class Family(
     fun count(predicate: (Entity) -> Boolean): Int = mutableEntities.count(predicate)
 
     /**
+     * Returns the index of the first [Entity] matching the given [predicate],
+     * or -1 if the family does not contain such an [Entity].
+     */
+    fun indexOfFirst(predicate: (Entity) -> Boolean): Int = mutableEntities.indexOfFirst(predicate)
+
+    /**
+     * Returns the index of the last [Entity] matching the given [predicate],
+     * or -1 if the family does not contain such an [Entity].
+     */
+    fun indexOfLast(predicate: (Entity) -> Boolean): Int = mutableEntities.indexOfLast(predicate)
+
+    /**
+     * Creates an [EntityBagIterator] for the family. If the family gets updated
+     * during iteration then [EntityBagIterator.reset] must be called to guarantee correct iterator behavior.
+     */
+    fun iterator(): EntityBagIterator = EntityBagIterator(mutableEntities)
+
+    /**
      * Returns a [Map] containing key-value pairs provided by the [transform] function applied to
      * each [entity][Entity] of the family.
      */

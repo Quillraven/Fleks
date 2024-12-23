@@ -449,4 +449,11 @@ class FamilyBagFunctionsTest {
         assertEquals(entityBagOf(testEntity1, testEntity2), testFamily.take(2))
         assertEquals(entityBagOf(testEntity1, testEntity2), testFamily.take(3))
     }
+
+    @Test
+    fun testIndexOf() {
+        assertEquals(0, testFamily.indexOfFirst { it.id == 0 })
+        assertEquals(1, testFamily.indexOfLast { it.id == 1 })
+        assertEquals(-1, testFamily.indexOfLast { it.id == 99 })
+    }
 }
