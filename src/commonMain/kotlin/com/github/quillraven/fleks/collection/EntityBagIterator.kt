@@ -1,6 +1,7 @@
 package com.github.quillraven.fleks.collection
 
 import com.github.quillraven.fleks.Entity
+import kotlin.math.max
 
 /**
  * Creates an [EntityBagIterator] for the bag. If the bag gets updated
@@ -49,7 +50,11 @@ data class EntityBagIterator(private val bag: EntityBag) {
     fun previous(loop: Boolean = false): Entity = when {
         hasPrevious() -> {
             // if iterator was at the end of the bag then return the second to last element instead
-            currentIdx = if (currentIdx == bag.size) bag.size - 2 else currentIdx - 1
+            currentIdx = if (currentIdx == bag.size) {
+                max(0, bag.size - 2)
+            } else {
+                currentIdx - 1
+            }
             bag[currentIdx]
         }
 
