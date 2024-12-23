@@ -1,7 +1,6 @@
 package com.github.quillraven.fleks.collection
 
 import com.github.quillraven.fleks.Entity
-import kotlin.math.max
 
 /**
  * Creates an [EntityBagIterator] for the bag. If the bag gets updated
@@ -16,23 +15,23 @@ fun EntityBag.iterator(): EntityBagIterator = EntityBagIterator(this)
  * The iterator returns [Entity.NONE] in case an [entity][Entity] does not exist.
  */
 data class EntityBagIterator(private val bag: EntityBag) {
-    private var currentIdx = 0
+    private var currentIdx = -1
 
     /**
      * Returns **true** if and only if there is a next [entity][Entity] in the bag.
      */
-    fun hasNext(): Boolean = currentIdx < bag.size
+    fun hasNext(): Boolean = currentIdx < bag.size - 1
 
     /**
      * Returns the next [entity][Entity] of the bag and moves the iterator forward.
      * If [loop] is true then the iterator starts again from the beginning if it is at the end.
      */
     fun next(loop: Boolean = false): Entity = when {
-        hasNext() -> bag[currentIdx++]
+        hasNext() -> bag[++currentIdx]
 
         loop && bag.isNotEmpty() -> {
-            currentIdx = 0
-            bag[currentIdx++]
+            currentIdx = -1
+            bag[++currentIdx]
         }
 
         else -> Entity.NONE
@@ -48,19 +47,11 @@ data class EntityBagIterator(private val bag: EntityBag) {
      * If [loop] is true then the iterator starts again at the end if it is at the beginning.
      */
     fun previous(loop: Boolean = false): Entity = when {
-        hasPrevious() -> {
-            // if iterator was at the end of the bag then return the second to last element instead
-            currentIdx = if (currentIdx == bag.size) {
-                max(0, bag.size - 2)
-            } else {
-                currentIdx - 1
-            }
-            bag[currentIdx]
-        }
+        hasPrevious() -> bag[--currentIdx]
 
         loop && bag.isNotEmpty() -> {
-            currentIdx = bag.size - 1
-            bag[currentIdx]
+            currentIdx = bag.size
+            bag[--currentIdx]
         }
 
         else -> Entity.NONE
@@ -70,7 +61,7 @@ data class EntityBagIterator(private val bag: EntityBag) {
      * Resets the iterator to the beginning of the bag.
      */
     fun reset() {
-        currentIdx = 0
+        currentIdx = -1
     }
 
     /**

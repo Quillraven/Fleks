@@ -32,9 +32,7 @@ class EntityBagIteratorTest {
         assertTrue(iterator.hasNext())
         assertFalse(iterator.hasPrevious())
         assertEquals(entity, iterator.next())
-        assertEquals(entity, iterator.previous())
         assertEquals(Entity.NONE, iterator.previous())
-        assertEquals(entity, iterator.next())
         assertEquals(Entity.NONE, iterator.next())
 
         // verify loop version
@@ -45,35 +43,49 @@ class EntityBagIteratorTest {
         assertEquals(entity, iterator.previous(loop = true))
     }
 
+
     @Test
-    fun `test iterator on bag with two entities`() {
+    fun `test next and previous with three entities`() {
         val entity1 = Entity(1, 0u)
         val entity2 = Entity(2, 0u)
-        val testBag = mutableEntityBagOf(entity1, entity2)
+        val entity3 = Entity(3, 0u)
+        val testBag = mutableEntityBagOf(entity1, entity2, entity3)
 
         val iterator = testBag.iterator()
 
-        assertTrue(iterator.hasNext())
-        assertFalse(iterator.hasPrevious())
+        // iterate to end and to beginning
         assertEquals(entity1, iterator.next())
         assertEquals(entity2, iterator.next())
+        assertEquals(entity3, iterator.next())
         assertEquals(Entity.NONE, iterator.next())
+        assertEquals(entity2, iterator.previous())
         assertEquals(entity1, iterator.previous())
         assertEquals(Entity.NONE, iterator.previous())
+
+        // iterate back and forth
+        iterator.reset()
         assertEquals(entity1, iterator.next())
+        assertEquals(Entity.NONE, iterator.previous())
         assertEquals(entity2, iterator.next())
         assertEquals(entity1, iterator.previous())
+        assertEquals(entity2, iterator.next())
+        assertEquals(entity3, iterator.next())
+        assertEquals(entity2, iterator.previous())
 
-        // verify loop version
+        // iterate to end and to beginning with loop
         iterator.reset()
         assertEquals(entity1, iterator.next(loop = true))
         assertEquals(entity2, iterator.next(loop = true))
+        assertEquals(entity3, iterator.next(loop = true))
         assertEquals(entity1, iterator.next(loop = true))
-        assertEquals(entity2, iterator.next(loop = true))
-        assertEquals(entity1, iterator.previous(loop = true))
+        assertEquals(entity3, iterator.previous(loop = true))
         assertEquals(entity2, iterator.previous(loop = true))
         assertEquals(entity1, iterator.previous(loop = true))
-        assertEquals(entity2, iterator.previous(loop = true))
+        assertEquals(entity3, iterator.previous(loop = true))
+
+        // start with previous call in loop version
+        iterator.reset()
+        assertEquals(entity3, iterator.previous(loop = true))
     }
 
     @Test
