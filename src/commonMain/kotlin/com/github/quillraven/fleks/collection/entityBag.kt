@@ -11,6 +11,11 @@ fun entityBagOf(vararg entities: Entity): EntityBag {
     }
 }
 
+/**
+ * Returns a new read-only empty [EntityBag].
+ */
+fun emptyEntityBag(): EntityBag = MutableEntityBag(0)
+
 interface EntityBag {
     /**
      * Returns the size of the [EntityBag].

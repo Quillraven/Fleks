@@ -10,7 +10,7 @@ class EntityBagIteratorTest {
 
     @Test
     fun `test iterator on empty bag`() {
-        val emptyBag = MutableEntityBag()
+        val emptyBag = emptyEntityBag()
 
         val iterator = emptyBag.iterator()
 

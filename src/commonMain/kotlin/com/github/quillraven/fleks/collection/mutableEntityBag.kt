@@ -18,6 +18,11 @@ fun mutableEntityBagOf(vararg entities: Entity): MutableEntityBag {
 }
 
 /**
+ * Returns a new empty [MutableEntityBag] of the given [size].
+ */
+fun mutableEntityBagOf(size: Int): MutableEntityBag = MutableEntityBag(size)
+
+/**
  * A bag implementation for [entities][Entity] (=integer) values in Kotlin to avoid autoboxing.
  * It contains necessary functions for Fleks and some additional Kotlin standard library utilities.
  */
