@@ -1,6 +1,3 @@
-import kotlinx.benchmark.gradle.KotlinJvmBenchmarkTarget
-import kotlinx.benchmark.gradle.benchmark
-
 plugins {
     buildsrc.plugins.`kmp-js`
     buildsrc.plugins.`kmp-jvm`
