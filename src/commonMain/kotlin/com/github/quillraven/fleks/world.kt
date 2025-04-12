@@ -162,6 +162,25 @@ class World internal constructor(
     }
 
     /**
+     * Adds a new [entity][Entity] to the world using the given [id][Int] and [configuration][EntityCreateContext].
+     *
+     * **Attention** Make sure that you only modify the entity of the current scope.
+     * Otherwise, you will get wrong behavior for families. E.g. don't do this:
+     *
+     * ```
+     * entity {
+     *     // modifying the current entity is allowed ✅
+     *     it += Position()
+     *     // don't modify other entities ❌
+     *     someOtherEntity += Position()
+     * }
+     * ```
+     */
+    inline fun entity(id: Int, configuration: EntityCreateContext.(Entity) -> Unit = {}): Entity {
+        return entityService.create(id, configuration)
+    }
+
+    /**
      * Returns true if and only if the [entity] is not removed and is part of the [World].
      */
     operator fun contains(entity: Entity) = entityService.contains(entity)
