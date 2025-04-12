@@ -277,6 +277,31 @@ internal class WorldTest {
     }
 
     @Test
+    fun createNewEntityWithId() {
+        val w = configureWorld {
+            injectables {
+                add("42")
+            }
+
+            entityProvider {
+                WorldEntityProvider(this)
+            }
+
+            systems {
+                add(WorldTestIteratingSystem())
+            }
+        }
+
+        val e = w.entity(id = 5) {
+            it += WorldTestComponent(x = 5f)
+        }
+
+        assertEquals(1, w.numEntities)
+        assertEquals(5, e.id)
+        assertEquals(5f, with(w) { e[WorldTestComponent].x })
+    }
+
+    @Test
     fun removeExistingEntity() {
         val w = configureWorld {}
         val e = w.entity()
@@ -832,12 +857,13 @@ internal class WorldTest {
     fun testLoadSnapshotOfEmptyWorld() {
         val w = configureWorld { }
         val family = w.family { all(WorldTestComponent) }
-        val entity = Entity(0, version = 0u)
+        val entity = Entity(5, version = 0u)
         val components = listOf(WorldTestComponent())
 
         assertFalse { entity in family }
         w.loadSnapshotOf(entity, Snapshot(components, emptyList()))
 
+        assertEquals(5, entity.id)
         assertEquals(1, w.numEntities)
         assertTrue { with(w) { entity has WorldTestComponent } }
         assertTrue { entity in family }
