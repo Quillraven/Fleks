@@ -41,14 +41,14 @@ abstract class EntityComponentContext(
      *
      * @throws [FleksNoSuchEntityComponentException] if the [entity][Entity] does not have such a component.
      */
-    inline operator fun <T : Component<*>> Entity.get(type: ComponentType<T>): T =
+    inline operator fun <reified T : Component<*>> Entity.get(type: ComponentType<T>): T =
         componentService.holder(type)[this]
 
     /**
      * Returns a [component][Component] of the given [type] for the [entity][Entity]
      * or null if the [entity][Entity] does not have such a [component][Component].
      */
-    inline fun <T : Component<*>> Entity.getOrNull(type: ComponentType<T>): T? =
+    inline fun <reified T : Component<*>> Entity.getOrNull(type: ComponentType<T>): T? =
         componentService.holder(type).getOrNull(this)
 
     /**

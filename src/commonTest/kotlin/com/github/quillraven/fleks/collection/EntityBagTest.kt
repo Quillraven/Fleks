@@ -402,7 +402,7 @@ class EntityBagTest {
         val expectedEntities = entityBagOf(testEntity1, testEntity1)
 
         val actualIntsIter = testBag.flatMap { listOf(it.id, it.id * 2) }
-        val actualIntsSeq = testBag.flatMapSequence { listOf(it.id, it.id * 2).asSequence() }
+        val actualIntsSeq = testBag.flatMap { listOf(it.id, it.id * 2).asSequence() }
         val actualEntities = testBag.flatMapBag { testBag.filter { it.id == 0 } }
 
         assertContentEquals(expectedInts, actualIntsIter)
