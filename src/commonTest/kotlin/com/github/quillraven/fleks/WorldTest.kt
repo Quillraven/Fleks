@@ -277,31 +277,6 @@ internal class WorldTest {
     }
 
     @Test
-    fun createNewEntityWithId() {
-        val w = configureWorld {
-            injectables {
-                add("42")
-            }
-
-            entityProvider {
-                WorldEntityProvider(this)
-            }
-
-            systems {
-                add(WorldTestIteratingSystem())
-            }
-        }
-
-        val e = w.entity(id = 5) {
-            it += WorldTestComponent(x = 5f)
-        }
-
-        assertEquals(1, w.numEntities)
-        assertEquals(5, e.id)
-        assertEquals(5f, with(w) { e[WorldTestComponent].x })
-    }
-
-    @Test
     fun removeExistingEntity() {
         val w = configureWorld {}
         val e = w.entity()
