@@ -832,13 +832,13 @@ internal class WorldTest {
     fun testLoadSnapshotOfEmptyWorld() {
         val w = configureWorld { }
         val family = w.family { all(WorldTestComponent) }
-        val entity = Entity(5, version = 0u)
+        val entity = Entity(0, version = 0u)
         val components = listOf(WorldTestComponent())
 
         assertFalse { entity in family }
         w.loadSnapshotOf(entity, Snapshot(components, emptyList()))
 
-        assertEquals(5, entity.id)
+        assertEquals(0, entity.id)
         assertEquals(1, w.numEntities)
         assertTrue { with(w) { entity has WorldTestComponent } }
         assertTrue { entity in family }
