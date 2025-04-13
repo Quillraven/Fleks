@@ -106,8 +106,10 @@ interface Component<T> {
 class ComponentsHolder<T : Component<*>>(
     private val world: World,
     private val type: ComponentType<*>,
-    private var components: Array<T?>,
+    components: List<T?>,
 ) {
+    private val components = components.toMutableList()
+
     /**
      * Sets the [component] for the given [entity]. This function is only
      * used by [World.loadSnapshot] where we don't have the correct type information
@@ -126,12 +128,15 @@ class ComponentsHolder<T : Component<*>>(
      */
     operator fun set(entity: Entity, component: T) {
         if (entity.id >= components.size) {
-            // not enough space to store the new component -> resize array
-            components = components.copyOf(max(components.size * 2, entity.id + 1))
+            val newSize = max(components.size * 2, entity.id + 1)
+
+            repeat(newSize - components.size) {
+                components += null
+            }
         }
 
         // check if the remove lifecycle method of the previous component needs to be called
-        components[entity.id]?.run {
+        components.getOrNull(entity.id)?.run {
             // assign current component to null in order for 'contains' calls inside the lifecycle
             // method to correctly return false
             components[entity.id] = null
@@ -214,7 +219,7 @@ class ComponentService {
     fun wildcardHolder(componentType: ComponentType<*>): ComponentsHolder<*> {
         if (holdersBag.hasNoValueAtIndex(componentType.id)) {
             holdersBag[componentType.id] =
-                ComponentsHolder(world, componentType, Array<Component<*>?>(world.capacity) { null })
+                ComponentsHolder(world, componentType, List<Component<*>?>(world.capacity) { null })
         }
         return holdersBag[componentType.id]
     }
@@ -224,9 +229,9 @@ class ComponentService {
      * will be created and added to the [holdersBag].
      */
     @Suppress("UNCHECKED_CAST")
-    inline fun <reified T : Component<*>> holder(componentType: ComponentType<T>): ComponentsHolder<T> {
+    inline fun <T : Component<*>> holder(componentType: ComponentType<T>): ComponentsHolder<T> {
         if (holdersBag.hasNoValueAtIndex(componentType.id)) {
-            holdersBag[componentType.id] = ComponentsHolder(world, componentType, Array<T?>(world.capacity) { null })
+            holdersBag[componentType.id] = ComponentsHolder(world, componentType, List<T?>(world.capacity) { null })
         }
         return holdersBag[componentType.id] as ComponentsHolder<T>
     }
