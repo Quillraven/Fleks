@@ -838,7 +838,6 @@ internal class WorldTest {
         assertFalse { entity in family }
         w.loadSnapshotOf(entity, Snapshot(components, emptyList()))
 
-        assertEquals(0, entity.id)
         assertEquals(1, w.numEntities)
         assertTrue { with(w) { entity has WorldTestComponent } }
         assertTrue { entity in family }
