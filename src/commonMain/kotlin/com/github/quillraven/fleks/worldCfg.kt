@@ -57,7 +57,7 @@ class SystemConfiguration(
      *
      * @throws [FleksSystemAlreadyAddedException] if the system was already added before.
      */
-    fun add(system: IntervalSystem) {
+    fun <T: IntervalSystem> add(system: T) {
         if (systems.any { it::class == system::class }) {
             throw FleksSystemAlreadyAddedException(system::class)
         }
