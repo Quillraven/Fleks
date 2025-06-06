@@ -4,7 +4,6 @@ plugins {
     buildsrc.plugins.`kmp-native`
     buildsrc.plugins.publishing
     buildsrc.plugins.benchmark
-    id("org.jetbrains.dokka")
 }
 
 group = "io.github.quillraven.fleks"
@@ -30,5 +29,5 @@ kotlin {
 }
 
 tasks.javadocJar {
-    from(tasks.dokkaHtml)
+    from(tasks.named("dokkaGeneratePublicationHtml"))
 }
