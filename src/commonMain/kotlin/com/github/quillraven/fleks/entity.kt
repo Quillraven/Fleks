@@ -1,6 +1,10 @@
 package com.github.quillraven.fleks
 
-import com.github.quillraven.fleks.collection.*
+import com.github.quillraven.fleks.collection.Bag
+import com.github.quillraven.fleks.collection.BitArray
+import com.github.quillraven.fleks.collection.MutableEntityBag
+import com.github.quillraven.fleks.collection.bag
+import com.github.quillraven.fleks.collection.compareEntity
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmName
 

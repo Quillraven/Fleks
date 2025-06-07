@@ -5,8 +5,8 @@ import kotlin.math.min
 /**
  * A BitArray implementation in Kotlin containing only the necessary functions for Fleks.
  *
- * Boolean[] gives a better performance when iterating over a BitArray, but uses more memory and
- * also the amount of array resizing is increased when enlarging the array which makes it then slower in the end.
+ * Boolean[] gives a better performance when iterating over a BitArray, but uses more memory, and
+ * also the amount of array resizing is increased when enlarging the array, which makes it then slower in the end.
  *
  * For that reason I used a Long[] implementation which is similar to the one of java.util with inspirations also from
  * https://github.com/lemire/javaewah/blob/master/src/main/java/com/googlecode/javaewah/datastructure/BitSet.java.
@@ -131,7 +131,7 @@ class BitArray(
                     // gets the distance from the start of the word to the highest (leftmost) bit
                     val bit = 63 - bitsAtWord.countLeadingZeroBits()
                     action(w + bit)
-                    bitsAtWord = (bitsAtWord xor (1L shl bit)) // removes highest bit
+                    bitsAtWord = (bitsAtWord xor (1L shl bit)) // removes the highest bit
                 }
             }
         }
@@ -143,11 +143,11 @@ class BitArray(
             if (bitsAtWord != 0L) {
                 val w = word shl 6
                 while (bitsAtWord != 0L) {
-                    bits[word] = 0L // clear
+                    bits[word] = 0L
                     // gets the distance from the start of the word to the highest (leftmost) bit
                     val bit = 63 - bitsAtWord.countLeadingZeroBits()
                     action(w + bit)
-                    bitsAtWord = (bitsAtWord xor (1L shl bit)) // removes highest bit
+                    bitsAtWord = (bitsAtWord xor (1L shl bit)) // removes the highest bit
                 }
             }
         }

@@ -3,7 +3,7 @@ package com.github.quillraven.fleks
 import com.github.quillraven.fleks.collection.EntityComparator
 
 /**
- * An interval for an [IntervalSystem]. There are two kind of intervals:
+ * An interval for an [IntervalSystem]. There are two kinds of intervals:
  * - [EachFrame]
  * - [Fixed]
  *
@@ -118,7 +118,7 @@ abstract class IntervalSystem(
     open fun onAlpha(alpha: Float) = Unit
 
     /**
-     * Optional function to dispose any resources of the system if needed.
+     * Optional function to dispose of any resources of the system if needed.
      * Gets called in reversed world's [systems][World.systems] order when the
      * world's [dispose][World.dispose] function is called.
      */
@@ -150,7 +150,7 @@ data object Manual : SortingType
  *
  * @param family the [Family] that is used for iteration.
  * @param comparator an optional [EntityComparator] that is used to sort [entities][Entity].
- * Default value is an empty comparator which means no sorting.
+ * Default value is an empty comparator that means no sorting.
  * @param sortingType the [type][SortingType] of sorting for entities when using a [comparator].
  * @param interval the [interval][Interval] in which the system gets updated. Default is [EachFrame].
  * @param enabled defines if the system gets updated when the [world][World] gets updated. Default is true.

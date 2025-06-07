@@ -1,6 +1,10 @@
 package com.github.quillraven.fleks.collection
 
-import com.github.quillraven.fleks.*
+import com.github.quillraven.fleks.Component
+import com.github.quillraven.fleks.ComponentType
+import com.github.quillraven.fleks.Entity
+import com.github.quillraven.fleks.FleksWrongConfigurationUsageException
+import com.github.quillraven.fleks.World
 import kotlin.math.min
 
 /**
@@ -41,7 +45,7 @@ private fun Array<Entity>.swap(idxA: Int, idxB: Int) {
 private fun Array<Entity>.vecSwap(idxA: Int, idxB: Int, n: Int) {
     var a = idxA
     var b = idxB
-    for (i in 0 until n) {
+    repeat(n) {
         this.swap(a++, b++)
     }
 }
@@ -135,7 +139,7 @@ internal fun Array<Entity>.quickSort(fromIdx: Int, toIdx: Int, comparator: Entit
         this.swap(b++, c--)
     }
 
-    // Swap partition elements back to middle
+    // Swap partition elements back to the middle
     var s = min(a - fromIdx, b - a)
     this.vecSwap(fromIdx, b - s, s)
     s = min(d - c, toIdx - d - 1)

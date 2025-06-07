@@ -9,7 +9,7 @@ import com.github.quillraven.fleks.Entity
 fun EntityBag.iterator(): EntityBagIterator = EntityBagIterator(this)
 
 /**
- * An iterator over an [EntityBag]. Allows to iterate in forward and backward direction.
+ * An iterator over an [EntityBag]. Allows iterating in a forward and backward direction.
  * Also, supports looping iteration which means that if the iterator is at the end/beginning of
  * the bag, then it will go to the beginning/end of the bag.
  * The iterator returns [Entity.NONE] in case an [entity][Entity] does not exist.
