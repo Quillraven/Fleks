@@ -1,10 +1,12 @@
 package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.World.Companion.family
-import kotlin.test.*
-import kotlin.time.Duration
-import kotlin.time.DurationUnit
-import kotlin.time.toDuration
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
+import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.seconds
 
 data object Visible : EntityTag()
 
@@ -53,12 +55,12 @@ class EntityTagTest {
             it += TestTags.PLAYER
         }
 
-        world.update(1000.toDuration(DurationUnit.SECONDS))
+        world.update(1.seconds)
         assertEquals(1, testSystem.ticks)
 
         testSystem.ticks = 0
         with(world) { entity.configure { it -= Visible } }
-        world.update(1000.toDuration(DurationUnit.SECONDS))
+        world.update(1.seconds)
         assertEquals(0, testSystem.ticks)
     }
 

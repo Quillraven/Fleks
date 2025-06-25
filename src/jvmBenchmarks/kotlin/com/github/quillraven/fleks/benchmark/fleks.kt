@@ -1,12 +1,22 @@
 package com.github.quillraven.fleks.benchmark
 
-import com.github.quillraven.fleks.*
+import com.github.quillraven.fleks.Component
+import com.github.quillraven.fleks.ComponentType
+import com.github.quillraven.fleks.Entity
+import com.github.quillraven.fleks.IteratingSystem
+import com.github.quillraven.fleks.World
 import com.github.quillraven.fleks.World.Companion.family
-import org.openjdk.jmh.annotations.*
+import com.github.quillraven.fleks.configureWorld
+import org.openjdk.jmh.annotations.Benchmark
+import org.openjdk.jmh.annotations.Fork
+import org.openjdk.jmh.annotations.Level
+import org.openjdk.jmh.annotations.Measurement
+import org.openjdk.jmh.annotations.Scope
+import org.openjdk.jmh.annotations.Setup
+import org.openjdk.jmh.annotations.State
+import org.openjdk.jmh.annotations.Warmup
 import java.util.concurrent.TimeUnit
-import kotlin.time.Duration
-import kotlin.time.DurationUnit
-import kotlin.time.toDuration
+import kotlin.time.Duration.Companion.seconds
 
 data class FleksPosition(var x: Float = 0f, var y: Float = 0f) : Component<FleksPosition> {
     override fun type() = FleksPosition
@@ -128,16 +138,15 @@ open class FleksBenchmark {
     @Benchmark
     fun simple(state: FleksStateSimple) {
         repeat(WORLD_UPDATES) {
-            state.world.update(ONE_SECOND)
+            state.world.update(1.seconds)
         }
     }
 
     @Benchmark
     fun complex(state: FleksStateComplex) {
         repeat(WORLD_UPDATES) {
-            state.world.update(ONE_SECOND)
+            state.world.update(1.seconds)
         }
     }
 }
 
-val ONE_SECOND = 1.toDuration(DurationUnit.SECONDS)

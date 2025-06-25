@@ -4,10 +4,16 @@ import com.github.quillraven.fleks.World.Companion.family
 import com.github.quillraven.fleks.World.Companion.inject
 import com.github.quillraven.fleks.collection.compareEntity
 import com.github.quillraven.fleks.collection.compareEntityBy
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
 import kotlin.time.Duration
-import kotlin.time.DurationUnit
-import kotlin.time.toDuration
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 private class SystemTestIntervalSystemEachFrame : IntervalSystem(
     interval = EachFrame
@@ -30,7 +36,7 @@ private class SystemTestIntervalSystemEachFrame : IntervalSystem(
 }
 
 private class SystemTestIntervalSystemFixed : IntervalSystem(
-    interval = Fixed(250.toDuration(DurationUnit.MILLISECONDS))
+    interval = Fixed(250.milliseconds)
 ) {
     var numCalls = 0
     var lastAlpha = 0f
@@ -58,7 +64,7 @@ private data class SystemTestComponent(
 
 private class SystemTestIteratingSystem : IteratingSystem(
     family = family { all(SystemTestComponent) },
-    interval = Fixed(250.toDuration(DurationUnit.MILLISECONDS))
+    interval = Fixed(250.milliseconds)
 ) {
     var numEntityCalls = 0
     var numAlphaCalls = 0
@@ -114,7 +120,7 @@ private class SystemTestIteratingSystemSortAutomatic : IteratingSystem(
 
 private class SystemTestFixedSystemRemoval : IteratingSystem(
     family = family { all(SystemTestComponent) },
-    interval = Fixed(1.toDuration(DurationUnit.SECONDS))
+    interval = Fixed(1.seconds)
 ) {
     var numEntityCalls = 0
     var lastEntityProcess = Entity.NONE
@@ -213,7 +219,7 @@ internal class SystemTest {
             }
         }
         val system = w.system<SystemTestIntervalSystemEachFrame>()
-        w.update(42.toDuration(DurationUnit.SECONDS))
+        w.update(42.seconds)
 
         assertEquals(42L, system.deltaTime.inWholeSeconds)
     }
@@ -227,7 +233,7 @@ internal class SystemTest {
         }
         val system = w.system<SystemTestIntervalSystemFixed>()
 
-        system.world.update(1100.toDuration(DurationUnit.MILLISECONDS))
+        system.world.update(1100.milliseconds)
 
         assertEquals(4, system.numCalls)
         assertEquals(0.1f / 0.25f, system.lastAlpha, 0.0001f)
@@ -242,7 +248,7 @@ internal class SystemTest {
         }
         val system = w.system<SystemTestIntervalSystemFixed>()
 
-        assertEquals(250.toDuration(DurationUnit.MILLISECONDS), system.deltaTime)
+        assertEquals(250.milliseconds, system.deltaTime)
     }
 
     @Test
@@ -306,7 +312,7 @@ internal class SystemTest {
         world.entity { it += SystemTestComponent() }
         world.entity { it += SystemTestComponent() }
 
-        world.update(300.toDuration(DurationUnit.MILLISECONDS))
+        world.update(300.milliseconds)
 
         val system = world.system<SystemTestIteratingSystem>()
         assertEquals(2, system.numEntityCalls)
@@ -325,7 +331,7 @@ internal class SystemTest {
         val system = world.system<SystemTestIteratingSystem>()
         system.entityToConfigure = entity
 
-        world.update(300.toDuration(DurationUnit.MILLISECONDS))
+        world.update(300.milliseconds)
 
         assertFalse(with(world) { entity has SystemTestComponent })
     }
@@ -430,8 +436,8 @@ internal class SystemTest {
 
         // call it twice - first call still iterates over all three entities
         // while the second call will only iterate over the remaining two entities
-        world.update(1.toDuration(DurationUnit.SECONDS))
-        world.update(1.toDuration(DurationUnit.SECONDS))
+        world.update(1.seconds)
+        world.update(1.seconds)
 
         assertEquals(4, system.numEntityCalls)
     }

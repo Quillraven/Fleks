@@ -4,12 +4,17 @@ import com.github.quillraven.fleks.World.Companion.family
 import com.github.quillraven.fleks.World.Companion.inject
 import com.github.quillraven.fleks.collection.compareEntity
 import com.github.quillraven.fleks.collection.compareEntityBy
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.DurationUnit
-import kotlin.time.toDuration
 
 private data class WorldTestComponent(
     var x: Float = 0f,
@@ -314,7 +319,7 @@ internal class WorldTest {
         }
         w.system<WorldTestIteratingSystem>().enabled = false
 
-        w.update(1.toDuration(DurationUnit.SECONDS))
+        w.update(1.seconds)
 
         assertEquals(1L, w.deltaTime.inWholeSeconds)
         assertEquals(1, w.system<WorldTestIntervalSystem>().numCalls)
@@ -346,7 +351,7 @@ internal class WorldTest {
     fun verifyUpdateAndUpdateDurationIsSame() {
         val world = configureWorld { }
 
-        world.update(500.toDuration(DurationUnit.MILLISECONDS))
+        world.update(500.milliseconds)
         assertEquals(500, world.deltaTime.inWholeMilliseconds)
 
         world.update(0.5.seconds)
@@ -789,7 +794,7 @@ internal class WorldTest {
 
         w.loadSnapshot(snapshot)
         val actual = w.snapshot()
-        w.update(1.toDuration(DurationUnit.SECONDS))
+        w.update(1.seconds)
 
         // 3 entities should be loaded
         assertEquals(3, w.numEntities)

@@ -4,9 +4,14 @@ import com.github.quillraven.fleks.Sprite.Companion.SpriteBackground
 import com.github.quillraven.fleks.Sprite.Companion.SpriteForeground
 import com.github.quillraven.fleks.World.Companion.family
 import com.github.quillraven.fleks.World.Companion.inject
-import kotlin.test.*
-import kotlin.time.DurationUnit
-import kotlin.time.toDuration
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.seconds
 
 private data class Position(
     var x: Float,
@@ -161,7 +166,7 @@ class Fleks2TDD {
             it += Position(0f, 0f)
         }
 
-        world.update(1000.toDuration(DurationUnit.SECONDS))
+        world.update(1.seconds)
 
         assertEquals(1f, with(world) { entity[Position] }.x)
     }
