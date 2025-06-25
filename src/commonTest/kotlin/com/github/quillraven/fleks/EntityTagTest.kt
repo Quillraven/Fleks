@@ -2,6 +2,9 @@ package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.World.Companion.family
 import kotlin.test.*
+import kotlin.time.Duration
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 data object Visible : EntityTag()
 
@@ -50,12 +53,12 @@ class EntityTagTest {
             it += TestTags.PLAYER
         }
 
-        world.update(1f)
+        world.update(1000.toDuration(DurationUnit.SECONDS))
         assertEquals(1, testSystem.ticks)
 
         testSystem.ticks = 0
         with(world) { entity.configure { it -= Visible } }
-        world.update(1f)
+        world.update(1000.toDuration(DurationUnit.SECONDS))
         assertEquals(0, testSystem.ticks)
     }
 

@@ -3,6 +3,7 @@ package com.github.quillraven.fleks
 import com.github.quillraven.fleks.World.Companion.family
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.time.Duration
 
 private class TestComponent : Component<TestComponent> {
     companion object : ComponentType<TestComponent>()
@@ -94,7 +95,7 @@ internal class SystemOrderTest {
             }
         }
 
-        world.update(0f)
+        world.update(Duration.ZERO)
 
         assertEquals(FirstSystem::class, systemOrder[0]::class)
         assertEquals(SecondSystem::class, systemOrder[1]::class)
@@ -146,7 +147,7 @@ internal class SystemOrderTest {
         }
 
         world.entity { it += TestComponent() }
-        world.update(0f)
+        world.update(Duration.ZERO)
 
         assertEquals(FirstSystem::class, systemOrder[0]::class)
         assertEquals(SecondSystem::class, systemOrder[1]::class)

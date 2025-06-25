@@ -41,7 +41,7 @@ class World internal constructor(
      * Returns the time passed to [update][World.update].
      * It represents the time in seconds between two frames.
      */
-    var deltaTime = 0f
+    var deltaTime = Duration.ZERO
         private set
 
     @PublishedApi
@@ -441,7 +441,7 @@ class World internal constructor(
      * Updates all [enabled][IntervalSystem.enabled] [systems][IntervalSystem] of the world
      * using the given [deltaTime] in seconds.
      */
-    fun update(deltaTime: Float) {
+    fun update(deltaTime: Duration) {
         this.deltaTime = deltaTime
         for (i in systems.indices) {
             val system = systems[i]
@@ -449,14 +449,6 @@ class World internal constructor(
                 system.onUpdate()
             }
         }
-    }
-
-    /**
-     * Updates all [enabled][IntervalSystem.enabled] [systems][IntervalSystem] of the world
-     * using the given [duration]. The duration is converted to seconds.
-     */
-    fun update(duration: Duration) {
-        update(duration.inWholeNanoseconds * 0.000000001f)
     }
 
     /**

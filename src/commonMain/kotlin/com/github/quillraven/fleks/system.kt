@@ -1,6 +1,7 @@
 package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.EntityComparator
+import kotlin.time.Duration
 
 /**
  * An interval for an [IntervalSystem]. There are two kinds of intervals:
@@ -16,7 +17,7 @@ data object EachFrame : Interval
 /**
  * @param step the time in seconds when an [IntervalSystem] gets updated.
  */
-data class Fixed(val step: Float) : Interval
+data class Fixed(val step: Duration) : Interval
 
 /**
  * A basic system of a [world][World] without a context to [entities][Entity].
@@ -51,7 +52,7 @@ abstract class IntervalSystem(
             }
         }
 
-    private var accumulator: Float = 0.0f
+    private var accumulator: Duration = Duration.ZERO
 
     /**
      * Returns the time in seconds since the last time [onUpdate] was called.
@@ -60,7 +61,7 @@ abstract class IntervalSystem(
      *
      * Otherwise, the [step][Fixed.step] value is returned.
      */
-    val deltaTime: Float
+    val deltaTime: Duration
         get() = if (interval is Fixed) interval.step else world.deltaTime
 
     /**
@@ -98,7 +99,7 @@ abstract class IntervalSystem(
                     accumulator -= stepRate
                 }
 
-                onAlpha(accumulator / stepRate)
+                onAlpha((accumulator / stepRate).toFloat())
             }
         }
     }

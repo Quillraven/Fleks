@@ -4,6 +4,8 @@ import com.github.quillraven.fleks.*
 import com.github.quillraven.fleks.World.Companion.family
 import org.openjdk.jmh.annotations.*
 import java.util.concurrent.TimeUnit
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 data class FleksPosition(var x: Float = 0f, var y: Float = 0f) : Component<FleksPosition> {
     override fun type() = FleksPosition
@@ -125,14 +127,14 @@ open class FleksBenchmark {
     @Benchmark
     fun simple(state: FleksStateSimple) {
         repeat(WORLD_UPDATES) {
-            state.world.update(1f)
+            state.world.update(1L.toDuration(DurationUnit.SECONDS))
         }
     }
 
     @Benchmark
     fun complex(state: FleksStateComplex) {
         repeat(WORLD_UPDATES) {
-            state.world.update(1f)
+            state.world.update(1L.toDuration(DurationUnit.SECONDS))
         }
     }
 }

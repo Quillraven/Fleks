@@ -5,8 +5,11 @@ import com.github.quillraven.fleks.World.Companion.inject
 import com.github.quillraven.fleks.collection.compareEntity
 import com.github.quillraven.fleks.collection.compareEntityBy
 import kotlin.test.*
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 private data class WorldTestComponent(
     var x: Float = 0f,
@@ -311,9 +314,9 @@ internal class WorldTest {
         }
         w.system<WorldTestIteratingSystem>().enabled = false
 
-        w.update(1f)
+        w.update(1.toDuration(DurationUnit.SECONDS))
 
-        assertEquals(1f, w.deltaTime)
+        assertEquals(1L, w.deltaTime.inWholeSeconds)
         assertEquals(1, w.system<WorldTestIntervalSystem>().numCalls)
         assertEquals(0, w.system<WorldTestIteratingSystem>().numCalls)
     }
@@ -334,7 +337,7 @@ internal class WorldTest {
 
         w.update(1.seconds)
 
-        assertEquals(1f, w.deltaTime)
+        assertEquals(1L, w.deltaTime.inWholeSeconds)
         assertEquals(1, w.system<WorldTestIntervalSystem>().numCalls)
         assertEquals(0, w.system<WorldTestIteratingSystem>().numCalls)
     }
@@ -343,14 +346,14 @@ internal class WorldTest {
     fun verifyUpdateAndUpdateDurationIsSame() {
         val world = configureWorld { }
 
-        world.update(0.5f)
-        assertEquals(0.5f, world.deltaTime)
+        world.update(500.toDuration(DurationUnit.MILLISECONDS))
+        assertEquals(500, world.deltaTime.inWholeMilliseconds)
 
         world.update(0.5.seconds)
-        assertEquals(0.5f, world.deltaTime)
+        assertEquals(500, world.deltaTime.inWholeMilliseconds)
 
         world.update(500.milliseconds)
-        assertEquals(0.5f, world.deltaTime)
+        assertEquals(500, world.deltaTime.inWholeMilliseconds)
     }
 
     @Test
@@ -459,7 +462,7 @@ internal class WorldTest {
         val e = w.entity()
 
         with(w) { e.configure { it += WorldTestComponent() } }
-        w.update(0f)
+        w.update(Duration.ZERO)
 
         assertEquals(1, w.system<WorldTestIteratingSystem>().numCallsEntity)
     }
@@ -786,7 +789,7 @@ internal class WorldTest {
 
         w.loadSnapshot(snapshot)
         val actual = w.snapshot()
-        w.update(1f)
+        w.update(1.toDuration(DurationUnit.SECONDS))
 
         // 3 entities should be loaded
         assertEquals(3, w.numEntities)
