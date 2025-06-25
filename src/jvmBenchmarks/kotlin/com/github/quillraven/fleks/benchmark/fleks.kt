@@ -4,6 +4,7 @@ import com.github.quillraven.fleks.*
 import com.github.quillraven.fleks.World.Companion.family
 import org.openjdk.jmh.annotations.*
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
@@ -127,14 +128,16 @@ open class FleksBenchmark {
     @Benchmark
     fun simple(state: FleksStateSimple) {
         repeat(WORLD_UPDATES) {
-            state.world.update(1L.toDuration(DurationUnit.SECONDS))
+            state.world.update(ONE_SECOND)
         }
     }
 
     @Benchmark
     fun complex(state: FleksStateComplex) {
         repeat(WORLD_UPDATES) {
-            state.world.update(1L.toDuration(DurationUnit.SECONDS))
+            state.world.update(ONE_SECOND)
         }
     }
 }
+
+val ONE_SECOND = 1.toDuration(DurationUnit.SECONDS)
