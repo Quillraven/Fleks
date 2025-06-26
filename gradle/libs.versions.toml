@@ -4,10 +4,13 @@ kotlin = "2.1.21"
 kotlinxSerialization = "1.8.1"
 kotlinDokka = "2.0.0"
 kotlinxBenchmark = "0.4.14"
+coroutines = "1.10.2"
 
 [libraries]
 
 kotlinxSerialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
+
+coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 
 kotlinxBenchmark-runtime = { module = "org.jetbrains.kotlinx:kotlinx-benchmark-runtime", version.ref = "kotlinxBenchmark" }
 
