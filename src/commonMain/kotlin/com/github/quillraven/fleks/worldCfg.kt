@@ -188,6 +188,7 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
 
         world.initAggregatedFamilyHooks()
         world.systems.forEach { it.onInit() }
+        world.suspendableSystems.forEach { it.onInit() }
     }
 }
 

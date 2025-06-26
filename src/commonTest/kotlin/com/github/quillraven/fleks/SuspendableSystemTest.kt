@@ -204,20 +204,20 @@ internal class SuspendableSystemTest {
     }
 
     @Test
-    fun systemWithIntervalEachFrameReturnsWorldDeltaTime() {
+    fun systemWithIntervalEachFrameReturnsWorldDeltaTime() = runTest {
         val w = configureWorld {
             systems {
                 add(SuspendableSystemTestIntervalSystemEachFrame())
             }
         }
         val system = w.system<SuspendableSystemTestIntervalSystemEachFrame>()
-        w.update(42f)
+        w.suspendableUpdate(42f)
 
         assertEquals(42f, system.deltaTime)
     }
 
     @Test
-    fun systemWithFixedIntervalOf025fGetsCalledFourTimesWhenDeltaTimeIs11f() {
+    fun systemWithFixedIntervalOf025fGetsCalledFourTimesWhenDeltaTimeIs11f() = runTest {
         val w = configureWorld {
             systems {
                 add(SuspendableSystemTestIntervalSystemFixed())
@@ -225,7 +225,7 @@ internal class SuspendableSystemTest {
         }
         val system = w.system<SuspendableSystemTestIntervalSystemFixed>()
 
-        system.world.update(1.1f)
+        system.world.suspendableUpdate(1.1f)
 
         assertEquals(4, system.numCalls)
         assertEquals(0.1f / 0.25f, system.lastAlpha, 0.0001f)
@@ -251,7 +251,7 @@ internal class SuspendableSystemTest {
             }
         }
 
-        assertEquals(1, expectedWorld.systems.size)
+        assertEquals(1, expectedWorld.suspendableSystems.size)
         assertNotNull(expectedWorld.system<SuspendableSystemTestIntervalSystemEachFrame>())
         assertSame(expectedWorld, expectedWorld.system<SuspendableSystemTestIntervalSystemEachFrame>().world)
     }
@@ -269,7 +269,7 @@ internal class SuspendableSystemTest {
         }
 
         val actualSystem = expectedWorld.system<SuspendableSystemTestIteratingSystemInjectable>()
-        assertEquals(1, expectedWorld.systems.size)
+        assertEquals(1, expectedWorld.suspendableSystems.size)
         assertSame(expectedWorld, actualSystem.world)
         assertEquals("42", actualSystem.injectable)
     }
@@ -288,14 +288,14 @@ internal class SuspendableSystemTest {
         }
 
         val actualSystem = expectedWorld.system<SuspendableSystemTestIteratingSystemQualifiedInjectable>()
-        assertEquals(1, expectedWorld.systems.size)
+        assertEquals(1, expectedWorld.suspendableSystems.size)
         assertSame(expectedWorld, actualSystem.world)
         assertEquals("42", actualSystem.injectable)
         assertEquals("43", actualSystem.injectable2)
     }
 
     @Test
-    fun iteratingSystemCallsOnTickAndOnAlphaForEachEntityOfTheSystem() {
+    fun iteratingSystemCallsOnTickAndOnAlphaForEachEntityOfTheSystem() = runTest {
         val world = configureWorld {
             systems {
                 add(SuspendableSystemTestIteratingSystem())
@@ -304,7 +304,7 @@ internal class SuspendableSystemTest {
         world.entity { it += SuspendableSystemTestComponent() }
         world.entity { it += SuspendableSystemTestComponent() }
 
-        world.update(0.3f)
+        world.suspendableUpdate(0.3f)
 
         val system = world.system<SuspendableSystemTestIteratingSystem>()
         assertEquals(2, system.numEntityCalls)
@@ -313,7 +313,7 @@ internal class SuspendableSystemTest {
     }
 
     @Test
-    fun configureEntityDuringIteration() {
+    fun configureEntityDuringIteration() = runTest {
         val world = configureWorld {
             systems {
                 add(SuspendableSystemTestIteratingSystem())
@@ -323,13 +323,13 @@ internal class SuspendableSystemTest {
         val system = world.system<SuspendableSystemTestIteratingSystem>()
         system.entityToConfigure = entity
 
-        world.update(0.3f)
+        world.suspendableUpdate(0.3f)
 
         assertFalse(with(world) { entity has SuspendableSystemTestComponent })
     }
 
     @Test
-    fun sortEntitiesAutomatically() {
+    fun sortEntitiesAutomatically() = runTest {
         val world = configureWorld {
             systems {
                 add(SuspendableSystemTestIteratingSystemSortAutomatic())
@@ -339,13 +339,13 @@ internal class SuspendableSystemTest {
         world.entity { it += SuspendableSystemTestComponent(x = 10f) }
         val expectedEntity = world.entity { it += SuspendableSystemTestComponent(x = 5f) }
 
-        world.update(0f)
+        world.suspendableUpdate(0f)
 
         assertEquals(expectedEntity, world.system<SuspendableSystemTestIteratingSystemSortAutomatic>().lastEntityProcess)
     }
 
     @Test
-    fun sortEntitiesProgrammatically() {
+    fun sortEntitiesProgrammatically() = runTest {
         val world = configureWorld {
             systems {
                 add(SuspendableSystemTestIteratingSystemSortManual())
@@ -357,7 +357,7 @@ internal class SuspendableSystemTest {
         val system = world.system<SuspendableSystemTestIteratingSystemSortManual>()
 
         system.doSort = true
-        world.update(0f)
+        world.suspendableUpdate(0f)
 
         assertEquals(expectedEntity, system.lastEntityProcess)
         assertFalse(system.doSort)
@@ -392,7 +392,7 @@ internal class SuspendableSystemTest {
     }
 
     @Test
-    fun removingAnEntityDuringUpdateIsDelayed() {
+    fun removingAnEntityDuringUpdateIsDelayed() = runTest {
         val world = configureWorld {
             systems {
                 add(SuspendableSystemTestIteratingSystemSortAutomatic())
@@ -406,14 +406,14 @@ internal class SuspendableSystemTest {
 
         // call it twice - first call still iterates over all three entities
         // while the second call will only iterate over the remaining two entities
-        world.update(0f)
-        world.update(0f)
+        world.suspendableUpdate(0f)
+        world.suspendableUpdate(0f)
 
         assertEquals(5, system.numEntityCalls)
     }
 
     @Test
-    fun removingAnEntityDuringAlphaIsDelayed() {
+    fun removingAnEntityDuringAlphaIsDelayed() = runTest {
         val world = configureWorld {
             systems {
                 add(SuspendableSystemTestFixedSystemRemoval())
@@ -428,8 +428,8 @@ internal class SuspendableSystemTest {
 
         // call it twice - first call still iterates over all three entities
         // while the second call will only iterate over the remaining two entities
-        world.update(1f)
-        world.update(1f)
+        world.suspendableUpdate(1f)
+        world.suspendableUpdate(1f)
 
         assertEquals(4, system.numEntityCalls)
     }
@@ -459,7 +459,7 @@ internal class SuspendableSystemTest {
     }
 
     @Test
-    fun createEntityDuringSystemInit() {
+    fun createEntityDuringSystemInit() = runTest {
         // this test verifies that entities that are created in a system's init block
         // are correctly added to families
         val world = configureWorld {
@@ -468,7 +468,7 @@ internal class SuspendableSystemTest {
             }
         }
 
-        world.update(0f)
+        world.suspendableUpdate(0f)
 
         val system = world.system<SuspendableSystemTestEntityCreation>()
         assertEquals(1, system.numTicks)

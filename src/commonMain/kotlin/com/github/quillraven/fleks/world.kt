@@ -280,7 +280,21 @@ class World internal constructor(
      *
      * @throws FleksSystemAlreadyAddedException if the system was already added before.
      */
+    fun add(system: SuspendableIntervalSystem) = add(systems.size, system)
+
+    /**
+     * Adds the [system] to the world's [systems].
+     *
+     * @throws FleksSystemAlreadyAddedException if the system was already added before.
+     */
     operator fun plusAssign(system: IntervalSystem) = add(system)
+
+    /**
+     * Adds the [system] to the world's [systems].
+     *
+     * @throws FleksSystemAlreadyAddedException if the system was already added before.
+     */
+    operator fun plusAssign(system: SuspendableIntervalSystem) = add(system)
 
     /**
      * Removes the [system] of the world's [systems].
@@ -296,7 +310,23 @@ class World internal constructor(
     /**
      * Removes the [system] of the world's [systems].
      */
+    fun remove(system: SuspendableIntervalSystem) {
+        mutableSuspendableSystems.remove(system)
+        if (system is IteratingSystem && (system is FamilyOnAdd || system is FamilyOnRemove)) {
+            updateAggregatedFamilyHooks(system.family)
+        }
+        system.onDispose()
+    }
+
+    /**
+     * Removes the [system] of the world's [systems].
+     */
     operator fun minusAssign(system: IntervalSystem) = remove(system)
+
+    /**
+     * Removes the [system] of the world's [systems].
+     */
+    operator fun minusAssign(system: SuspendableIntervalSystem) = remove(system)
 
     /**
      * Sets the [hook] as an [EntityService.addHook].
@@ -484,6 +514,20 @@ class World internal constructor(
     }
 
     /**
+     * Updates all [enabled][SuspendableIntervalSystem.enabled] [systems][SuspendableIntervalSystem] of the world
+     * using the given [deltaTime] in seconds.
+     */
+    suspend fun suspendableUpdate(deltaTime: Float) {
+        this.deltaTime = deltaTime
+        for (i in suspendableSystems.indices) {
+            val system = suspendableSystems[i]
+            if (system.enabled) {
+                system.onUpdate()
+            }
+        }
+    }
+
+    /**
      * Updates all [enabled][IntervalSystem.enabled] [systems][IntervalSystem] of the world
      * using the given [duration]. The duration is converted to seconds.
      */
@@ -498,6 +542,7 @@ class World internal constructor(
     fun dispose() {
         entityService.removeAll()
         systems.forEachReverse { it.onDispose() }
+        suspendableSystems.forEachReverse { it.onDispose() }
     }
 
     /**
