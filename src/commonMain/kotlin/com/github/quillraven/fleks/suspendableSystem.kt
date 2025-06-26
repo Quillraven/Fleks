@@ -2,25 +2,9 @@ package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.EntityComparator
 
-sealed interface System
-
 /**
- * An interval for an [IntervalSystem]. There are two kinds of intervals:
- * - [EachFrame]
- * - [Fixed]
+ * Coroutines-friendly version of [IntervalSystem]
  *
- * [EachFrame] means that the [IntervalSystem] is updated every time the [world][World] gets updated.
- * [Fixed] means that the [IntervalSystem] is updated at a fixed rate given in seconds.
- */
-sealed interface Interval
-data object EachFrame : Interval
-
-/**
- * @param step the time in seconds when an [IntervalSystem] gets updated.
- */
-data class Fixed(val step: Float) : Interval
-
-/**
  * A basic system of a [world][World] without a context to [entities][Entity].
  * It is mandatory to implement [onTick] which gets called whenever the system gets updated
  * according to its [interval][Interval].
@@ -30,7 +14,7 @@ data class Fixed(val step: Float) : Interval
  * @param interval the [interval][Interval] in which the system gets updated. Default is [EachFrame].
  * @param enabled defines if the system gets updated when the [world][World] gets updated. Default is true.
  */
-abstract class IntervalSystem(
+abstract class SuspendableIntervalSystem(
     val interval: Interval = EachFrame,
     enabled: Boolean = true,
     /**
@@ -89,7 +73,7 @@ abstract class IntervalSystem(
      * Otherwise, the world's [delta time][World.deltaTime] is analyzed and [onTick] is called at a fixed rate.
      * This could be multiple or zero times with a single call to [onUpdate]. At the end [onAlpha] is called.
      */
-    open fun onUpdate() {
+    open suspend fun onUpdate() {
         when (interval) {
             is EachFrame -> onTick()
             is Fixed -> {
@@ -109,7 +93,7 @@ abstract class IntervalSystem(
      * Function that contains the update logic of the system. Gets called whenever this system should get processed
      * according to its [interval].
      */
-    abstract fun onTick()
+    abstract suspend fun onTick()
 
     /**
      * Optional function for interpolation logic when using a [Fixed] interval. This function is not called for
@@ -127,20 +111,6 @@ abstract class IntervalSystem(
     open fun onDispose() = Unit
 }
 
-/**
- * A sorting type for an [IteratingSystem]. There are two sorting options:
- * - [Automatic]
- * - [Manual]
- *
- * [Automatic] means that the sorting of [entities][Entity] is happening automatically each time
- * [IteratingSystem.onTick] gets called.
- *
- * [Manual] means that sorting must be called programmatically by setting [IteratingSystem.doSort] to true.
- * [Entities][Entity] are then sorted the next time [IteratingSystem.onTick] gets called.
- */
-sealed interface SortingType
-data object Automatic : SortingType
-data object Manual : SortingType
 
 /**
  * An [IntervalSystem] of a [world][World] with a context to [entities][Entity].
@@ -157,14 +127,14 @@ data object Manual : SortingType
  * @param interval the [interval][Interval] in which the system gets updated. Default is [EachFrame].
  * @param enabled defines if the system gets updated when the [world][World] gets updated. Default is true.
  */
-abstract class IteratingSystem(
+abstract class SuspendableIteratingSystem(
     val family: Family,
     protected val comparator: EntityComparator = EMPTY_COMPARATOR,
     protected val sortingType: SortingType = Automatic,
     interval: Interval = EachFrame,
     enabled: Boolean = true,
     world: World
-) : IntervalSystem(interval, enabled, world) {
+) : SuspendableIntervalSystem(interval, enabled, world) {
 
     constructor(
         family: Family,
@@ -204,16 +174,16 @@ abstract class IteratingSystem(
      * Updates the [family] if needed and calls [onTickEntity] for each [entity][Entity] of the [family].
      * Does entity sorting using [onSort] before calling [onTickEntity].
      */
-    override fun onTick() {
+    override suspend fun onTick() {
         onSort()
 
-        family.forEach { onTickEntity(it) }
+        family.suspendForEach { onTickEntity(it) }
     }
 
     /**
      * Function that contains the update logic for each [entity][Entity] of the system.
      */
-    abstract fun onTickEntity(entity: Entity)
+    abstract suspend fun onTickEntity(entity: Entity)
 
     /**
      * Optional function for interpolation logic when using a [Fixed] interval. This function is not called for
@@ -235,27 +205,4 @@ abstract class IteratingSystem(
     companion object {
         private val EMPTY_COMPARATOR = EntityComparator { _, _ -> 0 }
     }
-}
-
-/**
- * Any [IteratingSystem] having this interface will be triggered
- * by own [Family] similarly to [Family.addHook].
- */
-interface FamilyOnAdd {
-    /**
-     * Gets called whenever an [entity][Entity] enters the family.
-     */
-    fun onAddEntity(entity: Entity)
-}
-
-/**
- * Any [IteratingSystem] having this interface will be triggered
- * by own [Family] similarly to [Family.removeHook].
- */
-interface FamilyOnRemove {
-    /**
-     * Gets called whenever an [entity][Entity] leaves the family.
-     * This function gets called in reversed world's [systems][World.systems] order.
-     */
-    fun onRemoveEntity(entity: Entity)
 }

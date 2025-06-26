@@ -49,7 +49,8 @@ class InjectableConfiguration(private val world: World) {
  */
 @WorldCfgMarker
 class SystemConfiguration(
-    private val systems: MutableList<IntervalSystem>
+    private val systems: MutableList<IntervalSystem>,
+    private val suspendableSystems: MutableList<SuspendableIntervalSystem>
 ) {
     /**
      * Adds the [system] to the [world][World].
@@ -62,6 +63,18 @@ class SystemConfiguration(
             throw FleksSystemAlreadyAddedException(system::class)
         }
         systems += system
+    }
+    /**
+     * Adds the [system] to the [world][World].
+     * The order in which systems are added is the order in which they will be executed when calling [World.update].
+     *
+     * @throws [FleksSystemAlreadyAddedException] if the system was already added before.
+     */
+    fun <T : SuspendableIntervalSystem> add(system: T) {
+        if (suspendableSystems.any { it::class == system::class }) {
+            throw FleksSystemAlreadyAddedException(system::class)
+        }
+        suspendableSystems += system
     }
 }
 
@@ -165,7 +178,7 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
     fun configure() {
         injectableCfg?.invoke(InjectableConfiguration(world))
         familyCfg?.invoke(FamilyConfiguration(world))
-        SystemConfiguration(world.mutableSystems).also {
+        SystemConfiguration(world.mutableSystems, world.mutableSuspendableSystems).also {
             systemCfg?.invoke(it)
         }
 

@@ -77,6 +77,16 @@ class World internal constructor(
     val systems: List<IntervalSystem>
         get() = mutableSystems
 
+    // Internal mutable list of systems
+    // can be replaced in a later version of Kotlin with "backing field" syntax
+    internal val mutableSuspendableSystems = arrayListOf<SuspendableIntervalSystem>()
+
+    /**
+     * Returns the world's suspendable systems.
+     */
+    val suspendableSystems: List<SuspendableIntervalSystem>
+        get() = mutableSuspendableSystems
+
     /**
      * Map of add [FamilyHook] out of the [WorldConfiguration].
      * Only used if there are also aggregated system hooks for the family to remember
@@ -192,12 +202,17 @@ class World internal constructor(
     }
 
     /**
-     * Returns the specified [system][IntervalSystem].
+     * Returns the specified [system][IntervalSystem] or [suspendable system][SuspendableIntervalSystem].
      *
      * @throws [FleksNoSuchSystemException] if there is no such system.
      */
-    inline fun <reified T : IntervalSystem> system(): T {
+    inline fun <reified T : System> system(): T {
         systems.forEach { system ->
+            if (system is T) {
+                return system
+            }
+        }
+        suspendableSystems.forEach { system ->
             if (system is T) {
                 return system
             }
@@ -206,17 +221,17 @@ class World internal constructor(
     }
 
     /**
-     * Returns true if and only if the given [system][IntervalSystem] is part of the world.
+     * Returns true if and only if the given [system][IntervalSystem] or [suspendable system][SuspendableIntervalSystem] is part of the world.
      */
-    inline fun <reified T : IntervalSystem> contains(): Boolean {
-        return systems.any { it is T }
+    inline fun <reified T : System> contains(): Boolean {
+        return systems.any { it is T } || suspendableSystems.any { it is T }
     }
 
     /**
-     * Returns the specified [system][IntervalSystem] or null if there is no such system.
+     * Returns the specified [system][IntervalSystem] or [suspendable system][SuspendableIntervalSystem] or null if there is no such system.
      */
-    inline fun <reified T : IntervalSystem> systemOrNull(): T? {
-        return systems.firstOrNull { it is T } as T?
+    inline fun <reified T : System> systemOrNull(): T? {
+        return systems.firstOrNull { it is T } as T? ?: suspendableSystems.firstOrNull { it is T } as T?
     }
 
     /**
@@ -230,6 +245,23 @@ class World internal constructor(
         }
 
         mutableSystems.add(index, system)
+        if (system is IteratingSystem && (system is FamilyOnAdd || system is FamilyOnRemove)) {
+            updateAggregatedFamilyHooks(system.family)
+        }
+        system.onInit()
+    }
+
+    /**
+     * Adds the [system] to the world's [systems] at the given [index].
+     *
+     * @throws FleksSystemAlreadyAddedException if the system was already added before.
+     */
+    fun add(index: Int, system: SuspendableIntervalSystem) {
+        if (suspendableSystems.any { it::class == system::class }) {
+            throw FleksSystemAlreadyAddedException(system::class)
+        }
+
+        mutableSuspendableSystems.add(index, system)
         if (system is IteratingSystem && (system is FamilyOnAdd || system is FamilyOnRemove)) {
             updateAggregatedFamilyHooks(system.family)
         }
