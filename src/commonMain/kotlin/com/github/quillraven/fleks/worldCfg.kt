@@ -12,7 +12,7 @@ annotation class WorldCfgMarker
 
 /**
  * Wrapper class for injectables of the [WorldConfiguration].
- * It is used to identify unused injectables after [world][World] creation.
+ * It is used to identify unused injectables after [world][GenericWorld] creation.
  */
 data class Injectable(val injObj: Any, var used: Boolean = false)
 
@@ -20,11 +20,11 @@ data class Injectable(val injObj: Any, var used: Boolean = false)
  * A DSL class to configure [Injectable] of a [WorldConfiguration].
  */
 @WorldCfgMarker
-class InjectableConfiguration(private val world: World) {
+class InjectableConfiguration(private val world: GenericWorld) {
 
     /**
      * Adds the specified [dependency] under the given [name] which
-     * can then be injected via [World.inject].
+     * can then be injected via [GenericWorld.inject].
      *
      * @throws [FleksInjectableAlreadyAddedException] if the dependency was already added before.
      */
@@ -39,7 +39,7 @@ class InjectableConfiguration(private val world: World) {
     /**
      * Adds the specified [dependency] via its [simpleName][KClass.simpleName],
      * or via its [toString][KClass.toString] if it has no name.
-     * It can then be injected via [World.inject].
+     * It can then be injected via [GenericWorld.inject].
      *
      * @throws [FleksInjectableAlreadyAddedException] if the dependency was already added before.
      */
@@ -50,19 +50,21 @@ class InjectableConfiguration(private val world: World) {
  * A DSL class to configure [IntervalSystem] of a [WorldConfiguration].
  */
 @WorldCfgMarker
-class SystemConfiguration(
-    private val systems: MutableList<IntervalSystem<*>>
+class SystemConfiguration<T>(
+    private val systems: ArrayList<IntervalSystem<T>>,
+    private val clock: WorldClock<T>
 ) {
     /**
-     * Adds the [system] to the [world][World].
-     * The order in which systems are added is the order in which they will be executed when calling [World.update].
+     * Adds the [system] to the [world][GenericWorld].
+     * The order in which systems are added is the order in which they will be executed when calling [GenericWorld.update].
      *
      * @throws [FleksSystemAlreadyAddedException] if the system was already added before.
      */
-    fun <T : IntervalSystem<*>> add(system: T) {
+    fun <A : IntervalSystem<T>> add(system: A) {
         if (systems.any { it::class == system::class }) {
             throw FleksSystemAlreadyAddedException(system::class)
         }
+        system.injectClock(clock)
         systems += system
     }
 }
@@ -73,7 +75,7 @@ class SystemConfiguration(
 @WorldCfgMarker
 class FamilyConfiguration(
     @PublishedApi
-    internal val world: World,
+    internal val world: GenericWorld,
 ) {
 
     /**
@@ -106,17 +108,17 @@ class FamilyConfiguration(
 }
 
 /**
- * A configuration for an entity [world][World] to define the systems, dependencies to be injected,
+ * A configuration for an entity [world][GenericWorld] to define the systems, dependencies to be injected,
  * [component][Component]- and [family][Family] hooks.
  *
- * @param world the [World] to be configured.
+ * @param world the [GenericWorld] to be configured.
  */
 @WorldCfgMarker
-class WorldConfiguration(@PublishedApi internal val world: World) {
+class WorldConfiguration<T>(@PublishedApi internal val world: World<T>) {
 
     private var injectableCfg: (InjectableConfiguration.() -> Unit)? = null
     private var familyCfg: (FamilyConfiguration.() -> Unit)? = null
-    private var systemCfg: (SystemConfiguration.() -> Unit)? = null
+    private var systemCfg: (SystemConfiguration<T>.() -> Unit)? = null
 
     fun injectables(cfg: InjectableConfiguration.() -> Unit) {
         injectableCfg = cfg
@@ -126,7 +128,7 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
         familyCfg = cfg
     }
 
-    fun systems(cfg: SystemConfiguration.() -> Unit) {
+    fun systems(cfg: SystemConfiguration<T>.() -> Unit) {
         systemCfg = cfg
     }
 
@@ -150,9 +152,9 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
 
     /**
      * Sets the [EntityProvider] for the [EntityService] by calling the [factory] function
-     * within the context of a [World]. Per default the [DefaultEntityProvider] is used.
+     * within the context of a [GenericWorld]. Per default the [DefaultEntityProvider] is used.
      */
-    fun entityProvider(factory: World.() -> EntityProvider) {
+    fun entityProvider(factory: GenericWorld.() -> EntityProvider) {
         world.entityService.entityProvider = world.run(factory)
     }
 
@@ -167,7 +169,10 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
     fun configure() {
         injectableCfg?.invoke(InjectableConfiguration(world))
         familyCfg?.invoke(FamilyConfiguration(world))
-        SystemConfiguration(world.mutableSystems).also {
+        SystemConfiguration<T>(
+            world.mutableSystems,
+            world.clock
+        ).also {
             systemCfg?.invoke(it)
         }
 
@@ -181,20 +186,22 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
 }
 
 /**
- * Creates a new [world][World] with the given [cfg][WorldConfiguration].
+ * Creates a new [world][GenericWorld] with the given [cfg][WorldConfiguration].
+ *
+ * @param worldClock provide a world clock to mesure elapsed time between two ticks
  *
  * @param entityCapacity initial maximum entity capacity.
- * Will be used internally when a [world][World] is created to set the initial
+ * Will be used internally when a [world][GenericWorld] is created to set the initial
  * size of some collections and to avoid slow resizing calls.
  *
  * @param cfg the [configuration][WorldConfiguration] of the world containing the [systems][IntervalSystem],
  * [injectables][Injectable] and [FamilyHook]s.
  */
-fun configureWorld(
-    worldClock: WorldClock<*> = NoOpWorldClock(),
+fun <T> configureWorld(
+    worldClock: WorldClock<T>,
     entityCapacity: Int = 512,
-    cfg: WorldConfiguration.() -> Unit
-): World {
+    cfg: WorldConfiguration<T>.() -> Unit
+): World<T> {
     val newWorld = World(entityCapacity, worldClock)
     World.CURRENT_WORLD = newWorld
 
@@ -206,3 +213,18 @@ fun configureWorld(
 
     return newWorld
 }
+
+/**
+ * Creates a new [world][GenericWorld] with the given [cfg][WorldConfiguration].
+ *
+ * @param entityCapacity initial maximum entity capacity.
+ * Will be used internally when a [world][GenericWorld] is created to set the initial
+ * size of some collections and to avoid slow resizing calls.
+ *
+ * @param cfg the [configuration][WorldConfiguration] of the world containing the [systems][IntervalSystem],
+ * [injectables][Injectable] and [FamilyHook]s.
+ */
+fun configureWorld(
+    entityCapacity: Int = 512,
+    cfg: WorldConfiguration<Unit>.() -> Unit
+): World<Unit> = configureWorld(NoOpWorldClock(), entityCapacity, cfg)

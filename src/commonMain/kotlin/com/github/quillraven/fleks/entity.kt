@@ -9,11 +9,11 @@ import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmName
 
 /**
- * An entity of a [world][World]. It represents a unique identifier that is the combination
+ * An entity of a [world][GenericWorld]. It represents a unique identifier that is the combination
  * of an index (=[id]) and a [version].
  *
  * It is possible to have two entities with the same [id] but different [version] but only
- * one of these entities is part of the [world][World] at any given time.
+ * one of these entities is part of the [world][GenericWorld] at any given time.
  */
 @Serializable
 data class Entity(val id: Int, val version: UInt) {
@@ -24,13 +24,13 @@ data class Entity(val id: Int, val version: UInt) {
 
 /**
  * Type alias for an optional hook function for an [EntityService].
- * Such a function runs within a [World] and takes the [Entity] as an argument.
+ * Such a function runs within a [GenericWorld] and takes the [Entity] as an argument.
  */
-typealias EntityHook = World.(Entity) -> Unit
+typealias EntityHook = GenericWorld.(Entity) -> Unit
 
 /**
  * A class for basic [Entity] extension functions within a [Family],
- * [IntervalSystem], [World] or [compareEntity].
+ * [IntervalSystem], [GenericWorld] or [compareEntity].
  */
 abstract class EntityComponentContext(
     @PublishedApi
@@ -89,7 +89,7 @@ abstract class EntityComponentContext(
 
     /**
      * Removes the [entity][Entity] from the world. The [entity][Entity] will be recycled and reused for
-     * future calls to [World.entity].
+     * future calls to [GenericWorld.entity].
      */
     fun Entity.remove() = componentService.world.minusAssign(this)
 
@@ -225,10 +225,10 @@ class EntityUpdateContext(
 interface EntityProvider {
 
     /**
-     * Reference to the [World] of the [EntityProvider].
+     * Reference to the [GenericWorld] of the [EntityProvider].
      * It is necessary for the [forEach] implementation.
      */
-    val world: World
+    val world: GenericWorld
 
     /**
      * Returns the total number of active [entities][Entity].
@@ -242,7 +242,7 @@ interface EntityProvider {
 
     /**
      * Creates a new [Entity] with a specific [id].
-     * Internally, this is only needed by [World.loadSnapshotOf] and
+     * Internally, this is only needed by [GenericWorld.loadSnapshotOf] and
      * if that is not used, then this function can be omitted.
      */
     fun create(id: Int): Entity
@@ -265,7 +265,7 @@ interface EntityProvider {
     /**
      * Performs the given [action] for all active [entities][Entity].
      */
-    fun forEach(action: World.(Entity) -> Unit)
+    fun forEach(action: GenericWorld.(Entity) -> Unit)
 }
 
 /**
@@ -274,7 +274,7 @@ interface EntityProvider {
  * The first [entity][Entity] starts with [id][Entity.id] zero and [version][Entity.version] zero.
  */
 class DefaultEntityProvider(
-    override val world: World,
+    override val world: GenericWorld,
     initialEntityCapacity: Int
 ) : EntityProvider {
 
@@ -373,7 +373,7 @@ class DefaultEntityProvider(
     /**
      * Performs the given [action] for all active [entities][Entity].
      */
-    override fun forEach(action: World.(Entity) -> Unit) {
+    override fun forEach(action: GenericWorld.(Entity) -> Unit) {
         activeEntities.forEach { world.action(it) }
     }
 }
@@ -385,7 +385,7 @@ class DefaultEntityProvider(
  */
 class EntityService(
     @PublishedApi
-    internal val world: World,
+    internal val world: GenericWorld,
     initialEntityCapacity: Int,
     @PublishedApi
     internal var entityProvider: EntityProvider = DefaultEntityProvider(world, initialEntityCapacity),
@@ -451,20 +451,20 @@ class EntityService(
 
     /**
      * Creates and returns a new [entity][Entity] and applies the given [configuration].
-     * Notifies all [families][World.allFamilies].
+     * Notifies all [families][GenericWorld.allFamilies].
      */
     inline fun create(configuration: EntityCreateContext.(Entity) -> Unit): Entity =
         postCreate(entityProvider.create(), configuration)
 
     /**
      * Creates and returns a new [entity][Entity] with the given [id] and applies the given [configuration].
-     * Notifies all [families][World.allFamilies].
+     * Notifies all [families][GenericWorld.allFamilies].
      */
     inline fun create(id: Int, configuration: EntityCreateContext.(Entity) -> Unit): Entity =
         postCreate(entityProvider.create(id), configuration)
 
     /**
-     * Applies the given [configuration] to the [entity] and notifies all [families][World.allFamilies].
+     * Applies the given [configuration] to the [entity] and notifies all [families][GenericWorld.allFamilies].
      * The [addHook] is invoked at the end, if provided.
      */
     @PublishedApi
@@ -494,7 +494,7 @@ class EntityService(
 
     /**
      * Updates an [entity] with the given [configuration].
-     * Notifies all [families][World.allFamilies].
+     * Notifies all [families][GenericWorld.allFamilies].
      */
     inline fun configure(entity: Entity, configuration: EntityUpdateContext.(Entity) -> Unit) {
         val skipFamilyNotify = updateId == entity.id || createId == entity.id
@@ -514,8 +514,8 @@ class EntityService(
 
     /**
      * Updates an [entity] with the given [snapshot][Snapshot].
-     * Notifies all [families][World.allFamilies].
-     * This function is only used by [World.loadSnapshot] and [World.loadSnapshotOf],
+     * Notifies all [families][GenericWorld.allFamilies].
+     * This function is only used by [GenericWorld.loadSnapshot] and [GenericWorld.loadSnapshotOf],
      * and is therefore working with unsafe wildcards ('*').
      */
     internal fun configure(entity: Entity, snapshot: Snapshot) {
@@ -550,7 +550,7 @@ class EntityService(
 
     /**
      * Recycles the given [entity] and resets its component mask with an empty [BitArray].
-     * This function is only used by [World.loadSnapshot].
+     * This function is only used by [GenericWorld.loadSnapshot].
      */
     internal fun recycle(entity: Entity) {
         entityProvider -= entity
@@ -561,7 +561,7 @@ class EntityService(
      * Removes the given [entity]. If [delayRemoval] is set then the [entity]
      * is not removed immediately and instead will be cleaned up within the [cleanupDelays] function.
      *
-     * Notifies all [families][World.allFamilies] when the [entity] gets removed.
+     * Notifies all [families][GenericWorld.allFamilies] when the [entity] gets removed.
      */
     operator fun minusAssign(entity: Entity) {
         if (entity !in entityProvider) {
@@ -612,7 +612,7 @@ class EntityService(
     /**
      * Performs the given [action] on each active [entity][Entity].
      */
-    fun forEach(action: World.(Entity) -> Unit) {
+    fun forEach(action: GenericWorld.(Entity) -> Unit) {
         entityProvider.forEach(action)
     }
 

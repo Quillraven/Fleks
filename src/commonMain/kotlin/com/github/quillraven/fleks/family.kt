@@ -10,9 +10,9 @@ import com.github.quillraven.fleks.collection.isNullOrEmpty
 
 /**
  * Type alias for an optional hook function for a [Family].
- * Such a function runs within a [World] and takes the [Entity] as an argument.
+ * Such a function runs within a [GenericWorld] and takes the [Entity] as an argument.
  */
-typealias FamilyHook = World.(Entity) -> Unit
+typealias FamilyHook = GenericWorld.(Entity) -> Unit
 
 /**
  * A class to define the configuration of a [Family]. A [family][Family] contains of three parts:
@@ -73,16 +73,16 @@ data class FamilyDefinition(
  * Each [component][Component] is assigned to a unique index via its [ComponentType].
  * That index is set in the [allOf], [noneOf] or [anyOf][] [BitArray].
  *
- * A family gets notified when an [entity][Entity] is added, updated or removed of the [world][World].
+ * A family gets notified when an [entity][Entity] is added, updated or removed of the [world][GenericWorld].
  *
  * Every [IteratingSystem] is linked to exactly one family, but a family can also exist outside of systems.
- * It gets created via the [World.family] function.
+ * It gets created via the [GenericWorld.family] function.
  */
 data class Family(
     internal val allOf: BitArray? = null,
     internal val noneOf: BitArray? = null,
     internal val anyOf: BitArray? = null,
-    private val world: World,
+    private val world: GenericWorld,
     @PublishedApi
     internal val entityService: EntityService = world.entityService,
 ) : EntityComponentContext(world.componentService) {

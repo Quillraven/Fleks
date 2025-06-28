@@ -17,12 +17,12 @@ private data class WorldTestComponent(
     var numAddCalls: Int = 0
     var numRemoveCalls: Int = 0
 
-    override fun World.onAdd(entity: Entity) {
+    override fun GenericWorld.onAdd(entity: Entity) {
         assertTrue(entity has WorldTestComponent)
         numAddCalls++
     }
 
-    override fun World.onRemove(entity: Entity) {
+    override fun GenericWorld.onRemove(entity: Entity) {
         assertFalse(entity has WorldTestComponent)
         numAddCalls--
     }
@@ -38,7 +38,7 @@ private class WorldTestComponent2 : Component<WorldTestComponent2> {
     companion object : ComponentType<WorldTestComponent2>()
 }
 
-private class WorldTestIntervalSystem(world: World = World.CURRENT_WORLD!!) : IntervalSystem<Unit>(world = world) {
+private class WorldTestIntervalSystem(world: GenericWorld = World.CURRENT_WORLD!!) : IntervalSystem<Unit>(world = world) {
     var numCalls = 0
     var disposed = false
 
@@ -52,7 +52,7 @@ private class WorldTestIntervalSystem(world: World = World.CURRENT_WORLD!!) : In
 }
 
 private class WorldTestIteratingSystem(
-    world: World = World.CURRENT_WORLD!!,
+    world: GenericWorld = World.CURRENT_WORLD!!,
     val testInject: String = world.inject()
 ) : IteratingSystem<Unit>(world = world, family = world.family { all(WorldTestComponent) }) {
     var numCalls = 0
@@ -73,7 +73,7 @@ private class WorldTestIteratingSystem(
     }
 }
 
-private class WorldTestInitSystem(world: World = World.CURRENT_WORLD!!) :
+private class WorldTestInitSystem(world: GenericWorld = World.CURRENT_WORLD!!) :
     IteratingSystem<Unit>(world.family { all(WorldTestComponent) }, world = world) {
     override fun onInit() {
         super.onInit()
@@ -83,7 +83,7 @@ private class WorldTestInitSystem(world: World = World.CURRENT_WORLD!!) :
     override fun onTickEntity(entity: Entity) = Unit
 }
 
-private class WorldTestInitSystemExtraFamily(world: World = World.CURRENT_WORLD!!) :
+private class WorldTestInitSystemExtraFamily(world: GenericWorld = World.CURRENT_WORLD!!) :
     IteratingSystem<Unit>(world.family { all(WorldTestComponent) }, world = world) {
     val extraFamily = world.family { any(WorldTestComponent2).none(WorldTestComponent) }
 
@@ -105,7 +105,7 @@ private class WorldTestNamedDependencySystem(
 }
 
 private class WorldEntityProvider(
-    override val world: World
+    override val world: GenericWorld
 ) : EntityProvider {
     private var id = 10
     private var entities = mutableListOf<Entity>()
@@ -127,7 +127,7 @@ private class WorldEntityProvider(
         entities.clear()
     }
 
-    override fun forEach(action: World.(Entity) -> Unit) {
+    override fun forEach(action: GenericWorld.(Entity) -> Unit) {
         entities.forEach { world.action(it) }
     }
 }

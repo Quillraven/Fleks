@@ -1,8 +1,6 @@
 package com.github.quillraven.fleks
 
 import WorldClock
-import com.github.quillraven.fleks.World.Companion.family
-import com.github.quillraven.fleks.World.Companion.inject
 import com.github.quillraven.fleks.collection.EntityBag
 import com.github.quillraven.fleks.collection.MutableEntityBag
 import kotlinx.serialization.Contextual
@@ -27,20 +25,22 @@ fun wildcardSnapshotOf(components: List<Component<*>>, tags: List<UniqueId<*>>):
     return Snapshot(components as List<Component<out Any>>, tags as List<UniqueId<out Any>>)
 }
 
+typealias GenericWorld = World<*>
+
 /**
  * A world to handle [entities][Entity] and [systems][IntervalSystem].
  *
  * @param entityCapacity the initial maximum capacity of entities.
  */
-class World internal constructor(
+class World<T> internal constructor(
     entityCapacity: Int,
-    val clock: WorldClock<*>
+    val clock: WorldClock<T>
 ) : EntityComponentContext(ComponentService()) {
     @PublishedApi
     internal val injectables = mutableMapOf<String, Injectable>()
 
     /**
-     * Returns the time passed to [update][World.update].
+     * Returns the time passed to [update][GenericWorld.update].
      * It represents the time in seconds between two frames.
      */
     var deltaTime = 0f
@@ -71,12 +71,12 @@ class World internal constructor(
 
     // Internal mutable list of systems
     // can be replaced in a later version of Kotlin with "backing field" syntax
-    internal val mutableSystems = arrayListOf<IntervalSystem<*>>()
+    internal val mutableSystems = arrayListOf<IntervalSystem<T>>()
 
     /**
      * Returns the world's systems.
      */
-    val systems: List<IntervalSystem<*>>
+    val systems: List<IntervalSystem<T>>
         get() = mutableSystems
 
     /**
@@ -164,13 +164,13 @@ class World internal constructor(
     }
 
     /**
-     * Returns true if and only if the [entity] is not removed and is part of the [World].
+     * Returns true if and only if the [entity] is not removed and is part of the [GenericWorld].
      */
     operator fun contains(entity: Entity) = entityService.contains(entity)
 
     /**
      * Removes the given [entity] from the world. The [entity] will be recycled and reused for
-     * future calls to [World.entity].
+     * future calls to [GenericWorld.entity].
      */
     operator fun minusAssign(entity: Entity) {
         entityService -= entity
@@ -178,7 +178,7 @@ class World internal constructor(
 
     /**
      * Removes all [entities][Entity] from the world. The entities will be recycled and reused for
-     * future calls to [World.entity].
+     * future calls to [GenericWorld.entity].
      * If [clearRecycled] is true then the recycled entities are cleared and the ids for newly
      * created entities start at 0 again.
      */
@@ -189,7 +189,7 @@ class World internal constructor(
     /**
      * Performs the given [action] on each active [entity][Entity].
      */
-    fun forEach(action: World.(Entity) -> Unit) {
+    fun forEach(action: GenericWorld.(Entity) -> Unit) {
         entityService.forEach(action)
     }
 
@@ -226,11 +226,12 @@ class World internal constructor(
      *
      * @throws FleksSystemAlreadyAddedException if the system was already added before.
      */
-    fun add(index: Int, system: IntervalSystem<*>) {
+    fun add(index: Int, system: IntervalSystem<T>) {
         if (systems.any { it::class == system::class }) {
             throw FleksSystemAlreadyAddedException(system::class)
         }
 
+        system.injectClock(clock)
         mutableSystems.add(index, system)
         if (system is IteratingSystem && (system is FamilyOnAdd || system is FamilyOnRemove)) {
             updateAggregatedFamilyHooks(system.family)
@@ -243,14 +244,14 @@ class World internal constructor(
      *
      * @throws FleksSystemAlreadyAddedException if the system was already added before.
      */
-    fun add(system: IntervalSystem<*>) = add(systems.size, system)
+    fun add(system: IntervalSystem<T>) = add(systems.size, system)
 
     /**
      * Adds the [system] to the world's [systems].
      *
      * @throws FleksSystemAlreadyAddedException if the system was already added before.
      */
-    operator fun plusAssign(system: IntervalSystem<*>) = add(system)
+    operator fun plusAssign(system: IntervalSystem<T>) = add(system)
 
     /**
      * Removes the [system] of the world's [systems].
@@ -529,7 +530,7 @@ class World internal constructor(
     @ThreadLocal
     companion object {
         @PublishedApi
-        internal var CURRENT_WORLD: World? = null
+        internal var CURRENT_WORLD: GenericWorld? = null
 
         /**
          * Returns an already registered injectable of the given [name] and marks it as used.

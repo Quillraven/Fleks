@@ -1,7 +1,7 @@
 package com.github.quillraven.fleks.benchmark
 
 import com.github.quillraven.fleks.*
-import com.github.quillraven.fleks.World.Companion.family
+import com.github.quillraven.fleks.GenericWorld.Companion.family
 import org.openjdk.jmh.annotations.*
 import java.util.concurrent.TimeUnit
 
@@ -57,7 +57,7 @@ class FleksSystemComplex2 : IteratingSystem(family { any(FleksPosition, FleksLif
 
 @State(Scope.Benchmark)
 open class FleksStateAddRemove {
-    lateinit var world: World
+    lateinit var world: GenericWorld
 
     @Setup(value = Level.Iteration)
     fun setup() {
@@ -67,7 +67,7 @@ open class FleksStateAddRemove {
 
 @State(Scope.Benchmark)
 open class FleksStateSimple {
-    lateinit var world: World
+    lateinit var world: GenericWorld
 
     @Setup(value = Level.Iteration)
     fun setup() {
@@ -87,7 +87,7 @@ open class FleksStateSimple {
 
 @State(Scope.Benchmark)
 open class FleksStateComplex {
-    lateinit var world: World
+    lateinit var world: GenericWorld
 
     @Setup(value = Level.Iteration)
     fun setup() {
