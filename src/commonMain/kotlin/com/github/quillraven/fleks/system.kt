@@ -14,6 +14,7 @@ import com.github.quillraven.fleks.collection.EntityComparator
  * [Fixed] means that the [IntervalSystem] is updated at a fixed rate given in seconds.
  */
 sealed interface Interval<T>
+class EachFrame<T> : Interval<T>
 
 /**
  * @param step the time in seconds when an [IntervalSystem] gets updated.
@@ -31,7 +32,7 @@ data class Fixed<T>(val step: T) : Interval<T>
  * @param enabled defines if the system gets updated when the [world][World] gets updated. Default is true.
  */
 abstract class IntervalSystem<T>(
-    val interval: Interval<T>? = null,
+    val interval: Interval<T> = EachFrame(),
     enabled: Boolean = true,
     /**
      * Returns the [world][World] to which this system belongs.
@@ -90,7 +91,7 @@ abstract class IntervalSystem<T>(
      */
     open fun onUpdate() {
         when (interval) {
-            null -> onTick()
+            is EachFrame<T> -> onTick()
             is Fixed<T> -> {
                 clock.tickWithInterval(
                     interval.step,
@@ -162,7 +163,7 @@ abstract class IteratingSystem<T>(
     val family: Family,
     protected val comparator: EntityComparator = EMPTY_COMPARATOR,
     protected val sortingType: SortingType = Automatic,
-    interval: Interval<T>? = null,
+    interval: Interval<T> = EachFrame(),
     enabled: Boolean = true,
     world: GenericWorld
 ) : IntervalSystem<T>(interval, enabled, world) {
@@ -171,7 +172,7 @@ abstract class IteratingSystem<T>(
         family: Family,
         comparator: EntityComparator = EMPTY_COMPARATOR,
         sortingType: SortingType = Automatic,
-        interval: Interval<T>? = null,
+        interval: Interval<T> = EachFrame(),
         enabled: Boolean = true,
     ) : this(
         family,
