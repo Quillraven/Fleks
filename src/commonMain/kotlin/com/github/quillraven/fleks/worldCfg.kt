@@ -1,7 +1,7 @@
 package com.github.quillraven.fleks
 
-import NoOpWorldClock
-import WorldClock
+import NoOpClock
+import Clock
 import kotlin.reflect.KClass
 
 /**
@@ -52,7 +52,7 @@ class InjectableConfiguration(private val world: GenericWorld) {
 @WorldCfgMarker
 class SystemConfiguration<T>(
     private val systems: ArrayList<IntervalSystem<T>>,
-    private val clock: WorldClock<T>
+    private val clock: Clock<T>
 ) {
     /**
      * Adds the [system] to the [world][GenericWorld].
@@ -188,7 +188,7 @@ class WorldConfiguration<T>(@PublishedApi internal val world: World<T>) {
 /**
  * Creates a new [world][GenericWorld] with the given [cfg][WorldConfiguration].
  *
- * @param worldClock provide a world clock to mesure elapsed time between two ticks
+ * @param clock provide a world clock to mesure elapsed time between two ticks
  *
  * @param entityCapacity initial maximum entity capacity.
  * Will be used internally when a [world][GenericWorld] is created to set the initial
@@ -198,11 +198,11 @@ class WorldConfiguration<T>(@PublishedApi internal val world: World<T>) {
  * [injectables][Injectable] and [FamilyHook]s.
  */
 fun <T> configureWorld(
-    worldClock: WorldClock<T>,
+    clock: Clock<T>,
     entityCapacity: Int = 512,
     cfg: WorldConfiguration<T>.() -> Unit
 ): World<T> {
-    val newWorld = World(entityCapacity, worldClock)
+    val newWorld = World(entityCapacity, clock)
     World.CURRENT_WORLD = newWorld
 
     try {
@@ -227,4 +227,4 @@ fun <T> configureWorld(
 fun configureWorld(
     entityCapacity: Int = 512,
     cfg: WorldConfiguration<Unit>.() -> Unit
-): World<Unit> = configureWorld(NoOpWorldClock(), entityCapacity, cfg)
+): World<Unit> = configureWorld(NoOpClock, entityCapacity, cfg)

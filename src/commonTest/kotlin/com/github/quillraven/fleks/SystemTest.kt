@@ -1,15 +1,15 @@
 package com.github.quillraven.fleks
 
-import WorldClock
+import FloatClock
 import com.github.quillraven.fleks.World.Companion.family
 import com.github.quillraven.fleks.World.Companion.inject
 import com.github.quillraven.fleks.collection.compareEntity
 import com.github.quillraven.fleks.collection.compareEntityBy
 import kotlin.test.*
 
-private class SystemTestIntervalSystemEachFrame : IntervalSystem<Unit>(
-    interval = EachFrame
-) {
+private typealias NoClockSystemTestIntervalSystemEachFrame = SystemTestIntervalSystemEachFrame<Unit>
+
+private class SystemTestIntervalSystemEachFrame<T> : IntervalSystem<T>() {
     var numInits = 0
     var numDisposes = 0
     var numCalls = 0
@@ -27,7 +27,7 @@ private class SystemTestIntervalSystemEachFrame : IntervalSystem<Unit>(
     }
 }
 
-private class SystemTestIntervalSystemFixed : IntervalSystem<Unit>(
+private class SystemTestIntervalSystemFixed: IntervalSystem<Float>(
     interval = Fixed(0.25f)
 ) {
     var numCalls = 0
@@ -54,7 +54,7 @@ private data class SystemTestComponent(
     companion object : ComponentType<SystemTestComponent>()
 }
 
-private class SystemTestIteratingSystem : IteratingSystem<Unit>(
+private class SystemTestIteratingSystem : IteratingSystem<Float>(
     family = family { all(SystemTestComponent) },
     interval = Fixed(0.25f)
 ) {
@@ -110,7 +110,7 @@ private class SystemTestIteratingSystemSortAutomatic : IteratingSystem<Unit>(
     }
 }
 
-private class SystemTestFixedSystemRemoval : IteratingSystem<Unit>(
+private class SystemTestFixedSystemRemoval : IteratingSystem<Float>(
     family = family { all(SystemTestComponent) },
     interval = Fixed(1f)
 ) {
@@ -192,10 +192,10 @@ internal class SystemTest {
     fun systemWithIntervalEachFrameGetsCalledEveryTime() {
         val w = configureWorld {
             systems {
-                add(SystemTestIntervalSystemEachFrame())
+                add(NoClockSystemTestIntervalSystemEachFrame())
             }
         }
-        val system = w.system<SystemTestIntervalSystemEachFrame>()
+        val system = w.system<NoClockSystemTestIntervalSystemEachFrame>()
 
         system.onUpdate()
         system.onUpdate()
@@ -205,26 +205,32 @@ internal class SystemTest {
 
     @Test
     fun systemWithIntervalEachFrameReturnsWorldDeltaTime() {
-        val w = configureWorld {
+        val clock = FloatClock()
+
+        val w = configureWorld(clock) {
             systems {
                 add(SystemTestIntervalSystemEachFrame())
             }
         }
-        val system = w.system<SystemTestIntervalSystemEachFrame>()
+        val system = w.system<SystemTestIntervalSystemEachFrame<Float>>()
+        clock.update(42f)
         w.update(42f)
 
-        assertEquals(42f, system.deltaTime)
+        assertEquals(42f, system.clock.deltaTime)
     }
 
     @Test
     fun systemWithFixedIntervalOf025fGetsCalledFourTimesWhenDeltaTimeIs11f() {
-        val w = configureWorld {
+        val clock = FloatClock()
+
+        val w = configureWorld(clock) {
             systems {
                 add(SystemTestIntervalSystemFixed())
             }
         }
         val system = w.system<SystemTestIntervalSystemFixed>()
 
+        clock.update(1.1f)
         system.world.update(1.1f)
 
         assertEquals(4, system.numCalls)
@@ -233,27 +239,31 @@ internal class SystemTest {
 
     @Test
     fun systemWithFixedIntervalReturnsStepRateAsDeltaTime() {
-        val w = configureWorld {
+        val clock = FloatClock()
+
+        val w = configureWorld(clock) {
             systems {
                 add(SystemTestIntervalSystemFixed())
             }
         }
+
+        clock.update(0.25f)
         val system = w.system<SystemTestIntervalSystemFixed>()
 
-        assertEquals(0.25f, system.deltaTime, 0.0001f)
+        assertEquals(0.25f, system.clock.deltaTime, 0.0001f)
     }
 
     @Test
     fun createIntervalSystemWithNoArgs() {
         val expectedWorld = configureWorld {
             systems {
-                add(SystemTestIntervalSystemEachFrame())
+                add(NoClockSystemTestIntervalSystemEachFrame())
             }
         }
 
         assertEquals(1, expectedWorld.systems.size)
-        assertNotNull(expectedWorld.system<SystemTestIntervalSystemEachFrame>())
-        assertSame(expectedWorld, expectedWorld.system<SystemTestIntervalSystemEachFrame>().world)
+        assertNotNull(expectedWorld.system<NoClockSystemTestIntervalSystemEachFrame>())
+        assertSame(expectedWorld, expectedWorld.system<NoClockSystemTestIntervalSystemEachFrame>().world)
     }
 
     @Test
@@ -296,7 +306,9 @@ internal class SystemTest {
 
     @Test
     fun iteratingSystemCallsOnTickAndOnAlphaForEachEntityOfTheSystem() {
-        val world = configureWorld {
+        val clock = FloatClock()
+
+        val world = configureWorld(clock) {
             systems {
                 add(SystemTestIteratingSystem())
             }
@@ -304,6 +316,7 @@ internal class SystemTest {
         world.entity { it += SystemTestComponent() }
         world.entity { it += SystemTestComponent() }
 
+        clock.update(0.3f)
         world.update(0.3f)
 
         val system = world.system<SystemTestIteratingSystem>()
@@ -314,7 +327,9 @@ internal class SystemTest {
 
     @Test
     fun configureEntityDuringIteration() {
-        val world = configureWorld {
+        val clock = FloatClock()
+
+        val world = configureWorld(clock) {
             systems {
                 add(SystemTestIteratingSystem())
             }
@@ -323,6 +338,7 @@ internal class SystemTest {
         val system = world.system<SystemTestIteratingSystem>()
         system.entityToConfigure = entity
 
+        clock.update(0.3f)
         world.update(0.3f)
 
         assertFalse(with(world) { entity has SystemTestComponent })
@@ -372,7 +388,7 @@ internal class SystemTest {
         }
 
         assertFailsWith<FleksNoSuchSystemException> {
-            world.system<SystemTestIntervalSystemEachFrame>()
+            world.system<NoClockSystemTestIntervalSystemEachFrame>()
         }
     }
 
@@ -380,10 +396,10 @@ internal class SystemTest {
     fun updateOnlyCallsEnabledSystems() {
         val world = configureWorld {
             systems {
-                add(SystemTestIntervalSystemEachFrame())
+                add(NoClockSystemTestIntervalSystemEachFrame())
             }
         }
-        val system = world.system<SystemTestIntervalSystemEachFrame>()
+        val system = world.system<NoClockSystemTestIntervalSystemEachFrame>()
         system.enabled = false
 
         world.update(0f)
@@ -414,7 +430,9 @@ internal class SystemTest {
 
     @Test
     fun removingAnEntityDuringAlphaIsDelayed() {
-        val world = configureWorld {
+        val clock = FloatClock()
+
+        val world = configureWorld(clock) {
             systems {
                 add(SystemTestFixedSystemRemoval())
             }
@@ -428,7 +446,9 @@ internal class SystemTest {
 
         // call it twice - first call still iterates over all three entities
         // while the second call will only iterate over the remaining two entities
+        clock.update(1f)
         world.update(1f)
+        clock.update(1f)
         world.update(1f)
 
         assertEquals(4, system.numEntityCalls)
@@ -438,24 +458,24 @@ internal class SystemTest {
     fun initService() {
         val world = configureWorld {
             systems {
-                add(SystemTestIntervalSystemEachFrame())
+                add(NoClockSystemTestIntervalSystemEachFrame())
             }
         }
 
-        assertEquals(1, world.system<SystemTestIntervalSystemEachFrame>().numInits)
+        assertEquals(1, world.system<NoClockSystemTestIntervalSystemEachFrame>().numInits)
     }
 
     @Test
     fun disposeService() {
         val world = configureWorld {
             systems {
-                add(SystemTestIntervalSystemEachFrame())
+                add(NoClockSystemTestIntervalSystemEachFrame())
             }
         }
 
         world.dispose()
 
-        assertEquals(1, world.system<SystemTestIntervalSystemEachFrame>().numDisposes)
+        assertEquals(1, world.system<NoClockSystemTestIntervalSystemEachFrame>().numDisposes)
     }
 
     @Test

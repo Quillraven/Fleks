@@ -1,6 +1,6 @@
 package com.github.quillraven.fleks
 
-import WorldClock
+import Clock
 import com.github.quillraven.fleks.collection.EntityBag
 import com.github.quillraven.fleks.collection.MutableEntityBag
 import kotlinx.serialization.Contextual
@@ -34,7 +34,7 @@ typealias GenericWorld = World<*>
  */
 class World<T> internal constructor(
     entityCapacity: Int,
-    val clock: WorldClock<T>
+    val clock: Clock<T>
 ) : EntityComponentContext(ComponentService()) {
     @PublishedApi
     internal val injectables = mutableMapOf<String, Injectable>()

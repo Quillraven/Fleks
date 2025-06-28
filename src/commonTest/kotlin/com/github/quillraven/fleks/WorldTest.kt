@@ -299,6 +299,8 @@ internal class WorldTest {
 
     @Test
     fun updateWorldWithDeltaTimeOf1() {
+
+
         val w = configureWorld {
             injectables {
                 add("42")
