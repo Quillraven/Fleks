@@ -4,6 +4,9 @@ import kotlin.reflect.KClass
 
 abstract class FleksException(message: String) : RuntimeException(message)
 
+class FleksWorldClockIsWrongType() :
+    FleksException("Wold clocks type must be the same as the world's type.")
+
 class FleksSystemAlreadyAddedException(system: KClass<*>) :
     FleksException("System '${system.simpleName}' is already part of the '${WorldConfiguration::class.simpleName}'.")
 

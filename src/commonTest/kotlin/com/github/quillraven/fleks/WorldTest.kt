@@ -38,7 +38,7 @@ private class WorldTestComponent2 : Component<WorldTestComponent2> {
     companion object : ComponentType<WorldTestComponent2>()
 }
 
-private class WorldTestIntervalSystem(world: World = World.CURRENT_WORLD!!) : IntervalSystem(world = world) {
+private class WorldTestIntervalSystem(world: World = World.CURRENT_WORLD!!) : IntervalSystem<Unit>(world = world) {
     var numCalls = 0
     var disposed = false
 
@@ -54,7 +54,7 @@ private class WorldTestIntervalSystem(world: World = World.CURRENT_WORLD!!) : In
 private class WorldTestIteratingSystem(
     world: World = World.CURRENT_WORLD!!,
     val testInject: String = world.inject()
-) : IteratingSystem(world = world, family = world.family { all(WorldTestComponent) }) {
+) : IteratingSystem<Unit>(world = world, family = world.family { all(WorldTestComponent) }) {
     var numCalls = 0
     var numCallsEntity = 0
     var disposed = false
@@ -74,7 +74,7 @@ private class WorldTestIteratingSystem(
 }
 
 private class WorldTestInitSystem(world: World = World.CURRENT_WORLD!!) :
-    IteratingSystem(world.family { all(WorldTestComponent) }, world = world) {
+    IteratingSystem<Unit>(world.family { all(WorldTestComponent) }, world = world) {
     override fun onInit() {
         super.onInit()
         world.entity { it += WorldTestComponent() }
@@ -84,7 +84,7 @@ private class WorldTestInitSystem(world: World = World.CURRENT_WORLD!!) :
 }
 
 private class WorldTestInitSystemExtraFamily(world: World = World.CURRENT_WORLD!!) :
-    IteratingSystem(world.family { all(WorldTestComponent) }, world = world) {
+    IteratingSystem<Unit>(world.family { all(WorldTestComponent) }, world = world) {
     val extraFamily = world.family { any(WorldTestComponent2).none(WorldTestComponent) }
 
     override fun onInit() {
@@ -97,7 +97,7 @@ private class WorldTestInitSystemExtraFamily(world: World = World.CURRENT_WORLD!
 
 private class WorldTestNamedDependencySystem(
     val injName: String = inject("name")
-) : IntervalSystem() {
+) : IntervalSystem<Unit>() {
     val level: String = world.inject("level")
     val name: String = injName
 
@@ -136,7 +136,7 @@ private class WorldEntityProvider(
 internal class WorldTest {
     @Test
     fun createEmptyWorldFor32Entities() {
-        val w = configureWorld(32) { }
+        val w = configureWorld(entityCapacity = 32) { }
 
         assertEquals(0, w.numEntities)
         assertEquals(32, w.capacity)

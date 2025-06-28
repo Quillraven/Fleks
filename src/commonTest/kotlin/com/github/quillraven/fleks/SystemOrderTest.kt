@@ -16,7 +16,7 @@ private abstract class BaseSystem(
     val onAddEntityOrder: MutableList<BaseSystem> = mutableListOf(),
     val onTickEntityOrder: MutableList<BaseSystem> = mutableListOf(),
     val onRemoveEntityOrder: MutableList<BaseSystem> = mutableListOf(),
-) : IteratingSystem(
+) : IteratingSystem<Unit>(
     family { all (TestComponent) }
 ), FamilyOnAdd, FamilyOnRemove {
 

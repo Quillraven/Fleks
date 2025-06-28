@@ -8,7 +8,7 @@ private class SimpleTestComponent : Component<SimpleTestComponent> {
     override fun type() = SimpleTestComponent
 }
 
-private class OnAddHookSystem(world: World? = null) : IteratingSystem(
+private class OnAddHookSystem(world: World? = null) : IteratingSystem<Unit>(
     world = world ?: World.CURRENT_WORLD!!, family = world?.family { all(SimpleTestComponent) } ?: family { all(SimpleTestComponent) }
 ), FamilyOnAdd {
 
@@ -23,7 +23,7 @@ private class OnAddHookSystem(world: World? = null) : IteratingSystem(
     override fun onTickEntity(entity: Entity) = Unit
 }
 
-private class OnAddHookSystem2(world: World? = null) : IteratingSystem(
+private class OnAddHookSystem2(world: World? = null) : IteratingSystem<Unit>(
     world = world ?: World.CURRENT_WORLD!!, family = world?.family { all(SimpleTestComponent) } ?: family { all(SimpleTestComponent) }
 ), FamilyOnAdd {
 
@@ -36,7 +36,7 @@ private class OnAddHookSystem2(world: World? = null) : IteratingSystem(
     override fun onTickEntity(entity: Entity) = Unit
 }
 
-private class OnAddHookSystem3(world: World? = null) : IteratingSystem(
+private class OnAddHookSystem3(world: World? = null) : IteratingSystem<Unit>(
     world = world ?: World.CURRENT_WORLD!!, family = world?.family { all(SimpleTestComponent) } ?: family { all(SimpleTestComponent) }
 ), FamilyOnAdd {
 
@@ -49,7 +49,7 @@ private class OnAddHookSystem3(world: World? = null) : IteratingSystem(
     override fun onTickEntity(entity: Entity) = Unit
 }
 
-private class OnRemoveHookSystem(world: World? = null) : IteratingSystem(
+private class OnRemoveHookSystem(world: World? = null) : IteratingSystem<Unit>(
     world = world ?: World.CURRENT_WORLD!!, family = world?.family { all(SimpleTestComponent) } ?: family { all(SimpleTestComponent) }
 ), FamilyOnRemove {
 
@@ -64,12 +64,12 @@ private class OnRemoveHookSystem(world: World? = null) : IteratingSystem(
     override fun onTickEntity(entity: Entity) = Unit
 }
 
-private class IllegalOnAddHookSystem : IntervalSystem(), FamilyOnAdd {
+private class IllegalOnAddHookSystem : IntervalSystem<Unit>(), FamilyOnAdd {
     override fun onTick() = Unit
     override fun onAddEntity(entity: Entity) = Unit
 }
 
-private class IllegalOnRemoveHookSystem : IntervalSystem(), FamilyOnRemove {
+private class IllegalOnRemoveHookSystem : IntervalSystem<Unit>(), FamilyOnRemove {
     override fun onTick() = Unit
     override fun onRemoveEntity(entity: Entity) = Unit
 }

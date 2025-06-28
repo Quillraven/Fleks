@@ -1,5 +1,6 @@
 package com.github.quillraven.fleks
 
+import WorldClock
 import com.github.quillraven.fleks.collection.EntityComparator
 
 /**
@@ -28,7 +29,7 @@ data class Fixed(val step: Float) : Interval
  * @param interval the [interval][Interval] in which the system gets updated. Default is [EachFrame].
  * @param enabled defines if the system gets updated when the [world][World] gets updated. Default is true.
  */
-abstract class IntervalSystem(
+abstract class IntervalSystem<T>(
     val interval: Interval = EachFrame,
     enabled: Boolean = true,
     /**
@@ -36,6 +37,8 @@ abstract class IntervalSystem(
      */
     val world: World = World.CURRENT_WORLD ?: throw FleksWrongConfigurationUsageException()
 ) : EntityComponentContext(world.componentService) {
+
+    val clock: WorldClock<T> = (world.clock as? WorldClock<T>) ?: throw FleksWorldClockIsWrongType()
 
     var enabled: Boolean = enabled
         set(value) {
@@ -155,14 +158,14 @@ data object Manual : SortingType
  * @param interval the [interval][Interval] in which the system gets updated. Default is [EachFrame].
  * @param enabled defines if the system gets updated when the [world][World] gets updated. Default is true.
  */
-abstract class IteratingSystem(
+abstract class IteratingSystem<T>(
     val family: Family,
     protected val comparator: EntityComparator = EMPTY_COMPARATOR,
     protected val sortingType: SortingType = Automatic,
     interval: Interval = EachFrame,
     enabled: Boolean = true,
     world: World
-) : IntervalSystem(interval, enabled, world) {
+) : IntervalSystem<T>(interval, enabled, world) {
 
     constructor(
         family: Family,

@@ -1,5 +1,7 @@
 package com.github.quillraven.fleks
 
+import NoOpWorldClock
+import WorldClock
 import kotlin.reflect.KClass
 
 /**
@@ -49,7 +51,7 @@ class InjectableConfiguration(private val world: World) {
  */
 @WorldCfgMarker
 class SystemConfiguration(
-    private val systems: MutableList<IntervalSystem>
+    private val systems: MutableList<IntervalSystem<*>>
 ) {
     /**
      * Adds the [system] to the [world][World].
@@ -57,7 +59,7 @@ class SystemConfiguration(
      *
      * @throws [FleksSystemAlreadyAddedException] if the system was already added before.
      */
-    fun <T : IntervalSystem> add(system: T) {
+    fun <T : IntervalSystem<*>> add(system: T) {
         if (systems.any { it::class == system::class }) {
             throw FleksSystemAlreadyAddedException(system::class)
         }
@@ -188,8 +190,12 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
  * @param cfg the [configuration][WorldConfiguration] of the world containing the [systems][IntervalSystem],
  * [injectables][Injectable] and [FamilyHook]s.
  */
-fun configureWorld(entityCapacity: Int = 512, cfg: WorldConfiguration.() -> Unit): World {
-    val newWorld = World(entityCapacity)
+fun configureWorld(
+    worldClock: WorldClock<*> = NoOpWorldClock(),
+    entityCapacity: Int = 512,
+    cfg: WorldConfiguration.() -> Unit
+): World {
+    val newWorld = World(entityCapacity, worldClock)
     World.CURRENT_WORLD = newWorld
 
     try {

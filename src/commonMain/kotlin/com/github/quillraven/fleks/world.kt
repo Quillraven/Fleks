@@ -1,5 +1,6 @@
 package com.github.quillraven.fleks
 
+import WorldClock
 import com.github.quillraven.fleks.World.Companion.family
 import com.github.quillraven.fleks.World.Companion.inject
 import com.github.quillraven.fleks.collection.EntityBag
@@ -33,6 +34,7 @@ fun wildcardSnapshotOf(components: List<Component<*>>, tags: List<UniqueId<*>>):
  */
 class World internal constructor(
     entityCapacity: Int,
+    val clock: WorldClock<*>
 ) : EntityComponentContext(ComponentService()) {
     @PublishedApi
     internal val injectables = mutableMapOf<String, Injectable>()
@@ -69,12 +71,12 @@ class World internal constructor(
 
     // Internal mutable list of systems
     // can be replaced in a later version of Kotlin with "backing field" syntax
-    internal val mutableSystems = arrayListOf<IntervalSystem>()
+    internal val mutableSystems = arrayListOf<IntervalSystem<*>>()
 
     /**
      * Returns the world's systems.
      */
-    val systems: List<IntervalSystem>
+    val systems: List<IntervalSystem<*>>
         get() = mutableSystems
 
     /**
@@ -196,7 +198,7 @@ class World internal constructor(
      *
      * @throws [FleksNoSuchSystemException] if there is no such system.
      */
-    inline fun <reified T : IntervalSystem> system(): T {
+    inline fun <reified T : IntervalSystem<*>> system(): T {
         systems.forEach { system ->
             if (system is T) {
                 return system
@@ -208,14 +210,14 @@ class World internal constructor(
     /**
      * Returns true if and only if the given [system][IntervalSystem] is part of the world.
      */
-    inline fun <reified T : IntervalSystem> contains(): Boolean {
+    inline fun <reified T : IntervalSystem<*>> contains(): Boolean {
         return systems.any { it is T }
     }
 
     /**
      * Returns the specified [system][IntervalSystem] or null if there is no such system.
      */
-    inline fun <reified T : IntervalSystem> systemOrNull(): T? {
+    inline fun <reified T : IntervalSystem<*>> systemOrNull(): T? {
         return systems.firstOrNull { it is T } as T?
     }
 
@@ -224,7 +226,7 @@ class World internal constructor(
      *
      * @throws FleksSystemAlreadyAddedException if the system was already added before.
      */
-    fun add(index: Int, system: IntervalSystem) {
+    fun add(index: Int, system: IntervalSystem<*>) {
         if (systems.any { it::class == system::class }) {
             throw FleksSystemAlreadyAddedException(system::class)
         }
@@ -241,19 +243,19 @@ class World internal constructor(
      *
      * @throws FleksSystemAlreadyAddedException if the system was already added before.
      */
-    fun add(system: IntervalSystem) = add(systems.size, system)
+    fun add(system: IntervalSystem<*>) = add(systems.size, system)
 
     /**
      * Adds the [system] to the world's [systems].
      *
      * @throws FleksSystemAlreadyAddedException if the system was already added before.
      */
-    operator fun plusAssign(system: IntervalSystem) = add(system)
+    operator fun plusAssign(system: IntervalSystem<*>) = add(system)
 
     /**
      * Removes the [system] of the world's [systems].
      */
-    fun remove(system: IntervalSystem) {
+    fun remove(system: IntervalSystem<*>) {
         mutableSystems.remove(system)
         if (system is IteratingSystem && (system is FamilyOnAdd || system is FamilyOnRemove)) {
             updateAggregatedFamilyHooks(system.family)
@@ -264,7 +266,7 @@ class World internal constructor(
     /**
      * Removes the [system] of the world's [systems].
      */
-    operator fun minusAssign(system: IntervalSystem) = remove(system)
+    operator fun minusAssign(system: IntervalSystem<*>) = remove(system)
 
     /**
      * Sets the [hook] as an [EntityService.addHook].

@@ -6,7 +6,7 @@ import com.github.quillraven.fleks.collection.compareEntity
 import com.github.quillraven.fleks.collection.compareEntityBy
 import kotlin.test.*
 
-private class SystemTestIntervalSystemEachFrame : IntervalSystem(
+private class SystemTestIntervalSystemEachFrame : IntervalSystem<Unit>(
     interval = EachFrame
 ) {
     var numInits = 0
@@ -26,7 +26,7 @@ private class SystemTestIntervalSystemEachFrame : IntervalSystem(
     }
 }
 
-private class SystemTestIntervalSystemFixed : IntervalSystem(
+private class SystemTestIntervalSystemFixed : IntervalSystem<Unit>(
     interval = Fixed(0.25f)
 ) {
     var numCalls = 0
@@ -53,7 +53,7 @@ private data class SystemTestComponent(
     companion object : ComponentType<SystemTestComponent>()
 }
 
-private class SystemTestIteratingSystem : IteratingSystem(
+private class SystemTestIteratingSystem : IteratingSystem<Unit>(
     family = family { all(SystemTestComponent) },
     interval = Fixed(0.25f)
 ) {
@@ -75,7 +75,7 @@ private class SystemTestIteratingSystem : IteratingSystem(
     }
 }
 
-private class SystemTestEntityCreation : IteratingSystem(family { any(SystemTestComponent) }) {
+private class SystemTestEntityCreation : IteratingSystem<Unit>(family { any(SystemTestComponent) }) {
     var numTicks = 0
 
     override fun onInit() {
@@ -88,7 +88,7 @@ private class SystemTestEntityCreation : IteratingSystem(family { any(SystemTest
     }
 }
 
-private class SystemTestIteratingSystemSortAutomatic : IteratingSystem(
+private class SystemTestIteratingSystemSortAutomatic : IteratingSystem<Unit>(
     family = family { all(SystemTestComponent) },
     comparator = compareEntity { entityA, entityB ->
         entityB[SystemTestComponent].x.compareTo(entityA[SystemTestComponent].x)
@@ -109,7 +109,7 @@ private class SystemTestIteratingSystemSortAutomatic : IteratingSystem(
     }
 }
 
-private class SystemTestFixedSystemRemoval : IteratingSystem(
+private class SystemTestFixedSystemRemoval : IteratingSystem<Unit>(
     family = family { all(SystemTestComponent) },
     interval = Fixed(1f)
 ) {
@@ -133,7 +133,7 @@ private class SystemTestFixedSystemRemoval : IteratingSystem(
     }
 }
 
-private class SystemTestIteratingSystemSortManual : IteratingSystem(
+private class SystemTestIteratingSystemSortManual : IteratingSystem<Unit>(
     family = family { all(SystemTestComponent) },
     comparator = compareEntityBy(SystemTestComponent),
     sortingType = Manual
@@ -148,7 +148,7 @@ private class SystemTestIteratingSystemSortManual : IteratingSystem(
 }
 
 private class SystemTestIteratingSystemInjectable :
-    IteratingSystem(family { none(SystemTestComponent).any(SystemTestComponent) }) {
+    IteratingSystem<Unit>(family { none(SystemTestComponent).any(SystemTestComponent) }) {
     val injectable: String = inject()
 
     override fun onTickEntity(entity: Entity) = Unit
@@ -156,13 +156,13 @@ private class SystemTestIteratingSystemInjectable :
 
 private class SystemTestIteratingSystemQualifiedInjectable(
     val injectable: String = inject()
-) : IteratingSystem(family { none(SystemTestComponent).any(SystemTestComponent) }) {
+) : IteratingSystem<Unit>(family { none(SystemTestComponent).any(SystemTestComponent) }) {
     val injectable2: String = world.inject("q1")
 
     override fun onTickEntity(entity: Entity) = Unit
 }
 
-private class SystemTestEnable(enabled: Boolean) : IntervalSystem(enabled = enabled) {
+private class SystemTestEnable(enabled: Boolean) : IntervalSystem<Unit>(enabled = enabled) {
     var enabledCall = false
     var disabledCall = false
 
@@ -177,7 +177,7 @@ private class SystemTestEnable(enabled: Boolean) : IntervalSystem(enabled = enab
     override fun onTick() = Unit
 }
 
-private class AddEntityInConstructorSystem() : IntervalSystem() {
+private class AddEntityInConstructorSystem() : IntervalSystem<Unit>() {
 
     init {
         world.entity { }

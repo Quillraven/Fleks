@@ -18,7 +18,7 @@ private class EntityTestComponent2 : Component<EntityTestComponent2> {
 }
 
 internal class EntityTest {
-    private val testWorld = configureWorld(32) { }
+    private val testWorld = configureWorld(entityCapacity = 32) { }
     private val testEntityService = testWorld.entityService
 
     @Test

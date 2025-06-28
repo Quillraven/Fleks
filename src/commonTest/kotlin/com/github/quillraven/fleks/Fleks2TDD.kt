@@ -60,7 +60,7 @@ private data class Sprite(
     }
 }
 
-private class PositionSystem : IteratingSystem(family { all(Position) }) {
+private class PositionSystem : IteratingSystem<Unit>(family { all(Position) }) {
     override fun onTickEntity(entity: Entity) {
         entity[Position].x++
     }
@@ -68,7 +68,7 @@ private class PositionSystem : IteratingSystem(family { all(Position) }) {
 
 private class SpriteSystem(
     val cstrInjectable: String = inject()
-) : IteratingSystem(family { any(SpriteBackground, SpriteForeground) }) {
+) : IteratingSystem<Unit>(family { any(SpriteBackground, SpriteForeground) }) {
     val propInjectable: String = world.inject("qualifiedString")
 
     override fun onTickEntity(entity: Entity) = Unit
@@ -226,7 +226,7 @@ class Fleks2TDD {
     fun testSystemCreationWithInjectables() {
         val expectedCstrStr = "42"
         val expectedPropStr = "1337"
-        val world = configureWorld(64) {
+        val world = configureWorld(entityCapacity = 64) {
             injectables {
                 add(expectedCstrStr)
                 add("qualifiedString", expectedPropStr)
