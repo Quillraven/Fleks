@@ -10,7 +10,7 @@ import com.github.quillraven.fleks.collection.EntityComparator
  * - [EachFrame]
  * - [Fixed]
  *
- * [EachFrame] means that the [IntervalSystem] is updated every time the [world][GenericWorld] gets updated.
+ * [EachFrame] means that the [IntervalSystem] is updated every time the [world][World] gets updated.
  * [Fixed] means that the [IntervalSystem] is updated at a fixed rate given in seconds.
  */
 sealed interface Interval<T>
@@ -21,20 +21,20 @@ sealed interface Interval<T>
 data class Fixed<T>(val step: T) : Interval<T>
 
 /**
- * A basic system of a [world][GenericWorld] without a context to [entities][Entity].
+ * A basic system of a [world][World] without a context to [entities][Entity].
  * It is mandatory to implement [onTick] which gets called whenever the system gets updated
  * according to its [interval][Interval].
  *
  * If the system uses a [Fixed] interval then [onAlpha] can be overridden in case interpolation logic is needed.
  *
  * @param interval the [interval][Interval] in which the system gets updated. Default is [EachFrame].
- * @param enabled defines if the system gets updated when the [world][GenericWorld] gets updated. Default is true.
+ * @param enabled defines if the system gets updated when the [world][World] gets updated. Default is true.
  */
 abstract class IntervalSystem<T>(
     val interval: Interval<T>? = null,
     enabled: Boolean = true,
     /**
-     * Returns the [world][GenericWorld] to which this system belongs.
+     * Returns the [world][World] to which this system belongs.
      */
     val world: GenericWorld = World.CURRENT_WORLD ?: throw FleksWrongConfigurationUsageException()
 ) : EntityComponentContext(world.componentService) {
@@ -80,12 +80,12 @@ abstract class IntervalSystem<T>(
     open fun onDisable() = Unit
 
     /**
-     * Updates the system according to its [interval]. This function gets called from [GenericWorld.update] when
+     * Updates the system according to its [interval]. This function gets called from [World.update] when
      * the system is [enabled].
      *
      * If the [interval] is [EachFrame] then [onTick] gets called.
      *
-     * Otherwise, the world's [delta time][GenericWorld.deltaTime] is analyzed and [onTick] is called at a fixed rate.
+     * Otherwise, the world's [delta time][World.deltaTime] is analyzed and [onTick] is called at a fixed rate.
      * This could be multiple or zero times with a single call to [onUpdate]. At the end [onAlpha] is called.
      */
     open fun onUpdate() {
@@ -122,8 +122,8 @@ abstract class IntervalSystem<T>(
 
     /**
      * Optional function to dispose of any resources of the system if needed.
-     * Gets called in reversed world's [systems][GenericWorld.systems] order when the
-     * world's [dispose][GenericWorld.dispose] function is called.
+     * Gets called in reversed world's [systems][World.systems] order when the
+     * world's [dispose][World.dispose] function is called.
      */
     open fun onDispose() = Unit
 }
@@ -144,7 +144,7 @@ data object Automatic : SortingType
 data object Manual : SortingType
 
 /**
- * An [IntervalSystem] of a [world][GenericWorld] with a context to [entities][Entity].
+ * An [IntervalSystem] of a [world][World] with a context to [entities][Entity].
  *
  * An IteratingSystem is always linked to exactly one [family][Family] which defines the [entities][Entity]
  * over which it will iterate.
@@ -156,7 +156,7 @@ data object Manual : SortingType
  * Default value is an empty comparator that means no sorting.
  * @param sortingType the [type][SortingType] of sorting for entities when using a [comparator].
  * @param interval the [interval][Interval] in which the system gets updated. Default is [EachFrame].
- * @param enabled defines if the system gets updated when the [world][GenericWorld] gets updated. Default is true.
+ * @param enabled defines if the system gets updated when the [world][World] gets updated. Default is true.
  */
 abstract class IteratingSystem<T>(
     val family: Family,
@@ -256,7 +256,7 @@ interface FamilyOnAdd {
 interface FamilyOnRemove {
     /**
      * Gets called whenever an [entity][Entity] leaves the family.
-     * This function gets called in reversed world's [systems][GenericWorld.systems] order.
+     * This function gets called in reversed world's [systems][World.systems] order.
      */
     fun onRemoveEntity(entity: Entity)
 }

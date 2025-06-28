@@ -12,7 +12,7 @@ annotation class WorldCfgMarker
 
 /**
  * Wrapper class for injectables of the [WorldConfiguration].
- * It is used to identify unused injectables after [world][GenericWorld] creation.
+ * It is used to identify unused injectables after [world][World] creation.
  */
 data class Injectable(val injObj: Any, var used: Boolean = false)
 
@@ -24,7 +24,7 @@ class InjectableConfiguration(private val world: GenericWorld) {
 
     /**
      * Adds the specified [dependency] under the given [name] which
-     * can then be injected via [GenericWorld.inject].
+     * can then be injected via [World.inject].
      *
      * @throws [FleksInjectableAlreadyAddedException] if the dependency was already added before.
      */
@@ -39,7 +39,7 @@ class InjectableConfiguration(private val world: GenericWorld) {
     /**
      * Adds the specified [dependency] via its [simpleName][KClass.simpleName],
      * or via its [toString][KClass.toString] if it has no name.
-     * It can then be injected via [GenericWorld.inject].
+     * It can then be injected via [World.inject].
      *
      * @throws [FleksInjectableAlreadyAddedException] if the dependency was already added before.
      */
@@ -55,8 +55,8 @@ class SystemConfiguration<T>(
     private val clock: Clock<T>
 ) {
     /**
-     * Adds the [system] to the [world][GenericWorld].
-     * The order in which systems are added is the order in which they will be executed when calling [GenericWorld.update].
+     * Adds the [system] to the [world][World].
+     * The order in which systems are added is the order in which they will be executed when calling [World.update].
      *
      * @throws [FleksSystemAlreadyAddedException] if the system was already added before.
      */
@@ -108,10 +108,10 @@ class FamilyConfiguration(
 }
 
 /**
- * A configuration for an entity [world][GenericWorld] to define the systems, dependencies to be injected,
+ * A configuration for an entity [world][World] to define the systems, dependencies to be injected,
  * [component][Component]- and [family][Family] hooks.
  *
- * @param world the [GenericWorld] to be configured.
+ * @param world the [World] to be configured.
  */
 @WorldCfgMarker
 class WorldConfiguration<T>(@PublishedApi internal val world: World<T>) {
@@ -152,7 +152,7 @@ class WorldConfiguration<T>(@PublishedApi internal val world: World<T>) {
 
     /**
      * Sets the [EntityProvider] for the [EntityService] by calling the [factory] function
-     * within the context of a [GenericWorld]. Per default the [DefaultEntityProvider] is used.
+     * within the context of a [World]. Per default the [DefaultEntityProvider] is used.
      */
     fun entityProvider(factory: GenericWorld.() -> EntityProvider) {
         world.entityService.entityProvider = world.run(factory)
@@ -186,12 +186,12 @@ class WorldConfiguration<T>(@PublishedApi internal val world: World<T>) {
 }
 
 /**
- * Creates a new [world][GenericWorld] with the given [cfg][WorldConfiguration].
+ * Creates a new [world][World] with the given [cfg][WorldConfiguration].
  *
  * @param clock provide a world clock to mesure elapsed time between two ticks
  *
  * @param entityCapacity initial maximum entity capacity.
- * Will be used internally when a [world][GenericWorld] is created to set the initial
+ * Will be used internally when a [world][World] is created to set the initial
  * size of some collections and to avoid slow resizing calls.
  *
  * @param cfg the [configuration][WorldConfiguration] of the world containing the [systems][IntervalSystem],
@@ -215,10 +215,10 @@ fun <T> configureWorld(
 }
 
 /**
- * Creates a new [world][GenericWorld] with the given [cfg][WorldConfiguration].
+ * Creates a new [world][World] with the given [cfg][WorldConfiguration].
  *
  * @param entityCapacity initial maximum entity capacity.
- * Will be used internally when a [world][GenericWorld] is created to set the initial
+ * Will be used internally when a [world][World] is created to set the initial
  * size of some collections and to avoid slow resizing calls.
  *
  * @param cfg the [configuration][WorldConfiguration] of the world containing the [systems][IntervalSystem],

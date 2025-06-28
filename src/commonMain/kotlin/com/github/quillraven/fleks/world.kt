@@ -156,13 +156,13 @@ class World<T> internal constructor(
     }
 
     /**
-     * Returns true if and only if the [entity] is not removed and is part of the [GenericWorld].
+     * Returns true if and only if the [entity] is not removed and is part of the [World].
      */
     operator fun contains(entity: Entity) = entityService.contains(entity)
 
     /**
      * Removes the given [entity] from the world. The [entity] will be recycled and reused for
-     * future calls to [GenericWorld.entity].
+     * future calls to [World.entity].
      */
     operator fun minusAssign(entity: Entity) {
         entityService -= entity
@@ -170,7 +170,7 @@ class World<T> internal constructor(
 
     /**
      * Removes all [entities][Entity] from the world. The entities will be recycled and reused for
-     * future calls to [GenericWorld.entity].
+     * future calls to [World.entity].
      * If [clearRecycled] is true then the recycled entities are cleared and the ids for newly
      * created entities start at 0 again.
      */

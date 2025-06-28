@@ -98,7 +98,7 @@ interface Component<T> {
 }
 
 /**
- * A class that is responsible to store components of a specific type for all [entities][Entity] in a [world][GenericWorld].
+ * A class that is responsible to store components of a specific type for all [entities][Entity] in a [world][World].
  * The index of the [components] array is linked to the id of an [entity][Entity]. If an [entity][Entity] has
  * a component of this specific type then the value at index 'entity.id' is not null.
  *
@@ -111,7 +111,7 @@ class ComponentsHolder<T : Component<*>>(
 ) {
     /**
      * Sets the [component] for the given [entity]. This function is only
-     * used by [GenericWorld.loadSnapshot] where we don't have the correct type information
+     * used by [World.loadSnapshot] where we don't have the correct type information
      * during runtime, and therefore we can only provide 'Any' as a type and need to cast it internally.
      */
     @Suppress("UNCHECKED_CAST")
@@ -209,7 +209,7 @@ class ComponentService {
 
     /**
      * Returns a [ComponentsHolder] for the given [componentType]. This function is only
-     * used by [GenericWorld.loadSnapshot] where we don't have the correct type information
+     * used by [World.loadSnapshot] where we don't have the correct type information
      * during runtime, and therefore we can only provide '*' as a type and need to cast it internally.
      */
     fun wildcardHolder(componentType: ComponentType<*>): ComponentsHolder<*> {
@@ -236,7 +236,7 @@ class ComponentService {
      * Returns the [ComponentsHolder] of the given [index] inside the [holdersBag] or null.
      * The index is linked to the id of a [ComponentType].
      * This function is only used internally at safe areas to speed up certain processes like
-     * removing an [entity][Entity] or creating a snapshot via [GenericWorld.snapshot].
+     * removing an [entity][Entity] or creating a snapshot via [World.snapshot].
      */
     internal fun holderByIndexOrNull(index: Int): ComponentsHolder<*>? {
         return holdersBag.getOrNull(index)
