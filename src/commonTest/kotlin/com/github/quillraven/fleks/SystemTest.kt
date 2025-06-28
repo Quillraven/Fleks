@@ -1,6 +1,7 @@
 package com.github.quillraven.fleks
 
 import FloatClock
+import IntervalRatio
 import com.github.quillraven.fleks.World.Companion.family
 import com.github.quillraven.fleks.World.Companion.inject
 import com.github.quillraven.fleks.collection.compareEntity
@@ -37,8 +38,8 @@ private class SystemTestIntervalSystemFixed: IntervalSystem<Float>(
         ++numCalls
     }
 
-    override fun onAlpha(alpha: Float) {
-        lastAlpha = alpha
+    override fun onAlpha(alpha: IntervalRatio) {
+        lastAlpha = alpha.value
     }
 }
 
@@ -70,8 +71,8 @@ private class SystemTestIteratingSystem : IteratingSystem<Float>(
         ++numEntityCalls
     }
 
-    override fun onAlphaEntity(entity: Entity, alpha: Float) {
-        lastAlpha = alpha
+    override fun onAlphaEntity(entity: Entity, alpha: IntervalRatio) {
+        lastAlpha = alpha.value
         ++numAlphaCalls
     }
 }
@@ -125,7 +126,7 @@ private class SystemTestFixedSystemRemoval : IteratingSystem<Float>(
         }
     }
 
-    override fun onAlphaEntity(entity: Entity, alpha: Float) {
+    override fun onAlphaEntity(entity: Entity, alpha: IntervalRatio) {
         // the next line would cause an exception if we don't update the family properly in alpha
         // because component removal is instantly
         entity[SystemTestComponent].x++
@@ -214,7 +215,7 @@ internal class SystemTest {
         }
         val system = w.system<SystemTestIntervalSystemEachFrame<Float>>()
         clock.update(42f)
-        w.update(42f)
+        w.update()
 
         assertEquals(42f, system.clock.deltaTime)
     }
@@ -231,7 +232,7 @@ internal class SystemTest {
         val system = w.system<SystemTestIntervalSystemFixed>()
 
         clock.update(1.1f)
-        system.world.update(1.1f)
+        system.world.update()
 
         assertEquals(4, system.numCalls)
         assertEquals(0.1f / 0.25f, system.lastAlpha, 0.0001f)
@@ -317,7 +318,7 @@ internal class SystemTest {
         world.entity { it += SystemTestComponent() }
 
         clock.update(0.3f)
-        world.update(0.3f)
+        world.update()
 
         val system = world.system<SystemTestIteratingSystem>()
         assertEquals(2, system.numEntityCalls)
@@ -339,7 +340,7 @@ internal class SystemTest {
         system.entityToConfigure = entity
 
         clock.update(0.3f)
-        world.update(0.3f)
+        world.update()
 
         assertFalse(with(world) { entity has SystemTestComponent })
     }
@@ -355,7 +356,7 @@ internal class SystemTest {
         world.entity { it += SystemTestComponent(x = 10f) }
         val expectedEntity = world.entity { it += SystemTestComponent(x = 5f) }
 
-        world.update(0f)
+        world.update()
 
         assertEquals(expectedEntity, world.system<SystemTestIteratingSystemSortAutomatic>().lastEntityProcess)
     }
@@ -373,7 +374,7 @@ internal class SystemTest {
         val system = world.system<SystemTestIteratingSystemSortManual>()
 
         system.doSort = true
-        world.update(0f)
+        world.update()
 
         assertEquals(expectedEntity, system.lastEntityProcess)
         assertFalse(system.doSort)
@@ -402,7 +403,7 @@ internal class SystemTest {
         val system = world.system<NoClockSystemTestIntervalSystemEachFrame>()
         system.enabled = false
 
-        world.update(0f)
+        world.update()
 
         assertEquals(0, system.numCalls)
     }
@@ -422,8 +423,8 @@ internal class SystemTest {
 
         // call it twice - first call still iterates over all three entities
         // while the second call will only iterate over the remaining two entities
-        world.update(0f)
-        world.update(0f)
+        world.update()
+        world.update()
 
         assertEquals(5, system.numEntityCalls)
     }
@@ -447,9 +448,9 @@ internal class SystemTest {
         // call it twice - first call still iterates over all three entities
         // while the second call will only iterate over the remaining two entities
         clock.update(1f)
-        world.update(1f)
+        world.update()
         clock.update(1f)
-        world.update(1f)
+        world.update()
 
         assertEquals(4, system.numEntityCalls)
     }
@@ -488,7 +489,7 @@ internal class SystemTest {
             }
         }
 
-        world.update(0f)
+        world.update()
 
         val system = world.system<SystemTestEntityCreation>()
         assertEquals(1, system.numTicks)

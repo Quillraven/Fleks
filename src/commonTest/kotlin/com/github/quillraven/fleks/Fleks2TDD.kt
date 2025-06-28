@@ -159,7 +159,7 @@ class Fleks2TDD {
             it += Position(0f, 0f)
         }
 
-        world.update(1f)
+        world.update()
 
         assertEquals(1f, with(world) { entity[Position] }.x)
     }

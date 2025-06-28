@@ -6,7 +6,6 @@ import com.github.quillraven.fleks.collection.MutableEntityBag
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlin.native.concurrent.ThreadLocal
-import kotlin.time.Duration
 
 /**
  * Snapshot for an [entity][Entity] that contains its [components][Component] and [tags][EntityTag].
@@ -38,13 +37,6 @@ class World<T> internal constructor(
 ) : EntityComponentContext(ComponentService()) {
     @PublishedApi
     internal val injectables = mutableMapOf<String, Injectable>()
-
-    /**
-     * Returns the time passed to [update][GenericWorld.update].
-     * It represents the time in seconds between two frames.
-     */
-    var deltaTime = 0f
-        private set
 
     @PublishedApi
     internal val entityService = EntityService(this, entityCapacity)
@@ -441,25 +433,15 @@ class World<T> internal constructor(
     }
 
     /**
-     * Updates all [enabled][IntervalSystem.enabled] [systems][IntervalSystem] of the world
-     * using the given [deltaTime] in seconds.
+     * Updates all [enabled][IntervalSystem.enabled] [systems][IntervalSystem] of the world.
      */
-    fun update(deltaTime: Float) {
-        this.deltaTime = deltaTime
+    fun update() {
         for (i in systems.indices) {
             val system = systems[i]
             if (system.enabled) {
                 system.onUpdate()
             }
         }
-    }
-
-    /**
-     * Updates all [enabled][IntervalSystem.enabled] [systems][IntervalSystem] of the world
-     * using the given [duration]. The duration is converted to seconds.
-     */
-    fun update(duration: Duration) {
-        update(duration.inWholeNanoseconds * 0.000000001f)
     }
 
     /**

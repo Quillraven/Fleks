@@ -94,7 +94,7 @@ internal class SystemOrderTest {
             }
         }
 
-        world.update(0f)
+        world.update()
 
         assertEquals(FirstSystem::class, systemOrder[0]::class)
         assertEquals(SecondSystem::class, systemOrder[1]::class)
@@ -146,7 +146,7 @@ internal class SystemOrderTest {
         }
 
         world.entity { it += TestComponent() }
-        world.update(0f)
+        world.update()
 
         assertEquals(FirstSystem::class, systemOrder[0]::class)
         assertEquals(SecondSystem::class, systemOrder[1]::class)

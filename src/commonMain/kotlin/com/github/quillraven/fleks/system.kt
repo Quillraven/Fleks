@@ -2,6 +2,7 @@ package com.github.quillraven.fleks
 
 import Clock
 import ClockAccumulator
+import IntervalRatio
 import com.github.quillraven.fleks.collection.EntityComparator
 
 /**
@@ -117,7 +118,7 @@ abstract class IntervalSystem<T>(
      *
      * @param alpha a value between 0 (inclusive) and 1 (exclusive) that describes the progress between two ticks.
      */
-    open fun onAlpha(alpha: T) = Unit
+    open fun onAlpha(alpha: IntervalRatio) = Unit
 
     /**
      * Optional function to dispose of any resources of the system if needed.
@@ -221,7 +222,7 @@ abstract class IteratingSystem<T>(
      *
      * @param alpha a value between 0 (inclusive) and 1 (exclusive) that describes the progress between two ticks.
      */
-    override fun onAlpha(alpha: T) {
+    override fun onAlpha(alpha: IntervalRatio) {
         family.forEach { onAlphaEntity(it, alpha) }
     }
 
@@ -230,7 +231,7 @@ abstract class IteratingSystem<T>(
      *
      * @param alpha a value between 0 (inclusive) and 1 (exclusive) that describes the progress between two ticks.
      */
-    open fun onAlphaEntity(entity: Entity, alpha: T) = Unit
+    open fun onAlphaEntity(entity: Entity, alpha: IntervalRatio) = Unit
 
     companion object {
         private val EMPTY_COMPARATOR = EntityComparator { _, _ -> 0 }

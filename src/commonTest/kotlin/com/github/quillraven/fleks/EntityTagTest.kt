@@ -50,12 +50,12 @@ class EntityTagTest {
             it += TestTags.PLAYER
         }
 
-        world.update(1f)
+        world.update()
         assertEquals(1, testSystem.ticks)
 
         testSystem.ticks = 0
         with(world) { entity.configure { it -= Visible } }
-        world.update(1f)
+        world.update()
         assertEquals(0, testSystem.ticks)
     }
 

@@ -125,14 +125,14 @@ open class FleksBenchmark {
     @Benchmark
     fun simple(state: FleksStateSimple) {
         repeat(WORLD_UPDATES) {
-            state.world.update(1f)
+            state.world.update()
         }
     }
 
     @Benchmark
     fun complex(state: FleksStateComplex) {
         repeat(WORLD_UPDATES) {
-            state.world.update(1f)
+            state.world.update()
         }
     }
 }
