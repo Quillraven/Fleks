@@ -12,7 +12,7 @@ import com.github.quillraven.fleks.collection.isNullOrEmpty
  * Type alias for an optional hook function for a [Family].
  * Such a function runs within a [World] and takes the [Entity] as an argument.
  */
-typealias FamilyHook = GenericWorld.(Entity) -> Unit
+typealias FamilyHook = World<*>.(Entity) -> Unit
 
 /**
  * A class to define the configuration of a [Family]. A [family][Family] contains of three parts:
@@ -82,7 +82,7 @@ data class Family(
     internal val allOf: BitArray? = null,
     internal val noneOf: BitArray? = null,
     internal val anyOf: BitArray? = null,
-    private val world: GenericWorld,
+    private val world: World<*>,
     @PublishedApi
     internal val entityService: EntityService = world.entityService,
 ) : EntityComponentContext(world.componentService) {

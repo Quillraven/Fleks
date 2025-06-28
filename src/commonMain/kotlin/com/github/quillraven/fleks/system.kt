@@ -37,7 +37,7 @@ abstract class IntervalSystem<T>(
     /**
      * Returns the [world][World] to which this system belongs.
      */
-    val world: GenericWorld = World.CURRENT_WORLD ?: throw FleksWrongConfigurationUsageException()
+    val world: World<*> = World.CURRENT_WORLD ?: throw FleksWrongConfigurationUsageException()
 ) : EntityComponentContext(world.componentService) {
 
     private lateinit var _clock: Clock<T>
@@ -165,7 +165,7 @@ abstract class IteratingSystem<T>(
     protected val sortingType: SortingType = Automatic,
     interval: Interval<T> = EachFrame(),
     enabled: Boolean = true,
-    world: GenericWorld
+    world: World<*>
 ) : IntervalSystem<T>(interval, enabled, world) {
 
     constructor(

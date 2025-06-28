@@ -22,20 +22,20 @@ internal class ComponentTest {
     }
 
     private data class ComponentTestWithLifecycleComponent(
-        val expectedWorld: GenericWorld,
+        val expectedWorld: World<*>,
         val expectedEntity: Entity,
         var numAddCalls: Int = 0,
         var numRemoveCalls: Int = 0
     ) : Component<ComponentTestWithLifecycleComponent> {
         override fun type() = ComponentTestWithLifecycleComponent
 
-        override fun GenericWorld.onAdd(entity: Entity) {
+        override fun World<*>.onAdd(entity: Entity) {
             assertEquals(expectedWorld, this)
             assertEquals(expectedEntity, entity)
             numAddCalls++
         }
 
-        override fun GenericWorld.onRemove(entity: Entity) {
+        override fun World<*>.onRemove(entity: Entity) {
             assertEquals(expectedWorld, this)
             assertEquals(expectedEntity, entity)
             numRemoveCalls++

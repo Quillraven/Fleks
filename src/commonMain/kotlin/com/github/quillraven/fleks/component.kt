@@ -89,12 +89,12 @@ interface Component<T> {
     /**
      * Lifecycle method that gets called whenever a [component][Component] gets set for an [entity][Entity].
      */
-    fun GenericWorld.onAdd(entity: Entity) = Unit
+    fun World<*>.onAdd(entity: Entity) = Unit
 
     /**
      * Lifecycle method that gets called whenever a [component][Component] gets removed from an [entity][Entity].
      */
-    fun GenericWorld.onRemove(entity: Entity) = Unit
+    fun World<*>.onRemove(entity: Entity) = Unit
 }
 
 /**
@@ -105,7 +105,7 @@ interface Component<T> {
  * Refer to [ComponentService] for more details.
  */
 class ComponentsHolder<T : Component<*>>(
-    private val world: GenericWorld,
+    private val world: World<*>,
     private val type: ComponentType<*>,
     private var components: Array<T?>,
 ) {
@@ -199,7 +199,7 @@ class ComponentsHolder<T : Component<*>>(
  */
 class ComponentService {
     @PublishedApi
-    internal lateinit var world: GenericWorld
+    internal lateinit var world: World<*>
 
     /**
      * Returns [Bag] of [ComponentsHolder].

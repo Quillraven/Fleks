@@ -26,7 +26,7 @@ data class Entity(val id: Int, val version: UInt) {
  * Type alias for an optional hook function for an [EntityService].
  * Such a function runs within a [World] and takes the [Entity] as an argument.
  */
-typealias EntityHook = GenericWorld.(Entity) -> Unit
+typealias EntityHook = World<*>.(Entity) -> Unit
 
 /**
  * A class for basic [Entity] extension functions within a [Family],
@@ -228,7 +228,7 @@ interface EntityProvider {
      * Reference to the [World] of the [EntityProvider].
      * It is necessary for the [forEach] implementation.
      */
-    val world: GenericWorld
+    val world: World<*>
 
     /**
      * Returns the total number of active [entities][Entity].
@@ -265,7 +265,7 @@ interface EntityProvider {
     /**
      * Performs the given [action] for all active [entities][Entity].
      */
-    fun forEach(action: GenericWorld.(Entity) -> Unit)
+    fun forEach(action: World<*>.(Entity) -> Unit)
 }
 
 /**
@@ -274,7 +274,7 @@ interface EntityProvider {
  * The first [entity][Entity] starts with [id][Entity.id] zero and [version][Entity.version] zero.
  */
 class DefaultEntityProvider(
-    override val world: GenericWorld,
+    override val world: World<*>,
     initialEntityCapacity: Int
 ) : EntityProvider {
 
@@ -373,7 +373,7 @@ class DefaultEntityProvider(
     /**
      * Performs the given [action] for all active [entities][Entity].
      */
-    override fun forEach(action: GenericWorld.(Entity) -> Unit) {
+    override fun forEach(action: World<*>.(Entity) -> Unit) {
         activeEntities.forEach { world.action(it) }
     }
 }
@@ -385,7 +385,7 @@ class DefaultEntityProvider(
  */
 class EntityService(
     @PublishedApi
-    internal val world: GenericWorld,
+    internal val world: World<*>,
     initialEntityCapacity: Int,
     @PublishedApi
     internal var entityProvider: EntityProvider = DefaultEntityProvider(world, initialEntityCapacity),
@@ -612,7 +612,7 @@ class EntityService(
     /**
      * Performs the given [action] on each active [entity][Entity].
      */
-    fun forEach(action: GenericWorld.(Entity) -> Unit) {
+    fun forEach(action: World<*>.(Entity) -> Unit) {
         entityProvider.forEach(action)
     }
 

@@ -24,8 +24,6 @@ fun wildcardSnapshotOf(components: List<Component<*>>, tags: List<UniqueId<*>>):
     return Snapshot(components as List<Component<out Any>>, tags as List<UniqueId<out Any>>)
 }
 
-typealias GenericWorld = World<*>
-
 /**
  * A world to handle [entities][Entity] and [systems][IntervalSystem].
  *
@@ -181,7 +179,7 @@ class World<T> internal constructor(
     /**
      * Performs the given [action] on each active [entity][Entity].
      */
-    fun forEach(action: GenericWorld.(Entity) -> Unit) {
+    fun forEach(action: World<*>.(Entity) -> Unit) {
         entityService.forEach(action)
     }
 
@@ -512,7 +510,7 @@ class World<T> internal constructor(
     @ThreadLocal
     companion object {
         @PublishedApi
-        internal var CURRENT_WORLD: GenericWorld? = null
+        internal var CURRENT_WORLD: World<*>? = null
 
         /**
          * Returns an already registered injectable of the given [name] and marks it as used.

@@ -31,12 +31,12 @@ private data class Collider(
 
     var colliderId: String? = null
 
-    override fun GenericWorld.onAdd(entity: Entity) {
+    override fun World<*>.onAdd(entity: Entity) {
         val provider = inject<ColliderService>()
         colliderId = provider.getId()
     }
 
-    override fun GenericWorld.onRemove(entity: Entity) {
+    override fun World<*>.onRemove(entity: Entity) {
         colliderId = null
     }
 
@@ -191,7 +191,7 @@ class Fleks2TDD {
 
     @Test
     fun testFamilyHooks() {
-        lateinit var testWorld: GenericWorld
+        lateinit var testWorld: World<*>
         lateinit var testFamily: Family
         var numAddCalls = 0
         var numRemoveCalls = 0

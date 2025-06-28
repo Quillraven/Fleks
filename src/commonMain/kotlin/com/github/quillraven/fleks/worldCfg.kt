@@ -20,7 +20,7 @@ data class Injectable(val injObj: Any, var used: Boolean = false)
  * A DSL class to configure [Injectable] of a [WorldConfiguration].
  */
 @WorldCfgMarker
-class InjectableConfiguration(private val world: GenericWorld) {
+class InjectableConfiguration(private val world: World<*>) {
 
     /**
      * Adds the specified [dependency] under the given [name] which
@@ -75,7 +75,7 @@ class SystemConfiguration<T>(
 @WorldCfgMarker
 class FamilyConfiguration(
     @PublishedApi
-    internal val world: GenericWorld,
+    internal val world: World<*>,
 ) {
 
     /**
@@ -154,7 +154,7 @@ class WorldConfiguration<T>(@PublishedApi internal val world: World<T>) {
      * Sets the [EntityProvider] for the [EntityService] by calling the [factory] function
      * within the context of a [World]. Per default the [DefaultEntityProvider] is used.
      */
-    fun entityProvider(factory: GenericWorld.() -> EntityProvider) {
+    fun entityProvider(factory: World<*>.() -> EntityProvider) {
         world.entityService.entityProvider = world.run(factory)
     }
 

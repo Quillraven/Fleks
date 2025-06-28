@@ -4,7 +4,6 @@ import com.github.quillraven.fleks.Component
 import com.github.quillraven.fleks.ComponentType
 import com.github.quillraven.fleks.Entity
 import com.github.quillraven.fleks.FleksWrongConfigurationUsageException
-import com.github.quillraven.fleks.GenericWorld
 import com.github.quillraven.fleks.World
 import kotlin.math.min
 
@@ -14,15 +13,15 @@ import kotlin.math.min
 typealias EntityComparator = Comparator<Entity>
 
 fun compareEntity(
-    world: GenericWorld = World.CURRENT_WORLD ?: throw FleksWrongConfigurationUsageException(),
-    compareFun: GenericWorld.(Entity, Entity) -> Int,
+    world: World<*> = World.CURRENT_WORLD ?: throw FleksWrongConfigurationUsageException(),
+    compareFun: World<*>.(Entity, Entity) -> Int,
 ): EntityComparator {
     return EntityComparator { entityA, entityB -> compareFun(world, entityA, entityB) }
 }
 
 inline fun <reified T> compareEntityBy(
     componentType: ComponentType<T>,
-    world: GenericWorld = World.CURRENT_WORLD ?: throw FleksWrongConfigurationUsageException(),
+    world: World<*> = World.CURRENT_WORLD ?: throw FleksWrongConfigurationUsageException(),
 ): EntityComparator where T : Component<T>, T : Comparable<T> {
     return object : EntityComparator {
         private val holder = world.componentService.holder(componentType)
