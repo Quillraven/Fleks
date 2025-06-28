@@ -206,32 +206,28 @@ internal class SystemTest {
 
     @Test
     fun systemWithIntervalEachFrameReturnsWorldDeltaTime() {
-        val clock = FloatClock()
-
-        val w = configureWorld(clock) {
+        val world = configureWorld(FloatClock()) {
             systems {
                 add(SystemTestIntervalSystemEachFrame())
             }
         }
-        val system = w.system<SystemTestIntervalSystemEachFrame<Float>>()
-        clock.update(42f)
-        w.update()
+        val system = world.system<SystemTestIntervalSystemEachFrame<Float>>()
+        world.clock.update(42f)
+        world.update()
 
         assertEquals(42f, system.clock.deltaTime)
     }
 
     @Test
     fun systemWithFixedIntervalOf025fGetsCalledFourTimesWhenDeltaTimeIs11f() {
-        val clock = FloatClock()
-
-        val w = configureWorld(clock) {
+        val world = configureWorld(FloatClock()) {
             systems {
                 add(SystemTestIntervalSystemFixed())
             }
         }
-        val system = w.system<SystemTestIntervalSystemFixed>()
+        val system = world.system<SystemTestIntervalSystemFixed>()
 
-        clock.update(1.1f)
+        world.clock.update(1.1f)
         system.world.update()
 
         assertEquals(4, system.numCalls)
@@ -240,16 +236,14 @@ internal class SystemTest {
 
     @Test
     fun systemWithFixedIntervalReturnsStepRateAsDeltaTime() {
-        val clock = FloatClock()
-
-        val w = configureWorld(clock) {
+        val world = configureWorld(FloatClock()) {
             systems {
                 add(SystemTestIntervalSystemFixed())
             }
         }
 
-        clock.update(0.25f)
-        val system = w.system<SystemTestIntervalSystemFixed>()
+        world.clock.update(0.25f)
+        val system = world.system<SystemTestIntervalSystemFixed>()
 
         assertEquals(0.25f, system.clock.deltaTime, 0.0001f)
     }
@@ -307,9 +301,7 @@ internal class SystemTest {
 
     @Test
     fun iteratingSystemCallsOnTickAndOnAlphaForEachEntityOfTheSystem() {
-        val clock = FloatClock()
-
-        val world = configureWorld(clock) {
+        val world = configureWorld(FloatClock()) {
             systems {
                 add(SystemTestIteratingSystem())
             }
@@ -317,7 +309,7 @@ internal class SystemTest {
         world.entity { it += SystemTestComponent() }
         world.entity { it += SystemTestComponent() }
 
-        clock.update(0.3f)
+        world.clock.update(0.3f)
         world.update()
 
         val system = world.system<SystemTestIteratingSystem>()
@@ -328,9 +320,7 @@ internal class SystemTest {
 
     @Test
     fun configureEntityDuringIteration() {
-        val clock = FloatClock()
-
-        val world = configureWorld(clock) {
+        val world = configureWorld(FloatClock()) {
             systems {
                 add(SystemTestIteratingSystem())
             }
@@ -339,7 +329,7 @@ internal class SystemTest {
         val system = world.system<SystemTestIteratingSystem>()
         system.entityToConfigure = entity
 
-        clock.update(0.3f)
+        world.clock.update(0.3f)
         world.update()
 
         assertFalse(with(world) { entity has SystemTestComponent })
@@ -431,9 +421,7 @@ internal class SystemTest {
 
     @Test
     fun removingAnEntityDuringAlphaIsDelayed() {
-        val clock = FloatClock()
-
-        val world = configureWorld(clock) {
+        val world = configureWorld(FloatClock()) {
             systems {
                 add(SystemTestFixedSystemRemoval())
             }
@@ -447,9 +435,9 @@ internal class SystemTest {
 
         // call it twice - first call still iterates over all three entities
         // while the second call will only iterate over the remaining two entities
-        clock.update(1f)
+        world.clock.update(1f)
         world.update()
-        clock.update(1f)
+        world.clock.update(1f)
         world.update()
 
         assertEquals(4, system.numEntityCalls)
