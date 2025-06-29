@@ -44,6 +44,12 @@ class World internal constructor(
     var deltaTime = 0f
         private set
 
+    /**
+     * Returns the duration passed to [update][World.update].
+     */
+    var duration = Duration.ZERO
+        private set
+
     @PublishedApi
     internal val entityService = EntityService(this, entityCapacity)
 
@@ -456,6 +462,7 @@ class World internal constructor(
      * using the given [duration]. The duration is converted to seconds.
      */
     fun update(duration: Duration) {
+        this.duration = duration
         update(duration.inWholeNanoseconds * 0.000000001f)
     }
 
