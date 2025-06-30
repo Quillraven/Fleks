@@ -7,7 +7,7 @@ pluginManagement {
     }
 }
 
-@Suppress("UnstableApiUsage")Add commentMore actions
+@Suppress("UnstableApiUsage")
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
 
@@ -28,7 +28,7 @@ dependencyResolutionManagement {
         }
 
         exclusiveContent {
-            forRepository {Add commentMore actions
+            forRepository {
                 ivy("https://github.com/yarnpkg/yarn/releases/download") {
                     name = "Yarn Distributions at $url"
                     patternLayout { artifact("v[revision]/[artifact](-v[revision]).[ext]") }
