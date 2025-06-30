@@ -1,6 +1,7 @@
 package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.EntityComparator
+import kotlin.time.Duration
 
 /**
  * An interval for an [IntervalSystem]. There are two kinds of intervals:
@@ -62,6 +63,12 @@ abstract class IntervalSystem(
      */
     val deltaTime: Float
         get() = if (interval is Fixed) interval.step else world.deltaTime
+
+    /**
+     * Returns the duration since the last time [onUpdate] was called (refer to [World.duration]).
+     */
+    val duration: Duration
+        get() = world.duration
 
     /**
      * This function gets called when the [world configuration][WorldConfiguration.configure] is completed.
