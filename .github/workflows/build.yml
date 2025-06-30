@@ -58,9 +58,6 @@ jobs:
 
       - name: Build project
         run: ./gradlew build --stacktrace
-        # avoid race conditions for wasm/js builds since Kotlin 2.2.0
-        env:
-          YARN_FLAGS: "--network-concurrency  1  --mutex  network"
 
   publish:
     # only publish after 'build' was successful, and this workflow is running on master branch
