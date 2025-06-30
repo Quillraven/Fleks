@@ -12,7 +12,13 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
 
     repositories {
-        mavenCentral()
+        mavenCentral() {
+            content {
+                excludeGroup("com.yarnpkg")
+                excludeGroup("com.github.webassembly")
+                excludeGroup("org.nodejs")
+            }
+        }
 
         // Declare the Node.js & Yarn download repositories
         exclusiveContent {
@@ -37,6 +43,18 @@ dependencyResolutionManagement {
                 }
             }
             filter { includeGroup("com.yarnpkg") }
+        }
+
+        exclusiveContent {
+            forRepository {
+                ivy("https://github.com/WebAssembly/binaryen/releases/download") {
+                    name = "Binaryen Distributions at $url"
+                    patternLayout { artifact("version_[revision]/[module]-version_[revision]-[classifier].[ext]") }
+                    metadataSources { artifact() }
+                    content { includeModule("com.github.webassembly", "binaryen") }
+                }
+            }
+            filter { includeGroup("com.github.webassembly") }
         }
     }
 }
