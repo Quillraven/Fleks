@@ -77,6 +77,16 @@ class World internal constructor(
     val systems: List<IntervalSystem>
         get() = mutableSystems
 
+    // Internal mutable list of systems
+    // can be replaced in a later version of Kotlin with "backing field" syntax
+    internal val mutableSuspendableSystems = arrayListOf<SuspendableIntervalSystem>()
+
+    /**
+     * Returns the world's suspendable systems.
+     */
+    val suspendableSystems: List<SuspendableIntervalSystem>
+        get() = mutableSuspendableSystems
+
     /**
      * Map of add [FamilyHook] out of the [WorldConfiguration].
      * Only used if there are also aggregated system hooks for the family to remember
@@ -192,12 +202,17 @@ class World internal constructor(
     }
 
     /**
-     * Returns the specified [system][IntervalSystem].
+     * Returns the specified [system][IntervalSystem] or [suspendable system][SuspendableIntervalSystem].
      *
      * @throws [FleksNoSuchSystemException] if there is no such system.
      */
-    inline fun <reified T : IntervalSystem> system(): T {
+    inline fun <reified T : System> system(): T {
         systems.forEach { system ->
+            if (system is T) {
+                return system
+            }
+        }
+        suspendableSystems.forEach { system ->
             if (system is T) {
                 return system
             }
@@ -206,17 +221,17 @@ class World internal constructor(
     }
 
     /**
-     * Returns true if and only if the given [system][IntervalSystem] is part of the world.
+     * Returns true if and only if the given [system][IntervalSystem] or [suspendable system][SuspendableIntervalSystem] is part of the world.
      */
-    inline fun <reified T : IntervalSystem> contains(): Boolean {
-        return systems.any { it is T }
+    inline fun <reified T : System> contains(): Boolean {
+        return systems.any { it is T } || suspendableSystems.any { it is T }
     }
 
     /**
-     * Returns the specified [system][IntervalSystem] or null if there is no such system.
+     * Returns the specified [system][IntervalSystem] or [suspendable system][SuspendableIntervalSystem] or null if there is no such system.
      */
-    inline fun <reified T : IntervalSystem> systemOrNull(): T? {
-        return systems.firstOrNull { it is T } as T?
+    inline fun <reified T : System> systemOrNull(): T? {
+        return systems.firstOrNull { it is T } as T? ?: suspendableSystems.firstOrNull { it is T } as T?
     }
 
     /**
@@ -237,6 +252,23 @@ class World internal constructor(
     }
 
     /**
+     * Adds the [system] to the world's [systems] at the given [index].
+     *
+     * @throws FleksSystemAlreadyAddedException if the system was already added before.
+     */
+    fun add(index: Int, system: SuspendableIntervalSystem) {
+        if (suspendableSystems.any { it::class == system::class }) {
+            throw FleksSystemAlreadyAddedException(system::class)
+        }
+
+        mutableSuspendableSystems.add(index, system)
+        if (system is IteratingSystem && (system is FamilyOnAdd || system is FamilyOnRemove)) {
+            updateAggregatedFamilyHooks(system.family)
+        }
+        system.onInit()
+    }
+
+    /**
      * Adds the [system] to the world's [systems].
      *
      * @throws FleksSystemAlreadyAddedException if the system was already added before.
@@ -248,7 +280,21 @@ class World internal constructor(
      *
      * @throws FleksSystemAlreadyAddedException if the system was already added before.
      */
+    fun add(system: SuspendableIntervalSystem) = add(systems.size, system)
+
+    /**
+     * Adds the [system] to the world's [systems].
+     *
+     * @throws FleksSystemAlreadyAddedException if the system was already added before.
+     */
     operator fun plusAssign(system: IntervalSystem) = add(system)
+
+    /**
+     * Adds the [system] to the world's [systems].
+     *
+     * @throws FleksSystemAlreadyAddedException if the system was already added before.
+     */
+    operator fun plusAssign(system: SuspendableIntervalSystem) = add(system)
 
     /**
      * Removes the [system] of the world's [systems].
@@ -264,7 +310,23 @@ class World internal constructor(
     /**
      * Removes the [system] of the world's [systems].
      */
+    fun remove(system: SuspendableIntervalSystem) {
+        mutableSuspendableSystems.remove(system)
+        if (system is IteratingSystem && (system is FamilyOnAdd || system is FamilyOnRemove)) {
+            updateAggregatedFamilyHooks(system.family)
+        }
+        system.onDispose()
+    }
+
+    /**
+     * Removes the [system] of the world's [systems].
+     */
     operator fun minusAssign(system: IntervalSystem) = remove(system)
+
+    /**
+     * Removes the [system] of the world's [systems].
+     */
+    operator fun minusAssign(system: SuspendableIntervalSystem) = remove(system)
 
     /**
      * Sets the [hook] as an [EntityService.addHook].
@@ -452,6 +514,20 @@ class World internal constructor(
     }
 
     /**
+     * Updates all [enabled][SuspendableIntervalSystem.enabled] [systems][SuspendableIntervalSystem] of the world
+     * using the given [deltaTime] in seconds.
+     */
+    suspend fun suspendableUpdate(deltaTime: Float) {
+        this.deltaTime = deltaTime
+        for (i in suspendableSystems.indices) {
+            val system = suspendableSystems[i]
+            if (system.enabled) {
+                system.onUpdate()
+            }
+        }
+    }
+
+    /**
      * Updates all [enabled][IntervalSystem.enabled] [systems][IntervalSystem] of the world
      * using the given [duration]. The duration is converted to seconds.
      */
@@ -466,6 +542,7 @@ class World internal constructor(
     fun dispose() {
         entityService.removeAll()
         systems.forEachReverse { it.onDispose() }
+        suspendableSystems.forEachReverse { it.onDispose() }
     }
 
     /**

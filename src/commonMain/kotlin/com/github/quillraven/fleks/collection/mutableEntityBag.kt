@@ -588,6 +588,15 @@ class MutableEntityBag(
     }
 
     /**
+     * Performs the given [action] on each [entity][Entity].
+     */
+    override inline suspend fun suspendForEach(action: suspend (Entity) -> Unit) {
+        for (i in 0 until size) {
+            action(values[i])
+        }
+    }
+
+    /**
      * Performs the given [action] on each [entity][Entity], providing sequential
      * index with the [entity][Entity].
      */

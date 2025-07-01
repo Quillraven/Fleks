@@ -265,6 +265,11 @@ interface EntityBag {
     fun forEach(action: (Entity) -> Unit)
 
     /**
+     * Performs the given [action] on each [entity][Entity].
+     */
+    suspend fun suspendForEach(action: suspend (Entity) -> Unit)
+
+    /**
      * Performs the given [action] on each [entity][Entity], providing sequential
      * index with the [entity][Entity].
      */
