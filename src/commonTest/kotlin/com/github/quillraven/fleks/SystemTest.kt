@@ -1,14 +1,16 @@
 package com.github.quillraven.fleks
 
+import FloatClock
+import IntervalRatio
 import com.github.quillraven.fleks.World.Companion.family
 import com.github.quillraven.fleks.World.Companion.inject
 import com.github.quillraven.fleks.collection.compareEntity
 import com.github.quillraven.fleks.collection.compareEntityBy
 import kotlin.test.*
 
-private class SystemTestIntervalSystemEachFrame : IntervalSystem(
-    interval = EachFrame
-) {
+private typealias NoClockSystemTestIntervalSystemEachFrame = SystemTestIntervalSystemEachFrame<Unit>
+
+private class SystemTestIntervalSystemEachFrame<T> : IntervalSystem<T>() {
     var numInits = 0
     var numDisposes = 0
     var numCalls = 0
@@ -26,7 +28,7 @@ private class SystemTestIntervalSystemEachFrame : IntervalSystem(
     }
 }
 
-private class SystemTestIntervalSystemFixed : IntervalSystem(
+private class SystemTestIntervalSystemFixed: IntervalSystem<Float>(
     interval = Fixed(0.25f)
 ) {
     var numCalls = 0
@@ -36,8 +38,8 @@ private class SystemTestIntervalSystemFixed : IntervalSystem(
         ++numCalls
     }
 
-    override fun onAlpha(alpha: Float) {
-        lastAlpha = alpha
+    override fun onAlpha(alpha: IntervalRatio) {
+        lastAlpha = alpha.value
     }
 }
 
@@ -53,7 +55,7 @@ private data class SystemTestComponent(
     companion object : ComponentType<SystemTestComponent>()
 }
 
-private class SystemTestIteratingSystem : IteratingSystem(
+private class SystemTestIteratingSystem : IteratingSystem<Float>(
     family = family { all(SystemTestComponent) },
     interval = Fixed(0.25f)
 ) {
@@ -69,13 +71,13 @@ private class SystemTestIteratingSystem : IteratingSystem(
         ++numEntityCalls
     }
 
-    override fun onAlphaEntity(entity: Entity, alpha: Float) {
-        lastAlpha = alpha
+    override fun onAlphaEntity(entity: Entity, alpha: IntervalRatio) {
+        lastAlpha = alpha.value
         ++numAlphaCalls
     }
 }
 
-private class SystemTestEntityCreation : IteratingSystem(family { any(SystemTestComponent) }) {
+private class SystemTestEntityCreation : IteratingSystem<Unit>(family { any(SystemTestComponent) }) {
     var numTicks = 0
 
     override fun onInit() {
@@ -88,7 +90,7 @@ private class SystemTestEntityCreation : IteratingSystem(family { any(SystemTest
     }
 }
 
-private class SystemTestIteratingSystemSortAutomatic : IteratingSystem(
+private class SystemTestIteratingSystemSortAutomatic : IteratingSystem<Unit>(
     family = family { all(SystemTestComponent) },
     comparator = compareEntity { entityA, entityB ->
         entityB[SystemTestComponent].x.compareTo(entityA[SystemTestComponent].x)
@@ -109,7 +111,7 @@ private class SystemTestIteratingSystemSortAutomatic : IteratingSystem(
     }
 }
 
-private class SystemTestFixedSystemRemoval : IteratingSystem(
+private class SystemTestFixedSystemRemoval : IteratingSystem<Float>(
     family = family { all(SystemTestComponent) },
     interval = Fixed(1f)
 ) {
@@ -124,7 +126,7 @@ private class SystemTestFixedSystemRemoval : IteratingSystem(
         }
     }
 
-    override fun onAlphaEntity(entity: Entity, alpha: Float) {
+    override fun onAlphaEntity(entity: Entity, alpha: IntervalRatio) {
         // the next line would cause an exception if we don't update the family properly in alpha
         // because component removal is instantly
         entity[SystemTestComponent].x++
@@ -133,7 +135,7 @@ private class SystemTestFixedSystemRemoval : IteratingSystem(
     }
 }
 
-private class SystemTestIteratingSystemSortManual : IteratingSystem(
+private class SystemTestIteratingSystemSortManual : IteratingSystem<Unit>(
     family = family { all(SystemTestComponent) },
     comparator = compareEntityBy(SystemTestComponent),
     sortingType = Manual
@@ -148,7 +150,7 @@ private class SystemTestIteratingSystemSortManual : IteratingSystem(
 }
 
 private class SystemTestIteratingSystemInjectable :
-    IteratingSystem(family { none(SystemTestComponent).any(SystemTestComponent) }) {
+    IteratingSystem<Unit>(family { none(SystemTestComponent).any(SystemTestComponent) }) {
     val injectable: String = inject()
 
     override fun onTickEntity(entity: Entity) = Unit
@@ -156,13 +158,13 @@ private class SystemTestIteratingSystemInjectable :
 
 private class SystemTestIteratingSystemQualifiedInjectable(
     val injectable: String = inject()
-) : IteratingSystem(family { none(SystemTestComponent).any(SystemTestComponent) }) {
+) : IteratingSystem<Unit>(family { none(SystemTestComponent).any(SystemTestComponent) }) {
     val injectable2: String = world.inject("q1")
 
     override fun onTickEntity(entity: Entity) = Unit
 }
 
-private class SystemTestEnable(enabled: Boolean) : IntervalSystem(enabled = enabled) {
+private class SystemTestEnable(enabled: Boolean) : IntervalSystem<Unit>(enabled = enabled) {
     var enabledCall = false
     var disabledCall = false
 
@@ -177,7 +179,7 @@ private class SystemTestEnable(enabled: Boolean) : IntervalSystem(enabled = enab
     override fun onTick() = Unit
 }
 
-private class AddEntityInConstructorSystem() : IntervalSystem() {
+private class AddEntityInConstructorSystem() : IntervalSystem<Unit>() {
 
     init {
         world.entity { }
@@ -191,10 +193,10 @@ internal class SystemTest {
     fun systemWithIntervalEachFrameGetsCalledEveryTime() {
         val w = configureWorld {
             systems {
-                add(SystemTestIntervalSystemEachFrame())
+                add(NoClockSystemTestIntervalSystemEachFrame())
             }
         }
-        val system = w.system<SystemTestIntervalSystemEachFrame>()
+        val system = w.system<NoClockSystemTestIntervalSystemEachFrame>()
 
         system.onUpdate()
         system.onUpdate()
@@ -204,27 +206,29 @@ internal class SystemTest {
 
     @Test
     fun systemWithIntervalEachFrameReturnsWorldDeltaTime() {
-        val w = configureWorld {
+        val world = configureWorld(FloatClock()) {
             systems {
                 add(SystemTestIntervalSystemEachFrame())
             }
         }
-        val system = w.system<SystemTestIntervalSystemEachFrame>()
-        w.update(42f)
+        val system = world.system<SystemTestIntervalSystemEachFrame<Float>>()
+        world.clock.update(42f)
+        world.update()
 
-        assertEquals(42f, system.deltaTime)
+        assertEquals(42f, system.clock.deltaTime)
     }
 
     @Test
     fun systemWithFixedIntervalOf025fGetsCalledFourTimesWhenDeltaTimeIs11f() {
-        val w = configureWorld {
+        val world = configureWorld(FloatClock()) {
             systems {
                 add(SystemTestIntervalSystemFixed())
             }
         }
-        val system = w.system<SystemTestIntervalSystemFixed>()
+        val system = world.system<SystemTestIntervalSystemFixed>()
 
-        system.world.update(1.1f)
+        world.clock.update(1.1f)
+        system.world.update()
 
         assertEquals(4, system.numCalls)
         assertEquals(0.1f / 0.25f, system.lastAlpha, 0.0001f)
@@ -232,27 +236,29 @@ internal class SystemTest {
 
     @Test
     fun systemWithFixedIntervalReturnsStepRateAsDeltaTime() {
-        val w = configureWorld {
+        val world = configureWorld(FloatClock()) {
             systems {
                 add(SystemTestIntervalSystemFixed())
             }
         }
-        val system = w.system<SystemTestIntervalSystemFixed>()
 
-        assertEquals(0.25f, system.deltaTime, 0.0001f)
+        world.clock.update(0.25f)
+        val system = world.system<SystemTestIntervalSystemFixed>()
+
+        assertEquals(0.25f, system.clock.deltaTime, 0.0001f)
     }
 
     @Test
     fun createIntervalSystemWithNoArgs() {
         val expectedWorld = configureWorld {
             systems {
-                add(SystemTestIntervalSystemEachFrame())
+                add(NoClockSystemTestIntervalSystemEachFrame())
             }
         }
 
         assertEquals(1, expectedWorld.systems.size)
-        assertNotNull(expectedWorld.system<SystemTestIntervalSystemEachFrame>())
-        assertSame(expectedWorld, expectedWorld.system<SystemTestIntervalSystemEachFrame>().world)
+        assertNotNull(expectedWorld.system<NoClockSystemTestIntervalSystemEachFrame>())
+        assertSame(expectedWorld, expectedWorld.system<NoClockSystemTestIntervalSystemEachFrame>().world)
     }
 
     @Test
@@ -295,7 +301,7 @@ internal class SystemTest {
 
     @Test
     fun iteratingSystemCallsOnTickAndOnAlphaForEachEntityOfTheSystem() {
-        val world = configureWorld {
+        val world = configureWorld(FloatClock()) {
             systems {
                 add(SystemTestIteratingSystem())
             }
@@ -303,7 +309,8 @@ internal class SystemTest {
         world.entity { it += SystemTestComponent() }
         world.entity { it += SystemTestComponent() }
 
-        world.update(0.3f)
+        world.clock.update(0.3f)
+        world.update()
 
         val system = world.system<SystemTestIteratingSystem>()
         assertEquals(2, system.numEntityCalls)
@@ -313,7 +320,7 @@ internal class SystemTest {
 
     @Test
     fun configureEntityDuringIteration() {
-        val world = configureWorld {
+        val world = configureWorld(FloatClock()) {
             systems {
                 add(SystemTestIteratingSystem())
             }
@@ -322,7 +329,8 @@ internal class SystemTest {
         val system = world.system<SystemTestIteratingSystem>()
         system.entityToConfigure = entity
 
-        world.update(0.3f)
+        world.clock.update(0.3f)
+        world.update()
 
         assertFalse(with(world) { entity has SystemTestComponent })
     }
@@ -338,7 +346,7 @@ internal class SystemTest {
         world.entity { it += SystemTestComponent(x = 10f) }
         val expectedEntity = world.entity { it += SystemTestComponent(x = 5f) }
 
-        world.update(0f)
+        world.update()
 
         assertEquals(expectedEntity, world.system<SystemTestIteratingSystemSortAutomatic>().lastEntityProcess)
     }
@@ -356,7 +364,7 @@ internal class SystemTest {
         val system = world.system<SystemTestIteratingSystemSortManual>()
 
         system.doSort = true
-        world.update(0f)
+        world.update()
 
         assertEquals(expectedEntity, system.lastEntityProcess)
         assertFalse(system.doSort)
@@ -371,7 +379,7 @@ internal class SystemTest {
         }
 
         assertFailsWith<FleksNoSuchSystemException> {
-            world.system<SystemTestIntervalSystemEachFrame>()
+            world.system<NoClockSystemTestIntervalSystemEachFrame>()
         }
     }
 
@@ -379,13 +387,13 @@ internal class SystemTest {
     fun updateOnlyCallsEnabledSystems() {
         val world = configureWorld {
             systems {
-                add(SystemTestIntervalSystemEachFrame())
+                add(NoClockSystemTestIntervalSystemEachFrame())
             }
         }
-        val system = world.system<SystemTestIntervalSystemEachFrame>()
+        val system = world.system<NoClockSystemTestIntervalSystemEachFrame>()
         system.enabled = false
 
-        world.update(0f)
+        world.update()
 
         assertEquals(0, system.numCalls)
     }
@@ -405,15 +413,15 @@ internal class SystemTest {
 
         // call it twice - first call still iterates over all three entities
         // while the second call will only iterate over the remaining two entities
-        world.update(0f)
-        world.update(0f)
+        world.update()
+        world.update()
 
         assertEquals(5, system.numEntityCalls)
     }
 
     @Test
     fun removingAnEntityDuringAlphaIsDelayed() {
-        val world = configureWorld {
+        val world = configureWorld(FloatClock()) {
             systems {
                 add(SystemTestFixedSystemRemoval())
             }
@@ -427,8 +435,10 @@ internal class SystemTest {
 
         // call it twice - first call still iterates over all three entities
         // while the second call will only iterate over the remaining two entities
-        world.update(1f)
-        world.update(1f)
+        world.clock.update(1f)
+        world.update()
+        world.clock.update(1f)
+        world.update()
 
         assertEquals(4, system.numEntityCalls)
     }
@@ -437,24 +447,24 @@ internal class SystemTest {
     fun initService() {
         val world = configureWorld {
             systems {
-                add(SystemTestIntervalSystemEachFrame())
+                add(NoClockSystemTestIntervalSystemEachFrame())
             }
         }
 
-        assertEquals(1, world.system<SystemTestIntervalSystemEachFrame>().numInits)
+        assertEquals(1, world.system<NoClockSystemTestIntervalSystemEachFrame>().numInits)
     }
 
     @Test
     fun disposeService() {
         val world = configureWorld {
             systems {
-                add(SystemTestIntervalSystemEachFrame())
+                add(NoClockSystemTestIntervalSystemEachFrame())
             }
         }
 
         world.dispose()
 
-        assertEquals(1, world.system<SystemTestIntervalSystemEachFrame>().numDisposes)
+        assertEquals(1, world.system<NoClockSystemTestIntervalSystemEachFrame>().numDisposes)
     }
 
     @Test
@@ -467,7 +477,7 @@ internal class SystemTest {
             }
         }
 
-        world.update(0f)
+        world.update()
 
         val system = world.system<SystemTestEntityCreation>()
         assertEquals(1, system.numTicks)

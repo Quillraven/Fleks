@@ -13,15 +13,15 @@ import kotlin.math.min
 typealias EntityComparator = Comparator<Entity>
 
 fun compareEntity(
-    world: World = World.CURRENT_WORLD ?: throw FleksWrongConfigurationUsageException(),
-    compareFun: World.(Entity, Entity) -> Int,
+    world: World<*> = World.CURRENT_WORLD ?: throw FleksWrongConfigurationUsageException(),
+    compareFun: World<*>.(Entity, Entity) -> Int,
 ): EntityComparator {
     return EntityComparator { entityA, entityB -> compareFun(world, entityA, entityB) }
 }
 
 inline fun <reified T> compareEntityBy(
     componentType: ComponentType<T>,
-    world: World = World.CURRENT_WORLD ?: throw FleksWrongConfigurationUsageException(),
+    world: World<*> = World.CURRENT_WORLD ?: throw FleksWrongConfigurationUsageException(),
 ): EntityComparator where T : Component<T>, T : Comparable<T> {
     return object : EntityComparator {
         private val holder = world.componentService.holder(componentType)

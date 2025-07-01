@@ -1,5 +1,8 @@
 package com.github.quillraven.fleks
 
+import Clock
+import ClockAccumulator
+import IntervalRatio
 import com.github.quillraven.fleks.collection.EntityComparator
 
 /**
@@ -10,13 +13,13 @@ import com.github.quillraven.fleks.collection.EntityComparator
  * [EachFrame] means that the [IntervalSystem] is updated every time the [world][World] gets updated.
  * [Fixed] means that the [IntervalSystem] is updated at a fixed rate given in seconds.
  */
-sealed interface Interval
-data object EachFrame : Interval
+sealed interface Interval<T>
+class EachFrame<T> : Interval<T>
 
 /**
  * @param step the time in seconds when an [IntervalSystem] gets updated.
  */
-data class Fixed(val step: Float) : Interval
+data class Fixed<T>(val step: T) : Interval<T>
 
 /**
  * A basic system of a [world][World] without a context to [entities][Entity].
@@ -28,14 +31,25 @@ data class Fixed(val step: Float) : Interval
  * @param interval the [interval][Interval] in which the system gets updated. Default is [EachFrame].
  * @param enabled defines if the system gets updated when the [world][World] gets updated. Default is true.
  */
-abstract class IntervalSystem(
-    val interval: Interval = EachFrame,
+abstract class IntervalSystem<T>(
+    val interval: Interval<T> = EachFrame(),
     enabled: Boolean = true,
     /**
      * Returns the [world][World] to which this system belongs.
      */
-    val world: World = World.CURRENT_WORLD ?: throw FleksWrongConfigurationUsageException()
+    val world: World<*> = World.CURRENT_WORLD ?: throw FleksWrongConfigurationUsageException()
 ) : EntityComponentContext(world.componentService) {
+
+    private lateinit var _clock: Clock<T>
+    private lateinit var accumulator: ClockAccumulator<T>
+
+    internal fun injectClock(clock: Clock<T>) {
+        _clock = clock
+        accumulator = clock.createAccumulator()
+    }
+
+    val clock: Clock<T>
+        get() = _clock
 
     var enabled: Boolean = enabled
         set(value) {
@@ -50,18 +64,6 @@ abstract class IntervalSystem(
                 onDisable()
             }
         }
-
-    private var accumulator: Float = 0.0f
-
-    /**
-     * Returns the time in seconds since the last time [onUpdate] was called.
-     *
-     * If the [interval] is [EachFrame] then the [world's][World] delta time is returned which is passed to [World.update].
-     *
-     * Otherwise, the [step][Fixed.step] value is returned.
-     */
-    val deltaTime: Float
-        get() = if (interval is Fixed) interval.step else world.deltaTime
 
     /**
      * This function gets called when the [world configuration][WorldConfiguration.configure] is completed.
@@ -89,16 +91,18 @@ abstract class IntervalSystem(
      */
     open fun onUpdate() {
         when (interval) {
-            is EachFrame -> onTick()
-            is Fixed -> {
-                accumulator += world.deltaTime
-                val stepRate = interval.step
-                while (accumulator >= stepRate) {
-                    onTick()
-                    accumulator -= stepRate
-                }
-
-                onAlpha(accumulator / stepRate)
+            is EachFrame<T> -> onTick()
+            is Fixed<T> -> {
+                clock.tickWithInterval(
+                    interval.step,
+                    accumulator,
+                    onTick = {
+                        onTick()
+                    },
+                    remainingDelta = { deltaTime ->
+                        onAlpha(deltaTime)
+                    }
+                )
             }
         }
     }
@@ -115,7 +119,7 @@ abstract class IntervalSystem(
      *
      * @param alpha a value between 0 (inclusive) and 1 (exclusive) that describes the progress between two ticks.
      */
-    open fun onAlpha(alpha: Float) = Unit
+    open fun onAlpha(alpha: IntervalRatio) = Unit
 
     /**
      * Optional function to dispose of any resources of the system if needed.
@@ -155,20 +159,20 @@ data object Manual : SortingType
  * @param interval the [interval][Interval] in which the system gets updated. Default is [EachFrame].
  * @param enabled defines if the system gets updated when the [world][World] gets updated. Default is true.
  */
-abstract class IteratingSystem(
+abstract class IteratingSystem<T>(
     val family: Family,
     protected val comparator: EntityComparator = EMPTY_COMPARATOR,
     protected val sortingType: SortingType = Automatic,
-    interval: Interval = EachFrame,
+    interval: Interval<T> = EachFrame(),
     enabled: Boolean = true,
-    world: World
-) : IntervalSystem(interval, enabled, world) {
+    world: World<*>
+) : IntervalSystem<T>(interval, enabled, world) {
 
     constructor(
         family: Family,
         comparator: EntityComparator = EMPTY_COMPARATOR,
         sortingType: SortingType = Automatic,
-        interval: Interval = EachFrame,
+        interval: Interval<T> = EachFrame(),
         enabled: Boolean = true,
     ) : this(
         family,
@@ -219,7 +223,7 @@ abstract class IteratingSystem(
      *
      * @param alpha a value between 0 (inclusive) and 1 (exclusive) that describes the progress between two ticks.
      */
-    override fun onAlpha(alpha: Float) {
+    override fun onAlpha(alpha: IntervalRatio) {
         family.forEach { onAlphaEntity(it, alpha) }
     }
 
@@ -228,7 +232,7 @@ abstract class IteratingSystem(
      *
      * @param alpha a value between 0 (inclusive) and 1 (exclusive) that describes the progress between two ticks.
      */
-    open fun onAlphaEntity(entity: Entity, alpha: Float) = Unit
+    open fun onAlphaEntity(entity: Entity, alpha: IntervalRatio) = Unit
 
     companion object {
         private val EMPTY_COMPARATOR = EntityComparator { _, _ -> 0 }

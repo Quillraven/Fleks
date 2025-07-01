@@ -1,13 +1,11 @@
 package com.github.quillraven.fleks
 
-import com.github.quillraven.fleks.World.Companion.family
-import com.github.quillraven.fleks.World.Companion.inject
+import Clock
 import com.github.quillraven.fleks.collection.EntityBag
 import com.github.quillraven.fleks.collection.MutableEntityBag
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlin.native.concurrent.ThreadLocal
-import kotlin.time.Duration
 
 /**
  * Snapshot for an [entity][Entity] that contains its [components][Component] and [tags][EntityTag].
@@ -31,18 +29,12 @@ fun wildcardSnapshotOf(components: List<Component<*>>, tags: List<UniqueId<*>>):
  *
  * @param entityCapacity the initial maximum capacity of entities.
  */
-class World internal constructor(
+class World<T> internal constructor(
     entityCapacity: Int,
+    val clock: Clock<T>
 ) : EntityComponentContext(ComponentService()) {
     @PublishedApi
     internal val injectables = mutableMapOf<String, Injectable>()
-
-    /**
-     * Returns the time passed to [update][World.update].
-     * It represents the time in seconds between two frames.
-     */
-    var deltaTime = 0f
-        private set
 
     @PublishedApi
     internal val entityService = EntityService(this, entityCapacity)
@@ -69,12 +61,12 @@ class World internal constructor(
 
     // Internal mutable list of systems
     // can be replaced in a later version of Kotlin with "backing field" syntax
-    internal val mutableSystems = arrayListOf<IntervalSystem>()
+    internal val mutableSystems = arrayListOf<IntervalSystem<T>>()
 
     /**
      * Returns the world's systems.
      */
-    val systems: List<IntervalSystem>
+    val systems: List<IntervalSystem<T>>
         get() = mutableSystems
 
     /**
@@ -187,7 +179,7 @@ class World internal constructor(
     /**
      * Performs the given [action] on each active [entity][Entity].
      */
-    fun forEach(action: World.(Entity) -> Unit) {
+    fun forEach(action: World<*>.(Entity) -> Unit) {
         entityService.forEach(action)
     }
 
@@ -196,7 +188,7 @@ class World internal constructor(
      *
      * @throws [FleksNoSuchSystemException] if there is no such system.
      */
-    inline fun <reified T : IntervalSystem> system(): T {
+    inline fun <reified T : IntervalSystem<*>> system(): T {
         systems.forEach { system ->
             if (system is T) {
                 return system
@@ -208,14 +200,14 @@ class World internal constructor(
     /**
      * Returns true if and only if the given [system][IntervalSystem] is part of the world.
      */
-    inline fun <reified T : IntervalSystem> contains(): Boolean {
+    inline fun <reified T : IntervalSystem<*>> contains(): Boolean {
         return systems.any { it is T }
     }
 
     /**
      * Returns the specified [system][IntervalSystem] or null if there is no such system.
      */
-    inline fun <reified T : IntervalSystem> systemOrNull(): T? {
+    inline fun <reified T : IntervalSystem<*>> systemOrNull(): T? {
         return systems.firstOrNull { it is T } as T?
     }
 
@@ -224,11 +216,12 @@ class World internal constructor(
      *
      * @throws FleksSystemAlreadyAddedException if the system was already added before.
      */
-    fun add(index: Int, system: IntervalSystem) {
+    fun add(index: Int, system: IntervalSystem<T>) {
         if (systems.any { it::class == system::class }) {
             throw FleksSystemAlreadyAddedException(system::class)
         }
 
+        system.injectClock(clock)
         mutableSystems.add(index, system)
         if (system is IteratingSystem && (system is FamilyOnAdd || system is FamilyOnRemove)) {
             updateAggregatedFamilyHooks(system.family)
@@ -241,19 +234,19 @@ class World internal constructor(
      *
      * @throws FleksSystemAlreadyAddedException if the system was already added before.
      */
-    fun add(system: IntervalSystem) = add(systems.size, system)
+    fun add(system: IntervalSystem<T>) = add(systems.size, system)
 
     /**
      * Adds the [system] to the world's [systems].
      *
      * @throws FleksSystemAlreadyAddedException if the system was already added before.
      */
-    operator fun plusAssign(system: IntervalSystem) = add(system)
+    operator fun plusAssign(system: IntervalSystem<T>) = add(system)
 
     /**
      * Removes the [system] of the world's [systems].
      */
-    fun remove(system: IntervalSystem) {
+    fun remove(system: IntervalSystem<*>) {
         mutableSystems.remove(system)
         if (system is IteratingSystem && (system is FamilyOnAdd || system is FamilyOnRemove)) {
             updateAggregatedFamilyHooks(system.family)
@@ -264,7 +257,7 @@ class World internal constructor(
     /**
      * Removes the [system] of the world's [systems].
      */
-    operator fun minusAssign(system: IntervalSystem) = remove(system)
+    operator fun minusAssign(system: IntervalSystem<*>) = remove(system)
 
     /**
      * Sets the [hook] as an [EntityService.addHook].
@@ -438,25 +431,15 @@ class World internal constructor(
     }
 
     /**
-     * Updates all [enabled][IntervalSystem.enabled] [systems][IntervalSystem] of the world
-     * using the given [deltaTime] in seconds.
+     * Updates all [enabled][IntervalSystem.enabled] [systems][IntervalSystem] of the world.
      */
-    fun update(deltaTime: Float) {
-        this.deltaTime = deltaTime
+    fun update() {
         for (i in systems.indices) {
             val system = systems[i]
             if (system.enabled) {
                 system.onUpdate()
             }
         }
-    }
-
-    /**
-     * Updates all [enabled][IntervalSystem.enabled] [systems][IntervalSystem] of the world
-     * using the given [duration]. The duration is converted to seconds.
-     */
-    fun update(duration: Duration) {
-        update(duration.inWholeNanoseconds * 0.000000001f)
     }
 
     /**
@@ -527,7 +510,7 @@ class World internal constructor(
     @ThreadLocal
     companion object {
         @PublishedApi
-        internal var CURRENT_WORLD: World? = null
+        internal var CURRENT_WORLD: World<*>? = null
 
         /**
          * Returns an already registered injectable of the given [name] and marks it as used.

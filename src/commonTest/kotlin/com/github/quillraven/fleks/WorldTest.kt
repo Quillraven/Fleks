@@ -1,11 +1,15 @@
 package com.github.quillraven.fleks
 
+import DurationClock
+import FloatClock
 import com.github.quillraven.fleks.World.Companion.family
 import com.github.quillraven.fleks.World.Companion.inject
 import com.github.quillraven.fleks.collection.compareEntity
 import com.github.quillraven.fleks.collection.compareEntityBy
 import kotlin.test.*
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.nanoseconds
 import kotlin.time.Duration.Companion.seconds
 
 private data class WorldTestComponent(
@@ -17,12 +21,12 @@ private data class WorldTestComponent(
     var numAddCalls: Int = 0
     var numRemoveCalls: Int = 0
 
-    override fun World.onAdd(entity: Entity) {
+    override fun World<*>.onAdd(entity: Entity) {
         assertTrue(entity has WorldTestComponent)
         numAddCalls++
     }
 
-    override fun World.onRemove(entity: Entity) {
+    override fun World<*>.onRemove(entity: Entity) {
         assertFalse(entity has WorldTestComponent)
         numAddCalls--
     }
@@ -38,7 +42,11 @@ private class WorldTestComponent2 : Component<WorldTestComponent2> {
     companion object : ComponentType<WorldTestComponent2>()
 }
 
-private class WorldTestIntervalSystem(world: World = World.CURRENT_WORLD!!) : IntervalSystem(world = world) {
+private typealias UnitWorldTestIntervalSystem = WorldTestIntervalSystem<Unit>
+private typealias FloatWorldTestIntervalSystem = WorldTestIntervalSystem<Float>
+private typealias DurationWorldTestIntervalSystem = WorldTestIntervalSystem<Duration>
+
+private class WorldTestIntervalSystem<T>(world: World<*> = World.CURRENT_WORLD!!) : IntervalSystem<T>(world = world) {
     var numCalls = 0
     var disposed = false
 
@@ -51,10 +59,14 @@ private class WorldTestIntervalSystem(world: World = World.CURRENT_WORLD!!) : In
     }
 }
 
-private class WorldTestIteratingSystem(
-    world: World = World.CURRENT_WORLD!!,
+private typealias UnitWorldTestIteratingSystem = WorldTestIteratingSystem<Unit>
+private typealias FloatWorldTestIteratingSystem = WorldTestIteratingSystem<Float>
+private typealias DurationWorldTestIteratingSystem = WorldTestIteratingSystem<Duration>
+
+private class WorldTestIteratingSystem<T>(
+    world: World<*> = World.CURRENT_WORLD!!,
     val testInject: String = world.inject()
-) : IteratingSystem(world = world, family = world.family { all(WorldTestComponent) }) {
+) : IteratingSystem<T>(world = world, family = world.family { all(WorldTestComponent) }) {
     var numCalls = 0
     var numCallsEntity = 0
     var disposed = false
@@ -73,8 +85,8 @@ private class WorldTestIteratingSystem(
     }
 }
 
-private class WorldTestInitSystem(world: World = World.CURRENT_WORLD!!) :
-    IteratingSystem(world.family { all(WorldTestComponent) }, world = world) {
+private class WorldTestInitSystem(world: World<*> = World.CURRENT_WORLD!!) :
+    IteratingSystem<Unit>(world.family { all(WorldTestComponent) }, world = world) {
     override fun onInit() {
         super.onInit()
         world.entity { it += WorldTestComponent() }
@@ -83,8 +95,8 @@ private class WorldTestInitSystem(world: World = World.CURRENT_WORLD!!) :
     override fun onTickEntity(entity: Entity) = Unit
 }
 
-private class WorldTestInitSystemExtraFamily(world: World = World.CURRENT_WORLD!!) :
-    IteratingSystem(world.family { all(WorldTestComponent) }, world = world) {
+private class WorldTestInitSystemExtraFamily(world: World<*> = World.CURRENT_WORLD!!) :
+    IteratingSystem<Unit>(world.family { all(WorldTestComponent) }, world = world) {
     val extraFamily = world.family { any(WorldTestComponent2).none(WorldTestComponent) }
 
     override fun onInit() {
@@ -97,7 +109,7 @@ private class WorldTestInitSystemExtraFamily(world: World = World.CURRENT_WORLD!
 
 private class WorldTestNamedDependencySystem(
     val injName: String = inject("name")
-) : IntervalSystem() {
+) : IntervalSystem<Unit>() {
     val level: String = world.inject("level")
     val name: String = injName
 
@@ -105,7 +117,7 @@ private class WorldTestNamedDependencySystem(
 }
 
 private class WorldEntityProvider(
-    override val world: World
+    override val world: World<*>
 ) : EntityProvider {
     private var id = 10
     private var entities = mutableListOf<Entity>()
@@ -127,7 +139,7 @@ private class WorldEntityProvider(
         entities.clear()
     }
 
-    override fun forEach(action: World.(Entity) -> Unit) {
+    override fun forEach(action: World<*>.(Entity) -> Unit) {
         entities.forEach { world.action(it) }
     }
 }
@@ -136,7 +148,7 @@ private class WorldEntityProvider(
 internal class WorldTest {
     @Test
     fun createEmptyWorldFor32Entities() {
-        val w = configureWorld(32) { }
+        val w = configureWorld(entityCapacity = 32) { }
 
         assertEquals(0, w.numEntities)
         assertEquals(32, w.capacity)
@@ -146,11 +158,11 @@ internal class WorldTest {
     fun createEmptyWorldWith1NoArgsIntervalSystem() {
         val w = configureWorld {
             systems {
-                add(WorldTestIntervalSystem())
+                add(UnitWorldTestIntervalSystem())
             }
         }
 
-        assertNotNull(w.system<WorldTestIntervalSystem>())
+        assertNotNull(w.system<UnitWorldTestIntervalSystem>())
     }
 
     @Test
@@ -161,12 +173,12 @@ internal class WorldTest {
             }
 
             systems {
-                add(WorldTestIteratingSystem())
+                add(UnitWorldTestIteratingSystem())
             }
         }
 
-        assertNotNull(w.system<WorldTestIteratingSystem>())
-        assertEquals("42", w.system<WorldTestIteratingSystem>().testInject)
+        assertNotNull(w.system<UnitWorldTestIteratingSystem>())
+        assertEquals("42", w.system<UnitWorldTestIteratingSystem>().testInject)
     }
 
     @Test
@@ -194,8 +206,8 @@ internal class WorldTest {
         assertFailsWith<FleksSystemAlreadyAddedException> {
             configureWorld {
                 systems {
-                    add(WorldTestIntervalSystem())
-                    add(WorldTestIntervalSystem())
+                    add(UnitWorldTestIntervalSystem())
+                    add(UnitWorldTestIntervalSystem())
                 }
             }
         }
@@ -205,31 +217,31 @@ internal class WorldTest {
     fun cannotAccessSystemThatWasNotAdded() {
         val w = configureWorld {}
 
-        assertFailsWith<FleksNoSuchSystemException> { w.system<WorldTestIntervalSystem>() }
+        assertFailsWith<FleksNoSuchSystemException> { w.system<UnitWorldTestIntervalSystem>() }
     }
 
     @Test
     fun testSystemOrNull() {
         val world = configureWorld {
             systems {
-                add(WorldTestIntervalSystem())
+                add(UnitWorldTestIntervalSystem())
             }
         }
 
-        assertNotNull(world.systemOrNull<WorldTestIntervalSystem>())
-        assertNull(world.systemOrNull<WorldTestIteratingSystem>())
+        assertNotNull(world.systemOrNull<UnitWorldTestIntervalSystem>())
+        assertNull(world.systemOrNull<UnitWorldTestIteratingSystem>())
     }
 
     @Test
     fun testSystemContains() {
         val world = configureWorld {
             systems {
-                add(WorldTestIntervalSystem())
+                add(UnitWorldTestIntervalSystem())
             }
         }
 
-        assertTrue(world.contains<WorldTestIntervalSystem>())
-        assertFalse(world.contains<WorldTestIteratingSystem>())
+        assertTrue(world.contains<UnitWorldTestIntervalSystem>())
+        assertFalse(world.contains<UnitWorldTestIteratingSystem>())
     }
 
     @Test
@@ -237,7 +249,7 @@ internal class WorldTest {
         assertFailsWith<FleksNoSuchInjectableException> {
             configureWorld {
                 systems {
-                    add(WorldTestIteratingSystem())
+                    add(UnitWorldTestIteratingSystem())
                 }
             }
         }
@@ -257,23 +269,23 @@ internal class WorldTest {
 
     @Test
     fun createNewEntity() {
-        val w = configureWorld {
+        val world = configureWorld {
             injectables {
                 add("42")
             }
 
             systems {
-                add(WorldTestIteratingSystem())
+                add(UnitWorldTestIteratingSystem())
             }
         }
 
-        val e = w.entity {
+        val e = world.entity {
             it += WorldTestComponent(x = 5f)
         }
 
-        assertEquals(1, w.numEntities)
+        assertEquals(1, world.numEntities)
         assertEquals(0, e.id)
-        assertEquals(5f, with(w) { e[WorldTestComponent].x })
+        assertEquals(5f, with(world) { e[WorldTestComponent].x })
     }
 
     @Test
@@ -299,58 +311,57 @@ internal class WorldTest {
 
     @Test
     fun updateWorldWithDeltaTimeOf1() {
-        val w = configureWorld {
+        val world = configureWorld(FloatClock()) {
             injectables {
                 add("42")
             }
 
             systems {
-                add(WorldTestIntervalSystem())
-                add(WorldTestIteratingSystem())
+                add(FloatWorldTestIntervalSystem())
+                add(FloatWorldTestIteratingSystem())
             }
         }
-        w.system<WorldTestIteratingSystem>().enabled = false
+        world.system<UnitWorldTestIteratingSystem>().enabled = false
 
-        w.update(1f)
+        world.clock.update(1f)
+        world.update()
 
-        assertEquals(1f, w.deltaTime)
-        assertEquals(1, w.system<WorldTestIntervalSystem>().numCalls)
-        assertEquals(0, w.system<WorldTestIteratingSystem>().numCalls)
+        assertEquals(1f, world.clock.deltaTime)
+        assertEquals(1, world.system<FloatWorldTestIntervalSystem>().numCalls)
+        assertEquals(0, world.system<FloatWorldTestIteratingSystem>().numCalls)
     }
 
     @Test
     fun updateWorldWithDurationOf1() {
-        val w = configureWorld {
+        val world = configureWorld(DurationClock()) {
             injectables {
                 add("42")
             }
 
             systems {
-                add(WorldTestIntervalSystem())
-                add(WorldTestIteratingSystem())
+                add(DurationWorldTestIntervalSystem())
+                add(DurationWorldTestIteratingSystem())
             }
         }
-        w.system<WorldTestIteratingSystem>().enabled = false
+        world.system<UnitWorldTestIteratingSystem>().enabled = false
 
-        w.update(1.seconds)
+        world.clock.update(1.seconds)
+        world.update()
 
-        assertEquals(1f, w.deltaTime)
-        assertEquals(1, w.system<WorldTestIntervalSystem>().numCalls)
-        assertEquals(0, w.system<WorldTestIteratingSystem>().numCalls)
+        assertEquals(1_000_000_000.nanoseconds, world.clock.deltaTime)
+        assertEquals(1, world.system<DurationWorldTestIntervalSystem>().numCalls)
+        assertEquals(0, world.system<DurationWorldTestIteratingSystem>().numCalls)
     }
 
     @Test
-    fun verifyUpdateAndUpdateDurationIsSame() {
-        val world = configureWorld { }
+    fun verifyUpdateAndUpdateDurationIsSameWithDuration() {
+        val world = configureWorld(DurationClock()) { }
 
-        world.update(0.5f)
-        assertEquals(0.5f, world.deltaTime)
+        world.clock.update(0.5.seconds)
+        assertEquals(500_000_000.nanoseconds, world.clock.deltaTime)
 
-        world.update(0.5.seconds)
-        assertEquals(0.5f, world.deltaTime)
-
-        world.update(500.milliseconds)
-        assertEquals(0.5f, world.deltaTime)
+        world.clock.update(500.milliseconds)
+        assertEquals(500_000_000.nanoseconds, world.clock.deltaTime)
     }
 
     @Test
@@ -368,7 +379,7 @@ internal class WorldTest {
     fun disposeWorld() {
         val w = configureWorld {
             systems {
-                add(WorldTestIntervalSystem())
+                add(UnitWorldTestIntervalSystem())
             }
         }
         w.entity()
@@ -376,7 +387,7 @@ internal class WorldTest {
 
         w.dispose()
 
-        assertTrue(w.system<WorldTestIntervalSystem>().disposed)
+        assertTrue(w.system<UnitWorldTestIntervalSystem>().disposed)
         assertEquals(0, w.numEntities)
     }
 
@@ -453,15 +464,15 @@ internal class WorldTest {
             }
 
             systems {
-                add(WorldTestIteratingSystem())
+                add(UnitWorldTestIteratingSystem())
             }
         }
         val e = w.entity()
 
         with(w) { e.configure { it += WorldTestComponent() } }
-        w.update(0f)
+        w.update()
 
-        assertEquals(1, w.system<WorldTestIteratingSystem>().numCallsEntity)
+        assertEquals(1, w.system<UnitWorldTestIteratingSystem>().numCallsEntity)
     }
 
     @Test
@@ -773,7 +784,7 @@ internal class WorldTest {
             }
 
             systems {
-                add(WorldTestIteratingSystem())
+                add(UnitWorldTestIteratingSystem())
             }
         }
         val comp1 = WorldTestComponent()
@@ -786,7 +797,7 @@ internal class WorldTest {
 
         w.loadSnapshot(snapshot)
         val actual = w.snapshot()
-        w.update(1f)
+        w.update()
 
         // 3 entities should be loaded
         assertEquals(3, w.numEntities)
@@ -803,7 +814,7 @@ internal class WorldTest {
             )
         }
         // 2 out of 3 loaded entities should be part of the IteratingSystem family
-        assertEquals(2, w.system<WorldTestIteratingSystem>().numCallsEntity)
+        assertEquals(2, w.system<UnitWorldTestIteratingSystem>().numCallsEntity)
         // 2 out of 3 loaded entities have components with lifecycle methods
         assertEquals(1, comp1.numAddCalls)
         assertEquals(0, comp1.numRemoveCalls)
@@ -1103,9 +1114,9 @@ internal class WorldTest {
                 add("42")
             }
         }
-        world.add(WorldTestIteratingSystem(world = world))
+        world.add(UnitWorldTestIteratingSystem(world = world))
 
-        assertNotNull(world.system<WorldTestIteratingSystem>())
+        assertNotNull(world.system<UnitWorldTestIteratingSystem>())
     }
 
     @Test
@@ -1116,10 +1127,10 @@ internal class WorldTest {
             }
 
             systems {
-                add(WorldTestIntervalSystem())
+                add(UnitWorldTestIntervalSystem())
             }
         }
-        val system = WorldTestIteratingSystem(world = world)
+        val system = UnitWorldTestIteratingSystem(world = world)
         world.add(0, system)
 
         assertEquals(system, world.systems[0])
@@ -1132,9 +1143,9 @@ internal class WorldTest {
                 add("42")
             }
         }
-        world += WorldTestIteratingSystem(world = world)
+        world += UnitWorldTestIteratingSystem(world = world)
 
-        assertNotNull(world.system<WorldTestIteratingSystem>())
+        assertNotNull(world.system<UnitWorldTestIteratingSystem>())
     }
 
     @Test
@@ -1146,8 +1157,8 @@ internal class WorldTest {
         }
 
         // add 2 systems
-        val system1 = WorldTestIteratingSystem(world = world)
-        val system2 = WorldTestIntervalSystem(world = world)
+        val system1 = UnitWorldTestIteratingSystem(world = world)
+        val system2 = UnitWorldTestIntervalSystem(world = world)
         world.add(system1)
         world.add(system2)
         assertEquals(2, world.systems.size)
