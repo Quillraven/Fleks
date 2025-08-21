@@ -30,5 +30,5 @@ kotlin {
 }
 
 tasks.javadocJar {
-    from(tasks.dokkaHtml)
+    from(tasks.dokkaGeneratePublicationHtml)
 }
