@@ -218,6 +218,37 @@ data class Family(
     }
 
     /**
+     * Updates this family if needed and runs the given [action] for all [entities][Entity].
+     *
+     * **Important note**: There is a potential risk when iterating over entities, and one of those entities
+     * gets removed. Removing the entity immediately and cleaning up its components could
+     * cause problems because if you access a component which is mandatory for the family, you will get
+     * a [FleksNoSuchEntityComponentException]. To avoid that, you could check if an entity really has the component
+     * before accessing it, but that is redundant in the context of a family.
+     *
+     * To avoid these kinds of issues, entity removals are delayed until the end of the iteration. This also means
+     * that a removed entity of this family will still be part of the [action] for the current iteration.
+     */
+    inline suspend fun suspendForEach(crossinline action: suspend Family.(Entity) -> Unit) {
+        // Access entities before the 'forEach' call to properly update them.
+        // Check mutableEntities getter for more details.
+        val entitiesForIteration = mutableEntities
+
+        if (!entityService.delayRemoval) {
+            entityService.delayRemoval = true
+            isIterating = true
+            entitiesForIteration.suspendForEach { action(it) }
+            isIterating = false
+            entityService.cleanupDelays()
+        } else {
+            val origIterating = isIterating
+            isIterating = true
+            entitiesForIteration.suspendForEach { this.action(it) }
+            isIterating = origIterating
+        }
+    }
+
+    /**
      * Updates this family if needed and returns its first [Entity].
      * @throws [NoSuchElementException] if the family has no entities.
      */
