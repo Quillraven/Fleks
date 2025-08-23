@@ -1,4 +1,4 @@
-![IMG_20231220_205745](https://github.com/Quillraven/Fleks/assets/93260/effbfdd7-0059-483e-9a89-fc01445b6e1a)
+<img width="512" height="289" alt="Fleks ECS Logo" src="assets/logo.png" />
 
 # Fleks
 
