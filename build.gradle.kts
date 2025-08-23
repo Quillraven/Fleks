@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "io.github.quillraven.fleks"
-version = "2.12"
+version = "2.13-SNAPSHOT"
 
 kotlin {
     sourceSets {
