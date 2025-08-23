@@ -31,7 +31,7 @@ val isReleaseVersion = provider { !version.toString().endsWith("-SNAPSHOT") }
 
 val sonatypeReleaseUrl: Provider<String> = isReleaseVersion.map { isRelease ->
     if (isRelease) {
-        "https://ossrh-staging-api.central.sonatype.com/service/local/"
+        "https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/"
     } else {
         "https://central.sonatype.com/repository/maven-snapshots/"
     }

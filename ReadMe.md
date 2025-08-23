@@ -3,7 +3,7 @@
 # Fleks
 
 [![LTS](https://img.shields.io/badge/LTS-2.12-orange.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks/2.12/jar)
-[![Snapshot](https://img.shields.io/badge/Snapshot-2.13--SNAPSHOT-orange.svg)](https://s01.oss.sonatype.org/#nexus-search;gav~io.github.quillraven.fleks~~2.13-SNAPSHOT~~)
+[![Snapshot](https://img.shields.io/badge/Snapshot-2.13--SNAPSHOT-orange.svg)](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots)
 [![Build Master](https://img.shields.io/github/actions/workflow/status/quillraven/fleks/build.yml?branch=master)](https://github.com/Quillraven/fleks/actions)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.2.10-red.svg)](http://kotlinlang.org/)
 
