@@ -7,4 +7,5 @@ dependencies {
     implementation(libs.gradlePlugin.kotlinSerialization)
     implementation(libs.gradlePlugin.kotlinDokka)
     implementation(libs.gradlePlugin.kotlinxBenchmark)
+    implementation(libs.gradlePlugin.mavenPublish)
 }

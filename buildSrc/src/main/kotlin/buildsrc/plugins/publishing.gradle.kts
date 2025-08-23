@@ -1,8 +1,5 @@
 package buildsrc.plugins
 
-import org.gradle.api.plugins.JavaBasePlugin.DOCUMENTATION_GROUP
-import org.gradle.kotlin.dsl.*
-
 /**
  * Conventions for publishing.
  *
@@ -14,101 +11,61 @@ import org.gradle.kotlin.dsl.*
 
 plugins {
     signing
-    `maven-publish`
+    id("com.vanniktech.maven.publish")
+    id("org.jetbrains.dokka")
 }
 
 
 //region Publication Properties
-// can be set in `$GRADLE_USER_HOME/gradle.properties`, e.g. `fleks.ossrhPassword=123`
-// or environment variables, e.g. `ORG_GRADLE_PROJECT_fleks.ossrhUsername=abc`
-val ossrhUsername: Provider<String> = providers.gradleProperty("fleks.ossrhUsername")
-val ossrhPassword: Provider<String> = providers.gradleProperty("fleks.ossrhPassword")
+// can be set in `$GRADLE_USER_HOME/gradle.properties`, e.g. `mavenCentralPassword=123`
+// or environment variables, e.g. `ORG_GRADLE_PROJECT_mavenCentralUsername=abc`
+val ossrhUsername: Provider<String> = providers.gradleProperty("mavenCentralUsername")
+val ossrhPassword: Provider<String> = providers.gradleProperty("mavenCentralPassword")
 
-val signingKey: Provider<String> = providers.gradleProperty("fleks.signing.key")
-val signingPassword: Provider<String> = providers.gradleProperty("fleks.signing.password")
-
-val isReleaseVersion = provider { !version.toString().endsWith("-SNAPSHOT") }
-
-val sonatypeReleaseUrl: Provider<String> = isReleaseVersion.map { isRelease ->
-    if (isRelease) {
-        "https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/"
-    } else {
-        "https://central.sonatype.com/repository/maven-snapshots/"
-    }
-}
+val signingKey: Provider<String> = providers.gradleProperty("signingInMemoryKey")
+val signingPassword: Provider<String> = providers.gradleProperty("signingInMemoryKeyPassword")
 //endregion
 
 
 //region POM convention
-publishing {
-    publications.withType<MavenPublication>().configureEach {
-        // pom information needs to be specified per publication
-        // because otherwise maven will complain again that
-        // information like license, developer or url are missing.
-        pom {
-            name.convention("Fleks")
-            description.convention("A lightweight entity component system written in Kotlin.")
-            url.convention("https://github.com/Quillraven/Fleks")
+mavenPublishing {
+    publishToMavenCentral(automaticRelease = true)
 
-            scm {
-                connection.convention("scm:git:git@github.com:quillraven/fleks.git")
-                developerConnection.convention("scm:git:git@github.com:quillraven/fleks.git")
-                url.convention("https://github.com/quillraven/fleks/")
+    signAllPublications()
+
+    coordinates(group.toString(), "Fleks", version.toString())
+
+    // pom information needs to be specified per publication
+    // because otherwise maven will complain again that
+    // information like license, developer or url are missing.
+    pom {
+        name.set("Fleks")
+        description.set("A lightweight entity component system written in Kotlin.")
+        url.set("https://github.com/Quillraven/Fleks")
+
+        scm {
+            connection.set("scm:git:git@github.com:quillraven/fleks.git")
+            developerConnection.set("scm:git:git@github.com:quillraven/fleks.git")
+            url.set("https://github.com/quillraven/fleks/")
+        }
+
+        licenses {
+            license {
+                name.set("MIT License")
+                url.set("https://opensource.org/licenses/MIT")
             }
+        }
 
-            licenses {
-                license {
-                    name.convention("MIT License")
-                    url.convention("https://opensource.org/licenses/MIT")
-                }
-            }
-
-            developers {
-                developer {
-                    id.set("Quillraven")
-                    name.set("Simon Klausner")
-                    email.set("quillraven@gmail.com")
-                }
+        developers {
+            developer {
+                id.set("Quillraven")
+                name.set("Simon Klausner")
+                email.set("quillraven@gmail.com")
             }
         }
     }
 }
 //endregion
-
-
-//region Maven Central publishing/signing
-val javadocJar by tasks.registering(Jar::class) {
-    group = DOCUMENTATION_GROUP
-    description = "Javadoc Jar"
-    // We need to add the javadocJar to every publication because otherwise Maven Central complains.
-    // It is not sufficient to only have it in the "root" folder.
-    archiveClassifier.set("javadoc")
-}
-
-publishing {
-    repositories {
-        maven(sonatypeReleaseUrl) {
-            name = "SonatypeRelease"
-            credentials {
-                username = ossrhUsername.orNull
-                password = ossrhPassword.orNull
-            }
-        }
-
-        // Publish to a project-local Maven directory, for verification.
-        // To test, run:
-        // ./gradlew publishAllPublicationsToProjectLocalRepository
-        // and check $rootDir/build/maven-project-local
-        maven(rootProject.layout.buildDirectory.dir("maven-project-local")) {
-            name = "ProjectLocal"
-        }
-    }
-
-    publications.withType<MavenPublication>().configureEach {
-        // Maven Central requires Javadoc
-        artifact(javadocJar)
-    }
-}
 
 signing {
     if (ossrhUsername.isPresent && ossrhPassword.isPresent) {

@@ -28,7 +28,3 @@ kotlin {
         }
     }
 }
-
-tasks.javadocJar {
-    from(tasks.dokkaGeneratePublicationHtml)
-}
