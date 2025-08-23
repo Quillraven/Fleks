@@ -36,7 +36,7 @@ mavenPublishing {
 
     signAllPublications()
 
-    coordinates(ProjectInfo.GROUP, "Fleks", ProjectInfo.VERSION)
+    coordinates(ProjectInfo.GROUP, ProjectInfo.ARTIFACT, ProjectInfo.VERSION)
 
     // pom information needs to be specified per publication
     // because otherwise maven will complain again that
@@ -85,28 +85,6 @@ signing {
             signing {
                 sign(publishing.publications)
             }
-        }
-    }
-}
-//endregion
-
-
-//region Fix Gradle warning about signing tasks using publishing task outputs without explicit dependencies
-// https://youtrack.jetbrains.com/issue/KT-46466
-val signingTasks = tasks.withType<Sign>()
-
-tasks.withType<AbstractPublishToMaven>().configureEach {
-    mustRunAfter(signingTasks)
-}
-//endregion
-
-
-//region publishing logging
-tasks.withType<AbstractPublishToMaven>().configureEach {
-    val publicationGAV = provider { publication?.run { "$group:$artifactId:$version" } }
-    doLast("log publication GAV") {
-        if (publicationGAV.isPresent) {
-            logger.lifecycle("[task: ${path}] ${publicationGAV.get()}")
         }
     }
 }
