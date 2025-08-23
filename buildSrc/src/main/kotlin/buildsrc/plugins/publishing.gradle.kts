@@ -1,5 +1,8 @@
 package buildsrc.plugins
 
+import ProjectInfo
+
+
 /**
  * Conventions for publishing.
  *
@@ -33,7 +36,7 @@ mavenPublishing {
 
     signAllPublications()
 
-    coordinates(group.toString(), "Fleks", version.toString())
+    coordinates(ProjectInfo.GROUP, "Fleks", ProjectInfo.VERSION)
 
     // pom information needs to be specified per publication
     // because otherwise maven will complain again that

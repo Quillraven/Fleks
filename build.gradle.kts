@@ -7,8 +7,8 @@ plugins {
     id("org.jetbrains.dokka")
 }
 
-group = "io.github.quillraven.fleks"
-version = "2.13-SNAPSHOT"
+group = ProjectInfo.GROUP
+version = ProjectInfo.VERSION
 
 kotlin {
     sourceSets {
