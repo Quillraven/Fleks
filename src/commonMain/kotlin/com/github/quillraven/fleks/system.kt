@@ -231,7 +231,7 @@ abstract class IteratingSystem(
     open fun onAlphaEntity(entity: Entity, alpha: Float) = Unit
 
     companion object {
-        private val EMPTY_COMPARATOR = EntityComparator { _, _ -> 0 }
+        val EMPTY_COMPARATOR = EntityComparator { _, _ -> 0 }
     }
 }
 
