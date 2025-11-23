@@ -112,9 +112,9 @@ private class WorldEntityProvider(
 
     override fun numEntities(): Int = entities.size
 
-    override fun create(): Entity = Entity(id++, version = 0u).also { entities += it }
+    override fun create(): Entity = entity(id++, version = 0u).also { entities += it }
 
-    override fun create(id: Int): Entity = Entity(id, version = 0u).also { entities += it }
+    override fun create(id: Int): Entity = entity(id, version = 0u).also { entities += it }
 
     override fun minusAssign(entity: Entity) {
         entities -= entity
@@ -291,8 +291,8 @@ internal class WorldTest {
         val w = configureWorld {}
         val e = w.entity()
 
-        w -= Entity(e.id, e.version - 1u)
-        w -= Entity(e.id, e.version + 1u)
+        w -= entity(e.id, e.version - 1u)
+        w -= entity(e.id, e.version + 1u)
 
         assertEquals(1, w.numEntities)
     }
@@ -705,7 +705,7 @@ internal class WorldTest {
 
         assertEquals(expected1, w.snapshotOf(e1))
         assertEquals(expected2, w.snapshotOf(e2))
-        assertEquals(expected2, w.snapshotOf(Entity(42, version = 0u)))
+        assertEquals(expected2, w.snapshotOf(entity(42, version = 0u)))
     }
 
     @Test
@@ -779,9 +779,9 @@ internal class WorldTest {
         val comp1 = WorldTestComponent()
         val comp2 = WorldTestComponent()
         val snapshot = mapOf(
-            Entity(3, version = 0u) to wildcardSnapshotOf(listOf(comp1, WorldTestComponent2()), emptyList()),
-            Entity(5, version = 0u) to wildcardSnapshotOf(listOf(comp2), emptyList()),
-            Entity(7, version = 0u) to wildcardSnapshotOf(listOf(), emptyList())
+            entity(3, version = 0u) to wildcardSnapshotOf(listOf(comp1, WorldTestComponent2()), emptyList()),
+            entity(5, version = 0u) to wildcardSnapshotOf(listOf(comp2), emptyList()),
+            entity(7, version = 0u) to wildcardSnapshotOf(listOf(), emptyList())
         )
 
         w.loadSnapshot(snapshot)
@@ -817,22 +817,22 @@ internal class WorldTest {
     fun testCreateEntityAfterSnapshotLoaded() {
         val w = configureWorld { }
         val snapshot = mapOf(
-            Entity(1, version = 0u) to Snapshot(listOf(), emptyList())
+            entity(1, version = 0u) to Snapshot(listOf(), emptyList())
         )
 
         w.loadSnapshot(snapshot)
 
         // first created entity should be recycled Entity 0
-        assertEquals(Entity(0, version = 0u), w.entity())
+        assertEquals(entity(0, version = 0u), w.entity())
         // next created entity should be new Entity 2
-        assertEquals(Entity(2, version = 0u), w.entity())
+        assertEquals(entity(2, version = 0u), w.entity())
     }
 
     @Test
     fun testLoadSnapshotOfEmptyWorld() {
         val w = configureWorld { }
         val family = w.family { all(WorldTestComponent) }
-        val entity = Entity(0, version = 0u)
+        val entity = entity(0, version = 0u)
         val components = listOf(WorldTestComponent())
 
         assertFalse { entity in family }
@@ -847,7 +847,7 @@ internal class WorldTest {
     fun testLoadSnapshotOfEmptyWorldWithRecycling() {
         val w = configureWorld { }
         val family = w.family { all(WorldTestComponent) }
-        val entity = Entity(1, version = 0u)
+        val entity = entity(1, version = 0u)
         val components = listOf(WorldTestComponent())
 
         assertFalse { entity in family }
@@ -882,7 +882,7 @@ internal class WorldTest {
     fun testLoadSnapshotOfWhileFamilyIterationInProcess() {
         val w = configureWorld { }
         val f = w.family { all(WorldTestComponent) }
-        val entity = Entity(0, version = 0u)
+        val entity = entity(0, version = 0u)
         val components = listOf(WorldTestComponent())
         w.entity { it += WorldTestComponent() }
 
@@ -976,7 +976,7 @@ internal class WorldTest {
 
     @Test
     fun testEntityHook() {
-        val dummyEntity = Entity.NONE
+        val dummyEntity = emptyEntity()
         var actualAddEntity: Entity
         var actualRemoveEntity: Entity
         lateinit var family: Family
@@ -1054,7 +1054,7 @@ internal class WorldTest {
             families {
                 onAdd(family) { entity ->
                     ++numAdd
-                    assertEquals(entity, Entity(0, 0u))
+                    assertEquals(entity, entity(0, 0u))
                 }
             }
         }
@@ -1078,7 +1078,7 @@ internal class WorldTest {
             families {
                 onAdd(family) { entity ->
                     ++numAdd
-                    assertEquals(entity, Entity(0, 0u))
+                    assertEquals(entity, entity(0, 0u))
                 }
             }
         }

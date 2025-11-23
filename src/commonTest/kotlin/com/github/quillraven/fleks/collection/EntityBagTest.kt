@@ -3,12 +3,13 @@ package com.github.quillraven.fleks.collection
 import com.github.quillraven.fleks.Entity
 import com.github.quillraven.fleks.Family
 import com.github.quillraven.fleks.configureWorld
+import com.github.quillraven.fleks.entity
 import kotlin.test.*
 
 class EntityBagTest {
 
-    private val testEntity1 = Entity(0, version = 0u)
-    private val testEntity2 = Entity(1, version = 0u)
+    private val testEntity1 = entity(0, version = 0u)
+    private val testEntity2 = entity(1, version = 0u)
     private val testBag = mutableEntityBagOf(testEntity1, testEntity2)
     private val testBagSingle = mutableEntityBagOf(testEntity1)
 
@@ -24,18 +25,18 @@ class EntityBagTest {
     fun addValueToBag() {
         val bag = MutableEntityBag()
 
-        bag += Entity(42, version = 0u)
+        bag += entity(42, version = 0u)
 
         assertTrue(bag.isNotEmpty())
         assertEquals(1, bag.size)
-        assertTrue(Entity(42, version = 0u) in bag)
+        assertTrue(entity(42, version = 0u) in bag)
     }
 
     @Test
     fun removeValueFromBag() {
         val bag = MutableEntityBag(2)
-        val e1 = Entity(0, version = 0u)
-        val e2 = Entity(1, version = 0u)
+        val e1 = entity(0, version = 0u)
+        val e2 = entity(1, version = 0u)
         bag += e1
         bag += e2
 
@@ -50,24 +51,24 @@ class EntityBagTest {
     @Test
     fun clearAllValuesFromBag() {
         val bag = MutableEntityBag()
-        bag += Entity(42, version = 0u)
-        bag += Entity(43, version = 0u)
+        bag += entity(42, version = 0u)
+        bag += entity(43, version = 0u)
 
         bag.clear()
 
         assertEquals(0, bag.size)
-        assertFalse { Entity(42, version = 0u) in bag }
-        assertFalse { Entity(43, version = 0u) in bag }
+        assertFalse { entity(42, version = 0u) in bag }
+        assertFalse { entity(43, version = 0u) in bag }
     }
 
     @Test
     fun addValueToBagWithInsufficientCapacity() {
         val bag = MutableEntityBag(0)
 
-        bag += Entity(42, version = 0u)
+        bag += entity(42, version = 0u)
 
         assertEquals(1, bag.size)
-        assertEquals(Entity(42, version = 0u), bag[0])
+        assertEquals(entity(42, version = 0u), bag[0])
         assertEquals(1, bag.capacity)
     }
 
@@ -96,8 +97,8 @@ class EntityBagTest {
     @Test
     fun executeActionForEachValueOfBag() {
         val bag = MutableEntityBag(4)
-        bag += Entity(42, version = 0u)
-        bag += Entity(43, version = 0u)
+        bag += entity(42, version = 0u)
+        bag += entity(43, version = 0u)
         var numCalls = 0
         val valuesCalled = mutableListOf<Entity>()
 
@@ -108,14 +109,14 @@ class EntityBagTest {
 
 
         assertEquals(2, numCalls)
-        assertEquals(listOf(Entity(42, version = 0u), Entity(43, version = 0u)), valuesCalled)
+        assertEquals(listOf(entity(42, version = 0u), entity(43, version = 0u)), valuesCalled)
     }
 
     @Test
     fun executeActionForEachValueOfBagIndexed() {
         val bag = MutableEntityBag(4)
-        bag += Entity(42, version = 0u)
-        bag += Entity(43, version = 0u)
+        bag += entity(42, version = 0u)
+        bag += entity(43, version = 0u)
         var numCalls = 0
         val valuesCalled = mutableListOf<Entity>()
         val expectedIndices = listOf(0, 1)
@@ -129,43 +130,43 @@ class EntityBagTest {
 
 
         assertEquals(2, numCalls)
-        assertEquals(listOf(Entity(42, version = 0u), Entity(43, version = 0u)), valuesCalled)
+        assertEquals(listOf(entity(42, version = 0u), entity(43, version = 0u)), valuesCalled)
         assertContentEquals(expectedIndices, actualIndices)
     }
 
     @Test
     fun sortValuesByNormalEntityComparisonWithSizeLessThan7() {
         val bag = MutableEntityBag()
-        repeat(6) { bag += Entity(6 - it, version = 0u) }
+        repeat(6) { bag += entity(6 - it, version = 0u) }
 
         bag.sort(compareEntity(configureWorld { }) { e1, e2 -> e1.id.compareTo(e2.id) })
 
         repeat(6) {
-            assertEquals(Entity(it + 1, version = 0u), bag[it])
+            assertEquals(entity(it + 1, version = 0u), bag[it])
         }
     }
 
     @Test
     fun sortValuesByNormalEntityComparisonWithSizeLessThan50ButGreater7() {
         val bag = MutableEntityBag()
-        repeat(8) { bag += Entity(8 - it, version = 0u) }
+        repeat(8) { bag += entity(8 - it, version = 0u) }
 
         bag.sort(compareEntity(configureWorld { }) { e1, e2 -> e1.id.compareTo(e2.id) })
 
         repeat(8) {
-            assertEquals(Entity(it + 1, version = 0u), bag[it])
+            assertEquals(entity(it + 1, version = 0u), bag[it])
         }
     }
 
     @Test
     fun sortValuesByNormalEntityComparisonWithSizeGreater50() {
         val bag = MutableEntityBag()
-        repeat(51) { bag += Entity(51 - it, version = 0u) }
+        repeat(51) { bag += entity(51 - it, version = 0u) }
 
         bag.sort(compareEntity(configureWorld { }) { e1, e2 -> e1.id.compareTo(e2.id) })
 
         repeat(51) {
-            assertEquals(Entity(it + 1, version = 0u), bag[it])
+            assertEquals(entity(it + 1, version = 0u), bag[it])
         }
     }
 
@@ -181,8 +182,8 @@ class EntityBagTest {
     fun testContainsAll() {
         assertTrue(testBag.containsAll(listOf(testEntity2, testEntity1)))
         assertTrue(testBag.containsAll(testBag))
-        assertFalse(testBag.containsAll(listOf(Entity(2, version = 0u))))
-        assertTrue(testBag.containsAll(listOf(Entity(1, version = 0u))))
+        assertFalse(testBag.containsAll(listOf(entity(2, version = 0u))))
+        assertTrue(testBag.containsAll(listOf(entity(1, version = 0u))))
         assertTrue(testBag.containsAll(emptyList()))
     }
 
@@ -192,7 +193,7 @@ class EntityBagTest {
         assertTrue(testBag.isEmpty())
         assertFalse(testBag.isNotEmpty())
 
-        testBag += Entity(0, version = 0u)
+        testBag += entity(0, version = 0u)
         assertFalse(testBag.isEmpty())
         assertTrue(testBag.isNotEmpty())
     }
@@ -245,10 +246,10 @@ class EntityBagTest {
 
     @Test
     fun testAssociateByKeyAndValueSelector() {
-        val expected = mapOf(Entity(2, version = 0u) to 2, Entity(3, version = 0u) to 3)
+        val expected = mapOf(entity(2, version = 0u) to 2, entity(3, version = 0u) to 3)
 
         val actual = testBag.associateBy(
-            { Entity(it.id + 2, version = 0u) },
+            { entity(it.id + 2, version = 0u) },
             { it.id + 2 }
         )
 
@@ -262,8 +263,8 @@ class EntityBagTest {
 
     @Test
     fun testAssociateTo() {
-        val expected = mapOf(testEntity1 to 0, testEntity2 to 1, Entity(2, version = 0u) to 2)
-        val destination = mutableMapOf(Entity(2, version = 0u) to 2)
+        val expected = mapOf(testEntity1 to 0, testEntity2 to 1, entity(2, version = 0u) to 2)
+        val destination = mutableMapOf(entity(2, version = 0u) to 2)
 
         val actual = testBag.associateTo(destination) { it to it.id }
 
@@ -277,8 +278,8 @@ class EntityBagTest {
 
     @Test
     fun testAssociateByToKeySelector() {
-        val expected = mapOf(0 to testEntity1, 1 to testEntity2, 2 to Entity(2, version = 0u))
-        val destination = mutableMapOf(2 to Entity(2, version = 0u))
+        val expected = mapOf(0 to testEntity1, 1 to testEntity2, 2 to entity(2, version = 0u))
+        val destination = mutableMapOf(2 to entity(2, version = 0u))
 
         val actual = testBag.associateByTo(destination) { it.id }
 
@@ -292,13 +293,13 @@ class EntityBagTest {
 
     @Test
     fun testAssociateByToKeyAndValueSelector() {
-        val expected = mapOf(Entity(2, version = 0u) to 2, Entity(3, version = 0u) to 3, Entity(4, version = 0u) to 4)
-        val destination = mutableMapOf(Entity(4, version = 0u) to 4)
+        val expected = mapOf(entity(2, version = 0u) to 2, entity(3, version = 0u) to 3, entity(4, version = 0u) to 4)
+        val destination = mutableMapOf(entity(4, version = 0u) to 4)
 
 
         val actual = testBag.associateByTo(
             destination,
-            { Entity(it.id + 2, version = 0u) },
+            { entity(it.id + 2, version = 0u) },
             { it.id + 2 }
         )
 
@@ -345,7 +346,7 @@ class EntityBagTest {
 
     @Test
     fun testFilterTo() {
-        val testEntity3 = Entity(2, version = 0u)
+        val testEntity3 = entity(2, version = 0u)
         val expected = entityBagOf(testEntity3, testEntity1)
         val expectedIndices = listOf(0, 1)
         val destination1 = mutableEntityBagOf(testEntity3)
@@ -365,7 +366,7 @@ class EntityBagTest {
 
     @Test
     fun testFilterNotTo() {
-        val testEntity3 = Entity(2, version = 0u)
+        val testEntity3 = entity(2, version = 0u)
         val expected = entityBagOf(testEntity3, testEntity2)
         val destination = mutableEntityBagOf(testEntity3)
 
@@ -475,11 +476,11 @@ class EntityBagTest {
         val expected1 = mapOf(
             0 to mutableEntityBagOf(testEntity1),
             1 to mutableEntityBagOf(testEntity2),
-            2 to mutableEntityBagOf(Entity(2, version = 0u))
+            2 to mutableEntityBagOf(entity(2, version = 0u))
         )
         val expected2 = mapOf(0 to listOf(3), 1 to listOf(3), 2 to listOf(3))
 
-        val actual = testBag.groupByTo(mutableMapOf(2 to mutableEntityBagOf(Entity(2, version = 0u)))) { it.id }
+        val actual = testBag.groupByTo(mutableMapOf(2 to mutableEntityBagOf(entity(2, version = 0u)))) { it.id }
         val actual2 = testBag.groupByTo(
             mutableMapOf(2 to mutableListOf(3)),
             { it.id },

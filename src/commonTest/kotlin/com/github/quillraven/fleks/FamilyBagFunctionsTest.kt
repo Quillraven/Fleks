@@ -8,8 +8,8 @@ import kotlin.test.*
 
 class FamilyBagFunctionsTest {
 
-    private val testEntity1 = Entity(0, version = 0u)
-    private val testEntity2 = Entity(1, version = 0u)
+    private val testEntity1 = entity(0, version = 0u)
+    private val testEntity2 = entity(1, version = 0u)
 
     private val testWorld = configureWorld { }
     private val testFamily = Family(world = testWorld).apply {
@@ -25,8 +25,8 @@ class FamilyBagFunctionsTest {
         assertTrue(testFamily.containsAll(listOf(testEntity2, testEntity1)))
         assertTrue(testFamily.containsAll(testFamily))
         assertTrue(testFamily.containsAll(entityBagOf(testEntity1, testEntity2)))
-        assertFalse(testFamily.containsAll(listOf(Entity(2, version = 0u))))
-        assertTrue(testFamily.containsAll(listOf(Entity(1, version = 0u))))
+        assertFalse(testFamily.containsAll(listOf(entity(2, version = 0u))))
+        assertTrue(testFamily.containsAll(listOf(entity(1, version = 0u))))
         assertTrue(testFamily.containsAll(emptyList()))
     }
 
@@ -83,10 +83,10 @@ class FamilyBagFunctionsTest {
 
     @Test
     fun testAssociateByKeyAndValueSelector() {
-        val expected = mapOf(Entity(2, version = 0u) to 2, Entity(3, version = 0u) to 3)
+        val expected = mapOf(entity(2, version = 0u) to 2, entity(3, version = 0u) to 3)
 
         val actual = testFamily.associateBy(
-            { Entity(it.id + 2, version = 0u) },
+            { entity(it.id + 2, version = 0u) },
             { it.id + 2 }
         )
 
@@ -100,8 +100,8 @@ class FamilyBagFunctionsTest {
 
     @Test
     fun testAssociateTo() {
-        val expected = mapOf(testEntity1 to 0, testEntity2 to 1, Entity(2, version = 0u) to 2)
-        val destination = mutableMapOf(Entity(2, version = 0u) to 2)
+        val expected = mapOf(testEntity1 to 0, testEntity2 to 1, entity(2, version = 0u) to 2)
+        val destination = mutableMapOf(entity(2, version = 0u) to 2)
 
         val actual = testFamily.associateTo(destination) { it to it.id }
 
@@ -115,8 +115,8 @@ class FamilyBagFunctionsTest {
 
     @Test
     fun testAssociateByToKeySelector() {
-        val expected = mapOf(0 to testEntity1, 1 to testEntity2, 2 to Entity(2, version = 0u))
-        val destination = mutableMapOf(2 to Entity(2, version = 0u))
+        val expected = mapOf(0 to testEntity1, 1 to testEntity2, 2 to entity(2, version = 0u))
+        val destination = mutableMapOf(2 to entity(2, version = 0u))
 
         val actual = testFamily.associateByTo(destination) { it.id }
 
@@ -130,13 +130,13 @@ class FamilyBagFunctionsTest {
 
     @Test
     fun testAssociateByToKeyAndValueSelector() {
-        val expected = mapOf(Entity(2, version = 0u) to 2, Entity(3, version = 0u) to 3, Entity(4, version = 0u) to 4)
-        val destination = mutableMapOf(Entity(4, version = 0u) to 4)
+        val expected = mapOf(entity(2, version = 0u) to 2, entity(3, version = 0u) to 3, entity(4, version = 0u) to 4)
+        val destination = mutableMapOf(entity(4, version = 0u) to 4)
 
 
         val actual = testFamily.associateByTo(
             destination,
-            { Entity(it.id + 2, version = 0u) },
+            { entity(it.id + 2, version = 0u) },
             { it.id + 2 }
         )
 
@@ -176,7 +176,7 @@ class FamilyBagFunctionsTest {
 
     @Test
     fun testFilterTo() {
-        val testEntity3 = Entity(2, version = 0u)
+        val testEntity3 = entity(2, version = 0u)
         val expected = entityBagOf(testEntity3, testEntity1)
         val expectedIndices = listOf(0, 1)
         val destination1 = mutableEntityBagOf(testEntity3)
@@ -196,7 +196,7 @@ class FamilyBagFunctionsTest {
 
     @Test
     fun testFilterNotTo() {
-        val testEntity3 = Entity(2, version = 0u)
+        val testEntity3 = entity(2, version = 0u)
         val expected = entityBagOf(testEntity3, testEntity2)
         val destination = mutableEntityBagOf(testEntity3)
 
@@ -307,11 +307,11 @@ class FamilyBagFunctionsTest {
         val expected1 = mapOf(
             0 to mutableEntityBagOf(testEntity1),
             1 to mutableEntityBagOf(testEntity2),
-            2 to mutableEntityBagOf(Entity(2, version = 0u))
+            2 to mutableEntityBagOf(entity(2, version = 0u))
         )
         val expected2 = mapOf(0 to listOf(3), 1 to listOf(3), 2 to listOf(3))
 
-        val actual = testFamily.groupByTo(mutableMapOf(2 to mutableEntityBagOf(Entity(2, version = 0u)))) { it.id }
+        val actual = testFamily.groupByTo(mutableMapOf(2 to mutableEntityBagOf(entity(2, version = 0u)))) { it.id }
         val actual2 = testFamily.groupByTo(
             mutableMapOf(2 to mutableListOf(3)),
             { it.id },

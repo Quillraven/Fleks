@@ -21,16 +21,36 @@ class TestSerializableComponent(val iVal: Int = 1, val sVal: String = "s") : Com
 
 class SerializationTest {
 
+    val json = Json {
+        serializersModule = SerializersModule {
+            // register components
+            polymorphic(Component::class) {
+                subclass(TestSerializableComponent::class, TestSerializableComponent.serializer())
+            }
+
+            // register tags
+            polymorphic(UniqueId::class) {
+                subclass(SerializeTag::class, SerializeTag.serializer())
+            }
+
+            polymorphic(Entity::class) {
+                subclass(EntityImpl::class, EntityImpl.serializer())
+            }
+        }
+        allowStructuredMapKeys = true // to support entity id + version as a key
+    }
+
+
     @Test
     fun testSerializeEntity() {
-        val entity0 = Entity(id = 0, version = 0u)
-        val entity1 = Entity(id = 1, version = 1u)
+        val entity0 = entity(id = 0, version = 0u)
+        val entity1 = entity(id = 1, version = 1u)
 
-        val entity0Json = Json.encodeToString(entity0)
-        val entity1Json = Json.encodeToString(entity1)
+        val entity0Json = json.encodeToString(entity0)
+        val entity1Json = json.encodeToString(entity1)
 
-        assertEquals(entity0, Json.decodeFromString(entity0Json))
-        assertEquals(entity1, Json.decodeFromString(entity1Json))
+        assertEquals(entity0, json.decodeFromString(entity0Json))
+        assertEquals(entity1, json.decodeFromString(entity1Json))
     }
 
     @Test
@@ -40,21 +60,6 @@ class SerializationTest {
             it += TestSerializableComponent()
             it += SerializeTag
         }
-        val json = Json {
-            serializersModule = SerializersModule {
-                // register components
-                polymorphic(Component::class) {
-                    subclass(TestSerializableComponent::class, TestSerializableComponent.serializer())
-                }
-
-                // register tags
-                polymorphic(UniqueId::class) {
-                    subclass(SerializeTag::class, SerializeTag.serializer())
-                }
-            }
-            allowStructuredMapKeys = true // to support entity id + version as a key
-        }
-
         val snapshot = world.snapshot()
         val snapshotJson = json.encodeToString(snapshot)
 
@@ -76,20 +81,6 @@ class SerializationTest {
         world.entity {
             it += TestSerializableComponent(2, "test")
             it += SerializeTag
-        }
-        val json = Json {
-            serializersModule = SerializersModule {
-                // register components
-                polymorphic(Component::class) {
-                    subclass(TestSerializableComponent::class, TestSerializableComponent.serializer())
-                }
-
-                // register tags
-                polymorphic(UniqueId::class) {
-                    subclass(SerializeTag::class, SerializeTag.serializer())
-                }
-            }
-            allowStructuredMapKeys = true // to support entity id + version as a key
         }
 
         val snapshot = world.snapshot()

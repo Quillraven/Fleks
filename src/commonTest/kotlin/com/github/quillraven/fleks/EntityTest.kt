@@ -90,7 +90,7 @@ internal class EntityTest {
 
         val actualEntity = testEntityService.create { }
 
-        assertEquals(Entity(initialEntity.id, initialEntity.version + 1u), actualEntity)
+        assertEquals(entity(initialEntity.id, initialEntity.version + 1u), actualEntity)
     }
 
     @Test
@@ -134,7 +134,7 @@ internal class EntityTest {
         val e1 = testEntityService.create { }
         val e2 = testEntityService.create { }
         testEntityService -= e2
-        val e3 = Entity(2, version = 0u)
+        val e3 = entity(2, version = 0u)
 
         assertTrue(e1 in testEntityService)
         assertFalse(e2 in testEntityService)
@@ -149,19 +149,19 @@ internal class EntityTest {
         testEntityService -= e2
         testEntityService.create { }
 
-        assertTrue { Entity(0, version = 0u) in testEntityService }
-        assertTrue { Entity(0, version = 1u) !in testEntityService }
+        assertTrue { entity(0, version = 0u) in testEntityService }
+        assertTrue { entity(0, version = 1u) !in testEntityService }
 
-        assertTrue { Entity(1, version = 0u) !in testEntityService }
-        assertTrue { Entity(1, version = 1u) in testEntityService }
+        assertTrue { entity(1, version = 0u) !in testEntityService }
+        assertTrue { entity(1, version = 1u) in testEntityService }
 
         assertEquals(2, testEntityService.numEntities)
     }
 
     @Test
     fun testNestedEntityCreation() {
-        var entity1 = Entity.NONE
-        var entity2 = Entity.NONE
+        var entity1 = emptyEntity()
+        var entity2 = emptyEntity()
 
         testEntityService.create { e1 ->
             entity1 = e1

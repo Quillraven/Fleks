@@ -1,8 +1,19 @@
 package com.github.quillraven.fleks
 
 import com.github.quillraven.fleks.collection.*
+import kotlinx.serialization.Polymorphic
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmName
+
+/**
+ * Creates a new entity instance with the given [id] and [version].
+ * */
+fun entity(id: Int, version: UInt = 0u): Entity = EntityImpl(id, version)
+
+/**
+ * Returns an empty entity instance.
+ * */
+fun emptyEntity(): Entity = EntityImpl.NONE
 
 /**
  * An entity of a [world][World]. It represents a unique identifier that is the combination
@@ -11,10 +22,24 @@ import kotlin.jvm.JvmName
  * It is possible to have two entities with the same [id] but different [version] but only
  * one of these entities is part of the [world][World] at any given time.
  */
+interface Entity {
+    val id: Int
+    val version: UInt
+
+    fun clone(id: Int = this.id, version: UInt = this.version): Entity
+}
+
+/**
+ * Default implementation of the [Entity] interface.
+ * */
 @Serializable
-data class Entity(val id: Int, val version: UInt) {
+data class EntityImpl(override val id: Int, override val version: UInt): Entity {
     companion object {
-        val NONE = Entity(-1, 0u)
+        val NONE = EntityImpl(-1, 0u)
+    }
+
+    override fun clone(id: Int, version: UInt): Entity {
+        return this.copy(id = id, version = version)
     }
 }
 
@@ -300,7 +325,7 @@ class DefaultEntityProvider(
      */
     override fun create(): Entity {
         return if (recycledEntities.isEmpty()) {
-            Entity(nextId++, version = 0u)
+            entity(nextId++, version = 0u)
         } else {
             val recycled = recycledEntities.removeLast()
 
@@ -312,7 +337,7 @@ class DefaultEntityProvider(
                 nextId = recycled.id + 1
             }
 
-            recycled.copy(version = recycled.version + 1u)
+            recycled.clone(version = recycled.version + 1u)
         }.also {
             activeEntities[it.id] = it
         }
@@ -325,7 +350,7 @@ class DefaultEntityProvider(
         if (id >= nextId) {
             // entity with given id was never created before -> create all missing entities ...
             repeat(id - nextId + 1) {
-                this -= Entity(nextId + it, version = 0u)
+                this -= entity(nextId + it, version = 0u)
             }
             // ... and then create the entity to guarantee that it has the correct ID.
             // The entity is at the end of the recycled list.

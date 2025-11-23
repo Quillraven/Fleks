@@ -50,7 +50,7 @@ internal class ComponentTest {
 
     @Test
     fun addEntityToHolderWithSufficientCapacity() {
-        val entity = Entity(0, version = 0u)
+        val entity = entity(0, version = 0u)
         val expectedComp = ComponentTestComponent()
 
         testHolder[entity] = expectedComp
@@ -61,7 +61,7 @@ internal class ComponentTest {
 
     @Test
     fun addEntityToHolderWithInsufficientCapacity() {
-        val entity = Entity(10_000, version = 0u)
+        val entity = entity(10_000, version = 0u)
         val expectedComp = ComponentTestComponent()
 
         testHolder[entity] = expectedComp
@@ -73,14 +73,14 @@ internal class ComponentTest {
     @Test
     fun returnsFalseWhenEntityIsNotPartOfHolder() {
         // within capacity
-        assertFalse(Entity(0, version = 0u) in testHolder)
+        assertFalse(entity(0, version = 0u) in testHolder)
         // outside capacity
-        assertFalse(Entity(10_000, version = 0u) in testHolder)
+        assertFalse(entity(10_000, version = 0u) in testHolder)
     }
 
     @Test
     fun removeExistingEntityFromHolder() {
-        val entity = Entity(0, version = 0u)
+        val entity = entity(0, version = 0u)
         testHolder[entity] = ComponentTestComponent()
 
         testHolder -= entity
@@ -89,8 +89,8 @@ internal class ComponentTest {
     }
 
     @Test
-    fun getComponentOfExistingEntity() {
-        val entity = Entity(0, version = 0u)
+    fun getComponentOfExistingentity() {
+        val entity = entity(0, version = 0u)
         testHolder[entity] = ComponentTestComponent(2)
 
         val cmp = testHolder[entity]
@@ -99,15 +99,15 @@ internal class ComponentTest {
     }
 
     @Test
-    fun cannotGetComponentOfNonExistingEntity() {
-        val entity = Entity(0, version = 0u)
+    fun cannotGetComponentOfNonExistingentity() {
+        val entity = entity(0, version = 0u)
 
         assertFailsWith<FleksNoSuchEntityComponentException> { testHolder[entity] }
     }
 
     @Test
     fun getComponentOfNonExistingEntityWithSufficientCapacity() {
-        val entity = Entity(0, version = 0u)
+        val entity = entity(0, version = 0u)
 
         val cmp = testHolder.getOrNull(entity)
 
@@ -116,7 +116,7 @@ internal class ComponentTest {
 
     @Test
     fun getComponentOfNonExistingEntityWithoutSufficientCapacity() {
-        val entity = Entity(2048, version = 0u)
+        val entity = entity(2048, version = 0u)
 
         val cmp = testHolder.getOrNull(entity)
 
@@ -125,7 +125,7 @@ internal class ComponentTest {
 
     @Test
     fun getComponentOfExistingEntityViaGetOrNull() {
-        val entity = Entity(0, version = 0u)
+        val entity = entity(0, version = 0u)
         testHolder[entity] = ComponentTestComponent(2)
 
         val cmp = testHolder.getOrNull(entity)
@@ -151,7 +151,7 @@ internal class ComponentTest {
 
     @Test
     fun addAndRemoveComponentWithLifecycleMethod() {
-        val expectedEntity = Entity(1, version = 0u)
+        val expectedEntity = entity(1, version = 0u)
         val expectedComp = ComponentTestWithLifecycleComponent(testWorld, expectedEntity)
 
         val testHolderForLifecycleComponent = testService.holder(ComponentTestWithLifecycleComponent)
@@ -168,7 +168,7 @@ internal class ComponentTest {
 
     @Test
     fun addAndReplaceComponentWithLifecycleMethod() {
-        val expectedEntity = Entity(1, version = 0u)
+        val expectedEntity = entity(1, version = 0u)
         val expectedComp1 = ComponentTestWithLifecycleComponent(testWorld, expectedEntity)
         val expectedComp2 = ComponentTestWithLifecycleComponent(testWorld, expectedEntity)
 
@@ -189,7 +189,7 @@ internal class ComponentTest {
     @Test
     fun cannotRemoveNonExistingEntityFromHolderWithInsufficientCapacity() {
         val holder = testService.holder(ComponentTestComponent)
-        val entity = Entity(10_000, version = 0u)
+        val entity = entity(10_000, version = 0u)
 
         assertFailsWith<IndexOutOfBoundsException> { holder -= entity }
     }

@@ -1,6 +1,8 @@
 package com.github.quillraven.fleks.collection
 
 import com.github.quillraven.fleks.Entity
+import com.github.quillraven.fleks.EntityImpl
+import com.github.quillraven.fleks.emptyEntity
 
 /**
  * Creates an [EntityBagIterator] for the bag. If the bag gets updated
@@ -12,7 +14,7 @@ fun EntityBag.iterator(): EntityBagIterator = EntityBagIterator(this)
  * An iterator over an [EntityBag]. Allows to iterate in forward and backward direction.
  * Also, supports looping iteration which means that if the iterator is at the end/beginning of
  * the bag, then it will go to the beginning/end of the bag.
- * The iterator returns [Entity.NONE] in case an [entity][Entity] does not exist.
+ * The iterator returns [emptyEntity()] in case an [entity][Entity] does not exist.
  */
 data class EntityBagIterator(private val bag: EntityBag) {
     private var currentIdx = -1
@@ -34,7 +36,7 @@ data class EntityBagIterator(private val bag: EntityBag) {
             bag[++currentIdx]
         }
 
-        else -> Entity.NONE
+        else -> emptyEntity()
     }
 
     /**
@@ -54,7 +56,7 @@ data class EntityBagIterator(private val bag: EntityBag) {
             bag[--currentIdx]
         }
 
-        else -> Entity.NONE
+        else -> emptyEntity()
     }
 
     /**
@@ -66,13 +68,13 @@ data class EntityBagIterator(private val bag: EntityBag) {
 
     /**
      * Moves the iterator to the first [Entity] matching the given [predicate] and returns it.
-     * If there is no such [Entity] then the iterator is reset and [Entity.NONE] is returned instead.
+     * If there is no such [Entity] then the iterator is reset and [emptyEntity()] is returned instead.
      */
     fun goToFirst(predicate: (Entity) -> Boolean): Entity {
         currentIdx = bag.indexOfFirst(predicate)
         if (currentIdx == -1) {
             reset()
-            return Entity.NONE
+            return emptyEntity()
         }
 
         return bag[currentIdx]
@@ -80,13 +82,13 @@ data class EntityBagIterator(private val bag: EntityBag) {
 
     /**
      * Moves the iterator to the last [Entity] matching the given [predicate] and returns it.
-     * If there is no such [Entity] then the iterator is reset and [Entity.NONE] is returned instead.
+     * If there is no such [Entity] then the iterator is reset and [emptyEntity()] is returned instead.
      */
     fun goToLast(predicate: (Entity) -> Boolean): Entity {
         currentIdx = bag.indexOfLast(predicate)
         if (currentIdx == -1) {
             reset()
-            return Entity.NONE
+            return emptyEntity()
         }
 
         return bag[currentIdx]
