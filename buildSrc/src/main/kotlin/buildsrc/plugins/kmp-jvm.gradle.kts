@@ -8,6 +8,5 @@ plugins {
 
 kotlin {
     jvm {
-        withJava()
     }
 }

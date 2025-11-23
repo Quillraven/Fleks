@@ -69,7 +69,7 @@ fun entityTagOf(): EntityTag = object : EntityTag() {}
  *
  * One convenient approach is to use the unnamed companion object of a Kotlin class as a [ComponentType].
  * Sample code for a component that stores the position of an entity:
- *
+ * ```kotlin
  *     data class Position(
  *         var x: Float,
  *         var y: Float,
@@ -78,6 +78,7 @@ fun entityTagOf(): EntityTag = object : EntityTag() {}
  *
  *         companion object : ComponentType<Position>()
  *     }
+ * ```
  */
 interface Component<T> {
     /**
@@ -137,7 +138,7 @@ class ComponentsHolder<T : Component<*>>(
 
         // check if the remove lifecycle method of the previous component needs to be called
         components.getOrNull(entity.id)?.run {
-            // assign current component to null in order for 'contains' calls inside the lifecycle
+            // assign the current component to null in order for 'contains' calls inside the lifecycle
             // method to correctly return false
             components[entity.id] = null
             world.onRemove(entity)

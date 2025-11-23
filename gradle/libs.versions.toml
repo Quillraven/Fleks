@@ -1,9 +1,10 @@
 [versions]
 
-kotlin = "2.1.20"
-kotlinxSerialization = "1.8.0"
+kotlin = "2.2.10"
+kotlinxSerialization = "1.9.0"
 kotlinDokka = "2.0.0"
-kotlinxBenchmark = "0.4.13"
+kotlinxBenchmark = "0.4.14"
+mavenPublishPlugin = "0.34.0"
 
 [libraries]
 
@@ -18,3 +19,4 @@ gradlePlugin-kotlin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", ve
 gradlePlugin-kotlinSerialization = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }
 gradlePlugin-kotlinDokka = { module = "org.jetbrains.dokka:dokka-gradle-plugin", version.ref = "kotlinDokka" }
 gradlePlugin-kotlinxBenchmark = { module = "org.jetbrains.kotlinx:kotlinx-benchmark-plugin", version.ref = "kotlinxBenchmark" }
+gradlePlugin-mavenPublish = { module = "com.vanniktech:gradle-maven-publish-plugin", version.ref = "mavenPublishPlugin" }

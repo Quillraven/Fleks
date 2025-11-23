@@ -1,6 +1,12 @@
 package com.github.quillraven.fleks
 
-import com.github.quillraven.fleks.collection.*
+import com.github.quillraven.fleks.collection.BitArray
+import com.github.quillraven.fleks.collection.EntityBag
+import com.github.quillraven.fleks.collection.EntityBagIterator
+import com.github.quillraven.fleks.collection.EntityComparator
+import com.github.quillraven.fleks.collection.MutableEntityBag
+import com.github.quillraven.fleks.collection.bag
+import com.github.quillraven.fleks.collection.isNullOrEmpty
 
 /**
  * Type alias for an optional hook function for a [Family].
@@ -15,7 +21,7 @@ typealias FamilyHook = World.(Entity) -> Unit
  * - **noneOf**: an [entity][Entity] must not have any of the specified [components][Component] to be part of the [family][Family].
  * - **anyOf**: an [entity][Entity] must have at least one of the specified [components][Component] to be part of the [family][Family].
  *
- * It is not mandatory to specify all three parts but **at least one** part must be provided.
+ * It is not mandatory to specify all three parts, but **at least one** part must be provided.
  */
 data class FamilyDefinition(
     internal var allOf: BitArray? = null,
@@ -69,7 +75,7 @@ data class FamilyDefinition(
  *
  * A family gets notified when an [entity][Entity] is added, updated or removed of the [world][World].
  *
- * Every [IteratingSystem] is linked to exactly one family but a family can also exist outside of systems.
+ * Every [IteratingSystem] is linked to exactly one family, but a family can also exist outside of systems.
  * It gets created via the [World.family] function.
  */
 data class Family(
@@ -119,7 +125,7 @@ data class Family(
      * Returns the [entities][Entity] that belong to this family.
      * Be aware that the underlying [EntityBag] collection is not always up to date.
      * The collection is not updated while a family iteration is in progress. It
-     * gets automatically updated whenever it is accessed and no iteration is currently
+     * gets automatically updated whenever it is accessed, and no iteration is currently
      * in progress.
      */
     val entities: EntityBag
@@ -183,17 +189,17 @@ data class Family(
     /**
      * Updates this family if needed and runs the given [action] for all [entities][Entity].
      *
-     * **Important note**: There is a potential risk when iterating over entities and one of those entities
+     * **Important note**: There is a potential risk when iterating over entities, and one of those entities
      * gets removed. Removing the entity immediately and cleaning up its components could
      * cause problems because if you access a component which is mandatory for the family, you will get
-     * a FleksNoSuchComponentException. To avoid that you could check if an entity really has the component
-     * before accessing it but that is redundant in context of a family.
+     * a [FleksNoSuchEntityComponentException]. To avoid that, you could check if an entity really has the component
+     * before accessing it, but that is redundant in the context of a family.
      *
      * To avoid these kinds of issues, entity removals are delayed until the end of the iteration. This also means
      * that a removed entity of this family will still be part of the [action] for the current iteration.
      */
     inline fun forEach(crossinline action: Family.(Entity) -> Unit) {
-        // Access entities before 'forEach' call to properly update them.
+        // Access entities before the 'forEach' call to properly update them.
         // Check mutableEntities getter for more details.
         val entitiesForIteration = mutableEntities
 

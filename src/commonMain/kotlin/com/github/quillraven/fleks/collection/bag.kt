@@ -3,7 +3,7 @@ package com.github.quillraven.fleks.collection
 import kotlin.math.max
 
 /**
- * Creates a new [Bag] of the given [capacity] and type. Default capacity is 64.
+ * Creates a new [Bag] of the given [capacity] and type. The default capacity is 64.
  */
 inline fun <reified T> bag(capacity: Int = 64): Bag<T> {
     return Bag(arrayOfNulls(capacity))

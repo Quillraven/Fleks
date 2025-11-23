@@ -57,7 +57,7 @@ class SystemConfiguration(
      *
      * @throws [FleksSystemAlreadyAddedException] if the system was already added before.
      */
-    fun add(system: IntervalSystem) {
+    fun <T : IntervalSystem> add(system: T) {
         if (systems.any { it::class == system::class }) {
             throw FleksSystemAlreadyAddedException(system::class)
         }
@@ -75,7 +75,7 @@ class FamilyConfiguration(
 ) {
 
     /**
-     * Sets the add [hook][Family.addHook] for the given [family].
+     * Sets the [addHook][Family.addHook] for the given [family].
      * This hook gets called whenever an [entity][Entity] enters the [family].
      */
     fun onAdd(
@@ -129,7 +129,7 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
     }
 
     /**
-     * Sets the add entity [hook][EntityService.addHook].
+     * Sets the entity [addHook][EntityService.addHook].
      * This hook gets called whenever an [entity][Entity] gets created and
      * after its [components][Component] are assigned and [families][Family] are updated.
      */
@@ -155,7 +155,7 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
     }
 
     /**
-     * Configures the world in following sequence:
+     * Configures the world in the following sequence:
      * - injectables
      * - family
      * - system

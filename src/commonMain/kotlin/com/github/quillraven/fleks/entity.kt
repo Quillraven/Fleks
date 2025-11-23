@@ -1,7 +1,10 @@
 package com.github.quillraven.fleks
 
-import com.github.quillraven.fleks.collection.*
-import kotlinx.serialization.Polymorphic
+import com.github.quillraven.fleks.collection.Bag
+import com.github.quillraven.fleks.collection.BitArray
+import com.github.quillraven.fleks.collection.MutableEntityBag
+import com.github.quillraven.fleks.collection.bag
+import com.github.quillraven.fleks.collection.compareEntity
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmName
 
@@ -94,7 +97,7 @@ abstract class EntityComponentContext(
      * Updates the [entity][Entity] using the given [configuration] to add and remove [components][Component].
      *
      * **Attention** Make sure that you only modify the entity of the current scope.
-     * Otherwise, you will get wrong behavior for families. E.g. don't do this:
+     * Otherwise, you will get wrong behavior for families. E.g., don't do this:
      *
      * ```
      * entity.configure {
@@ -174,7 +177,7 @@ open class EntityCreateContext(
      */
     operator fun Entity.plusAssign(tag: EntityTags) {
         compMasks[this.id].set(tag.id)
-        // We need to remember used tags in order to correctly return and load them using
+        // We need to remember used tags to correctly return and load them using
         // the snapshot functionality, because tags are not managed via ComponentHolder and
         // the entity's component mask just knows about the tag's id.
         // However, a snapshot should contain the real object instances related to an entity.
@@ -247,12 +250,12 @@ interface EntityProvider {
 
     /**
      * Reference to the [World] of the [EntityProvider].
-     * It is needed for the [forEach] implementation.
+     * It is necessary for the [forEach] implementation.
      */
     val world: World
 
     /**
-     * Returns the total amount of active [entities][Entity].
+     * Returns the total number of active [entities][Entity].
      */
     fun numEntities(): Int
 
@@ -310,7 +313,7 @@ class DefaultEntityProvider(
     private val recycledEntities = ArrayDeque<Entity>()
 
     /**
-     * Returns the total amount of active [entities][Entity].
+     * Returns the total number of active [entities][Entity].
      */
     override fun numEntities(): Int = nextId - recycledEntities.size
 
@@ -329,7 +332,7 @@ class DefaultEntityProvider(
         } else {
             val recycled = recycledEntities.removeLast()
 
-            // because of the load snapshot functionality of the world, it is
+            // Because of the load snapshot functionality of the world, it is
             // possible that an entity with an ID higher than nextId gets recycled
             // and immediately created afterward. In such a case we need to correct the
             // nextId to avoid creating duplicated entities.
@@ -348,7 +351,7 @@ class DefaultEntityProvider(
      */
     override fun create(id: Int): Entity {
         if (id >= nextId) {
-            // entity with given id was never created before -> create all missing entities ...
+            // entity with a given id was never created before -> create all missing entities ...
             repeat(id - nextId + 1) {
                 this -= entity(nextId + it, version = 0u)
             }
@@ -359,8 +362,8 @@ class DefaultEntityProvider(
             nextId = id + 1
             return create()
         } else {
-            // entity with given id was already created before and is part of the recycled entities
-            // -> move it to the end to be used by the next create call
+            // entity with a given id was already created before and is part of the recycled entities
+            // -> move it to the end to be used by the next call to 'create'
             val index = recycledEntities.indexOfFirst { it.id == id }
             val entity = recycledEntities.removeAt(index)
             recycledEntities.addLast(entity)
@@ -414,7 +417,7 @@ class EntityService(
 ) {
 
     /**
-     * Returns the amount of active entities.
+     * Returns the number of active entities.
      */
     val numEntities: Int
         get() = entityProvider.numEntities()

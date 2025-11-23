@@ -1,5 +1,7 @@
 package com.github.quillraven.fleks
 
+import com.github.quillraven.fleks.World.Companion.family
+import com.github.quillraven.fleks.World.Companion.inject
 import com.github.quillraven.fleks.collection.EntityBag
 import com.github.quillraven.fleks.collection.MutableEntityBag
 import kotlinx.serialization.Contextual
@@ -36,7 +38,7 @@ class World internal constructor(
     internal val injectables = mutableMapOf<String, Injectable>()
 
     /**
-     * Returns the time that is passed to [update][World.update].
+     * Returns the time passed to [update][World.update].
      * It represents the time in seconds between two frames.
      */
     var deltaTime = 0f
@@ -54,7 +56,7 @@ class World internal constructor(
     internal var allFamilies = emptyArray<Family>()
 
     /**
-     * Returns the amount of active entities.
+     * Returns the number of active entities.
      */
     val numEntities: Int
         get() = entityService.numEntities
@@ -65,7 +67,7 @@ class World internal constructor(
     val capacity: Int
         get() = entityService.capacity
 
-    // internal mutable list of systems
+    // Internal mutable list of systems
     // can be replaced in a later version of Kotlin with "backing field" syntax
     internal val mutableSystems = arrayListOf<IntervalSystem>()
 
@@ -127,7 +129,7 @@ class World internal constructor(
     /**
      * Returns a new [EntityBag] instance containing all [entities][Entity] of the world.
      *
-     * Do not call this operation each frame, as it can be expensive depending on the amount
+     * Do not call this operation each frame, as it can be expensive depending on the number
      * of entities in your world.
      *
      * For frequent entity operations on specific entities, use [families][Family].
@@ -144,7 +146,7 @@ class World internal constructor(
      * Adds a new [entity][Entity] to the world using the given [configuration][EntityCreateContext].
      *
      * **Attention** Make sure that you only modify the entity of the current scope.
-     * Otherwise, you will get wrong behavior for families. E.g. don't do this:
+     * Otherwise, you will get wrong behavior for families. E.g., don't do this:
      *
      * ```
      * entity {
@@ -267,7 +269,7 @@ class World internal constructor(
     /**
      * Sets the [hook] as an [EntityService.addHook].
      *
-     * @throws FleksHookAlreadyAddedException if the [EntityService] already has an add hook set.
+     * @throws FleksHookAlreadyAddedException if the [EntityService] already has an [addHook][EntityService.addHook] set.
      */
     @PublishedApi
     internal fun setEntityAddHook(hook: EntityHook) {
@@ -298,7 +300,7 @@ class World internal constructor(
      * that matches its configuration.
      * Therefore, this might have a performance impact on the first call if there are a lot of entities in the world.
      *
-     * As a best practice families should be created as early as possible, ideally during world creation.
+     * As a best practice, families should be created as early as possible, ideally during world creation.
      * Also, store the result of this function instead of calling this function multiple times with the same arguments.
      *
      * @throws [FleksFamilyException] if the [FamilyDefinition] is null or empty.
@@ -313,7 +315,7 @@ class World internal constructor(
      * that matches its configuration.
      * Therefore, this might have a performance impact on the first call if there are a lot of entities in the world.
      *
-     * As a best practice families should be created as early as possible, ideally during world creation.
+     * As a best practice, families should be created as early as possible, ideally during world creation.
      * Also, store the result of this function instead of calling this function multiple times with the same arguments.
      *
      * @throws [FleksFamilyException] if the [FamilyDefinition] is null or empty.
@@ -341,7 +343,7 @@ class World internal constructor(
      * Returns a map that contains all [entities][Entity] and their components of this world.
      * The keys of the map are the entities.
      * The values are a list of components that a specific entity has. If the entity
-     * does not have any components then the value is an empty list.
+     * does not have any components, then the value is an empty list.
      */
     fun snapshot(): Map<Entity, Snapshot> {
         val result = mutableMapOf<Entity, Snapshot>()
@@ -353,7 +355,7 @@ class World internal constructor(
 
     /**
      * Returns a list that contains all components of the given [entity] of this world.
-     * If the entity does not have any components then an empty list is returned.
+     * If the entity does not have any components, then an empty list is returned.
      */
     @Suppress("UNCHECKED_CAST")
     fun snapshotOf(entity: Entity): Snapshot {
@@ -364,7 +366,7 @@ class World internal constructor(
             entityService.compMasks[entity.id].forEachSetBit { cmpId ->
                 val holder = componentService.holderByIndexOrNull(cmpId)
                 if (holder == null) {
-                    // tag instead of component
+                    // tag instead of a component
                     tags += tagCache[cmpId] ?: throw FleksSnapshotException("Tag with id $cmpId was never assigned")
                 } else {
                     comps += holder[entity]
@@ -390,13 +392,13 @@ class World internal constructor(
         // remove any existing entity and clean up recycled ids
         removeAll(true)
         if (snapshot.isEmpty()) {
-            // snapshot is empty -> nothing to load
+            // the snapshot is empty -> nothing to load
             return
         }
 
         val versionLookup = snapshot.keys.associateBy { it.id }
 
-        // Set next entity id to the maximum provided id + 1.
+        // Set the next entity id to the maximum provided id + 1.
         // All ids before that will be either created or added to the recycled
         // ids to guarantee that the provided snapshot entity ids match the newly created ones.
         with(entityService) {
@@ -417,7 +419,7 @@ class World internal constructor(
     /**
      * Loads the given [entity] and its [snapshot][Snapshot].
      * If the entity does not exist yet, it will be created.
-     * If the entity already exists it will be updated with the given components.
+     * If the entity already exists, it will be updated with the given components.
      *
      * @throws FleksSnapshotException if a family iteration is currently in process.
      */
@@ -431,7 +433,7 @@ class World internal constructor(
             entityService.create(entity.id) { }
         }
 
-        // load components for entity
+        // load components for an entity
         entityService.configure(entity, snapshot)
     }
 
@@ -499,7 +501,7 @@ class World internal constructor(
      */
     private fun updateAggregatedFamilyHooks(family: Family) {
         // system validation like in initAggregatedFamilyHooks is not necessary
-        // because it is already validated before (in initAggregatedFamilyHooks and in add/remove system)
+        // because it is already validated before (in initAggregatedFamilyHooks and in 'add/remove' system)
 
         // update family add hook by adding systems' onAddEntity calls after its original world cfg hook
         val addSystems = systems.filter { it is IteratingSystem && it is FamilyOnAdd && it.family == family }
@@ -544,7 +546,7 @@ class World internal constructor(
          * that matches its configuration.
          * Therefore, this might have a performance impact on the first call if there are a lot of entities in the world.
          *
-         * As a best practice families should be created as early as possible, ideally during world creation.
+         * As a best practice, families should be created as early as possible, ideally during world creation.
          * Also, store the result of this function instead of calling this function multiple times with the same arguments.
          *
          * @throws [FleksFamilyException] if the [FamilyDefinition] is null or empty.
