@@ -385,7 +385,7 @@ data class Family(
      * Returns a single [List] of all elements yielded from the results of [transform] function
      * being invoked on each [entity][Entity] of the family.
      */
-    inline fun <R> flatMapSequence(transform: (Entity) -> Sequence<R>) = mutableEntities.flatMapSequence(transform)
+    inline fun <R> flatMapSequence(transform: (Entity) -> Sequence<R>) = mutableEntities.flatMap(transform)
 
     /**
      * Returns a new bag of all elements yielded from the results of [transform] function

@@ -12,7 +12,7 @@ class EntityBagIteratorTest {
     fun `test iterator on empty bag`() {
         val emptyBag = emptyEntityBag()
 
-        val iterator = emptyBag.iterator()
+        val iterator = emptyBag.entityBagIterator()
 
         assertFalse(iterator.hasNext())
         assertFalse(iterator.hasPrevious())
@@ -27,7 +27,7 @@ class EntityBagIteratorTest {
         val entity = Entity(1, 0u)
         val testBag = mutableEntityBagOf(entity)
 
-        val iterator = testBag.iterator()
+        val iterator = testBag.entityBagIterator()
 
         assertTrue(iterator.hasNext())
         assertFalse(iterator.hasPrevious())
@@ -51,7 +51,7 @@ class EntityBagIteratorTest {
         val entity3 = Entity(3, 0u)
         val testBag = mutableEntityBagOf(entity1, entity2, entity3)
 
-        val iterator = testBag.iterator()
+        val iterator = testBag.entityBagIterator()
 
         // iterate to end and to beginning
         assertEquals(entity1, iterator.next())
@@ -95,7 +95,7 @@ class EntityBagIteratorTest {
         val entity3 = Entity(2, 1u) // same id on purpose to check that goTo stops at first entity
         val testBag = mutableEntityBagOf(entity1, entity2, entity3)
 
-        val iterator = testBag.iterator()
+        val iterator = testBag.entityBagIterator()
 
         assertEquals(entity2, iterator.goToFirst { e -> e.id == 2 })
         assertEquals(entity1, iterator.previous())
@@ -110,12 +110,11 @@ class EntityBagIteratorTest {
         val entity3 = Entity(2, 1u) // same id on purpose to check that goTo stops at first entity
         val testBag = mutableEntityBagOf(entity1, entity2, entity3)
 
-        val iterator = testBag.iterator()
+        val iterator = testBag.entityBagIterator()
 
         assertEquals(entity3, iterator.goToLast { e -> e.id == 2 })
         assertEquals(entity2, iterator.previous())
         assertEquals(Entity.NONE, iterator.goToLast { e -> e.id == 3 })
         assertEquals(entity1, iterator.next())
     }
-
 }
