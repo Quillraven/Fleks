@@ -1,10 +1,10 @@
 [versions]
 
-kotlin = "2.2.10"
+kotlin = "2.2.21"
 kotlinxSerialization = "1.9.0"
-kotlinDokka = "2.0.0"
+kotlinDokka = "2.1.0"
 kotlinxBenchmark = "0.4.14"
-mavenPublishPlugin = "0.34.0"
+mavenPublishPlugin = "0.35.0"
 
 [libraries]
 
