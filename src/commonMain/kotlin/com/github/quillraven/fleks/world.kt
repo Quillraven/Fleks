@@ -524,6 +524,12 @@ class World internal constructor(
         }
     }
 
+    /**
+     * Returns a [ComponentsHolder] for the given [componentType].
+     */
+    inline fun <reified T : Component<*>> componentHolder(componentType: ComponentType<T>): ComponentsHolder<T> =
+        componentService.holder(componentType)
+
     @ThreadLocal
     companion object {
         @PublishedApi
@@ -554,6 +560,14 @@ class World internal constructor(
          */
         fun family(cfg: FamilyDefinition.() -> Unit): Family =
             CURRENT_WORLD?.family(cfg) ?: throw FleksWrongConfigurationUsageException()
+
+        /**
+         * Returns a [ComponentsHolder] for the given [componentType].
+         *
+         * @throws FleksWrongConfigurationUsageException if called outside a [WorldConfiguration] scope.
+         */
+        inline fun <reified T : Component<*>> componentHolder(componentType: ComponentType<T>): ComponentsHolder<T> =
+            CURRENT_WORLD?.componentService?.holder(componentType) ?: throw FleksWrongConfigurationUsageException()
     }
 }
 

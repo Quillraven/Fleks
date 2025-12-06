@@ -1,5 +1,6 @@
 package com.github.quillraven.fleks
 
+import com.github.quillraven.fleks.World.Companion.componentHolder
 import com.github.quillraven.fleks.World.Companion.family
 import com.github.quillraven.fleks.World.Companion.inject
 import com.github.quillraven.fleks.collection.compareEntity
@@ -1193,5 +1194,52 @@ internal class WorldTest {
 
         assertEquals(1, s.extraFamily.numEntities)
         assertEquals(0, s.family.numEntities)
+    }
+
+    @Test
+    fun componentHolderInstanceReturnsCorrectHolder() {
+        val world = configureWorld { }
+
+        val holder = world.componentHolder(WorldTestComponent)
+        val sameHolder = world.componentHolder(WorldTestComponent)
+
+        // same instance is returned for the same component type
+        assertSame(holder, sameHolder)
+
+        // holder identity and contents reflect world operations
+        val e = world.entity {}
+        val cmp = WorldTestComponent(42f)
+        with(world) { e.configure { it += cmp } }
+
+        assertTrue(e in holder)
+        assertSame(cmp, holder[e])
+    }
+
+    @Test
+    fun companionComponentHolderReturnsCorrectHolderWithinConfigurationScope() {
+        var holderFromCompanion: ComponentsHolder<WorldTestComponent>? = null
+
+        val world = configureWorld {
+            // call global componentHolder within configuration scope
+            holderFromCompanion = componentHolder(WorldTestComponent)
+        }
+
+        // the holder returned from the companion/global function must be the same as the instance method
+        val holderFromWorld = world.componentHolder(WorldTestComponent)
+        assertSame(holderFromWorld, holderFromCompanion)
+    }
+
+    @Test
+    fun componentHolderMustBeUsedWithinConfigurationScope() {
+        // BEFORE configuration block
+        assertFailsWith<FleksWrongConfigurationUsageException> {
+            componentHolder(WorldTestComponent)
+        }
+
+        // AFTER configuration block
+        assertFailsWith<FleksWrongConfigurationUsageException> {
+            configureWorld { }
+            componentHolder(WorldTestComponent)
+        }
     }
 }
