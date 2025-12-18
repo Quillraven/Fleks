@@ -390,7 +390,7 @@ internal class WorldTest {
                 add("used")
             }
         }
-        val expected = mapOf("42" to "myString", "Int" to 1337)
+        val expected = mapOf("42" to "myString", "kotlin.Int" to 1337)
         // this sets the 'used' string injectable to used=true
         world.inject<String>()
 

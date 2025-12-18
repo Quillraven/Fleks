@@ -10,11 +10,6 @@ plugins {
 }
 
 kotlin {
-    js(IR) {
-        browser()
-        nodejs()
-    }
-
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         browser()

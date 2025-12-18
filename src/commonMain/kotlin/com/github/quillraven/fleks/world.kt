@@ -113,7 +113,7 @@ class World internal constructor(
      *
      * @throws FleksNoSuchInjectableException if there is no injectable registered for [name].
      */
-    inline fun <reified T> inject(name: String = T::class.simpleName ?: T::class.toString()): T {
+    inline fun <reified T> inject(name: String = T::class.qualifiedName ?: T::class.toString()): T {
         val injectable = injectables[name] ?: throw FleksNoSuchInjectableException(name)
         injectable.used = true
         return injectable.injObj as T
@@ -541,7 +541,7 @@ class World internal constructor(
          * @throws FleksNoSuchInjectableException if there is no injectable registered for [name].
          * @throws FleksWrongConfigurationUsageException if called outside a [WorldConfiguration] scope.
          */
-        inline fun <reified T> inject(name: String = T::class.simpleName ?: T::class.toString()): T =
+        inline fun <reified T> inject(name: String = T::class.qualifiedName ?: T::class.toString()): T =
             CURRENT_WORLD?.inject(name) ?: throw FleksWrongConfigurationUsageException()
 
         /**

@@ -41,7 +41,7 @@ class InjectableConfiguration(private val world: World) {
      *
      * @throws [FleksInjectableAlreadyAddedException] if the dependency was already added before.
      */
-    inline fun <reified T : Any> add(dependency: T) = add(T::class.simpleName ?: T::class.toString(), dependency)
+    inline fun <reified T : Any> add(dependency: T) = add(T::class.qualifiedName ?: T::class.toString(), dependency)
 }
 
 /**
