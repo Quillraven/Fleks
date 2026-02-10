@@ -97,6 +97,9 @@ class World internal constructor(
     @PublishedApi
     internal val tagCache = mutableMapOf<Int, UniqueId<*>>()
 
+    // optional system that automatically removes components/tags registered in the WorldConfiguration
+    internal var oneShotComponentSystem: OneShotComponentSystem? = null
+
     init {
         /**
          * Maybe because of design flaws, the world reference of the ComponentService must be
@@ -408,7 +411,7 @@ class World internal constructor(
                 this.recycle(entity)
                 val entitySnapshot = snapshot[versionLookup[it]]
                 if (entitySnapshot != null) {
-                    // snapshot for entity is provided -> create it
+                    // a snapshot for the entity is provided -> create it
                     // note that the id for the entity will be the recycled id from above
                     this.configure(this.create { }, entitySnapshot)
                 }
@@ -449,6 +452,7 @@ class World internal constructor(
                 system.onUpdate()
             }
         }
+        oneShotComponentSystem?.onUpdate()
     }
 
     /**

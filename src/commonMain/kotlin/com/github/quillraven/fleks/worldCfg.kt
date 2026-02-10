@@ -155,10 +155,19 @@ class WorldConfiguration(@PublishedApi internal val world: World) {
     }
 
     /**
+     * Registers the given [components][Component]/[tags][EntityTag] as
+     * one-shot, meaning that they are automatically removed from an [entity][Entity]
+     * at the end of [World.update].
+     */
+    fun oneShotComponents(vararg types: UniqueId<*>) {
+        world.oneShotComponentSystem = OneShotComponentSystem(types, world)
+    }
+
+    /**
      * Configures the world in the following sequence:
-     * - injectables
-     * - family
-     * - system
+     * - Injectable
+     * - Family
+     * - System
      *
      * The order is important to correctly trigger [FamilyHook]s and [EntityHook]s.
      */
