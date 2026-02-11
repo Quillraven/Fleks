@@ -73,7 +73,7 @@ data class FamilyDefinition(
  * Each [component][Component] is assigned to a unique index via its [ComponentType].
  * That index is set in the [allOf], [noneOf] or [anyOf][] [BitArray].
  *
- * A family gets notified when an [entity][Entity] is added, updated or removed of the [world][World].
+ * A family gets notified when an [entity][Entity] is added, updated, or removed of the [world][World].
  *
  * Every [IteratingSystem] is linked to exactly one family, but a family can also exist outside of systems.
  * It gets created via the [World.family] function.
@@ -335,17 +335,17 @@ data class Family(
     ): M = mutableEntities.associateByTo(destination, keySelector, valueTransform)
 
     /**
-     * Returns a [List] containing only [entities][Entity] matching the given [predicate].
+     * Returns an [EntityBag] containing only [entities][Entity] matching the given [predicate].
      */
     fun filter(predicate: (Entity) -> Boolean): EntityBag = mutableEntities.filter(predicate)
 
     /**
-     * Returns a [List] containing all [entities][Entity] not matching the given [predicate].
+     * Returns an [EntityBag] containing all [entities][Entity] not matching the given [predicate].
      */
     fun filterNot(predicate: (Entity) -> Boolean): EntityBag = mutableEntities.filterNot(predicate)
 
     /**
-     * Returns a [List] containing only [entities][Entity] matching the given [predicate].
+     * Returns an [EntityBag] containing only [entities][Entity] matching the given [predicate].
      */
     fun filterIndexed(predicate: (index: Int, Entity) -> Boolean): EntityBag = mutableEntities.filterIndexed(predicate)
 
@@ -555,7 +555,7 @@ data class Family(
     fun singleOrNull(predicate: (Entity) -> Boolean): Entity? = mutableEntities.singleOrNull(predicate)
 
     /**
-     * Returns a [List] containing the first [n][] [entities][Entity].
+     * Returns an [EntityBag] containing the first [n][] [entities][Entity].
      */
     fun take(n: Int): EntityBag = mutableEntities.take(n)
 

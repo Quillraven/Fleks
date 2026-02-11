@@ -24,7 +24,7 @@ fun mutableEntityBagOf(size: Int): MutableEntityBag = MutableEntityBag(size)
 
 /**
  * A bag implementation for [entities][Entity] (=integer) values in Kotlin to avoid autoboxing.
- * It contains necessary functions for Fleks and some additional Kotlin standard library utilities.
+ * It contains the necessary functions for Fleks and some additional Kotlin standard library utilities.
  */
 class MutableEntityBag(
     size: Int = 64
@@ -329,7 +329,7 @@ class MutableEntityBag(
     }
 
     /**
-     * Returns a [List] containing only [entities][Entity] matching the given [predicate].
+     * Returns an [EntityBag] containing only [entities][Entity] matching the given [predicate].
      */
     override inline fun filter(predicate: (Entity) -> Boolean): EntityBag {
         val result = MutableEntityBag((size * 0.25f).toInt())
@@ -343,7 +343,7 @@ class MutableEntityBag(
     }
 
     /**
-     * Returns a [List] containing all [entities][Entity] not matching the given [predicate].
+     * Returns an [EntityBag] containing all [entities][Entity] not matching the given [predicate].
      */
     override inline fun filterNot(predicate: (Entity) -> Boolean): EntityBag {
         val result = MutableEntityBag((size * 0.25f).toInt())
@@ -357,7 +357,7 @@ class MutableEntityBag(
     }
 
     /**
-     * Returns a [List] containing only [entities][Entity] matching the given [predicate].
+     * Returns an [EntityBag] containing only [entities][Entity] matching the given [predicate].
      */
     override inline fun filterIndexed(predicate: (index: Int, entity: Entity) -> Boolean): EntityBag {
         val result = MutableEntityBag((size * 0.25f).toInt())
@@ -805,7 +805,7 @@ class MutableEntityBag(
         if (isEmpty()) {
             throw NoSuchElementException("EntityBag is empty!")
         }
-        return values[Random.Default.nextInt(size)]
+        return values[Random.nextInt(size)]
     }
 
     /**
@@ -815,7 +815,7 @@ class MutableEntityBag(
         if (isEmpty()) {
             return null
         }
-        return values[Random.Default.nextInt(size)]
+        return values[Random.nextInt(size)]
     }
 
     /**
@@ -881,7 +881,7 @@ class MutableEntityBag(
     }
 
     /**
-     * Returns a [List] containing the first [n][] [entities][Entity].
+     * Returns an [EntityBag] containing the first [n][] [entities][Entity].
      */
     override fun take(n: Int): EntityBag {
         val result = MutableEntityBag(max(min(n, size), 0))

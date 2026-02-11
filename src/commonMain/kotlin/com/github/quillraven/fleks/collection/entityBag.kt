@@ -136,17 +136,17 @@ interface EntityBag {
     fun indexOfLast(predicate: (Entity) -> Boolean): Int
 
     /**
-     * Returns a [List] containing only [entities][Entity] matching the given [predicate].
+     * Returns an [EntityBag] containing only [entities][Entity] matching the given [predicate].
      */
     fun filter(predicate: (Entity) -> Boolean): EntityBag
 
     /**
-     * Returns a [List] containing all [entities][Entity] not matching the given [predicate].
+     * Returns an [EntityBag] containing all [entities][Entity] not matching the given [predicate].
      */
     fun filterNot(predicate: (Entity) -> Boolean): EntityBag
 
     /**
-     * Returns a [List] containing only [entities][Entity] matching the given [predicate].
+     * Returns an [EntityBag] containing only [entities][Entity] matching the given [predicate].
      */
     fun filterIndexed(predicate: (index: Int, Entity) -> Boolean): EntityBag
 
@@ -415,7 +415,7 @@ interface EntityBag {
     fun singleOrNull(predicate: (Entity) -> Boolean): Entity?
 
     /**
-     * Returns a [List] containing the first [n][] [entities][Entity].
+     * Returns an [EntityBag] containing the first [n][] [entities][Entity].
      */
     fun take(n: Int): EntityBag
 }
