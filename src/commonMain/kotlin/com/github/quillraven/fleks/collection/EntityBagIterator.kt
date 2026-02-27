@@ -6,7 +6,7 @@ import com.github.quillraven.fleks.Entity
  * Creates an [EntityBagIterator] for the bag. If the bag gets updated
  * during iteration then [EntityBagIterator.reset] must be called to guarantee correct iterator behavior.
  */
-fun EntityBag.iterator(): EntityBagIterator = EntityBagIterator(this)
+operator fun EntityBag.iterator(): EntityBagIterator = EntityBagIterator(this)
 
 /**
  * An iterator over an [EntityBag]. Allows iterating in a forward and backward direction.
@@ -20,7 +20,7 @@ data class EntityBagIterator(private val bag: EntityBag) {
     /**
      * Returns **true** if and only if there is a next [entity][Entity] in the bag.
      */
-    fun hasNext(): Boolean = currentIdx < bag.size - 1
+    operator fun hasNext(): Boolean = currentIdx < bag.size - 1
 
     /**
      * Returns the next [entity][Entity] of the bag and moves the iterator forward.
@@ -36,6 +36,11 @@ data class EntityBagIterator(private val bag: EntityBag) {
 
         else -> Entity.NONE
     }
+
+    /**
+     * Returns the next [entity][Entity] of the bag and moves the iterator forward.
+     */
+    operator fun next(): Entity = next(false)
 
     /**
      * Returns **true** if and only if there is a previous [entity][Entity] in the bag.
