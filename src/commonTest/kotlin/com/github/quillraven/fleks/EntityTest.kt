@@ -218,4 +218,17 @@ internal class EntityTest {
         assertTrue(testEntityService.compMasks[entity.id][EntityTestComponent1.id])
         assertTrue(testEntityService.compMasks[entity.id][EntityTestComponent2.id])
     }
+
+    @Test
+    fun testWasRemoved() {
+        val entity = testEntityService.create { }
+
+        with(testEntityService.world) {
+            assertFalse { entity.wasRemoved() }
+
+            entity.remove()
+
+            assertTrue { entity.wasRemoved() }
+        }
+    }
 }

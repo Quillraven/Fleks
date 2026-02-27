@@ -98,6 +98,11 @@ abstract class EntityComponentContext(
      * This is the case, if it gets [removed][remove] during the system's iteration.
      */
     fun Entity.isMarkedForRemoval() = this in componentService.world.entityService.delayedEntities
+
+    /**
+     * Returns true if and only if the [entity][Entity] was removed and is not part of the [World] anymore.
+     */
+    fun Entity.wasRemoved() = this !in componentService.world
 }
 
 /**
