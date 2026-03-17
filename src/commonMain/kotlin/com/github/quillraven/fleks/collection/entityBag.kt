@@ -206,6 +206,19 @@ interface EntityBag {
     fun firstOrNull(predicate: (Entity) -> Boolean): Entity?
 
     /**
+     * Returns the first non-null value produced by [transform] applied to each [entity][Entity].
+     *
+     * @throws [NoSuchElementException] if no non-null value was produced.
+     */
+    fun <R : Any> firstNotNullOf(transform: (Entity) -> R?): R
+
+    /**
+     * Returns the first non-null value produced by [transform] applied to each [entity][Entity],
+     * or null if no non-null value was produced.
+     */
+    fun <R : Any> firstNotNullOfOrNull(transform: (Entity) -> R?): R?
+
+    /**
      * Returns a single [List] of all elements yielded from the results of [transform] function
      * being invoked on each [entity][Entity] of the bag.
      */

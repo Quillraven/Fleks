@@ -241,6 +241,19 @@ data class Family(
     fun firstOrNull(predicate: (Entity) -> Boolean): Entity? = mutableEntities.firstOrNull(predicate)
 
     /**
+     * Updates this family if needed and returns the first non-null value produced by [transform]
+     * applied to each [Entity].
+     * @throws [NoSuchElementException] if no non-null value was produced.
+     */
+    fun <R : Any> firstNotNullOf(transform: (Entity) -> R?): R = mutableEntities.firstNotNullOf(transform)
+
+    /**
+     * Updates this family if needed and returns the first non-null value produced by [transform]
+     * applied to each [Entity], or null if no non-null value was produced.
+     */
+    fun <R : Any> firstNotNullOfOrNull(transform: (Entity) -> R?): R? = mutableEntities.firstNotNullOfOrNull(transform)
+
+    /**
      * Sorts the [entities][Entity] of this family by the given [comparator].
      */
     fun sort(comparator: EntityComparator) = mutableEntities.sort(comparator)

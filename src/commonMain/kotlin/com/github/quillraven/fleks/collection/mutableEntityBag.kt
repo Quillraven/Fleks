@@ -470,6 +470,28 @@ class MutableEntityBag(
     override inline fun firstOrNull(predicate: (Entity) -> Boolean): Entity? = find(predicate)
 
     /**
+     * Returns the first non-null value produced by [transform] applied to each [entity][Entity].
+     *
+     * @throws [NoSuchElementException] if no non-null value was produced.
+     */
+    override inline fun <R : Any> firstNotNullOf(transform: (Entity) -> R?): R {
+        return firstNotNullOfOrNull(transform)
+            ?: throw NoSuchElementException("There is no entity matching the given transform!")
+    }
+
+    /**
+     * Returns the first non-null value produced by [transform] applied to each [entity][Entity],
+     * or null if no non-null value was produced.
+     */
+    override inline fun <R : Any> firstNotNullOfOrNull(transform: (Entity) -> R?): R? {
+        for (i in 0 until size) {
+            val result = transform(values[i])
+            if (result != null) return result
+        }
+        return null
+    }
+
+    /**
      * Returns a single [List] of all elements yielded from the results of [transform] function
      * being invoked on each [entity][Entity] of the bag.
      */
