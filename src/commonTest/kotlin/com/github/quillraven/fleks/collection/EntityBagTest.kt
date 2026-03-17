@@ -397,6 +397,20 @@ class EntityBagTest {
     }
 
     @Test
+    fun testFirstNotNullOf() {
+        assertEquals(testEntity1.id, testBag.firstNotNullOf { it.id.takeIf { id -> id == testEntity1.id } })
+        assertEquals(testEntity2.id, testBag.firstNotNullOf { it.id.takeIf { id -> id == testEntity2.id } })
+        assertFailsWith<NoSuchElementException> { testBag.firstNotNullOf { null } }
+    }
+
+    @Test
+    fun testFirstNotNullOfOrNull() {
+        assertEquals(testEntity1.id, testBag.firstNotNullOfOrNull { it.id.takeIf { id -> id == testEntity1.id } })
+        assertEquals(testEntity2.id, testBag.firstNotNullOfOrNull { it.id.takeIf { id -> id == testEntity2.id } })
+        assertNull(testBag.firstNotNullOfOrNull { null })
+    }
+
+    @Test
     fun testFlatMap() {
         val expectedInts = listOf(0, 0, 1, 2)
         val expectedEntities = entityBagOf(testEntity1, testEntity1)

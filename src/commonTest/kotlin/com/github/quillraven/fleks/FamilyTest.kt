@@ -429,5 +429,24 @@ internal class FamilyTest {
         assertEquals(entity, family.firstOrNull())
         assertEquals(entity, family.firstOrNull { it.id == entity.id })
     }
+
+    @Test
+    fun testFirstNotNullOfForEmptyFamily() {
+        val family = testWorld.family { all(FamilyTestComponent2) }
+
+        assertFailsWith<NoSuchElementException> { family.firstNotNullOf { it.id } }
+        assertNull(family.firstNotNullOfOrNull { it.id })
+    }
+
+    @Test
+    fun testFirstNotNullOfForNonEmptyFamily() {
+        val family = testWorld.family { all(FamilyTestComponent) }
+        val entity = testWorld.entity { it += FamilyTestComponent() }
+
+        assertEquals(entity.id, family.firstNotNullOf { it.id.takeIf { id -> id == entity.id } })
+        assertEquals(entity.id, family.firstNotNullOfOrNull { it.id.takeIf { id -> id == entity.id } })
+        assertFailsWith<NoSuchElementException> { family.firstNotNullOf { null } }
+        assertNull(family.firstNotNullOfOrNull { null })
+    }
 }
 
