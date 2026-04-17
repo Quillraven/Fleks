@@ -214,8 +214,7 @@ class ComponentService {
      */
     fun wildcardHolder(componentType: ComponentType<*>): ComponentsHolder<*> {
         if (holdersBag.hasNoValueAtIndex(componentType.id)) {
-            holdersBag[componentType.id] =
-                ComponentsHolder(world, componentType, Array<Component<*>?>(world.capacity) { null })
+            holdersBag[componentType.id] = ComponentsHolder(world, componentType, Array<Component<*>?>(world.capacity) { null })
         }
         return holdersBag[componentType.id]
     }

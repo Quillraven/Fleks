@@ -9,18 +9,21 @@ import com.github.quillraven.fleks.World.Companion.family
  * This system is only used internally and is called at the end of a [World.update].
  */
 class OneShotComponentSystem(
-    private val types: Array<out UniqueId<*>>,
+    types: Array<out UniqueId<*>>,
     world: World,
 ) : IteratingSystem(
     family = family { any(*types) },
     world = world,
 ) {
+    private val typeIds = types.map { it.id }.toIntArray()
+    private val holders: Array<ComponentsHolder<*>> = types.filterIsInstance<ComponentType<*>>()
+        .map { world.componentService.wildcardHolder(it) }
+        .toTypedArray()
 
     override fun onTickEntity(entity: Entity) {
         entity.configure {
-            types.forEach { componentType ->
-                entity -= componentType
-            }
+            holders.forEach { it -= entity }
+            typeIds.forEach { compMasks[entity.id].clear(it) }
         }
     }
 

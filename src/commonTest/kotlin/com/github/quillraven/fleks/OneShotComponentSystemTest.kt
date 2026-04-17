@@ -2,6 +2,8 @@ package com.github.quillraven.fleks
 
 import kotlin.test.Test
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 private class OneShotComp : Component<OneShotComp> {
@@ -32,6 +34,7 @@ internal class OneShotComponentSystemTest {
             world.update(0f)
 
             assertFalse { entity has OneShotComp }
+            assertNull(entity.getOrNull(OneShotComp))
         }
     }
 
@@ -64,6 +67,7 @@ internal class OneShotComponentSystemTest {
             world.update(0f)
 
             assertTrue { entity has NormalComp }
+            assertNotNull(entity.getOrNull(NormalComp))
         }
     }
 
@@ -86,7 +90,9 @@ internal class OneShotComponentSystemTest {
             world.update(0f)
 
             assertTrue { entity has NormalComp }
+            assertNotNull(entity.getOrNull(NormalComp))
             assertFalse { entity has OneShotComp }
+            assertNull(entity.getOrNull(OneShotComp))
             assertFalse { entity has OneShotTag }
         }
     }
