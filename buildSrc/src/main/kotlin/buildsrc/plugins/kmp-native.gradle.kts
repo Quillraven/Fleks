@@ -38,7 +38,6 @@ kotlin {
     mingwX64()
 
     macosArm64()
-    macosX64()
 
 
     // https://kotlinlang.org/docs/multiplatform-hierarchy.html#target-shortcuts
