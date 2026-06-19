@@ -1,20 +1,22 @@
 [versions]
-
 kotlin = "2.4.0"
+kctfork = "0.13.0" # kotlin compiler test library
 kotlinxSerialization = "1.11.0"
 kotlinDokka = "2.2.0"
 kotlinxBenchmark = "0.4.16"
 mavenPublishPlugin = "0.35.0"
 
 [libraries]
-
 kotlinxSerialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
-
 kotlinxBenchmark-runtime = { module = "org.jetbrains.kotlinx:kotlinx-benchmark-runtime", version.ref = "kotlinxBenchmark" }
-
+# kotlin compiler plugin libs
+kotlin-compiler = { module = "org.jetbrains.kotlin:kotlin-compiler", version.ref = "kotlin" }
+kotlin-gradlePluginApi = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin-api", version.ref = "kotlin" }
+kctfork-core = { module = "dev.zacsweers.kctfork:core", version.ref = "kctfork" }
+# other ECS libraries for benchmark
 ashley = { module = "com.badlogicgames.ashley:ashley", version = "1.7.4" }
 artemisOdb = { module = "net.onedaybeard.artemis:artemis-odb", version = "2.3.0" }
-
+# buildSrc classpath dependencies
 gradlePlugin-kotlin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 gradlePlugin-kotlinSerialization = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }
 gradlePlugin-kotlinDokka = { module = "org.jetbrains.dokka:dokka-gradle-plugin", version.ref = "kotlinDokka" }
