@@ -1,5 +1,6 @@
 package buildsrc.plugins
 
+import buildsrc.library
 import kotlinx.benchmark.gradle.KotlinJvmBenchmarkTarget
 import kotlinx.benchmark.gradle.benchmark
 import kotlinx.benchmark.gradle.internal.KotlinxBenchmarkPluginInternalApi
@@ -26,9 +27,9 @@ kotlin {
     sourceSets {
         val jvmBenchmarks by getting {
             dependencies {
-                implementation(versionCatalogs.named("libs").findLibrary("kotlinxBenchmark.runtime").orElseThrow(::AssertionError))
-                implementation(versionCatalogs.named("libs").findLibrary("ashley").orElseThrow(::AssertionError))
-                implementation(versionCatalogs.named("libs").findLibrary("artemisOdb").orElseThrow(::AssertionError))
+                implementation(library("kotlinxBenchmark-runtime"))
+                implementation(library("ashley"))
+                implementation(library("artemisOdb"))
             }
         }
     }

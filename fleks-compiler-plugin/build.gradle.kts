@@ -1,6 +1,6 @@
 plugins {
     kotlin("jvm")
-    buildsrc.plugins.base
+    id("buildsrc.plugins.base")
     `java-gradle-plugin`
 }
 

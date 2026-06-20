@@ -1,6 +1,7 @@
 rootProject.name = "Fleks"
 
 pluginManagement {
+    includeBuild("build-logic")
     repositories {
         mavenCentral()
         gradlePluginPortal()

@@ -1,4 +1,3 @@
 plugins {
-    buildsrc.plugins.`kmp-jvm`
-    buildsrc.plugins.benchmark
+    id("buildsrc.plugins.benchmark")
 }
