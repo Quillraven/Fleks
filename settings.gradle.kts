@@ -1,10 +1,16 @@
 rootProject.name = "Fleks"
 
 pluginManagement {
+    plugins {
+        id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
+    }
+
     repositories {
         mavenCentral()
         gradlePluginPortal()
     }
+
+    includeBuild("build-logic")
 }
 
 @Suppress("UnstableApiUsage")
@@ -60,4 +66,3 @@ dependencyResolutionManagement {
 }
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
-enableFeaturePreview("STABLE_CONFIGURATION_CACHE")

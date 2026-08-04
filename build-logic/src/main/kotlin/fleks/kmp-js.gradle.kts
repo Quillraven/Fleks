@@ -1,4 +1,4 @@
-package buildsrc.plugins
+package fleks
 
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.targets.js.npm.tasks.KotlinNpmInstallTask
@@ -6,7 +6,7 @@ import org.jetbrains.kotlin.gradle.targets.js.npm.tasks.KotlinNpmInstallTask
 /** conventions for a Kotlin/JS subproject */
 
 plugins {
-    id("buildsrc.plugins.kmp-base")
+    id("fleks.kmp-base")
 }
 
 kotlin {

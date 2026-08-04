@@ -1,21 +1,21 @@
-package buildsrc.plugins
+package fleks
 
 import kotlinx.benchmark.gradle.KotlinJvmBenchmarkTarget
 import kotlinx.benchmark.gradle.benchmark
 import kotlinx.benchmark.gradle.internal.KotlinxBenchmarkPluginInternalApi
 
-plugins{
-    id("buildsrc.plugins.kmp-jvm")
+plugins {
+    id("fleks.kmp-jvm")
     id("org.jetbrains.kotlinx.benchmark")
 }
 
 kotlin {
     jvm {
         compilations {
-            val main by getting
+            val main = getByName("main")
 
             // custom benchmark compilation
-            val benchmarks by creating { associateWith(main) }
+            val benchmarks = create("benchmarks") { associateWith(main) }
             @OptIn(KotlinxBenchmarkPluginInternalApi::class)
             benchmark.targets.add(
                 KotlinJvmBenchmarkTarget(benchmark, benchmarks.defaultSourceSet.name, benchmarks)
@@ -24,7 +24,7 @@ kotlin {
     }
 
     sourceSets {
-        val jvmBenchmarks by getting {
+        val jvmBenchmarks = getByName("jvmBenchmarks") {
             dependencies {
                 implementation(versionCatalogs.named("libs").findLibrary("kotlinxBenchmark.runtime").orElseThrow(::AssertionError))
                 implementation(versionCatalogs.named("libs").findLibrary("ashley").orElseThrow(::AssertionError))

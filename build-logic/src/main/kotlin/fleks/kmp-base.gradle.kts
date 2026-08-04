@@ -1,4 +1,4 @@
-package buildsrc.plugins
+package fleks
 
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
@@ -12,20 +12,20 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
  *
  * ```
  * plugins {
- *   id("buildsrc.plugins.kmp-js")
+ *   id("fleks.kmp-js")
  * }
  * ```
  */
 
 plugins {
-    id("buildsrc.plugins.base")
+    id("fleks.base")
     kotlin("multiplatform")
     kotlin("plugin.serialization")
 }
 
 
 kotlin {
-    jvmToolchain(11)
+    jvmToolchain(17)
 
     // configure all Kotlin/JVM Tests to use JUnit Jupiter
     targets.withType<KotlinJvmTarget>().configureEach {
@@ -39,6 +39,6 @@ kotlin {
 
 tasks.withType<KotlinJvmCompile>().configureEach {
     compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_11)
+        jvmTarget.set(JvmTarget.JVM_17)
     }
 }

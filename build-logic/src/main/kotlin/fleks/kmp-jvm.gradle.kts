@@ -1,9 +1,9 @@
-package buildsrc.plugins
+package fleks
 
 /** conventions for a Kotlin/JVM subproject */
 
 plugins {
-    id("buildsrc.plugins.kmp-base")
+    id("fleks.kmp-base")
 }
 
 kotlin {

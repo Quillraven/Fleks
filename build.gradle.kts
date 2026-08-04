@@ -1,14 +1,13 @@
 plugins {
-    buildsrc.plugins.`kmp-js`
-    buildsrc.plugins.`kmp-jvm`
-    buildsrc.plugins.`kmp-native`
-    buildsrc.plugins.publishing
-    buildsrc.plugins.benchmark
-    id("org.jetbrains.dokka")
+    id("fleks.kmp-js")
+    id("fleks.kmp-jvm")
+    id("fleks.kmp-native")
+    id("fleks.publishing")
+    id("fleks.benchmark")
 }
 
-group = ProjectInfo.GROUP
-version = ProjectInfo.VERSION
+group = providers.gradleProperty("fleks.group").get()
+version = providers.gradleProperty("fleks.version").get()
 
 kotlin {
     sourceSets {

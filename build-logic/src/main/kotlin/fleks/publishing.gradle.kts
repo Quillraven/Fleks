@@ -1,6 +1,4 @@
-package buildsrc.plugins
-
-import ProjectInfo
+package fleks
 
 
 /**
@@ -31,12 +29,16 @@ val signingPassword: Provider<String> = providers.gradleProperty("signingInMemor
 
 
 //region POM convention
+val fleksGroup: String = providers.gradleProperty("fleks.group").get()
+val fleksArtifact: String = providers.gradleProperty("fleks.artifact").get()
+val fleksVersion: String = providers.gradleProperty("fleks.version").get()
+
 mavenPublishing {
     publishToMavenCentral(automaticRelease = true)
 
     signAllPublications()
 
-    coordinates(ProjectInfo.GROUP, ProjectInfo.ARTIFACT, ProjectInfo.VERSION)
+    coordinates(fleksGroup, fleksArtifact, fleksVersion)
 
     // pom information needs to be specified per publication
     // because otherwise maven will complain again that
