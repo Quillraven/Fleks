@@ -1,7 +1,5 @@
 package com.github.quillraven.fleks
 
-import com.github.quillraven.fleks.World.Companion.family
-import com.github.quillraven.fleks.World.Companion.inject
 import com.github.quillraven.fleks.collection.EntityBag
 import com.github.quillraven.fleks.collection.MutableEntityBag
 import kotlinx.serialization.Contextual
@@ -392,6 +390,17 @@ class World internal constructor(
             throw FleksSnapshotException("Snapshots cannot be loaded while a family iteration is in process")
         }
 
+        // Save the valid state of all EntityRefs before removeAll invalidates them.
+        // Snapshot components hold references to the same EntityRef objects stored in the
+        // refs bag. removeAll invalidates those objects, so we must preserve their state
+        // and restore it afterwards for any entity that still exists after loading.
+        val savedRefValidity = mutableMapOf<EntityRef, Boolean>()
+        for (id in 0 until entityService.refs.size) {
+            entityService.refs.getOrNull(id)?.let { ref ->
+                savedRefValidity[ref] = ref.valid
+            }
+        }
+
         // remove any existing entity and clean up recycled ids
         removeAll(true)
         if (snapshot.isEmpty()) {
@@ -399,22 +408,29 @@ class World internal constructor(
             return
         }
 
-        val versionLookup = snapshot.keys.associateBy { it.id }
-
         // Set the next entity id to the maximum provided id + 1.
         // All ids before that will be either created or added to the recycled
         // ids to guarantee that the provided snapshot entity ids match the newly created ones.
         with(entityService) {
             val maxId = snapshot.keys.maxOf { it.id }
-            repeat(maxId + 1) {
-                val entity = Entity(it, version = (versionLookup[it]?.version ?: 0u) - 1u)
+            repeat(maxId + 1) { id ->
+                val entity = Entity(id)
                 this.recycle(entity)
-                val entitySnapshot = snapshot[versionLookup[it]]
+                val entitySnapshot = snapshot[entity]
                 if (entitySnapshot != null) {
                     // a snapshot for the entity is provided -> create it
                     // note that the id for the entity will be the recycled id from above
                     this.configure(this.create { }, entitySnapshot)
                 }
+            }
+        }
+
+        // Restore EntityRef validity for entities that exist after loading.
+        // This ensures components in the snapshot retain the correct ref validity
+        // even though removeAll invalidated the shared EntityRef objects.
+        savedRefValidity.forEach { (ref, valid) ->
+            if (ref.entity in entityService) {
+                ref.valid = valid
             }
         }
     }

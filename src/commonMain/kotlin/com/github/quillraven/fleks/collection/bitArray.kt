@@ -137,6 +137,20 @@ class BitArray(
         }
     }
 
+    inline fun forEachSetBitAsc(action: (Int) -> Unit) {
+        for (word in 0 until bits.size) {
+            var bitsAtWord = bits[word]
+            if (bitsAtWord != 0L) {
+                val w = word shl 6
+                while (bitsAtWord != 0L) {
+                    val bit = bitsAtWord.countTrailingZeroBits()
+                    action(w + bit)
+                    bitsAtWord = bitsAtWord and (bitsAtWord - 1)
+                }
+            }
+        }
+    }
+
     inline fun clearAndForEachSetBit(action: (Int) -> Unit) {
         for (word in bits.size - 1 downTo 0) {
             var bitsAtWord = bits[word]

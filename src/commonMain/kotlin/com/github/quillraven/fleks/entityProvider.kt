@@ -1,6 +1,6 @@
 package com.github.quillraven.fleks
 
-import com.github.quillraven.fleks.collection.bag
+import com.github.quillraven.fleks.collection.BitArray
 
 /**
  * Interface to describe the functionality needed by an [EntityService]
@@ -56,7 +56,7 @@ interface EntityProvider {
 /**
  * Default implementation of an [EntityProvider] which uses an [entity][Entity]
  * recycling mechanism to reuse [entities][Entity] that get removed.
- * The first [entity][Entity] starts with [id][Entity.id] zero and [version][Entity.version] zero.
+ * The first [entity][Entity] starts with [id][Entity.id] zero.
  */
 class DefaultEntityProvider(
     override val world: World,
@@ -79,9 +79,9 @@ class DefaultEntityProvider(
     override fun numEntities(): Int = nextId - recycledEntities.size
 
     /**
-     * Bag of all currently active [entities][Entity].
+     * Bit array tracking which entity ids are currently active.
      */
-    private val activeEntities = bag<Entity>(initialEntityCapacity)
+    private val activeEntities = BitArray(initialEntityCapacity)
 
     /**
      * Creates a new [entity][Entity]. If there are [recycledEntities] then they will be preferred
@@ -89,7 +89,7 @@ class DefaultEntityProvider(
      */
     override fun create(): Entity {
         return if (recycledEntities.isEmpty()) {
-            Entity(nextId++, version = 0u)
+            Entity(nextId++)
         } else {
             val recycled = recycledEntities.removeLast()
 
@@ -101,9 +101,9 @@ class DefaultEntityProvider(
                 nextId = recycled.id + 1
             }
 
-            recycled.copy(version = recycled.version + 1u)
+            recycled
         }.also {
-            activeEntities[it.id] = it
+            activeEntities.set(it.id)
         }
     }
 
@@ -114,7 +114,7 @@ class DefaultEntityProvider(
         if (id >= nextId) {
             // entity with a given id was never created before -> create all missing entities ...
             repeat(id - nextId + 1) {
-                this -= Entity(nextId + it, version = 0u)
+                this -= Entity(nextId + it)
             }
             // ... and then create the entity to guarantee that it has the correct ID.
             // The entity is at the end of the recycled list.
@@ -137,13 +137,13 @@ class DefaultEntityProvider(
      */
     override operator fun minusAssign(entity: Entity) {
         recycledEntities.add(entity)
-        activeEntities.removeAt(entity.id)
+        activeEntities.clear(entity.id)
     }
 
     /**
      * Returns true if and only if the given [entity] is active and part of the provider.
      */
-    override fun contains(entity: Entity): Boolean = activeEntities.getOrNull(entity.id)?.version == entity.version
+    override fun contains(entity: Entity): Boolean = activeEntities[entity.id]
 
     /**
      * Resets the provider by removing and recycling all [entities][Entity].
@@ -152,13 +152,15 @@ class DefaultEntityProvider(
     override fun reset() {
         nextId = 0
         recycledEntities.clear()
-        activeEntities.clear()
+        activeEntities.clearAll()
     }
 
     /**
      * Performs the given [action] for all active [entities][Entity].
      */
     override fun forEach(action: World.(Entity) -> Unit) {
-        activeEntities.forEach { world.action(it) }
+        activeEntities.forEachSetBitAsc { id ->
+            action(world, Entity(id))
+        }
     }
 }

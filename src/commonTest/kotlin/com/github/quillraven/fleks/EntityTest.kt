@@ -90,7 +90,7 @@ internal class EntityTest {
 
         val actualEntity = testEntityService.create { }
 
-        assertEquals(Entity(initialEntity.id, initialEntity.version + 1u), actualEntity)
+        assertEquals(initialEntity.id, actualEntity.id)
     }
 
     @Test
@@ -134,28 +134,12 @@ internal class EntityTest {
         val e1 = testEntityService.create { }
         val e2 = testEntityService.create { }
         testEntityService -= e2
-        val e3 = Entity(2, version = 0u)
+        val e3 = Entity(2)
 
         assertTrue(e1 in testEntityService)
         assertFalse(e2 in testEntityService)
         assertFalse(e3 in testEntityService)
         assertEquals(1, testEntityService.numEntities)
-    }
-
-    @Test
-    fun testContainsEntityVersion() {
-        testEntityService.create { }
-        val e2 = testEntityService.create { }
-        testEntityService -= e2
-        testEntityService.create { }
-
-        assertTrue { Entity(0, version = 0u) in testEntityService }
-        assertTrue { Entity(0, version = 1u) !in testEntityService }
-
-        assertTrue { Entity(1, version = 0u) !in testEntityService }
-        assertTrue { Entity(1, version = 1u) in testEntityService }
-
-        assertEquals(2, testEntityService.numEntities)
     }
 
     @Test

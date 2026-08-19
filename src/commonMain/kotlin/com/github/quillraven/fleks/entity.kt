@@ -3,19 +3,17 @@ package com.github.quillraven.fleks
 import com.github.quillraven.fleks.collection.Bag
 import com.github.quillraven.fleks.collection.BitArray
 import kotlinx.serialization.Serializable
+import kotlin.jvm.JvmInline
 import kotlin.jvm.JvmName
 
 /**
- * An entity of a [world][World]. It represents a unique identifier that is the combination
- * of an index (=[id]) and a [version].
- *
- * It is possible to have two entities with the same [id] but different [version] but only
- * one of these entities is part of the [world][World] at any given time.
+ * An entity of a [world][World]. It represents a unique identifier.
  */
+@JvmInline
 @Serializable
-data class Entity(val id: Int, val version: UInt) {
+value class Entity(val id: Int) {
     companion object {
-        val NONE = Entity(-1, 0u)
+        val NONE = Entity(-1)
     }
 }
 
@@ -100,6 +98,65 @@ abstract class EntityComponentContext(
      * Returns true if and only if the [entity][Entity] was removed and is not part of the [World] anymore.
      */
     fun Entity.wasRemoved() = this !in componentService.world
+
+    /**
+     * Returns an [EntityRef] for the given [entity][Entity]. If a ref already exists for this entity,
+     * the existing one is returned. Otherwise, a new [EntityRef] is created and stored.
+     */
+    fun Entity.getRef(): EntityRef {
+        val existing = componentService.world.entityService.refs.getOrNull(this.id)
+        if (existing != null) return existing
+        val ref = EntityRef(this)
+        componentService.world.entityService.refs[this.id] = ref
+        return ref
+    }
+
+    // ---- EntityRef extensions ----
+
+    /**
+     * Returns a [component][Component] of the given [type] for the [entity][EntityRef].
+     *
+     * @throws [FleksNoSuchEntityComponentException] if the entity does not have such a component.
+     */
+    inline operator fun <reified T : Component<*>> EntityRef.get(type: ComponentType<T>): T =
+        componentService.holder(type)[entity]
+
+    /**
+     * Returns a [component][Component] of the given [type] for the [entity][EntityRef]
+     * or null if the entity does not have such a [component][Component].
+     */
+    inline fun <reified T : Component<*>> EntityRef.getOrNull(type: ComponentType<T>): T? =
+        componentService.holder(type).getOrNull(entity)
+
+    /**
+     * Returns true if and only if the [entity][EntityRef] has a [component][Component] or [tag][EntityTag] of the given [type].
+     */
+    operator fun EntityRef.contains(type: UniqueId<*>): Boolean =
+        componentService.world.entityService.compMasks.getOrNull(entity.id)?.get(type.id) ?: false
+
+    /**
+     * Returns true if and only if the [entity][EntityRef] has a [component][Component] or [tag][EntityTag] of the given [type].
+     */
+    infix fun EntityRef.has(type: UniqueId<*>): Boolean =
+        componentService.world.entityService.compMasks.getOrNull(entity.id)?.get(type.id) ?: false
+
+    /**
+     * Returns true if and only if the [entity][EntityRef] doesn't have a [component][Component] or [tag][EntityTag] of the given [type].
+     */
+    infix fun EntityRef.hasNo(type: UniqueId<*>): Boolean =
+        componentService.world.entityService.compMasks.getOrNull(entity.id)?.get(type.id)?.not() ?: true
+
+    /**
+     * Updates the [entity][EntityRef] using the given [configuration] to add and remove [components][Component].
+     */
+    inline fun EntityRef.configure(configuration: EntityUpdateContext.(Entity) -> Unit) =
+        componentService.world.entityService.configure(entity, configuration)
+
+    /**
+     * Removes the [entity][EntityRef] from the world. The entity will be recycled and reused for
+     * future calls to [World.entity].
+     */
+    fun EntityRef.remove() = componentService.world.minusAssign(entity)
 }
 
 /**
@@ -170,6 +227,45 @@ open class EntityCreateContext(
         tags.forEach { this += it }
     }
 
+    // ---- EntityRef extensions ----
+
+    /**
+     * Adds the [component] to the [entity][EntityRef].
+     */
+    inline operator fun <reified T : Component<T>> EntityRef.plusAssign(component: T) {
+        val compType: ComponentType<T> = component.type()
+        compMasks[entity.id].set(compType.id)
+        val holder: ComponentsHolder<T> = componentService.holder(compType)
+        holder[entity] = component
+    }
+
+    /**
+     * Adds the [components] to the [entity][EntityRef].
+     */
+    operator fun EntityRef.plusAssign(components: List<Component<*>>) {
+        components.forEach { cmp ->
+            val compType = cmp.type()
+            compMasks[entity.id].set(compType.id)
+            val holder = componentService.wildcardHolder(compType)
+            holder.setWildcard(entity, cmp)
+        }
+    }
+
+    /**
+     * Sets the [tag][EntityTag] to the [entity][EntityRef].
+     */
+    operator fun EntityRef.plusAssign(tag: EntityTags) {
+        compMasks[entity.id].set(tag.id)
+        componentService.world.tagCache[tag.id] = tag
+    }
+
+    /**
+     * Sets all [tags][EntityTag] on the given [entity][EntityRef].
+     */
+    @JvmName("plusAssignRefTags")
+    operator fun EntityRef.plusAssign(tags: List<EntityTags>) {
+        tags.forEach { this += it }
+    }
 }
 
 /**
@@ -217,4 +313,38 @@ class EntityUpdateContext(
      * Removes the [tag][EntityTag] from the [entity][Entity].
      */
     operator fun Entity.minusAssign(tag: UniqueId<*>) = compMasks[this.id].clear(tag.id)
+
+    // ---- EntityRef extensions ----
+
+    /**
+     * Removes a [component][Component] of the given [type] from the [entity][EntityRef].
+     */
+    inline operator fun <reified T : Component<*>> EntityRef.minusAssign(type: ComponentType<T>) {
+        compMasks[entity.id].clear(type.id)
+        componentService.holder(type) -= entity
+    }
+
+    /**
+     * Returns a [component][Component] of the given [type] for the [entity][EntityRef].
+     *
+     * If the entity does not have such a [component][Component] then [add] is called
+     * to assign it to the entity and return it.
+     */
+    inline fun <reified T : Component<T>> EntityRef.getOrAdd(type: ComponentType<T>, add: () -> T): T {
+        val holder: ComponentsHolder<T> = componentService.holder(type)
+        val existingCmp = holder.getOrNull(entity)
+        if (existingCmp != null) {
+            return existingCmp
+        }
+
+        compMasks[entity.id].set(type.id)
+        val newCmp = add()
+        holder[entity] = newCmp
+        return newCmp
+    }
+
+    /**
+     * Removes the [tag][EntityTag] from the [entity][EntityRef].
+     */
+    operator fun EntityRef.minusAssign(tag: UniqueId<*>) = compMasks[entity.id].clear(tag.id)
 }

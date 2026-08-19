@@ -23,8 +23,8 @@ class SerializationTest {
 
     @Test
     fun testSerializeEntity() {
-        val entity0 = Entity(id = 0, version = 0u)
-        val entity1 = Entity(id = 1, version = 1u)
+        val entity0 = Entity(id = 0)
+        val entity1 = Entity(id = 1)
 
         val entity0Json = Json.encodeToString(entity0)
         val entity1Json = Json.encodeToString(entity1)
@@ -52,7 +52,7 @@ class SerializationTest {
                     subclass(SerializeTag::class, SerializeTag.serializer())
                 }
             }
-            allowStructuredMapKeys = true // to support entity id + version as a key
+            allowStructuredMapKeys = true // to support entity id as a key
         }
 
         val snapshot = world.snapshot()
@@ -89,7 +89,7 @@ class SerializationTest {
                     subclass(SerializeTag::class, SerializeTag.serializer())
                 }
             }
-            allowStructuredMapKeys = true // to support entity id + version as a key
+            allowStructuredMapKeys = true // to support entity id as a key
         }
 
         val snapshot = world.snapshot()

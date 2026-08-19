@@ -2,13 +2,14 @@ package com.github.quillraven.fleks.collection
 
 import com.github.quillraven.fleks.Entity
 
-/**
- * Returns a new read-only [EntityBag] of given [entities].
- */
-fun entityBagOf(vararg entities: Entity): EntityBag {
-    return MutableEntityBag(entities.size).apply {
-        entities.forEach { this += it }
-    }
+fun entityBagOf(): EntityBag = MutableEntityBag(0)
+
+fun entityBagOf(entity: Entity): EntityBag = MutableEntityBag(1).apply { this += entity }
+
+fun entityBagOf(e1: Entity, e2: Entity): EntityBag = MutableEntityBag(2).apply { this += e1; this += e2 }
+
+fun entityBagOf(entities: Collection<Entity>): EntityBag = MutableEntityBag(entities.size).apply {
+    entities.forEach { this += it }
 }
 
 /**

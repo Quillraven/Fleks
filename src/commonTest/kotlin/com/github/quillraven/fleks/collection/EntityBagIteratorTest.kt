@@ -24,7 +24,7 @@ class EntityBagIteratorTest {
 
     @Test
     fun `test iterator on bag with single entity`() {
-        val entity = Entity(1, 0u)
+        val entity = Entity(1)
         val testBag = mutableEntityBagOf(entity)
 
         val iterator = testBag.iterator()
@@ -46,9 +46,9 @@ class EntityBagIteratorTest {
 
     @Test
     fun `test next and previous with three entities`() {
-        val entity1 = Entity(1, 0u)
-        val entity2 = Entity(2, 0u)
-        val entity3 = Entity(3, 0u)
+        val entity1 = Entity(1)
+        val entity2 = Entity(2)
+        val entity3 = Entity(3)
         val testBag = mutableEntityBagOf(entity1, entity2, entity3)
 
         val iterator = testBag.iterator()
@@ -90,9 +90,9 @@ class EntityBagIteratorTest {
 
     @Test
     fun `test goToFirst`() {
-        val entity1 = Entity(1, 0u)
-        val entity2 = Entity(2, 0u)
-        val entity3 = Entity(2, 1u) // same id on purpose to check that goTo stops at first entity
+        val entity1 = Entity(1)
+        val entity2 = Entity(2)
+        val entity3 = Entity(2) // same id on purpose to check that goTo stops at first entity
         val testBag = mutableEntityBagOf(entity1, entity2, entity3)
 
         val iterator = testBag.iterator()
@@ -105,9 +105,9 @@ class EntityBagIteratorTest {
 
     @Test
     fun `test goToLast`() {
-        val entity1 = Entity(1, 0u)
-        val entity2 = Entity(2, 0u)
-        val entity3 = Entity(2, 1u) // same id on purpose to check that goTo stops at first entity
+        val entity1 = Entity(1)
+        val entity2 = Entity(2)
+        val entity3 = Entity(2) // same id on purpose to check that goTo stops at first entity
         val testBag = mutableEntityBagOf(entity1, entity2, entity3)
 
         val iterator = testBag.iterator()

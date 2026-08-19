@@ -76,6 +76,12 @@ class EntityService(
     internal var removeHook: EntityHook? = null
 
     /**
+     * Bag of [EntityRef] instances indexed by entity id. Populated lazily via [Entity.getRef][EntityCreateContext.getRef].
+     */
+    @PublishedApi
+    internal val refs = bag<EntityRef>(initialEntityCapacity)
+
+    /**
      * Creates and returns a new [entity][Entity] and applies the given [configuration].
      * Notifies all [families][World.allFamilies].
      */
@@ -181,6 +187,12 @@ class EntityService(
     internal fun recycle(entity: Entity) {
         entityProvider -= entity
         compMasks[entity.id] = BitArray(64)
+
+        // invalidate and remove any EntityRef for this entity
+        refs.getOrNull(entity.id)?.let {
+            it.valid = false
+            refs.removeAt(entity.id)
+        }
     }
 
     /**
@@ -212,6 +224,11 @@ class EntityService(
                 compService.holderByIndexOrNull(compId)?.minusAssign(entity)
             }
 
+            // invalidate and remove any EntityRef for this entity
+            refs.getOrNull(entity.id)?.let {
+                it.valid = false
+                refs.removeAt(entity.id)
+            }
         }
     }
 
@@ -227,6 +244,7 @@ class EntityService(
         if (clearRecycled) {
             entityProvider.reset()
             compMasks.clear()
+            refs.clear()
         }
     }
 

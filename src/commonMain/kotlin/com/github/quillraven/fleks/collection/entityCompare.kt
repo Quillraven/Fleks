@@ -36,13 +36,13 @@ inline fun <reified T> compareEntityBy(
 
 private const val SMALL = 7
 private const val MEDIUM = 50
-private fun Array<Entity>.swap(idxA: Int, idxB: Int) {
+private fun IntArray.swap(idxA: Int, idxB: Int) {
     val tmp = this[idxA]
     this[idxA] = this[idxB]
     this[idxB] = tmp
 }
 
-private fun Array<Entity>.vecSwap(idxA: Int, idxB: Int, n: Int) {
+private fun IntArray.vecSwap(idxA: Int, idxB: Int, n: Int) {
     var a = idxA
     var b = idxB
     repeat(n) {
@@ -50,10 +50,10 @@ private fun Array<Entity>.vecSwap(idxA: Int, idxB: Int, n: Int) {
     }
 }
 
-private fun Array<Entity>.med3(idxA: Int, idxB: Int, idxC: Int, comparator: EntityComparator): Int {
-    val ab = comparator.compare(this[idxA], this[idxB])
-    val ac = comparator.compare(this[idxA], this[idxC])
-    val bc = comparator.compare(this[idxB], this[idxC])
+private fun IntArray.med3(idxA: Int, idxB: Int, idxC: Int, comparator: EntityComparator): Int {
+    val ab = comparator.compare(Entity(this[idxA]), Entity(this[idxB]))
+    val ac = comparator.compare(Entity(this[idxA]), Entity(this[idxC]))
+    val bc = comparator.compare(Entity(this[idxB]), Entity(this[idxC]))
 
     return when {
         ab < 0 -> {
@@ -70,11 +70,11 @@ private fun Array<Entity>.med3(idxA: Int, idxB: Int, idxC: Int, comparator: Enti
     }
 }
 
-private fun Array<Entity>.selectionSort(fromIdx: Int, toIdx: Int, comparator: EntityComparator) {
+private fun IntArray.selectionSort(fromIdx: Int, toIdx: Int, comparator: EntityComparator) {
     for (i in fromIdx until toIdx - 1) {
         var m = i
         for (j in i + 1 until toIdx) {
-            if (comparator.compare(this[j], this[m]) < 0) {
+            if (comparator.compare(Entity(this[j]), Entity(this[m])) < 0) {
                 m = j
             }
         }
@@ -84,7 +84,7 @@ private fun Array<Entity>.selectionSort(fromIdx: Int, toIdx: Int, comparator: En
     }
 }
 
-internal fun Array<Entity>.quickSort(fromIdx: Int, toIdx: Int, comparator: EntityComparator) {
+internal fun IntArray.quickSort(fromIdx: Int, toIdx: Int, comparator: EntityComparator) {
     val len = toIdx - fromIdx
 
     // Selection sort on smallest arrays
@@ -118,14 +118,14 @@ internal fun Array<Entity>.quickSort(fromIdx: Int, toIdx: Int, comparator: Entit
     while (true) {
         var comparison = 0
 
-        while (b <= c && comparator.compare(this[b], v).also { comparison = it } <= 0) {
+        while (b <= c && comparator.compare(Entity(this[b]), Entity(v)).also { comparison = it } <= 0) {
             if (comparison == 0) {
                 this.swap(a++, b)
             }
             b++
         }
 
-        while (c >= b && comparator.compare(this[c], v).also { comparison = it } >= 0) {
+        while (c >= b && comparator.compare(Entity(this[c]), Entity(v)).also { comparison = it } >= 0) {
             if (comparison == 0) {
                 this.swap(c, d--)
             }

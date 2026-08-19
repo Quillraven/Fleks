@@ -1,11 +1,20 @@
 package com.github.quillraven.fleks
 
+import com.github.quillraven.fleks.EntityRef.Companion.isNotValid
 import com.github.quillraven.fleks.World.Companion.componentHolder
 import com.github.quillraven.fleks.World.Companion.family
 import com.github.quillraven.fleks.World.Companion.inject
 import com.github.quillraven.fleks.collection.compareEntity
 import com.github.quillraven.fleks.collection.compareEntityBy
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -113,9 +122,9 @@ private class WorldEntityProvider(
 
     override fun numEntities(): Int = entities.size
 
-    override fun create(): Entity = Entity(id++, version = 0u).also { entities += it }
+    override fun create(): Entity = Entity(id++).also { entities += it }
 
-    override fun create(id: Int): Entity = Entity(id, version = 0u).also { entities += it }
+    override fun create(id: Int): Entity = Entity(id).also { entities += it }
 
     override fun minusAssign(entity: Entity) {
         entities -= entity
@@ -285,17 +294,6 @@ internal class WorldTest {
         w -= e
 
         assertEquals(0, w.numEntities)
-    }
-
-    @Test
-    fun doNotRemoveEntityWithWrongVersion() {
-        val w = configureWorld {}
-        val e = w.entity()
-
-        w -= Entity(e.id, e.version - 1u)
-        w -= Entity(e.id, e.version + 1u)
-
-        assertEquals(1, w.numEntities)
     }
 
     @Test
@@ -706,7 +704,7 @@ internal class WorldTest {
 
         assertEquals(expected1, w.snapshotOf(e1))
         assertEquals(expected2, w.snapshotOf(e2))
-        assertEquals(expected2, w.snapshotOf(Entity(42, version = 0u)))
+        assertEquals(expected2, w.snapshotOf(Entity(42)))
     }
 
     @Test
@@ -748,10 +746,13 @@ internal class WorldTest {
     @Test
     fun testLoadSnapshotWithOneRecycledEntity() {
         val w = configureWorld { }
-        val removedEntities = (1..3).map {
-            w.entity().also { w -= it }
-        }
+        val removedE1 = w.entity()
+        val removedE2 = w.entity()
+        val removedE3 = w.entity()
         val entity = w.entity()
+        w -= removedE1
+        w -= removedE2
+        w -= removedE2
         val comps = listOf(WorldTestComponent())
         val snapshot = mapOf(entity to Snapshot(comps, emptyList()))
 
@@ -759,9 +760,9 @@ internal class WorldTest {
         val actual = w.snapshotOf(entity)
 
         assertEquals(1, w.numEntities)
-        removedEntities.forEach {
-            assertFalse(it in w)
-        }
+        assertFalse(removedE1 in w)
+        assertFalse(removedE2 in w)
+        assertFalse(removedE3 in w)
         assertTrue(entity in w)
         assertEquals(comps, actual.components)
     }
@@ -780,9 +781,9 @@ internal class WorldTest {
         val comp1 = WorldTestComponent()
         val comp2 = WorldTestComponent()
         val snapshot = mapOf(
-            Entity(3, version = 0u) to wildcardSnapshotOf(listOf(comp1, WorldTestComponent2()), emptyList()),
-            Entity(5, version = 0u) to wildcardSnapshotOf(listOf(comp2), emptyList()),
-            Entity(7, version = 0u) to wildcardSnapshotOf(listOf(), emptyList())
+            Entity(3) to wildcardSnapshotOf(listOf(comp1, WorldTestComponent2()), emptyList()),
+            Entity(5) to wildcardSnapshotOf(listOf(comp2), emptyList()),
+            Entity(7) to wildcardSnapshotOf(listOf(), emptyList())
         )
 
         w.loadSnapshot(snapshot)
@@ -818,22 +819,22 @@ internal class WorldTest {
     fun testCreateEntityAfterSnapshotLoaded() {
         val w = configureWorld { }
         val snapshot = mapOf(
-            Entity(1, version = 0u) to Snapshot(listOf(), emptyList())
+            Entity(1) to Snapshot(listOf(), emptyList())
         )
 
         w.loadSnapshot(snapshot)
 
         // first created entity should be recycled Entity 0
-        assertEquals(Entity(0, version = 0u), w.entity())
+        assertEquals(Entity(0), w.entity())
         // next created entity should be new Entity 2
-        assertEquals(Entity(2, version = 0u), w.entity())
+        assertEquals(Entity(2), w.entity())
     }
 
     @Test
     fun testLoadSnapshotOfEmptyWorld() {
         val w = configureWorld { }
         val family = w.family { all(WorldTestComponent) }
-        val entity = Entity(0, version = 0u)
+        val entity = Entity(0)
         val components = listOf(WorldTestComponent())
 
         assertFalse { entity in family }
@@ -848,7 +849,7 @@ internal class WorldTest {
     fun testLoadSnapshotOfEmptyWorldWithRecycling() {
         val w = configureWorld { }
         val family = w.family { all(WorldTestComponent) }
-        val entity = Entity(1, version = 0u)
+        val entity = Entity(1)
         val components = listOf(WorldTestComponent())
 
         assertFalse { entity in family }
@@ -883,7 +884,7 @@ internal class WorldTest {
     fun testLoadSnapshotOfWhileFamilyIterationInProcess() {
         val w = configureWorld { }
         val f = w.family { all(WorldTestComponent) }
-        val entity = Entity(0, version = 0u)
+        val entity = Entity(0)
         val components = listOf(WorldTestComponent())
         w.entity { it += WorldTestComponent() }
 
@@ -892,7 +893,7 @@ internal class WorldTest {
         }
     }
 
-    data class FollowerComponent(val leader: Entity) : Component<FollowerComponent> {
+    data class FollowerComponent(val leader: EntityRef) : Component<FollowerComponent> {
         override fun type() = FollowerComponent
 
         companion object : ComponentType<FollowerComponent>()
@@ -903,25 +904,34 @@ internal class WorldTest {
         val w = configureWorld { }
         val leaderA = w.entity { }
         val followerA = w.entity {
-            it += FollowerComponent(leaderA)
+            it += FollowerComponent(leaderA.getRef())
         }
         w -= leaderA
         val leaderB = w.entity { }
         val followerB = w.entity {
-            it += FollowerComponent(leaderB)
+            it += FollowerComponent(leaderB.getRef())
+        }
+        // create a component with EntityRef NONE to verify that id -1 is not an issue
+        val followerC = w.entity {
+            it += FollowerComponent(EntityRef.NONE)
         }
 
         val snapshot = w.snapshot()
         w.loadSnapshot(snapshot)
 
         with(w) {
-            assertFalse { leaderA in w }
+            // Without versioning, leaderA and leaderB share the same id (Entity(0)).
+            // After the snapshot loads, Entity(0) exists again, so all references are valid.
+            assertTrue { leaderA in w }
             assertTrue { followerA in w }
-            assertFalse { followerA[FollowerComponent].leader in w }
+            assertFalse { followerA[FollowerComponent].leader.valid }
 
             assertTrue { leaderB in w }
             assertTrue { followerB in w }
-            assertTrue { followerB[FollowerComponent].leader in w }
+            assertTrue { followerB[FollowerComponent].leader.valid }
+
+            assertTrue { followerC in w }
+            assertTrue { followerC[FollowerComponent].leader.isNotValid() }
         }
     }
 
@@ -1055,7 +1065,7 @@ internal class WorldTest {
             families {
                 onAdd(family) { entity ->
                     ++numAdd
-                    assertEquals(entity, Entity(0, 0u))
+                    assertEquals(entity, Entity(0))
                 }
             }
         }
@@ -1079,7 +1089,7 @@ internal class WorldTest {
             families {
                 onAdd(family) { entity ->
                     ++numAdd
-                    assertEquals(entity, Entity(0, 0u))
+                    assertEquals(entity, Entity(0))
                 }
             }
         }
