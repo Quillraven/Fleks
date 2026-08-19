@@ -110,6 +110,29 @@ class MutableEntityBag(
     }
 
     /**
+     * Removes the [entity][Entity] at the given [index] by swapping it with the last element
+     * of the bag and shrinking the [size] by one. The entity that got swapped into [index]
+     * is returned so that the caller can update any index-based lookup structure
+     * (e.g. the sparse array of a sparse set).
+     *
+     * This is an O(1) operation and therefore more efficient than [minusAssign], which
+     * requires a linear search to find the entity.
+     *
+     * @throws [IndexOutOfBoundsException] if [index] is less than zero or greater equal [size].
+     */
+    @PublishedApi
+    internal fun removeAt(index: Int): Entity {
+        if (index !in 0..<size) {
+            throw IndexOutOfBoundsException("$index is not valid for bag of size $size")
+        }
+        val lastIdx = --size
+        val movedId = values[lastIdx]
+        values[index] = movedId
+        values[lastIdx] = Entity.NONE.id
+        return Entity(movedId)
+    }
+
+    /**
      * Resets [size] to zero and clears any [entity][Entity] of the bag.
      */
     fun clear() {

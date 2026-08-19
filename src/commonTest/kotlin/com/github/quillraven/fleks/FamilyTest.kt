@@ -101,8 +101,8 @@ internal class FamilyTest {
         family.onEntityCfgChanged(entity, BitArray())
 
         // accessing the entities will trigger an internal update
-        assertEquals(1, family.mutableEntities.size)
-        assertEquals(entity, family.mutableEntities[0])
+        assertEquals(1, family.entities.size)
+        assertEquals(entity, family.entities[0])
     }
 
     @Test
@@ -159,9 +159,9 @@ internal class FamilyTest {
         // sort descending by entity id
         family.sort(compareEntity(testWorld) { eA, eB -> eB.id.compareTo(eA.id) })
 
-        assertEquals(Entity(2), family.mutableEntities[0])
-        assertEquals(Entity(1), family.mutableEntities[1])
-        assertEquals(Entity(0), family.mutableEntities[2])
+        assertEquals(Entity(2), family.entities[0])
+        assertEquals(Entity(1), family.entities[1])
+        assertEquals(Entity(0), family.entities[2])
     }
 
     @Test
@@ -183,17 +183,17 @@ internal class FamilyTest {
             if (addEntityBeforeCall) {
                 family.onEntityCfgChanged(entity, BitArray().apply { set(1) })
                 // accessing entities triggers an internal family update
-                family.mutableEntities
+                family.entities
             }
 
             if (addEntityToFamily) {
                 family.onEntityCfgChanged(entity, BitArray().apply { set(1) })
 
-                assertEquals(1, family.mutableEntities.size)
+                assertEquals(1, family.entities.size)
             } else {
                 family.onEntityCfgChanged(entity, BitArray())
 
-                assertEquals(0, family.mutableEntities.size)
+                assertEquals(0, family.entities.size)
             }
         }
     }

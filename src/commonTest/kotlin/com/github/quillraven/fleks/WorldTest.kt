@@ -475,7 +475,7 @@ internal class WorldTest {
 
         val wFamily = w.family { all(WorldTestComponent) }
 
-        assertEquals(1, wFamily.mutableEntities.size)
+        assertEquals(1, wFamily.entities.size)
         assertEquals(1, wFamily.numEntities)
     }
 
@@ -658,10 +658,10 @@ internal class WorldTest {
         val family = w.family { none(WorldTestComponent) }
         val e = w.entity { }
 
-        assertTrue(e in family.mutableEntities)
+        assertTrue(e in family.entities)
 
         w -= e
-        assertFalse(e in family.mutableEntities)
+        assertFalse(e in family.entities)
     }
 
     @Test
@@ -1187,7 +1187,7 @@ internal class WorldTest {
 
         val wFamily = w.family { all(WorldTestComponent) }
 
-        assertEquals(1, wFamily.mutableEntities.size)
+        assertEquals(1, wFamily.entities.size)
         assertEquals(1, wFamily.numEntities)
     }
 
