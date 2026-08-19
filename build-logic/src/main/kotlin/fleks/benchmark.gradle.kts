@@ -54,5 +54,10 @@ benchmark {
             include("complex")
             exclude("Artemis|Ashley")
         }
+
+        create("FleksArtemisOnly") {
+            include("simple|complex")
+            exclude("Ashley")
+        }
     }
 }
