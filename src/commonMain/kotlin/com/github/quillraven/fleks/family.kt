@@ -223,14 +223,20 @@ data class Family(
         if (!entityService.delayRemoval) {
             entityService.delayRemoval = true
             isIterating = true
-            entitiesForIteration.forEach { action(it) }
-            isIterating = false
-            entityService.cleanupDelays()
+            try {
+                entitiesForIteration.forEach { action(it) }
+            } finally {
+                isIterating = false
+                entityService.cleanupDelays()
+            }
         } else {
             val origIterating = isIterating
             isIterating = true
-            entitiesForIteration.forEach { this.action(it) }
-            isIterating = origIterating
+            try {
+                entitiesForIteration.forEach { this.action(it) }
+            } finally {
+                isIterating = origIterating
+            }
         }
     }
 
@@ -597,10 +603,9 @@ data class Family(
      */
     @PublishedApi
     internal fun onEntityAdded(entity: Entity, compMask: BitArray) {
-        if (compMask in this) {
-            if (entity !in activeEntities) {
-                activeEntities += entity
-            }
+        // the entity might already be part of the family if a hook updated the families during its creation
+        if (compMask in this && entity !in activeEntities) {
+            activeEntities += entity
             addHook?.invoke(world, entity)
         }
     }

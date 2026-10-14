@@ -238,6 +238,24 @@ internal class FamilyTest {
     }
 
     @Test
+    fun testFailedIteration() {
+        val family = testWorld.family { all(FamilyTestComponent) }
+        val e1 = testWorld.entity { it += FamilyTestComponent() }
+        testWorld.entity { it += FamilyTestComponent() }
+
+        assertFailsWith<IllegalStateException> {
+            family.forEach {
+                e1.remove()
+                error("iteration failed")
+            }
+        }
+
+        assertFalse(family.isIterating)
+        assertFalse(family.entityService.delayRemoval)
+        assertFalse(e1 in family.entityService, "the delayed removal is still processed")
+    }
+
+    @Test
     fun testFamilyHook() {
         val requiredComps = BitArray().apply { set(1) }
         val e = Entity(0)
@@ -267,6 +285,36 @@ internal class FamilyTest {
         family.onEntityCfgChanged(e, BitArray())
         assertEquals(1, numAddCalls)
         assertEquals(1, numRemoveCalls)
+    }
+
+    @Test
+    fun testFamilyAddHookIsCalledOnceForAlreadyAddedEntity() {
+        val requiredComps = BitArray().apply { set(1) }
+        val e = Entity(0)
+        var numAddCalls = 0
+        val family = Family(allOf = requiredComps, world = testWorld)
+        family.addHook = { numAddCalls++ }
+
+        family.onEntityAdded(e, requiredComps)
+        family.onEntityAdded(e, requiredComps)
+
+        assertEquals(1, numAddCalls)
+        assertEquals(1, family.numEntities)
+    }
+
+    @Test
+    fun testFamilyAddHookIsCalledOnceWhenHookConfiguresEntityDuringCreation() {
+        // the hook of the first family updates the second family before the creation notifies it
+        val configuringFamily = testWorld.family { all(FamilyTestComponent) }
+        val family = testWorld.family { all(FamilyTestComponent, FamilyTestComponent2) }
+        var numAddCalls = 0
+        configuringFamily.addHook = { entity -> entity.configure { it += FamilyTestComponent2() } }
+        family.addHook = { numAddCalls++ }
+
+        val entity = testWorld.entity { it += FamilyTestComponent() }
+
+        assertEquals(1, numAddCalls)
+        assertTrue(entity in family)
     }
 
     @Test

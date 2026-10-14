@@ -1,5 +1,6 @@
 package com.github.quillraven.fleks
 
+import com.github.quillraven.fleks.collection.BitArray
 import com.github.quillraven.fleks.collection.EntityBag
 import com.github.quillraven.fleks.collection.MutableEntityBag
 import kotlinx.serialization.Contextual
@@ -487,6 +488,73 @@ class World internal constructor(
         entityService.removeAll()
         systems.forEachReverse { it.onDispose() }
     }
+
+    /**
+     * Returns all [component types][ComponentType] and [tags][EntityTag] that are referenced by the world,
+     * sorted by their id. Use [retireComponentTypes] to release them.
+     */
+    fun componentTypesInUse(): List<UniqueId<*>> =
+        buildList {
+            componentService.holdersBag.forEach { holder -> add(holder.type) }
+            addAll(tagCache.values)
+        }.sortedBy { it.id }
+
+    /**
+     * Removes the given [component types][ComponentType] and [tags][EntityTag] from all [entities][Entity]
+     * and releases the world's references to them, e.g. when unloading dynamically loaded code.
+     *
+     * A retired type can be used again, but a [ComponentsHolder] retrieved before must not be used anymore.
+     * [Component.onRemove] must not add a retired type again.
+     *
+     * @throws FleksRetireComponentTypesException if a family iteration is in process
+     * or if an [entity][Entity] gets created or configured.
+     */
+    fun retireComponentTypes(types: Collection<UniqueId<*>>) {
+        if (entityService.delayRemoval) {
+            throw FleksRetireComponentTypesException("a family iteration is in process")
+        }
+        if (entityService.createId != -1 || entityService.updateId != -1) {
+            throw FleksRetireComponentTypesException("an entity gets created or configured")
+        }
+        if (types.isEmpty()) {
+            return
+        }
+        val retiredMask = BitArray(64).apply { types.forEach { set(it.id) } }
+
+        // remove the retired types from any entity and update the families like configure does
+        entityService.forEach { entity ->
+            val compMask = entityService.compMasks[entity.id]
+            if (!compMask.intersects(retiredMask)) {
+                return@forEach
+            }
+            types.forEach { type ->
+                if (compMask[type.id]) {
+                    compMask.clear(type.id)
+                    // a tag has no holder -> nothing else to remove
+                    componentService.holderByIndexOrNull(type.id)?.minusAssign(entity)
+                }
+            }
+            if (entity !in entityService) {
+                // a Component.onRemove removed the entity which already updated the families
+                return@forEach
+            }
+            allFamilies.forEach { it.onEntityCfgChanged(entity, compMask) }
+        }
+
+        // reclaim holders and tag cache entries
+        types.forEach { type ->
+            if (componentService.holdersBag.hasValueAtIndex(type.id)) {
+                componentService.holdersBag.removeAt(type.id)
+            }
+            tagCache.remove(type.id)
+        }
+    }
+
+    /**
+     * Retires the given [component types][ComponentType] and [tags][EntityTag].
+     * Refer to [retireComponentTypes] for details.
+     */
+    fun retireComponentTypes(vararg types: UniqueId<*>) = retireComponentTypes(types.asList())
 
     /**
      * Extend [Family.addHook] and [Family.removeHook] for all

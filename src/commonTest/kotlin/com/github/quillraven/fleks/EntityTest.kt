@@ -2,6 +2,7 @@ package com.github.quillraven.fleks
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -188,6 +189,30 @@ internal class EntityTest {
         assertTrue(testEntityService.compMasks[entity1.id][EntityTestComponent2.id])
         assertTrue(testEntityService.compMasks[entity2.id][EntityTestComponent1.id])
         assertFalse(testEntityService.compMasks[entity2.id][EntityTestComponent2.id])
+    }
+
+    @Test
+    fun restoreCreateIdWhenCreationFails() {
+        val family = testWorld.family { all(EntityTestComponent1) }
+        var entity = Entity.NONE
+
+        assertFailsWith<IllegalStateException> { testEntityService.create { entity = it; error("creation failed") } }
+        testEntityService.configure(entity) { it += EntityTestComponent1() }
+
+        assertEquals(-1, testEntityService.createId)
+        assertTrue(entity in family, "families are notified about later configurations")
+    }
+
+    @Test
+    fun restoreUpdateIdWhenConfigurationFails() {
+        val family = testWorld.family { all(EntityTestComponent1) }
+        val entity = testEntityService.create { }
+
+        assertFailsWith<IllegalStateException> { testEntityService.configure(entity) { error("configuration failed") } }
+        testEntityService.configure(entity) { it += EntityTestComponent1() }
+
+        assertEquals(-1, testEntityService.updateId)
+        assertTrue(entity in family, "families are notified about later configurations")
     }
 
     @Test

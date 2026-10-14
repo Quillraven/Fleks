@@ -15,15 +15,15 @@ class OneShotComponentSystem(
     family = family { any(*types) },
     world = world,
 ) {
+    // only hold ids so retired types aren't kept alive
     private val typeIds = types.map { it.id }.toIntArray()
-    private val holders: Array<ComponentsHolder<*>> = types.filterIsInstance<ComponentType<*>>()
-        .map { world.componentService.wildcardHolder(it) }
-        .toTypedArray()
 
     override fun onTickEntity(entity: Entity) {
         entity.configure {
-            holders.forEach { it -= entity }
-            typeIds.forEach { compMasks[entity.id].clear(it) }
+            typeIds.forEach {
+                world.componentService.holderByIndexOrNull(it)?.minusAssign(entity)
+                compMasks[entity.id].clear(it)
+            }
         }
     }
 

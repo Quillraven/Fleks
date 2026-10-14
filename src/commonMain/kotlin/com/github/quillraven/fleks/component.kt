@@ -105,7 +105,7 @@ interface Component<T> {
  */
 class ComponentsHolder<T : Component<*>>(
     private val world: World,
-    private val type: ComponentType<*>,
+    internal val type: ComponentType<*>,
     private var components: Array<T?>,
 ) {
     /**

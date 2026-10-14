@@ -24,6 +24,8 @@ class FleksFamilyException(familyDefinition: FamilyDefinition) :
 
 class FleksSnapshotException(reason: String) : FleksException("Cannot load snapshot: $reason!")
 
+class FleksRetireComponentTypesException(reason: String) : FleksException("Cannot retire component types: $reason!")
+
 class FleksNoSuchInjectableException(name: String) :
     FleksException("There is no injectable with name $name registered! Make sure to define 'injectables' before your 'systems' in the WorldConfiguration.")
 

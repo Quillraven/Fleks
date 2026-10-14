@@ -111,8 +111,11 @@ class EntityService(
 
         val prevCreateId = createId
         createId = entity.id
-        createCtx.configuration(entity)
-        createId = prevCreateId
+        try {
+            createCtx.configuration(entity)
+        } finally {
+            createId = prevCreateId
+        }
 
         // update families
         val compMask = compMasks[entity.id]
@@ -133,8 +136,11 @@ class EntityService(
 
         val prevUpdateId = updateId
         updateId = entity.id
-        updateCtx.configuration(entity)
-        updateId = prevUpdateId
+        try {
+            updateCtx.configuration(entity)
+        } finally {
+            updateId = prevUpdateId
+        }
 
         // notify families
         if (skipFamilyNotify) {
