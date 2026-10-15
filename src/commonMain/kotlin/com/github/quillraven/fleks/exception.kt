@@ -26,6 +26,9 @@ class FleksSnapshotException(reason: String) : FleksException("Cannot load snaps
 
 class FleksRetireComponentTypesException(reason: String) : FleksException("Cannot retire component types: $reason!")
 
+class FleksSystemFamilyReclaimedException(system: KClass<*>) :
+    FleksException("System '${system.simpleName}' cannot be added again because retireComponentTypes removed its family.")
+
 class FleksNoSuchInjectableException(name: String) :
     FleksException("There is no injectable with name $name registered! Make sure to define 'injectables' before your 'systems' in the WorldConfiguration.")
 

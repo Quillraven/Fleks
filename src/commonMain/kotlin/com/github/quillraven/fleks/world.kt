@@ -225,10 +225,15 @@ class World internal constructor(
      * Adds the [system] to the world's [systems] at the given [index].
      *
      * @throws FleksSystemAlreadyAddedException if the system was already added before.
+     * @throws FleksSystemFamilyReclaimedException if [retireComponentTypes] removed the family of the system.
      */
     fun add(index: Int, system: IntervalSystem) {
         if (systems.any { it::class == system::class }) {
             throw FleksSystemAlreadyAddedException(system::class)
+        }
+
+        if (system is IteratingSystem && allFamilies.none { it === system.family }) {
+            throw FleksSystemFamilyReclaimedException(system::class)
         }
 
         mutableSystems.add(index, system)
@@ -242,6 +247,7 @@ class World internal constructor(
      * Adds the [system] to the world's [systems].
      *
      * @throws FleksSystemAlreadyAddedException if the system was already added before.
+     * @throws FleksSystemFamilyReclaimedException if [retireComponentTypes] removed the family of the system.
      */
     fun add(system: IntervalSystem) = add(systems.size, system)
 
@@ -249,6 +255,7 @@ class World internal constructor(
      * Adds the [system] to the world's [systems].
      *
      * @throws FleksSystemAlreadyAddedException if the system was already added before.
+     * @throws FleksSystemFamilyReclaimedException if [retireComponentTypes] removed the family of the system.
      */
     operator fun plusAssign(system: IntervalSystem) = add(system)
 
@@ -332,7 +339,7 @@ class World internal constructor(
 
         var family = allFamilies.find { it.allOf == defAll && it.noneOf == defNone && it.anyOf == defAny }
         if (family == null) {
-            family = Family(defAll, defNone, defAny, this)
+            family = Family(definition, this)
             allFamilies += family
             // initialize a newly created family by notifying it for any already existing entity
             // world.allFamilies.forEach { it.onEntityCfgChanged(entity, compMask) }
@@ -497,7 +504,8 @@ class World internal constructor(
         buildList {
             componentService.holdersBag.forEach { holder -> add(holder.type) }
             addAll(tagCache.values)
-        }.sortedBy { it.id }
+            allFamilies.forEach { addAll(it.types) }
+        }.distinct().sortedBy { it.id }
 
     /**
      * Removes the given [component types][ComponentType] and [tags][EntityTag] from all [entities][Entity]
@@ -505,6 +513,8 @@ class World internal constructor(
      *
      * A retired type can be used again, but a [ComponentsHolder] retrieved before must not be used anymore.
      * [Component.onRemove] must not add a retired type again.
+     * A [Family] that can no longer match is removed unless a system or world configuration hook uses it,
+     * and must not be used anymore. Remove systems that iterate the types first to release their families too.
      *
      * @throws FleksRetireComponentTypesException if a family iteration is in process
      * or if an [entity][Entity] gets created or configured.
@@ -548,6 +558,43 @@ class World internal constructor(
             }
             tagCache.remove(type.id)
         }
+
+        // reclaim families that can no longer match unless a system or a world configuration hook uses them
+        val iterated = systems.mapNotNull { (it as? IteratingSystem)?.family }
+        val oneShotFamily = oneShotComponentSystem?.family
+        val (reclaimed, kept) = allFamilies.partition { family ->
+            val canNoLongerMatch = family.canNoLongerMatch(retiredMask)
+            val iteratedBySystem = iterated.any { it === family } || family === oneShotFamily
+            val hasConfiguredHook = worldCfgFamilyAddHooks[family] != null || worldCfgFamilyRemoveHooks[family] != null
+            canNoLongerMatch && !iteratedBySystem && !hasConfiguredHook
+        }
+        allFamilies = kept.toTypedArray()
+
+        // forget the reclaimed families and empty them in case one is still held
+        reclaimed.forEach { family ->
+            worldCfgFamilyAddHooks.remove(family)
+            worldCfgFamilyRemoveHooks.remove(family)
+            family.types = emptyList()
+            family.activeEntities.clear()
+        }
+
+        // drop retired types from kept families that reference them, unless a later call reclaims the system's family
+        kept.forEach { family ->
+            val referencesRetiredType = family.types.any { retiredMask[it.id] }
+            if (referencesRetiredType && (iterated.none { it === family } || !family.canNoLongerMatch(retiredMask))) {
+                family.types = family.types.filterNot { retiredMask[it.id] }.toList()
+            }
+        }
+    }
+
+    /**
+     * Returns true if no [entity][Entity] can be part of the family without using one of the [retired] types again:
+     * the family requires a retired type, or all its [any][FamilyDefinition.any] types are retired.
+     */
+    private fun Family.canNoLongerMatch(retired: BitArray): Boolean {
+        val requiresRetiredType = allOf?.intersects(retired) == true
+        val anyTypesRetired = anyOf?.let { it.isNotEmpty && retired.contains(it) } == true
+        return requiresRetiredType || anyTypesRetired
     }
 
     /**

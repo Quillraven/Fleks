@@ -28,6 +28,16 @@ data class FamilyDefinition(
     internal var noneOf: BitArray? = null,
     internal var anyOf: BitArray? = null,
 ) {
+    // the types of each part, which the family references
+    private var allTypes = emptyList<UniqueId<*>>()
+    private var noneTypes = emptyList<UniqueId<*>>()
+    private var anyTypes = emptyList<UniqueId<*>>()
+
+    /**
+     * The [component types][ComponentType] and [tags][EntityTag] of all parts, each once.
+     */
+    internal val types: List<UniqueId<*>>
+        get() = (allTypes + noneTypes + anyTypes).distinct()
 
     /**
      * Any [entity][Entity] must have all given [types] to be part of the [family][Family].
@@ -36,6 +46,7 @@ data class FamilyDefinition(
         allOf = BitArray(types.size).also { bits ->
             types.forEach { bits.set(it.id) }
         }
+        allTypes = types.toList()
         return this
     }
 
@@ -46,6 +57,7 @@ data class FamilyDefinition(
         noneOf = BitArray(types.size).also { bits ->
             types.forEach { bits.set(it.id) }
         }
+        noneTypes = types.toList()
         return this
     }
 
@@ -56,6 +68,7 @@ data class FamilyDefinition(
         anyOf = BitArray(types.size).also { bits ->
             types.forEach { bits.set(it.id) }
         }
+        anyTypes = types.toList()
         return this
     }
 
@@ -95,6 +108,11 @@ data class Family(
      * An optional [FamilyHook] that gets called whenever an [entity][Entity] leaves the family.
      */
     internal var removeHook: FamilyHook? = null
+
+    /**
+     * The [component types][ComponentType] and [tags][EntityTag] that the family references.
+     */
+    internal var types: List<UniqueId<*>> = emptyList()
 
     /**
      * The [entities][Entity] that belong to this family. It is a sparse set that provides
@@ -165,6 +183,14 @@ data class Family(
      */
     val isNotEmpty: Boolean
         get() = activeEntities.size > 0
+
+    /**
+     * Creates a family of the given [definition] that references the definition's types.
+     */
+    internal constructor(definition: FamilyDefinition, world: World) :
+        this(definition.allOf, definition.noneOf, definition.anyOf, world) {
+        types = definition.types
+    }
 
     /**
      * Returns true if the specified [compMask] matches the family's component configuration.
