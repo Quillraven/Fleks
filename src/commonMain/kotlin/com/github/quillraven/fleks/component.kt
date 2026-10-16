@@ -60,7 +60,8 @@ typealias EntityTags = UniqueId<Any>
  * Function to create an object for an [EntityTag].
  * It can be used to make values of an enum class an [EntityTag]. Refer to [EntityTags].
  */
-fun entityTagOf(): EntityTag = object : EntityTag() {}
+@Suppress("NOTHING_TO_INLINE") // inline, so that the tag's class is generated in the caller and uses its class loader
+inline fun entityTagOf(): EntityTag = object : EntityTag() {}
 
 /**
  * An interface that must be implemented by any component that is used for Fleks.

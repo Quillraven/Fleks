@@ -6,6 +6,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotSame
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 private data class RetiredComponent(var removed: Int = 0) : Component<RetiredComponent> {
@@ -47,11 +48,7 @@ private class EntityRemovingComponent : Component<EntityRemovingComponent> {
 }
 
 private class RetiredIteratingSystem : IteratingSystem(family { all(RetiredComponent) }) {
-    var ticks = 0
-
-    override fun onTickEntity(entity: Entity) {
-        ticks++
-    }
+    override fun onTickEntity(entity: Entity) = Unit
 }
 
 private class ExcludingSystem : IteratingSystem(family { all(SurvivingComponent).none(RetiredComponent) }) {
@@ -107,29 +104,39 @@ internal class ComponentTypeRetirementTest {
     }
 
     @Test
-    fun keepFamilyOfSystemWhenRetiringItsType() {
+    fun keepFamilyOfRegisteredSystemUntilALaterSweep() {
         // a system's family can only be created inside the configuration scope
+        lateinit var system: RetiredIteratingSystem
+        val world = configureWorld { systems { add(RetiredIteratingSystem().also { system = it }) } }
+        val entity = world.entity { it += RetiredComponent() }
+
+        world.retireComponentTypes(RetiredComponent)
+
+        assertTrue(system in world.systems)
+        assertTrue(system.family in world.allFamilies, "the family of a registered system is kept")
+        assertTrue(system.family.isEmpty, "the stripped entity left the kept family")
+        with(world) { assertFalse(entity has RetiredComponent) }
+        assertTrue(RetiredComponent in world.componentTypesInUse(), "the types of the kept family stay listed")
+
+        // a later sweep removes the family once its system is removed
+        world -= system
+        world.retireComponentTypes(world.componentTypesInUse().filter { it === RetiredComponent })
+
+        assertFalse(system.family in world.allFamilies)
+        assertTrue(RetiredComponent !in world.componentTypesInUse())
+    }
+
+    @Test
+    fun retireTypeAfterRemovingItsSystem() {
         lateinit var system: RetiredIteratingSystem
         val world = configureWorld { systems { add(RetiredIteratingSystem().also { system = it }) } }
         world.entity { it += RetiredComponent() }
 
-        world.retireComponentTypes(RetiredComponent)
-
-        assertEquals(0, system.family.numEntities, "the stripped entity left the family")
-        assertTrue(system.family in world.allFamilies)
-        assertTrue(RetiredComponent in world.componentTypesInUse(), "the system's family keeps referencing the type")
-        world.update(1f)
-        assertEquals(0, system.ticks)
-
-        // the family still works when the type gets used again
-        world.entity { it += RetiredComponent() }
-        world.update(1f)
-        assertEquals(1, system.ticks)
-
-        // the family gets reclaimed once no system iterates over it anymore
         world -= system
         world.retireComponentTypes(RetiredComponent)
+
         assertFalse(system.family in world.allFamilies)
+        assertTrue(system.family.isEmpty)
         assertTrue(RetiredComponent !in world.componentTypesInUse())
     }
 
@@ -148,34 +155,30 @@ internal class ComponentTypeRetirementTest {
     }
 
     @Test
-    fun keepFamilyThatExcludesRetiredType() {
+    fun removeFamilyThatExcludesRetiredType() {
         val world = configureWorld { }
         val family = world.family { all(SurvivingComponent).none(RetiredComponent) }
         world.entity { it += SurvivingComponent() }
-        val entity = world.entity { it += SurvivingComponent(); it += RetiredComponent() }
-
-        assertEquals(1, family.numEntities)
+        world.entity { it += SurvivingComponent(); it += RetiredComponent() }
 
         world.retireComponentTypes(RetiredComponent)
 
         assertEquals(listOf<UniqueId<*>>(SurvivingComponent), world.componentTypesInUse())
-        assertEquals(2, family.numEntities)
-        assertTrue(entity in family)
-        assertTrue(family in world.allFamilies)
+        assertFalse(family in world.allFamilies)
+        assertTrue(family.isEmpty)
     }
 
     @Test
-    fun keepFamilyWithRetiredTypeInAny() {
+    fun removeFamilyWithRetiredTypeInAny() {
         val world = configureWorld { }
         val family = world.family { any(RetiredComponent, SurvivingComponent) }
-        val entity = world.entity { it += SurvivingComponent() }
+        world.entity { it += SurvivingComponent() }
 
-        assertTrue(RetiredComponent in world.componentTypesInUse(), "the family references its any types")
+        assertTrue(RetiredComponent in world.componentTypesInUse(), "a type that only a family uses is listed")
         world.retireComponentTypes(RetiredComponent)
 
-        assertTrue(family in world.allFamilies)
-        assertTrue(entity in family)
-        assertTrue(RetiredComponent !in world.componentTypesInUse(), "the kept family no longer references the type")
+        assertFalse(family in world.allFamilies)
+        assertTrue(RetiredComponent !in world.componentTypesInUse(), "a retired type is no longer listed")
     }
 
     @Test
@@ -199,9 +202,30 @@ internal class ComponentTypeRetirementTest {
     }
 
     @Test
-    fun componentTypesInUseAreDistinctAndSortedById() {
+    fun familyCountStaysStableWhenReloadedTypesAreRetired() {
         val world = configureWorld { }
         world.entity { it += SurvivingComponent() }
+        val numFamilies = world.allFamilies.size
+
+        repeat(3) {
+            // a reloaded plugin defines a new type object with a new id, which no entity ever gets
+            val pluginType = object : ComponentType<SurvivingComponent>() {}
+            world.family { all(pluginType) }
+            world.family { all(SurvivingComponent, pluginType) }
+            world.family { all(SurvivingComponent).none(pluginType) }
+            world.family { any(SurvivingComponent, pluginType) }
+
+            // like an engine's reclaimer: retire the listed types that belong to the unloaded plugin
+            world.retireComponentTypes(world.componentTypesInUse().filter { it === pluginType })
+
+            assertEquals(numFamilies, world.allFamilies.size)
+        }
+    }
+
+    @Test
+    fun componentTypesInUseAreDistinctAndSortedById() {
+        val world = configureWorld { }
+        world.entity { it += RetiredTag; it += SurvivingComponent(); it += RetiredComponent() }
         world.family { all(SurvivingComponent).none(RetiredComponent, RetiredTag) }
 
         val inUse = world.componentTypesInUse()
@@ -220,18 +244,6 @@ internal class ComponentTypeRetirementTest {
     }
 
     @Test
-    fun reclaimedFamilyReferencesNothing() {
-        val world = configureWorld { }
-        val family = world.family { all(RetiredComponent) }
-        world.entity { it += RetiredComponent() }
-
-        world.retireComponentTypes(RetiredComponent)
-
-        assertTrue(family.types.isEmpty())
-        assertTrue(family.isEmpty)
-    }
-
-    @Test
     fun reclaimFamilyWhoseAnyTypesAreAllRetired() {
         val world = configureWorld { }
         val anyFamily = world.family { any(RetiredComponent, RetiredTag) }
@@ -246,14 +258,16 @@ internal class ComponentTypeRetirementTest {
     }
 
     @Test
-    fun dropRetiredTypeFromSystemFamilyThatExcludesIt() {
+    fun keepExcludingFamilyOfRegisteredSystem() {
         lateinit var system: ExcludingSystem
         val world = configureWorld { systems { add(ExcludingSystem().also { system = it }) } }
+        val entity = world.entity { it += SurvivingComponent(); it += RetiredComponent() }
 
         world.retireComponentTypes(RetiredComponent)
 
         assertTrue(system.family in world.allFamilies)
-        assertTrue(RetiredComponent !in world.componentTypesInUse(), "the family can still match, so it no longer references the type")
+        assertTrue(entity in system.family, "the kept family keeps working")
+        assertTrue(RetiredComponent in world.componentTypesInUse())
     }
 
     @Test
@@ -263,7 +277,7 @@ internal class ComponentTypeRetirementTest {
 
         world.retireComponentTypes(RetiredComponent)
 
-        assertTrue(RetiredComponent !in world.componentTypesInUse())
+        assertTrue(RetiredComponent in world.componentTypesInUse(), "the one-shot family is kept with its types")
         // remaining one-shot types are still removed
         val entity = world.entity { it += OneShotComponent() }
         world.update(1f)
@@ -288,7 +302,7 @@ internal class ComponentTypeRetirementTest {
 
         world.retireComponentTypes(RetiredComponent)
 
-        assertTrue(RetiredComponent !in world.componentTypesInUse())
+        assertTrue(RetiredComponent in world.componentTypesInUse(), "the one-shot family is kept with its types")
         // the one-shot type is still removed when it gets used again
         val entity = world.entity { it += RetiredComponent() }
         world.update(1f)
@@ -307,7 +321,7 @@ internal class ComponentTypeRetirementTest {
     }
 
     @Test
-    fun callFamilyHooks() {
+    fun noHooksOfRemovedFamilies() {
         lateinit var excludingFamily: Family
         lateinit var includingFamily: Family
         var addCalls = 0
@@ -324,10 +338,11 @@ internal class ComponentTypeRetirementTest {
 
         world.retireComponentTypes(RetiredComponent)
 
-        assertEquals(1, addCalls, "the entity entered the family that excludes the retired type")
-        assertEquals(1, removeCalls, "the entity left the family that includes the retired type")
-        assertTrue(includingFamily in world.allFamilies, "a family with a hook is kept")
-        assertTrue(RetiredComponent !in world.componentTypesInUse(), "the kept families no longer reference the type")
+        assertEquals(0, addCalls, "the entity does not enter a removed family")
+        assertEquals(0, removeCalls, "the entity does not leave a removed family")
+        assertFalse(excludingFamily in world.allFamilies)
+        assertFalse(includingFamily in world.allFamilies)
+        assertNull(includingFamily.removeHook, "the hooks of a removed family are dropped")
     }
 
     @Test
@@ -373,21 +388,22 @@ internal class ComponentTypeRetirementTest {
     @Test
     fun retireFromFamilyHookDuringCreation() {
         lateinit var retiringFamily: Family
-        lateinit var excludingFamily: Family
+        lateinit var countingFamily: Family
         var addCalls = 0
         val world = configureWorld {
             retiringFamily = family { all(SurvivingComponent) }
-            excludingFamily = family { all(SurvivingComponent).none(RetiredComponent) }
+            countingFamily = family { any(SurvivingComponent) }
             families {
                 onAdd(retiringFamily) { retireComponentTypes(RetiredComponent) }
-                onAdd(excludingFamily) { addCalls++ }
+                onAdd(countingFamily) { addCalls++ }
             }
         }
 
         val entity = world.entity { it += SurvivingComponent(); it += RetiredComponent() }
 
         assertEquals(1, addCalls, "the add hook is called once although the entity entered the family during its creation")
-        assertTrue(entity in excludingFamily)
+        assertTrue(entity in countingFamily)
+        with(world) { assertFalse(entity has RetiredComponent) }
     }
 
     @Test

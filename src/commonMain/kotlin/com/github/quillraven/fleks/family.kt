@@ -28,7 +28,7 @@ data class FamilyDefinition(
     internal var noneOf: BitArray? = null,
     internal var anyOf: BitArray? = null,
 ) {
-    // the types of each part, which the family references
+    // the types of each part, which the world caches when it creates the family
     private var allTypes = emptyList<UniqueId<*>>()
     private var noneTypes = emptyList<UniqueId<*>>()
     private var anyTypes = emptyList<UniqueId<*>>()
@@ -110,11 +110,6 @@ data class Family(
     internal var removeHook: FamilyHook? = null
 
     /**
-     * The [component types][ComponentType] and [tags][EntityTag] that the family references.
-     */
-    internal var types: List<UniqueId<*>> = emptyList()
-
-    /**
      * The [entities][Entity] that belong to this family. It is a sparse set that provides
      * O(1) membership tests via its sparse array and O(N) iterations over its densely
      * packed dense array. Therefore, it is always up to date and does not need any lazy
@@ -183,14 +178,6 @@ data class Family(
      */
     val isNotEmpty: Boolean
         get() = activeEntities.size > 0
-
-    /**
-     * Creates a family of the given [definition] that references the definition's types.
-     */
-    internal constructor(definition: FamilyDefinition, world: World) :
-        this(definition.allOf, definition.noneOf, definition.anyOf, world) {
-        types = definition.types
-    }
 
     /**
      * Returns true if the specified [compMask] matches the family's component configuration.
