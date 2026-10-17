@@ -28,6 +28,16 @@ data class FamilyDefinition(
     internal var noneOf: BitArray? = null,
     internal var anyOf: BitArray? = null,
 ) {
+    // the types of each part, which the world caches when it creates the family
+    private var allTypes = emptyList<UniqueId<*>>()
+    private var noneTypes = emptyList<UniqueId<*>>()
+    private var anyTypes = emptyList<UniqueId<*>>()
+
+    /**
+     * The [component types][ComponentType] and [tags][EntityTag] of all parts, each once.
+     */
+    internal val types: List<UniqueId<*>>
+        get() = (allTypes + noneTypes + anyTypes).distinct()
 
     /**
      * Any [entity][Entity] must have all given [types] to be part of the [family][Family].
@@ -36,6 +46,7 @@ data class FamilyDefinition(
         allOf = BitArray(types.size).also { bits ->
             types.forEach { bits.set(it.id) }
         }
+        allTypes = types.toList()
         return this
     }
 
@@ -46,6 +57,7 @@ data class FamilyDefinition(
         noneOf = BitArray(types.size).also { bits ->
             types.forEach { bits.set(it.id) }
         }
+        noneTypes = types.toList()
         return this
     }
 
@@ -56,6 +68,7 @@ data class FamilyDefinition(
         anyOf = BitArray(types.size).also { bits ->
             types.forEach { bits.set(it.id) }
         }
+        anyTypes = types.toList()
         return this
     }
 

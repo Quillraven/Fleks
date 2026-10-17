@@ -96,6 +96,12 @@ class World internal constructor(
     @PublishedApi
     internal val tagCache = mutableMapOf<Int, UniqueId<*>>()
 
+    /**
+     * Cache of [component types][ComponentType] and [tags][EntityTag] used by [family][Family] definitions.
+     * Needed to list them in [componentTypesInUse].
+     */
+    private val familyTypeCache = mutableMapOf<Int, UniqueId<*>>()
+
     // optional system that automatically removes components/tags registered in the WorldConfiguration
     internal var oneShotComponentSystem: OneShotComponentSystem? = null
 
@@ -225,10 +231,15 @@ class World internal constructor(
      * Adds the [system] to the world's [systems] at the given [index].
      *
      * @throws FleksSystemAlreadyAddedException if the system was already added before.
+     * @throws FleksSystemFamilyReclaimedException if [retireComponentTypes] removed the family of the system.
      */
     fun add(index: Int, system: IntervalSystem) {
         if (systems.any { it::class == system::class }) {
             throw FleksSystemAlreadyAddedException(system::class)
+        }
+
+        if (system is IteratingSystem && allFamilies.none { it === system.family }) {
+            throw FleksSystemFamilyReclaimedException(system::class)
         }
 
         mutableSystems.add(index, system)
@@ -242,6 +253,7 @@ class World internal constructor(
      * Adds the [system] to the world's [systems].
      *
      * @throws FleksSystemAlreadyAddedException if the system was already added before.
+     * @throws FleksSystemFamilyReclaimedException if [retireComponentTypes] removed the family of the system.
      */
     fun add(system: IntervalSystem) = add(systems.size, system)
 
@@ -249,6 +261,7 @@ class World internal constructor(
      * Adds the [system] to the world's [systems].
      *
      * @throws FleksSystemAlreadyAddedException if the system was already added before.
+     * @throws FleksSystemFamilyReclaimedException if [retireComponentTypes] removed the family of the system.
      */
     operator fun plusAssign(system: IntervalSystem) = add(system)
 
@@ -334,6 +347,7 @@ class World internal constructor(
         if (family == null) {
             family = Family(defAll, defNone, defAny, this)
             allFamilies += family
+            definition.types.forEach { familyTypeCache[it.id] = it }
             // initialize a newly created family by notifying it for any already existing entity
             // world.allFamilies.forEach { it.onEntityCfgChanged(entity, compMask) }
             entityService.forEach { family.onEntityCfgChanged(it, entityService.compMasks[it.id]) }
@@ -491,13 +505,14 @@ class World internal constructor(
 
     /**
      * Returns all [component types][ComponentType] and [tags][EntityTag] that are referenced by the world,
-     * sorted by their id. Use [retireComponentTypes] to release them.
+     * including the ones only used by a [family][Family], sorted by their id. Use [retireComponentTypes] to release them.
      */
     fun componentTypesInUse(): List<UniqueId<*>> =
         buildList {
             componentService.holdersBag.forEach { holder -> add(holder.type) }
             addAll(tagCache.values)
-        }.sortedBy { it.id }
+            addAll(familyTypeCache.values)
+        }.distinctBy { it.id }.sortedBy { it.id }
 
     /**
      * Removes the given [component types][ComponentType] and [tags][EntityTag] from all [entities][Entity]
@@ -505,6 +520,9 @@ class World internal constructor(
      *
      * A retired type can be used again, but a [ComponentsHolder] retrieved before must not be used anymore.
      * [Component.onRemove] must not add a retired type again.
+     * A [Family] that uses a retired type is removed together with its hooks and must not be used anymore.
+     * A family that a [system][IteratingSystem] still iterates is kept and its types stay listed by
+     * [componentTypesInUse], so that a later call removes it once the system is removed.
      *
      * @throws FleksRetireComponentTypesException if a family iteration is in process
      * or if an [entity][Entity] gets created or configured.
@@ -521,7 +539,22 @@ class World internal constructor(
         }
         val retiredMask = BitArray(64).apply { types.forEach { set(it.id) } }
 
-        // remove the retired types from any entity and update the families like configure does
+        // remove the families that use a retired type first, so that none of their hooks run
+        val iterated = systems.mapNotNull { (it as? IteratingSystem)?.family } +
+            listOfNotNull(oneShotComponentSystem?.family)
+        val reclaimed = allFamilies.filter { family -> family.usesAny(retiredMask) && iterated.none { it === family } }
+        if (reclaimed.isNotEmpty()) {
+            allFamilies = allFamilies.filter { family -> reclaimed.none { it === family } }.toTypedArray()
+            reclaimed.forEach { family ->
+                worldCfgFamilyAddHooks.remove(family)
+                worldCfgFamilyRemoveHooks.remove(family)
+                family.addHook = null
+                family.removeHook = null
+                family.activeEntities.clear()
+            }
+        }
+
+        // remove the retired types from any entity and update the remaining families like configure does
         entityService.forEach { entity ->
             val compMask = entityService.compMasks[entity.id]
             if (!compMask.intersects(retiredMask)) {
@@ -541,14 +574,30 @@ class World internal constructor(
             allFamilies.forEach { it.onEntityCfgChanged(entity, compMask) }
         }
 
-        // reclaim holders and tag cache entries
+        // reclaim holders and cache entries
         types.forEach { type ->
             if (componentService.holdersBag.hasValueAtIndex(type.id)) {
                 componentService.holdersBag.removeAt(type.id)
             }
             tagCache.remove(type.id)
+            // a family that a system still iterates keeps its types listed, so that a later call can remove it
+            if (allFamilies.none { it.uses(type.id) }) {
+                familyTypeCache.remove(type.id)
+            }
         }
     }
+
+    /**
+     * Returns true if the [all][FamilyDefinition.all], [none][FamilyDefinition.none] or [any][FamilyDefinition.any]
+     * part of the family uses one of the [retired] types.
+     */
+    private fun Family.usesAny(retired: BitArray): Boolean =
+        allOf?.intersects(retired) == true || noneOf?.intersects(retired) == true || anyOf?.intersects(retired) == true
+
+    /**
+     * Returns true if a part of the family uses the type with the given [id].
+     */
+    private fun Family.uses(id: Int): Boolean = allOf?.get(id) == true || noneOf?.get(id) == true || anyOf?.get(id) == true
 
     /**
      * Retires the given [component types][ComponentType] and [tags][EntityTag].
