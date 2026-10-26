@@ -1,3 +1,5 @@
+import org.gradle.plugin.compatibility.compatibility
+
 plugins {
     kotlin("jvm")
     id("fleks.base")
@@ -29,6 +31,12 @@ gradlePlugin {
             displayName = "Fleks Compiler Plugin"
             description = "Kotlin compiler plugin for Fleks that removes the boilerplate of components"
             tags = listOf("kotlin", "ecs", "compiler-plugin", "gamedev")
+            compatibility {
+                features {
+                    // the Gradle plugin only registers the compiler plugin and creates no tasks
+                    configurationCache = true
+                }
+            }
             implementationClass = "com.github.quillraven.fleks.plugin.FleksGradlePlugin"
         }
     }
