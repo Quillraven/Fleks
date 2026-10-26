@@ -6,12 +6,17 @@ kotlinDokka = "2.2.0"
 kotlinxBenchmark = "0.5.0"
 mavenPublishPlugin = "0.37.0"
 kotlinxAtomic = "0.33.0"
+kctfork = "0.14.0" # kotlin compiler test library
 
 [libraries]
 
 kotlinxSerialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 
 kotlinxBenchmark-runtime = { module = "org.jetbrains.kotlinx:kotlinx-benchmark-runtime", version.ref = "kotlinxBenchmark" }
+
+kotlin-compiler = { module = "org.jetbrains.kotlin:kotlin-compiler", version.ref = "kotlin" }
+kotlin-gradlePluginApi = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin-api", version.ref = "kotlin" }
+kctfork-core = { module = "dev.zacsweers.kctfork:core", version.ref = "kctfork" }
 
 ashley = { module = "com.badlogicgames.ashley:ashley", version = "1.7.4" }
 artemisOdb = { module = "net.onedaybeard.artemis:artemis-odb", version = "2.3.0" }
@@ -22,3 +27,7 @@ gradlePlugin-kotlinDokka = { module = "org.jetbrains.dokka:dokka-gradle-plugin",
 gradlePlugin-kotlinxBenchmark = { module = "org.jetbrains.kotlinx:kotlinx-benchmark-plugin", version.ref = "kotlinxBenchmark" }
 gradlePlugin-mavenPublish = { module = "com.vanniktech:gradle-maven-publish-plugin", version.ref = "mavenPublishPlugin" }
 gradlePlugin-kotlinxAtomic = { module = "org.jetbrains.kotlinx:atomicfu-gradle-plugin", version.ref = "kotlinxAtomic" }
+
+[plugins]
+
+gradlePluginPublish = { id = "com.gradle.plugin-publish", version = "2.2.1" }

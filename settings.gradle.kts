@@ -66,3 +66,5 @@ dependencyResolutionManagement {
 }
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+
+include(":fleks-compiler-plugin")

@@ -5,7 +5,7 @@
 [![LTS](https://img.shields.io/badge/LTS-2.15-orange.svg)](https://search.maven.org/artifact/io.github.quillraven.fleks/Fleks/2.15/jar)
 [![Snapshot](https://img.shields.io/badge/Snapshot-2.16--SNAPSHOT-orange.svg)](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots)
 [![Build Master](https://img.shields.io/github/actions/workflow/status/quillraven/fleks/build.yml?branch=master)](https://github.com/Quillraven/fleks/actions)
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.4.10-red.svg)](http://kotlinlang.org/)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.4.21-red.svg)](http://kotlinlang.org/)
 
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/Quillraven/Fleks/blob/master/LICENSE)
 
@@ -103,6 +103,19 @@ maven { url 'https://central.sonatype.com/repository/maven-snapshots/' }
 // Kotlin DSL
 maven { url = uri("https://central.sonatype.com/repository/maven-snapshots/") }
 ```
+
+#### Compiler plugin
+
+Fleks also provides an optional [compiler plugin](fleks-compiler-plugin/ReadMe.md) that generates the boilerplate
+of components. Annotate a class with `@FleksComponent` instead of implementing `Component<T>`, writing `type()`
+and creating a companion object by hand:
+
+```kotlin
+@FleksComponent
+data class Position(var x: Float = 0f, var y: Float = 0f)
+```
+
+[![Plugin](https://img.shields.io/gradle-plugin-portal/v/io.github.quillraven.fleks.compiler-plugin?label=Gradle%20Plugin&color=orange)](fleks-compiler-plugin/ReadMe.md)
 
 ## API and examples
 
