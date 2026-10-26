@@ -52,8 +52,8 @@ class SparseEntityBag(
      * Returns true if and only if the given [entity] is part of the bag.
      */
     operator fun contains(entity: Entity): Boolean {
-        val denseIdx = sparse.getOrNull(entity.id) ?: return false
-        return denseIdx != Entity.NONE.id
+        val id = entity.id
+        return id >= 0 && id < sparse.size && sparse[id] != Entity.NONE.id
     }
 
     /**
@@ -74,7 +74,11 @@ class SparseEntityBag(
      * array tightly packed, and its [sparse] entry gets updated accordingly.
      */
     operator fun minusAssign(entity: Entity) {
-        val denseIdx = sparse.getOrNull(entity.id) ?: return
+        val id = entity.id
+        if (id < 0 || id >= sparse.size) {
+            return
+        }
+        val denseIdx = sparse[id]
         if (denseIdx == Entity.NONE.id) {
             return
         }

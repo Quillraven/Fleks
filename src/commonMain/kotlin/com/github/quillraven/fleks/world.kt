@@ -643,21 +643,33 @@ class World internal constructor(
         // update family add hook by adding systems' onAddEntity calls after its original world cfg hook
         val addSystems = systems.filter { it is IteratingSystem && it is FamilyOnAdd && it.family == family }
         val ownAddHook = worldCfgFamilyAddHooks[family]
-        family.addHook = if (ownAddHook != null) { entity ->
-            ownAddHook(this, entity)
-            addSystems.forEach { (it as FamilyOnAdd).onAddEntity(entity) }
-        } else { entity ->
-            addSystems.forEach { (it as FamilyOnAdd).onAddEntity(entity) }
+        family.addHook = when {
+            // no wrapping hook necessary to avoid unnecessary overhead whenever an entity enters the family
+            addSystems.isEmpty() -> ownAddHook
+            ownAddHook != null -> { entity ->
+                ownAddHook(this, entity)
+                addSystems.forEach { (it as FamilyOnAdd).onAddEntity(entity) }
+            }
+
+            else -> { entity ->
+                addSystems.forEach { (it as FamilyOnAdd).onAddEntity(entity) }
+            }
         }
 
         // update family remove hook by adding systems' onRemoveEntity calls before its original world cfg hook
         val removeSystems = systems.filter { it is IteratingSystem && it is FamilyOnRemove && it.family == family }
         val ownRemoveHook = worldCfgFamilyRemoveHooks[family]
-        family.removeHook = if (ownRemoveHook != null) { entity ->
-            removeSystems.forEachReverse { (it as FamilyOnRemove).onRemoveEntity(entity) }
-            ownRemoveHook(this, entity)
-        } else { entity ->
-            removeSystems.forEachReverse { (it as FamilyOnRemove).onRemoveEntity(entity) }
+        family.removeHook = when {
+            // no wrapping hook necessary to avoid unnecessary overhead whenever an entity leaves the family
+            removeSystems.isEmpty() -> ownRemoveHook
+            ownRemoveHook != null -> { entity ->
+                removeSystems.forEachReverse { (it as FamilyOnRemove).onRemoveEntity(entity) }
+                ownRemoveHook(this, entity)
+            }
+
+            else -> { entity ->
+                removeSystems.forEachReverse { (it as FamilyOnRemove).onRemoveEntity(entity) }
+            }
         }
     }
 

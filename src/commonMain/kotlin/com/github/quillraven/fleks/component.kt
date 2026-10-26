@@ -225,10 +225,13 @@ class ComponentService {
      */
     @Suppress("UNCHECKED_CAST")
     inline fun <reified T : Component<*>> holder(componentType: ComponentType<T>): ComponentsHolder<T> {
-        if (holdersBag.hasNoValueAtIndex(componentType.id)) {
-            holdersBag[componentType.id] = ComponentsHolder(world, componentType, Array<T?>(world.capacity) { null })
+        val existing = holdersBag.getOrNull(componentType.id)
+        if (existing != null) {
+            return existing as ComponentsHolder<T>
         }
-        return holdersBag[componentType.id] as ComponentsHolder<T>
+        val holder = ComponentsHolder(world, componentType, Array<T?>(world.capacity) { null })
+        holdersBag[componentType.id] = holder
+        return holder
     }
 
     /**
