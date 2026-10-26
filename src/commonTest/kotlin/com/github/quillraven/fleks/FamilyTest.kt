@@ -365,6 +365,24 @@ internal class FamilyTest {
     }
 
     @Test
+    fun testFamilyContainsEntityRef() {
+        val family = testWorld.family { all(FamilyTestComponent) }
+        val e1 = testWorld.entity { it += FamilyTestComponent() }
+        val e2 = testWorld.entity()
+        val ref1 = with(testWorld) { e1.getRef() }
+        val ref2 = with(testWorld) { e2.getRef() }
+
+        assertTrue(ref1 in family)
+        assertFalse(ref2 in family)
+        assertFalse(EntityRef.NONE in family)
+
+        testWorld.apply { e1.remove() }
+
+        assertFalse(ref1.valid)
+        assertFalse(ref1 in family)
+    }
+
+    @Test
     fun testNestedFamilyUpdate() {
         val f1 = testWorld.family { all(FamilyTestComponent) }
         val f2 = testWorld.family { all(FamilyTestComponent2) }

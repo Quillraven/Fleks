@@ -910,7 +910,7 @@ class MutableEntityBag(
      * Returns the single [entity][Entity] of the bag matching the given [predicate],
      * or throws an exception if the bag is empty or has more than one [entity][Entity].
      */
-    override fun single(predicate: (Entity) -> Boolean): Entity {
+    override inline fun single(predicate: (Entity) -> Boolean): Entity {
         var single: Entity? = null
         for (i in 0 until size) {
             val entity = Entity(values[i])
@@ -942,7 +942,7 @@ class MutableEntityBag(
      * Returns the single [entity][Entity] of the bag matching the given [predicate],
      * or null if the bag is empty or has more than one [entity][Entity].
      */
-    override fun singleOrNull(predicate: (Entity) -> Boolean): Entity? {
+    override inline fun singleOrNull(predicate: (Entity) -> Boolean): Entity? {
         var single: Entity? = null
         for (i in 0 until size) {
             val entity = Entity(values[i])
