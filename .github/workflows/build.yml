@@ -7,6 +7,7 @@ on:
       - '**.md'
       - 'LICENSE'
       - '.gitignore'
+      - 'fleks-compiler-plugin/**' # built and tested by build-plugin.yml
   pull_request:
     branches:
       - master
@@ -14,6 +15,7 @@ on:
       - '**.md'
       - 'LICENSE'
       - '.gitignore'
+      - 'fleks-compiler-plugin/**' # built and tested by build-plugin.yml
   workflow_dispatch:
 
 concurrency:

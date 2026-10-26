@@ -1,0 +1,67 @@
+name: Build Compiler Plugin
+on:
+  push:
+    branches:
+      - master
+    # everything that ends up in the plugin artifact or its tests (docs and runtime code are not relevant)
+    paths:
+      - 'fleks-compiler-plugin/**'
+      - '!fleks-compiler-plugin/**.md'
+      - 'build-logic/build.gradle.kts'
+      - 'build-logic/settings.gradle.kts'
+      - 'build-logic/src/main/kotlin/fleks/base.gradle.kts'
+      - 'build-logic/src/main/kotlin/fleks/publishing.gradle.kts'
+      - 'gradle/libs.versions.toml'
+      - '.github/workflows/build-plugin.yml'
+      - '.github/workflows/publish-plugin.yml'
+  pull_request:
+    branches:
+      - master
+    # everything that ends up in the plugin artifact or its tests (docs and runtime code are not relevant)
+    paths:
+      - 'fleks-compiler-plugin/**'
+      - '!fleks-compiler-plugin/**.md'
+      - 'build-logic/build.gradle.kts'
+      - 'build-logic/settings.gradle.kts'
+      - 'build-logic/src/main/kotlin/fleks/base.gradle.kts'
+      - 'build-logic/src/main/kotlin/fleks/publishing.gradle.kts'
+      - 'gradle/libs.versions.toml'
+      - '.github/workflows/build-plugin.yml'
+      - '.github/workflows/publish-plugin.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: "${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}"
+  # never cancel a running release, only superseded pull request builds
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest # the plugin is JVM only
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v6
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-cleanup: always
+
+      - name: Build plugin
+        run: ./gradlew :fleks-compiler-plugin:build --stacktrace
+
+  publish:
+    # only publish after 'build' was successful, and this workflow is running on master branch
+    needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+    uses: ./.github/workflows/publish-plugin.yml
+    secrets: inherit

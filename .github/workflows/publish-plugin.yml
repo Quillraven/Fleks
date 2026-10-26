@@ -1,20 +1,6 @@
 name: Publish Compiler Plugin
 on:
-  push:
-    branches:
-      - master
-    # only files that end up in the plugin artifact (tests, docs and runtime code are not relevant)
-    paths:
-      - 'fleks-compiler-plugin/src/main/**'
-      - 'fleks-compiler-plugin/build.gradle.kts'
-      - 'fleks-compiler-plugin/gradle.properties'
-      - 'build-logic/build.gradle.kts'
-      - 'build-logic/settings.gradle.kts'
-      - 'build-logic/src/main/kotlin/fleks/base.gradle.kts'
-      - 'build-logic/src/main/kotlin/fleks/publishing.gradle.kts'
-      - 'gradle/libs.versions.toml'
-      - '.github/workflows/publish-plugin.yml'
-  workflow_dispatch:
+  workflow_call:
 
 concurrency:
   group: "${{ github.workflow }}"
@@ -83,7 +69,7 @@ jobs:
       - name: Publish plugin
         if: steps.check.outputs.central == 'true' || steps.check.outputs.portal == 'true'
         run: |
-          tasks=":fleks-compiler-plugin:test"
+          tasks=""
           if [[ "${{ steps.check.outputs.central }}" == "true" ]]; then
             tasks="$tasks :fleks-compiler-plugin:publishToMavenCentral"
           fi
