@@ -87,7 +87,7 @@ itself is still required because it contains the `@FleksComponent` annotation:
 ```kotlin
 plugins {
     kotlin("jvm") version "2.4.21" // or kotlin("multiplatform")
-    id("io.github.quillraven.fleks.compiler-plugin") version "0.1.1"
+    id("io.github.quillraven.fleks.compiler-plugin") version "0.1.2"
 }
 
 dependencies {
@@ -115,7 +115,7 @@ Using a different version can fail with errors like a `NoSuchMethodError` during
 
 | Plugin | Kotlin | Fleks   |
 |--------|--------|---------|
-| 0.1.1  | 2.4.21 | 2.16+   |
+| 0.1.2  | 2.4.21 | 2.16+   |
 
 The plugin has its own version which is independent of the Fleks version. A new plugin version is released when the
 plugin changes or when it needs to support a new Kotlin version.
@@ -129,8 +129,8 @@ To try out unreleased changes, publish the plugin and Fleks to your local Maven 
 signed, therefore publish the plugin as a snapshot:
 
 ```shell
-./gradlew publishToMavenLocal -Pfleks.plugin.version=0.1.1-SNAPSHOT
+./gradlew publishToMavenLocal -Pfleks.plugin.version=0.1.2-SNAPSHOT
 ```
 
 Then add `mavenLocal()` to the `pluginManagement` and `dependencyResolutionManagement` repositories of your project
-and use the snapshot versions of the plugin (`0.1.1-SNAPSHOT`) and Fleks (the current `fleks.version`).
+and use the snapshot versions of the plugin (`0.1.2-SNAPSHOT`) and Fleks (the current `fleks.version`).
