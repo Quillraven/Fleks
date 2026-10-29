@@ -14,7 +14,6 @@ import org.jetbrains.kotlin.fir.declarations.DirectDeclarationsAccess
 import org.jetbrains.kotlin.fir.declarations.FirClassLikeDeclaration
 import org.jetbrains.kotlin.fir.declarations.FirRegularClass
 import org.jetbrains.kotlin.fir.declarations.FirDeclarationOrigin.Plugin
-import org.jetbrains.kotlin.fir.declarations.hasAnnotation
 import org.jetbrains.kotlin.fir.declarations.utils.isCompanion
 import org.jetbrains.kotlin.fir.extensions.FirDeclarationGenerationExtension
 import org.jetbrains.kotlin.fir.extensions.FirDeclarationPredicateRegistrar
@@ -24,6 +23,7 @@ import org.jetbrains.kotlin.fir.extensions.FirSupertypeGenerationExtension
 import org.jetbrains.kotlin.fir.extensions.MemberGenerationContext
 import org.jetbrains.kotlin.fir.extensions.NestedClassGenerationContext
 import org.jetbrains.kotlin.fir.extensions.predicate.DeclarationPredicate
+import org.jetbrains.kotlin.fir.extensions.predicateBasedProvider
 import org.jetbrains.kotlin.fir.plugin.createCompanionObject
 import org.jetbrains.kotlin.fir.plugin.createDefaultPrivateConstructor
 import org.jetbrains.kotlin.fir.plugin.createMemberFunction
@@ -36,9 +36,9 @@ import org.jetbrains.kotlin.fir.symbols.impl.FirNamedFunctionSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirRegularClassSymbol
 import org.jetbrains.kotlin.fir.types.ConeClassLikeType
 import org.jetbrains.kotlin.fir.types.ConeKotlinType
+import org.jetbrains.kotlin.fir.types.ConeStarProjection
 import org.jetbrains.kotlin.fir.types.FirResolvedTypeRef
 import org.jetbrains.kotlin.fir.types.classId
-import org.jetbrains.kotlin.fir.types.constructStarProjectedType
 import org.jetbrains.kotlin.fir.types.constructType
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.builders.irBlockBody
@@ -70,7 +70,6 @@ import org.jetbrains.kotlin.name.SpecialNames
 const val FLEKS_PLUGIN_ID = "io.github.quillraven.fleks.compiler-plugin"
 
 private val COMPONENT_ANNOTATION_FQN = FqName("com.github.quillraven.fleks.FleksComponent")
-private val COMPONENT_ANNOTATION_CLASS_ID = ClassId.topLevel(COMPONENT_ANNOTATION_FQN)
 private val COMPONENT_CLASS_ID = ClassId.fromString("com/github/quillraven/fleks/Component")
 private val COMPONENT_TYPE_CLASS_ID = ClassId.fromString("com/github/quillraven/fleks/ComponentType")
 private val TYPE_FUNCTION_NAME = Name.identifier("type")
@@ -80,10 +79,30 @@ private data object FleksPluginKey : GeneratedDeclarationKey()
 
 private val componentAnnotationPredicate = DeclarationPredicate.create { annotated(COMPONENT_ANNOTATION_FQN) }
 
-/** Creates `Class<Self>` for a runtime class with a single type parameter, e.g. `Component<Position>`. */
-private fun FirSession.selfParameterizedType(classId: ClassId, self: FirClassSymbol<*>): ConeClassLikeType? =
-    symbolProvider.getClassLikeSymbolByClassId(classId)
-        ?.constructType(arrayOf(self.constructStarProjectedType(isMarkedNullable = false)), isMarkedNullable = false)
+/**
+ * Whether the declaration is annotated with `@FleksComponent`. Uses the registered predicate instead of
+ * `hasAnnotation`: the IDE asks for generated declarations before annotations are fully resolved, and resolving
+ * them from within these extensions fails there.
+ */
+private fun FirSession.isComponent(declaration: FirClassLikeDeclaration): Boolean =
+    predicateBasedProvider.matches(componentAnnotationPredicate, declaration)
+
+private fun FirSession.isComponent(symbol: FirClassSymbol<*>): Boolean =
+    predicateBasedProvider.matches(componentAnnotationPredicate, symbol)
+
+/**
+ * Creates `Class<Self>` for a runtime class with a single type parameter, e.g. `Component<Position>`.
+ * `Self` is star-projected via `constructType` instead of `constructStarProjectedType`, whose receiver type differs
+ * between the Kotlin compiler and the analysis API bundled with IntelliJ.
+ */
+private fun FirSession.selfParameterizedType(classId: ClassId, self: FirClassSymbol<*>): ConeClassLikeType? {
+    val selfType = self.constructType(
+        Array(self.typeParameterSymbols.size) { ConeStarProjection },
+        isMarkedNullable = false,
+    )
+    return symbolProvider.getClassLikeSymbolByClassId(classId)
+        ?.constructType(arrayOf(selfType), isMarkedNullable = false)
+}
 
 /**
  * Adds `Component<Self>` as a supertype to every class annotated with `@FleksComponent`
@@ -95,14 +114,14 @@ private class FleksSupertypeGenerationExtension(session: FirSession) : FirSupert
     }
 
     override fun needTransformSupertypes(declaration: FirClassLikeDeclaration): Boolean =
-        declaration.hasAnnotation(COMPONENT_ANNOTATION_CLASS_ID, session) || declaration.componentOfCompanion() != null
+        session.isComponent(declaration) || declaration.componentOfCompanion() != null
 
     override fun computeAdditionalSupertypes(
         classLikeDeclaration: FirClassLikeDeclaration,
         resolvedSupertypes: List<FirResolvedTypeRef>,
         typeResolver: TypeResolveService,
     ): List<ConeKotlinType> {
-        if (classLikeDeclaration.hasAnnotation(COMPONENT_ANNOTATION_CLASS_ID, session)) {
+        if (session.isComponent(classLikeDeclaration)) {
             val self = classLikeDeclaration.symbol as? FirClassSymbol<*> ?: return emptyList()
             return listOfNotNull(session.selfParameterizedType(COMPONENT_CLASS_ID, self))
         }
@@ -117,7 +136,7 @@ private class FleksSupertypeGenerationExtension(session: FirSession) : FirSupert
     private fun FirClassLikeDeclaration.componentOfCompanion(): FirClassSymbol<*>? {
         if (this !is FirRegularClass || !isCompanion) return null
         val owner = session.symbolProvider.getClassLikeSymbolByClassId(symbol.classId.outerClassId ?: return null)
-        return (owner as? FirRegularClassSymbol)?.takeIf { it.hasAnnotation(COMPONENT_ANNOTATION_CLASS_ID, session) }
+        return (owner as? FirRegularClassSymbol)?.takeIf { session.isComponent(it) }
     }
 }
 
@@ -132,7 +151,7 @@ private class FleksDeclarationGenerationExtension(session: FirSession) : FirDecl
     }
 
     private fun FirClassSymbol<*>.isComponentClass(): Boolean =
-        this is FirRegularClassSymbol && hasAnnotation(COMPONENT_ANNOTATION_CLASS_ID, session)
+        this is FirRegularClassSymbol && session.isComponent(this)
 
     private fun FirClassSymbol<*>.isGeneratedCompanion(): Boolean = isCompanion && origin == Plugin(FleksPluginKey)
 

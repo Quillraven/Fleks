@@ -87,7 +87,7 @@ itself is still required because it contains the `@FleksComponent` annotation:
 ```kotlin
 plugins {
     kotlin("jvm") version "2.4.21" // or kotlin("multiplatform")
-    id("io.github.quillraven.fleks.compiler-plugin") version "0.1.2"
+    id("io.github.quillraven.fleks.compiler-plugin") version "0.1.3"
 }
 
 dependencies {
@@ -115,7 +115,7 @@ Using a different version can fail with errors like a `NoSuchMethodError` during
 
 | Plugin | Kotlin | Fleks   |
 |--------|--------|---------|
-| 0.1.2  | 2.4.21 | 2.16+   |
+| 0.1.3  | 2.4.21 | 2.16+   |
 
 The plugin has its own version which is independent of the Fleks version. A new plugin version is released when the
 plugin changes or when it needs to support a new Kotlin version.
@@ -123,14 +123,37 @@ plugin changes or when it needs to support a new Kotlin version.
 The plugin is tested with the JVM target. As it only generates plain Kotlin declarations, other targets are expected
 to work as well, but this is not covered by tests yet.
 
+## IntelliJ IDEA
+
+Gradle builds work out of the box, but IntelliJ IDEA in K2 mode only loads the compiler plugins that are bundled with
+its Kotlin plugin, e.g. kotlinx.serialization or Compose. Third-party compiler plugins like this one are ignored, so the
+editor does not know the generated companion objects and marks every usage of a component as an error.
+
+The reason is that the IDE does not use the Kotlin compiler of your project. It analyzes the code with the Kotlin
+version that is bundled with it, and a compiler plugin that is built against a different Kotlin version can break the
+code analysis.
+
+To enable the plugin in the IDE:
+
+1. Open *Help | Find Action...*, search for *Registry...* and open it.
+2. Disable `kotlin.k2.only.bundled.compiler.plugins.enabled`.
+3. Restart the IDE and reload the Gradle project.
+
+| Plugin | Tested with          |
+|--------|----------------------|
+| 0.1.3  | IntelliJ IDEA 2026.2 |
+
+If the code is still marked as an error, the plugin is most likely not compatible with the Kotlin version of your IDE.
+The exceptions of the plugin are logged in the `idea.log` of the IDE (*Help | Show Log in Files*).
+
 ## Using a local build
 
 To try out unreleased changes, publish the plugin and Fleks to your local Maven repository. Release versions are
 signed, therefore publish the plugin as a snapshot:
 
 ```shell
-./gradlew publishToMavenLocal -Pfleks.plugin.version=0.1.2-SNAPSHOT
+./gradlew publishToMavenLocal -Pfleks.plugin.version=0.1.3-SNAPSHOT
 ```
 
 Then add `mavenLocal()` to the `pluginManagement` and `dependencyResolutionManagement` repositories of your project
-and use the snapshot versions of the plugin (`0.1.2-SNAPSHOT`) and Fleks (the current `fleks.version`).
+and use the snapshot versions of the plugin (`0.1.3-SNAPSHOT`) and Fleks (the current `fleks.version`).
